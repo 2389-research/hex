@@ -5,11 +5,14 @@ package ui
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/glamour"
 	tea "github.com/charmbracelet/bubbletea"
+	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
@@ -102,6 +105,18 @@ type Model struct {
 	executingTool    bool              // Tool is running
 	currentToolID    string            // ID of currently executing tool
 	toolResults      []ToolResult      // Results to send back to API
+
+	// Phase 6C: Enhanced UI Components
+	spinner          *ToolSpinner
+	approvalPrompt   *ApprovalPrompt
+	streamingDisplay *StreamingDisplay
+	statusBar        *StatusBar
+	helpVisible      bool
+	typewriterMode   bool
+
+	// Phase 6B: Context Management
+	contextManager *ctxmgr.Manager
+	contextUsage   ctxmgr.ContextUsage
 }
 
 // ToolResult represents a tool execution result for the API
@@ -133,17 +148,27 @@ func NewModel(conversationID, model string) *Model {
 		renderer = nil // Explicit - RenderMessage already checks for nil
 	}
 
+	// Phase 6C: Initialize new UI components
+	spinner := NewToolSpinner()
+	streamingDisplay := NewStreamingDisplay()
+	statusBar := NewStatusBar(model, 80)
+
 	return &Model{
-		ConversationID: conversationID,
-		Model:          model,
-		Messages:       []Message{},
-		Input:          ta,
-		Viewport:       vp,
-		Width:          80,
-		Height:         24,
-		CurrentView:    ViewModeChat,
-		Status:         StatusIdle,
-		renderer:       renderer,
+		ConversationID:   conversationID,
+		Model:            model,
+		Messages:         []Message{},
+		Input:            ta,
+		Viewport:         vp,
+		Width:            80,
+		Height:           24,
+		CurrentView:      ViewModeChat,
+		Status:           StatusIdle,
+		renderer:         renderer,
+		spinner:          spinner,
+		streamingDisplay: streamingDisplay,
+		statusBar:        statusBar,
+		helpVisible:      false,
+		typewriterMode:   false,
 	}
 }
 
@@ -158,6 +183,8 @@ func (m *Model) AddMessage(role, content string) {
 		Role:    role,
 		Content: content,
 	})
+	// Update context usage after adding message
+	m.updateContextUsage()
 }
 
 // NextView cycles to the next view mode
@@ -272,6 +299,76 @@ func (m *Model) SetToolSystem(registry *tools.Registry, executor *tools.Executor
 	m.toolExecutor = executor
 }
 
+// Phase 6B: Context Management Methods
+
+// SetContextManager sets the context manager and initializes context tracking
+func (m *Model) SetContextManager(manager *ctxmgr.Manager) {
+	m.contextManager = manager
+	m.updateContextUsage()
+}
+
+// updateContextUsage updates the context usage statistics and status bar
+func (m *Model) updateContextUsage() {
+	if m.contextManager == nil {
+		return
+	}
+
+	// Convert UI messages to core.Message for estimation
+	coreMessages := make([]core.Message, len(m.Messages))
+	for i, msg := range m.Messages {
+		coreMessages[i] = core.Message{
+			Role:    msg.Role,
+			Content: msg.Content,
+		}
+	}
+
+	m.contextUsage = m.contextManager.GetUsage(coreMessages)
+
+	// Update status bar with context info
+	if m.statusBar != nil {
+		m.statusBar.SetContextSize(m.contextManager.MaxTokens)
+		m.statusBar.SetTokens(m.contextUsage.EstimatedTokens, 0) // Estimated as input for now
+
+		// Show warning if near limit
+		if m.contextUsage.NearLimit {
+			m.statusBar.SetCustomMessage(fmt.Sprintf("⚠ Context %.0f%% full - pruning recommended", m.contextUsage.PercentUsed))
+		} else {
+			m.statusBar.ClearCustomMessage()
+		}
+	}
+}
+
+// GetPrunedMessages returns messages pruned to fit context limit
+func (m *Model) GetPrunedMessages() []core.Message {
+	if m.contextManager == nil {
+		// No context manager, return all messages
+		coreMessages := make([]core.Message, len(m.Messages))
+		for i, msg := range m.Messages {
+			coreMessages[i] = core.Message{
+				Role:    msg.Role,
+				Content: msg.Content,
+			}
+		}
+		return coreMessages
+	}
+
+	// Convert to core messages
+	coreMessages := make([]core.Message, len(m.Messages))
+	for i, msg := range m.Messages {
+		coreMessages[i] = core.Message{
+			Role:    msg.Role,
+			Content: msg.Content,
+		}
+	}
+
+	// Prune if needed
+	if m.contextManager.ShouldPrune(coreMessages) {
+		return m.contextManager.Prune(coreMessages)
+	}
+
+	return coreMessages
+}
+
 // HandleToolUse processes a tool_use request from the API
 func (m *Model) HandleToolUse(toolUse *core.ToolUse) tea.Cmd {
 	// Store the pending tool use
@@ -292,10 +389,17 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.toolApprovalMode = false
 	m.executingTool = true
 	m.currentToolID = toolUse.ID
+
+	// Phase 6C: Start spinner for tool execution
+	var spinnerCmd tea.Cmd
+	if m.spinner != nil {
+		spinnerCmd = m.spinner.Start(SpinnerTypeToolExecution, "Running "+toolUse.Name+"...")
+	}
+
 	m.updateViewport()
 
 	// Execute tool in background
-	return func() tea.Msg {
+	toolCmd := func() tea.Msg {
 		ctx := context.Background()
 		result, err := m.toolExecutor.Execute(ctx, toolUse.Name, toolUse.Input)
 		return toolExecutionMsg{
@@ -304,6 +408,12 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 			err:       err,
 		}
 	}
+
+	// Return batch of spinner start and tool execution
+	if spinnerCmd != nil {
+		return tea.Batch(spinnerCmd, toolCmd)
+	}
+	return toolCmd
 }
 
 // DenyToolUse rejects the pending tool
@@ -342,6 +452,65 @@ type toolExecutionMsg struct {
 	toolUseID string
 	result    *tools.Result
 	err       error
+}
+
+// Phase 6C: Enhanced UI Methods
+
+// ToggleHelp toggles the help display
+func (m *Model) ToggleHelp() {
+	m.helpVisible = !m.helpVisible
+}
+
+// ToggleTypewriter toggles typewriter mode
+func (m *Model) ToggleTypewriter() {
+	m.typewriterMode = !m.typewriterMode
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.ToggleTypewriterMode()
+	}
+}
+
+// ClearScreen clears the viewport
+func (m *Model) ClearScreen() {
+	m.Viewport.SetContent("")
+	m.Viewport.GotoTop()
+}
+
+// ClearConversation clears all messages
+func (m *Model) ClearConversation() {
+	m.Messages = []Message{}
+	m.StreamingText = ""
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.Reset()
+	}
+	m.updateViewport()
+}
+
+// ExportConversation exports the conversation to a string
+func (m *Model) ExportConversation() string {
+	var b strings.Builder
+	b.WriteString("# Clem Conversation Export\n\n")
+	b.WriteString(fmt.Sprintf("Model: %s\n", m.Model))
+	b.WriteString(fmt.Sprintf("Conversation ID: %s\n\n", m.ConversationID))
+	b.WriteString("---\n\n")
+
+	for _, msg := range m.Messages {
+		b.WriteString(fmt.Sprintf("## %s\n\n", strings.Title(msg.Role)))
+		b.WriteString(msg.Content)
+		b.WriteString("\n\n")
+	}
+
+	return b.String()
+}
+
+// SaveConversation saves the conversation (placeholder for future implementation)
+func (m *Model) SaveConversation() error {
+	// This would save to database or file
+	// For now, it's a placeholder
+	if m.db != nil {
+		// Conversation is already being saved incrementally
+		return nil
+	}
+	return nil
 }
 
 // sendToolResults sends tool results back to the API and continues the conversation

@@ -4,6 +4,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,6 +38,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.executingTool = false
 		m.currentToolID = ""
 
+		// Phase 6C: Stop spinner
+		if m.spinner != nil {
+			m.spinner.Stop()
+		}
+
 		if msg.err != nil {
 			m.ErrorMessage = "Tool execution error: " + msg.err.Error()
 			m.AddMessage("tool", "Tool error: "+msg.err.Error())
@@ -64,10 +70,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyRunes:
 				if len(msg.Runes) > 0 {
 					r := msg.Runes[0]
-					if r == 'y' || r == 'Y' {
+					if r == 'y' || r == 'Y' || r == 'a' || r == 'A' {
 						return m, m.ApproveToolUse()
-					} else if r == 'n' || r == 'N' {
+					} else if r == 'n' || r == 'N' || r == 'd' || r == 'D' {
 						return m, m.DenyToolUse()
+					} else if r == 'v' || r == 'V' {
+						// Phase 6C: Toggle approval details
+						if m.approvalPrompt != nil {
+							m.approvalPrompt.ToggleDetails()
+						}
+						return m, nil
 					}
 				}
 			case tea.KeyEsc:
@@ -78,10 +90,61 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Phase 6C: Handle new keyboard shortcuts
+		// Ctrl+L: Clear screen
+		if msg.Type == tea.KeyCtrlL {
+			m.ClearScreen()
+			return m, nil
+		}
+
+		// Ctrl+K: Clear conversation
+		if msg.Type == tea.KeyCtrlK {
+			m.ClearConversation()
+			return m, nil
+		}
+
+		// Ctrl+S: Save conversation
+		if msg.Type == tea.KeyCtrlS {
+			err := m.SaveConversation()
+			if err != nil {
+				m.ErrorMessage = "Failed to save conversation: " + err.Error()
+			} else if m.statusBar != nil {
+				m.statusBar.SetCustomMessage("Conversation saved!")
+			}
+			return m, nil
+		}
+
+		// Ctrl+E: Export conversation
+		if msg.Type == tea.KeyCtrlE {
+			exported := m.ExportConversation()
+			// For now, just show it was exported (in future, could write to file)
+			if m.statusBar != nil {
+				m.statusBar.SetCustomMessage("Conversation exported (" + fmt.Sprintf("%d", len(exported)) + " bytes)")
+			}
+			return m, nil
+		}
+
+		// Ctrl+T: Toggle typewriter mode
+		if msg.Type == tea.KeyCtrlT {
+			m.ToggleTypewriter()
+			if m.statusBar != nil {
+				if m.typewriterMode {
+					m.statusBar.SetCustomMessage("Typewriter mode ON")
+				} else {
+					m.statusBar.SetCustomMessage("Typewriter mode OFF")
+				}
+			}
+			return m, nil
+		}
+
 		// Handle Esc key - can quit or exit search mode
 		if msg.Type == tea.KeyEsc {
 			if m.SearchMode {
 				m.ExitSearchMode()
+				return m, nil
+			}
+			if m.helpVisible {
+				m.ToggleHelp()
 				return m, nil
 			}
 			// Cancel any active stream before quitting
@@ -149,7 +212,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Handle rune keys for vim-like navigation
+		// Handle rune keys for vim-like navigation and help
 		// ONLY activate vim navigation when textarea is NOT focused
 		if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && !m.Input.Focused() {
 			r := msg.Runes[0]
@@ -157,6 +220,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Handle search mode input
 			if m.SearchMode {
 				m.SearchQuery += string(r)
+				return m, nil
+			}
+
+			// Phase 6C: Handle '?' for help
+			if r == '?' {
+				m.ToggleHelp()
 				return m, nil
 			}
 
@@ -206,6 +275,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.Ready {
 			m.Ready = true
 			m.updateViewport()
+		}
+		// Phase 6C: Update component widths
+		if m.statusBar != nil {
+			m.statusBar.SetWidth(msg.Width)
+		}
+		if m.approvalPrompt != nil {
+			m.approvalPrompt.SetWidth(msg.Width)
+		}
+	}
+
+	// Phase 6C: Update spinner
+	if m.spinner != nil {
+		cmd = m.spinner.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
 		}
 	}
 
@@ -299,6 +383,10 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Handle content deltas
 	if chunk.Delta != nil && chunk.Delta.Text != "" {
 		m.AppendStreamingText(chunk.Delta.Text)
+		// Phase 6C: Update streaming display
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.AppendText(chunk.Delta.Text)
+		}
 		m.SetStatus(StatusStreaming)
 		m.updateViewport()
 		// Continue reading from stream

@@ -1,17 +1,95 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
 
+// ContentBlock represents a single block of content (text or image)
+type ContentBlock struct {
+	Type   string       `json:"type"`             // "text" or "image"
+	Text   string       `json:"text,omitempty"`   // For text blocks
+	Source *ImageSource `json:"source,omitempty"` // For image blocks
+}
+
+// NewTextBlock creates a text content block
+func NewTextBlock(text string) ContentBlock {
+	return ContentBlock{
+		Type: "text",
+		Text: text,
+	}
+}
+
+// NewImageBlock creates an image content block
+func NewImageBlock(source *ImageSource) ContentBlock {
+	return ContentBlock{
+		Type:   "image",
+		Source: source,
+	}
+}
+
 // Message represents a single message in a conversation
 type Message struct {
-	ID        string     `json:"id,omitempty"`
-	Role      string     `json:"role"` // "user", "assistant", "system"
-	Content   string     `json:"content"`
-	ToolCalls []ToolUse  `json:"tool_calls,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	ID           string         `json:"id,omitempty"`
+	Role         string         `json:"role"` // "user", "assistant", "system"
+	Content      string         `json:"-"`    // Internal field, not directly serialized
+	ContentBlock []ContentBlock `json:"-"`    // Internal field, not directly serialized
+	ToolCalls    []ToolUse      `json:"tool_calls,omitempty"`
+	CreatedAt    *time.Time     `json:"created_at,omitempty"`
+}
+
+// MarshalJSON implements custom JSON marshalling for Message
+// This handles the Claude API requirement that 'content' can be either a string or an array
+func (m Message) MarshalJSON() ([]byte, error) {
+	type Alias Message
+	aux := struct {
+		Content interface{} `json:"content,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(&m),
+	}
+
+	// If ContentBlock is set, use it as an array
+	// Otherwise, use the string Content
+	if len(m.ContentBlock) > 0 {
+		aux.Content = m.ContentBlock
+	} else if m.Content != "" {
+		aux.Content = m.Content
+	}
+
+	return json.Marshal(aux)
+}
+
+// UnmarshalJSON implements custom JSON unmarshalling for Message
+func (m *Message) UnmarshalJSON(data []byte) error {
+	type Alias Message
+	aux := &struct {
+		Content json.RawMessage `json:"content,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(m),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Try to unmarshal content as array first
+	var blocks []ContentBlock
+	if err := json.Unmarshal(aux.Content, &blocks); err == nil {
+		m.ContentBlock = blocks
+		return nil
+	}
+
+	// Otherwise, treat as string
+	var str string
+	if err := json.Unmarshal(aux.Content, &str); err == nil {
+		m.Content = str
+		return nil
+	}
+
+	return nil
 }
 
 // Validate checks if the message is valid

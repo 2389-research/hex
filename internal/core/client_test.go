@@ -78,3 +78,84 @@ func TestClientError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "401")
 }
+
+func TestCreateMessageWithImage(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping API test in short mode")
+	}
+
+	// Create VCR recorder
+	r, err := recorder.New("testdata/fixtures/create_message_with_image")
+	require.NoError(t, err)
+	defer r.Stop()
+
+	// Add custom matcher
+	r.SetMatcher(func(r *http.Request, i cassette.Request) bool {
+		return r.URL.String() == i.URL && r.Method == i.Method
+	})
+
+	// Create HTTP client with recorder
+	httpClient := &http.Client{Transport: r}
+
+	// Create API client
+	client := core.NewClient("test-api-key", core.WithHTTPClient(httpClient))
+
+	// Create a message with image content
+	req := core.MessageRequest{
+		Model:     "claude-sonnet-4-5-20250929",
+		MaxTokens: 1024,
+		Messages: []core.Message{
+			{
+				Role: "user",
+				ContentBlock: []core.ContentBlock{
+					core.NewImageBlock(&core.ImageSource{
+						Type:      "base64",
+						MediaType: "image/png",
+						Data:      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+					}),
+					core.NewTextBlock("What's in this image?"),
+				},
+			},
+		},
+	}
+
+	// Execute
+	resp, err := client.CreateMessage(context.Background(), req)
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotEmpty(t, resp.Content)
+
+	// Check response structure
+	assert.Equal(t, "assistant", resp.Role)
+	assert.NotEmpty(t, resp.ID)
+}
+
+func TestMessageRequestSerialization(t *testing.T) {
+	t.Run("text-only message uses content field", func(t *testing.T) {
+		msg := core.Message{
+			Role:    "user",
+			Content: "Hello",
+		}
+
+		// When serialized, should have content field
+		assert.Equal(t, "Hello", msg.Content)
+		assert.Nil(t, msg.ContentBlock)
+	})
+
+	t.Run("multimodal message uses content array", func(t *testing.T) {
+		msg := core.Message{
+			Role: "user",
+			ContentBlock: []core.ContentBlock{
+				core.NewTextBlock("Hello"),
+				core.NewImageBlock(&core.ImageSource{
+					Type:      "base64",
+					MediaType: "image/png",
+					Data:      "data",
+				}),
+			},
+		}
+
+		// When serialized, should have content_block field
+		assert.Len(t, msg.ContentBlock, 2)
+	})
+}

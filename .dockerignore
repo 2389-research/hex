@@ -1,0 +1,40 @@
+# Build artifacts
+clem
+*.exe
+*.dll
+*.so
+*.dylib
+dist/
+coverage.txt
+coverage.html
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+docs/
+
+# Test files
+*_test.go
+test/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.*
+
+# Dependencies (will be downloaded in container)
+vendor/
+
+# OS files
+.DS_Store
+Thumbs.db

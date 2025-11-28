@@ -12,8 +12,8 @@ import (
 )
 
 func runPrintMode(prompt string) error {
-	if prompt == "" {
-		return fmt.Errorf("prompt required in print mode")
+	if prompt == "" && len(imagePaths) == 0 {
+		return fmt.Errorf("prompt or image required in print mode")
 	}
 
 	// Load config
@@ -40,13 +40,39 @@ func runPrintMode(prompt string) error {
 		modelToUse = core.DefaultModel // fallback default
 	}
 
+	// Build message content
+	var msg core.Message
+	msg.Role = "user"
+
+	// If images are provided, use ContentBlock array
+	if len(imagePaths) > 0 {
+		contentBlocks := []core.ContentBlock{}
+
+		// Add images first
+		for _, imgPath := range imagePaths {
+			imgSrc, err := core.LoadImage(imgPath)
+			if err != nil {
+				return fmt.Errorf("load image %s: %w", imgPath, err)
+			}
+			contentBlocks = append(contentBlocks, core.NewImageBlock(imgSrc))
+		}
+
+		// Add text prompt if provided
+		if prompt != "" {
+			contentBlocks = append(contentBlocks, core.NewTextBlock(prompt))
+		}
+
+		msg.ContentBlock = contentBlocks
+	} else {
+		// Text-only message
+		msg.Content = prompt
+	}
+
 	// Create request
 	req := core.MessageRequest{
 		Model:     modelToUse,
 		MaxTokens: 4096,
-		Messages: []core.Message{
-			{Role: "user", Content: prompt},
-		},
+		Messages:  []core.Message{msg},
 	}
 
 	// Send request

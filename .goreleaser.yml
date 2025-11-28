@@ -1,0 +1,171 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: clem
+    main: ./cmd/clem
+    binary: clem
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/harper/clem/internal/core.Version={{.Version}}
+      - -X github.com/harper/clem/internal/core.Commit={{.ShortCommit}}
+      - -X github.com/harper/clem/internal/core.Date={{.Date}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+
+archives:
+  - id: clem
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE*
+      - README.md
+      - CHANGELOG.md
+      - docs/**/*
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - typo
+  groups:
+    - title: Features
+      regexp: '^feat:'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^fix:'
+      order: 1
+    - title: Other Changes
+      order: 999
+
+release:
+  github:
+    owner: harper
+    name: clem
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Clem {{ .Tag }}
+
+    {{ .Date }}
+
+    **Download**: Choose the archive for your platform below.
+
+  footer: |
+    ## Installation
+
+    ### Install Script
+    ```bash
+    curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+    ```
+
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew install harper/tap/clem
+    ```
+
+    ### Manual Installation
+    1. Download the appropriate archive for your platform
+    2. Extract the binary
+    3. Move to a directory in your PATH (e.g., `/usr/local/bin`)
+    4. Run `clem --version` to verify
+
+    ## Documentation
+    - [User Guide](https://github.com/harper/clem/blob/main/docs/USER_GUIDE.md)
+    - [Architecture](https://github.com/harper/clem/blob/main/docs/ARCHITECTURE.md)
+    - [Tools Reference](https://github.com/harper/clem/blob/main/docs/TOOLS.md)
+
+brews:
+  - repository:
+      owner: harper
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    folder: Formula
+    homepage: https://github.com/harper/clem
+    description: "Claude CLI - AI assistant for the terminal"
+    license: MIT
+    test: |
+      system "#{bin}/clem", "--version"
+    install: |
+      bin.install "clem"
+
+dockers:
+  - image_templates:
+      - "ghcr.io/harper/clem:{{ .Tag }}"
+      - "ghcr.io/harper/clem:v{{ .Major }}"
+      - "ghcr.io/harper/clem:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/harper/clem:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/amd64"
+
+nfpms:
+  - id: clem
+    package_name: clem
+    vendor: Harper
+    homepage: https://github.com/harper/clem
+    maintainer: Harper <harper@example.com>
+    description: Claude CLI - AI assistant for the terminal
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+    section: utils
+    contents:
+      - src: ./LICENSE
+        dst: /usr/share/doc/clem/LICENSE
+      - src: ./README.md
+        dst: /usr/share/doc/clem/README.md
+    file_name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
+announce:
+  skip: true

@@ -1,8 +1,13 @@
 # Clem - Claude CLI
 
+[![Test](https://github.com/harper/clem/workflows/Test/badge.svg)](https://github.com/harper/clem/actions/workflows/test.yml)
+[![Release](https://github.com/harper/clem/workflows/Release/badge.svg)](https://github.com/harper/clem/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/harper/clem)](https://goreportcard.com/report/github.com/harper/clem)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
 
-**Latest Version**: v0.2.0
+**Latest Version**: v0.5.0
 
 ## Features
 
@@ -36,9 +41,54 @@ A Go implementation of Claude Code CLI with interactive mode and tool execution 
 
 ### Installation
 
+**Method 1: Install Script (Recommended)**
+
 ```bash
-# Install latest version
+# macOS and Linux
+curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+
+# Verify installation
+clem --version
+```
+
+**Method 2: Homebrew (macOS/Linux)**
+
+```bash
+# Add tap and install
+brew install harper/tap/clem
+
+# Verify installation
+clem --version
+```
+
+**Method 3: Go Install**
+
+```bash
+# Requires Go 1.24+
 go install github.com/harper/clem/cmd/clem@latest
+
+# Verify installation
+clem --version
+```
+
+**Method 4: Download Binary**
+
+Download pre-built binaries from the [releases page](https://github.com/harper/clem/releases):
+
+1. Download the archive for your platform
+2. Extract the binary
+3. Move to a directory in your PATH (e.g., `/usr/local/bin`)
+4. Run `clem --version` to verify
+
+**Method 5: Build from Source**
+
+```bash
+# Clone repository
+git clone https://github.com/harper/clem.git
+cd clem
+
+# Build and install
+make install
 
 # Verify installation
 clem --version

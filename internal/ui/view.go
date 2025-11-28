@@ -70,7 +70,26 @@ func (m *Model) View() string {
 	// Title with status indicator
 	title := titleStyle.Render(fmt.Sprintf("Clem • %s", m.Model))
 	statusIndicator := m.renderStatusIndicator()
-	b.WriteString(title + " " + statusIndicator + "\n\n")
+	b.WriteString(title + " " + statusIndicator)
+
+	// Phase 6C: Add streaming indicator if streaming
+	if m.Streaming && m.streamingDisplay != nil {
+		b.WriteString("  ")
+		b.WriteString(m.streamingDisplay.RenderStreamingIndicator())
+	}
+
+	// Phase 6C: Add spinner if active
+	if m.spinner != nil && m.spinner.IsActive() {
+		b.WriteString("  ")
+		b.WriteString(m.spinner.View())
+	}
+
+	b.WriteString("\n\n")
+
+	// Phase 6C: Show help if toggled
+	if m.helpVisible {
+		b.WriteString(m.renderHelpPanel() + "\n\n")
+	}
 
 	// Render different views based on CurrentView
 	switch m.CurrentView {
@@ -84,9 +103,9 @@ func (m *Model) View() string {
 
 	b.WriteString("\n")
 
-	// Task 12: Tool approval prompt (takes precedence over everything)
+	// Phase 6C: Tool approval prompt (takes precedence over everything)
 	if m.toolApprovalMode {
-		b.WriteString(m.renderToolApprovalPrompt() + "\n")
+		b.WriteString(m.renderToolApprovalPromptEnhanced() + "\n")
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
@@ -101,8 +120,8 @@ func (m *Model) View() string {
 		}
 	}
 
-	// Status bar with token counter and help
-	b.WriteString("\n" + m.renderStatusBar())
+	// Phase 6C: Enhanced status bar
+	b.WriteString("\n" + m.renderStatusBarEnhanced())
 
 	return b.String()
 }
@@ -237,4 +256,70 @@ func (m *Model) renderToolStatus() string {
 	}
 
 	return toolExecutingStyle.Render(fmt.Sprintf("⏳ Executing tool: %s...", toolName))
+}
+
+// Phase 6C: Enhanced rendering methods
+
+// renderHelpPanel renders the help panel when toggled
+func (m *Model) renderHelpPanel() string {
+	if m.statusBar == nil {
+		return ""
+	}
+
+	helpStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("99")).
+		Padding(1, 2).
+		Width(m.Width - 4)
+
+	return helpStyle.Render(m.statusBar.GetFullHelp())
+}
+
+// renderToolApprovalPromptEnhanced renders enhanced tool approval UI
+func (m *Model) renderToolApprovalPromptEnhanced() string {
+	if !m.toolApprovalMode || m.pendingToolUse == nil {
+		return m.renderToolApprovalPrompt() // Fallback to basic version
+	}
+
+	// Use the new ApprovalPrompt component if available
+	if m.approvalPrompt == nil {
+		m.approvalPrompt = NewApprovalPrompt(m.pendingToolUse)
+		m.approvalPrompt.SetWidth(m.Width)
+	}
+
+	return m.approvalPrompt.View()
+}
+
+// renderStatusBarEnhanced renders the enhanced status bar
+func (m *Model) renderStatusBarEnhanced() string {
+	if m.statusBar == nil {
+		return m.renderStatusBar() // Fallback to basic version
+	}
+
+	// Update status bar state
+	m.statusBar.SetWidth(m.Width)
+	m.statusBar.SetTokens(m.TokensInput, m.TokensOutput)
+
+	// Update connection status
+	if m.Streaming {
+		m.statusBar.SetConnectionStatus(ConnectionStreaming)
+	} else if m.apiClient != nil {
+		m.statusBar.SetConnectionStatus(ConnectionConnected)
+	} else {
+		m.statusBar.SetConnectionStatus(ConnectionDisconnected)
+	}
+
+	// Update mode
+	mode := ""
+	switch m.CurrentView {
+	case ViewModeChat:
+		mode = "chat"
+	case ViewModeHistory:
+		mode = "history"
+	case ViewModeTools:
+		mode = "tools"
+	}
+	m.statusBar.SetMode(mode)
+
+	return m.statusBar.View()
 }

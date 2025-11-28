@@ -36,7 +36,7 @@ func TestViewRendersToolsMode(t *testing.T) {
 
 	view := model.View()
 	assert.Contains(t, view, "Tool Inspector")
-	assert.Contains(t, view, "[Tools]")
+	assert.Contains(t, view, "[tools]") // Phase 6C: lowercase in status bar
 }
 
 func TestViewShowsTokenCounter(t *testing.T) {
@@ -45,8 +45,9 @@ func TestViewShowsTokenCounter(t *testing.T) {
 	model.UpdateTokens(100, 250)
 
 	view := model.View()
-	assert.Contains(t, view, "100 in")
-	assert.Contains(t, view, "250 out")
+	// Phase 6C: New compact token format with k suffix
+	assert.Contains(t, view, "0k↓") // 100 rounds down to 0k
+	assert.Contains(t, view, "0k↑") // 250 rounds down to 0k
 }
 
 func TestViewShowsSearchMode(t *testing.T) {
@@ -65,9 +66,9 @@ func TestViewShowsHelpText(t *testing.T) {
 	model.Ready = true
 
 	view := model.View()
-	assert.Contains(t, view, "ctrl+c: quit")
-	assert.Contains(t, view, "tab: switch view")
-	assert.Contains(t, view, "j/k: scroll")
+	// Phase 6C: New compact help text in status bar
+	assert.Contains(t, view, "?:help")
+	assert.Contains(t, view, "^C:quit")
 }
 
 func TestViewStatusIndicatorChanges(t *testing.T) {

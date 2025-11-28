@@ -8,7 +8,9 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
+	"github.com/harper/clem/internal/logging"
 	"github.com/harper/clem/internal/mcp"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
@@ -31,6 +33,18 @@ var (
 	continueFlag bool
 	resumeID     string
 	dbPath       string
+
+	// Phase 6A: Logging flags
+	logLevel  string
+	logFile   string
+	logFormat string
+
+	// Phase 6B: Multimodal flags
+	imagePaths []string
+
+	// Phase 6B: Context management flags
+	maxContextTokens int
+	contextStrategy  string
 )
 
 var rootCmd = &cobra.Command{
@@ -56,9 +70,29 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&continueFlag, "continue", false, "Continue the most recent conversation")
 	rootCmd.PersistentFlags().StringVar(&resumeID, "resume", "", "Resume a specific conversation by ID")
 	rootCmd.PersistentFlags().StringVar(&dbPath, "db-path", defaultDBPath(), "Path to database file")
+
+	// Phase 6A: Logging flags
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level: debug, info, warn, error")
+	rootCmd.PersistentFlags().StringVar(&logFile, "log-file", "", "Log to file (optional)")
+	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", "text", "Log format: text, json")
+
+	// Phase 6B: Multimodal flags
+	rootCmd.PersistentFlags().StringSliceVar(&imagePaths, "image", []string{}, "Image file path(s) to include in message (repeatable)")
+
+	// Phase 6B: Context management flags
+	rootCmd.PersistentFlags().IntVar(&maxContextTokens, "max-context-tokens", 180000, "Maximum context window size in tokens")
+	rootCmd.PersistentFlags().StringVar(&contextStrategy, "context-strategy", "prune", "Context management strategy: keep-all, prune, summarize")
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
+	// Initialize logging
+	if err := initializeLogging(); err != nil {
+		return fmt.Errorf("initialize logging: %w", err)
+	}
+	defer closeLogger()
+
+	logging.InfoWith("Clem starting", "version", version)
+
 	prompt := ""
 	if len(args) > 0 {
 		prompt = joinArgs(args)
@@ -76,17 +110,23 @@ func joinArgs(args []string) string {
 }
 
 func runInteractive(prompt string) error {
+	logging.Debug("Starting interactive mode")
+
 	// Validate flag conflicts
 	if continueFlag && resumeID != "" {
-		return fmt.Errorf("cannot use both --continue and --resume flags together")
+		logging.Error("Flag conflict: both --continue and --resume specified")
+		return fmt.Errorf("cannot use both --continue and --resume flags together. Use either --continue to resume the latest conversation or --resume <ID> for a specific one")
 	}
 
 	// Task 7: Open database
+	logging.DebugWith("Opening database", "path", dbPath)
 	db, err := openDatabase(dbPath)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		logging.ErrorWithErr("Failed to open database", err, "path", dbPath)
+		return fmt.Errorf("failed to open database at %s: %w. Try:\n  - Check if parent directory exists\n  - Check write permissions\n  - Try different path with --db-path", dbPath, err)
 	}
 	defer db.Close()
+	logging.InfoWith("Database opened successfully", "path", dbPath)
 
 	// Use default model if not specified
 	modelName := model
@@ -215,9 +255,12 @@ func runInteractive(prompt string) error {
 	}
 
 	// Phase 5B: Load MCP tools from .mcp.json if present
+	logging.Debug("Loading MCP tools")
 	if err := mcp.LoadMCPTools(".", registry); err != nil {
 		// Log error but don't fail - continue with built-in tools
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load MCP tools: %v\n", err)
+		logging.WarnWith("Failed to load MCP tools", "error", err.Error())
+	} else {
+		logging.Info("MCP tools loaded successfully")
 	}
 
 	// Create executor with approval function
@@ -230,6 +273,11 @@ func runInteractive(prompt string) error {
 	// Set tool system in model
 	uiModel.SetToolSystem(registry, executor)
 
+	// Phase 6B: Set up context manager
+	contextManager := ctxmgr.NewManager(maxContextTokens)
+	uiModel.SetContextManager(contextManager)
+	logging.DebugWith("Context manager initialized", "maxTokens", maxContextTokens, "strategy", contextStrategy)
+
 	// Add initial prompt if provided
 	if prompt != "" {
 		uiModel.AddMessage("user", prompt)
@@ -239,8 +287,60 @@ func runInteractive(prompt string) error {
 	// Start Bubbletea program
 	p := tea.NewProgram(uiModel, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
+		logging.ErrorWithErr("Failed to run UI", err)
 		return fmt.Errorf("run UI: %w", err)
 	}
 
+	logging.Info("Clem shutting down")
 	return nil
+}
+
+var globalLogger *logging.Logger
+
+func initializeLogging() error {
+	level := logging.LevelFromString(logLevel)
+
+	var format logging.Format
+	switch logFormat {
+	case "json":
+		format = logging.FormatJSON
+	default:
+		format = logging.FormatText
+	}
+
+	config := logging.Config{
+		Level:  level,
+		Format: format,
+	}
+
+	var logger *logging.Logger
+	var err error
+
+	if logFile != "" {
+		// Log to file (and optionally stderr in debug mode)
+		config.LogFile = logFile
+		if level == logging.LevelDebug {
+			config.Writer = os.Stderr
+		}
+		logger, err = logging.NewLoggerWithFile(config)
+		if err != nil {
+			return fmt.Errorf("failed to create logger with file %s: %w. Try:\n  - Check parent directory exists\n  - Check write permissions\n  - Use absolute path", logFile, err)
+		}
+	} else {
+		// Log to stderr only
+		config.Writer = os.Stderr
+		logger = logging.NewLogger(config)
+	}
+
+	globalLogger = logger
+	logging.SetGlobalLogger(logger)
+	return nil
+}
+
+func closeLogger() {
+	if globalLogger != nil {
+		if err := globalLogger.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to close logger: %v\n", err)
+		}
+	}
 }
