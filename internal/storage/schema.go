@@ -19,6 +19,7 @@ func InitializeSchema(db *sql.DB) error {
 	migrationFiles := []string{
 		"migrations/001_initial.sql",
 		"migrations/002_todos.sql",
+		"migrations/003_history.sql",
 	}
 
 	// Execute each migration
