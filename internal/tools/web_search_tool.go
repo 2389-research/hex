@@ -25,7 +25,7 @@ type SearchResult struct {
 	Snippet string
 }
 
-func NewWebSearchTool() *WebSearchTool {
+func NewWebSearchTool() Tool {
 	return &WebSearchTool{
 		baseURL:    "https://html.duckduckgo.com/html/",
 		httpClient: &http.Client{},
@@ -57,7 +57,11 @@ func (t *WebSearchTool) Execute(ctx context.Context, params map[string]interface
 	// Extract and validate query parameter
 	query, ok := params["query"].(string)
 	if !ok || query == "" {
-		return nil, fmt.Errorf("query parameter is required and must be a non-empty string")
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    "query parameter is required and must be a non-empty string",
+		}, nil
 	}
 
 	// Extract optional limit parameter
@@ -69,10 +73,18 @@ func (t *WebSearchTool) Execute(ctx context.Context, params map[string]interface
 		case float64:
 			limit = int(v)
 		default:
-			return nil, fmt.Errorf("limit parameter must be a number")
+			return &Result{
+				ToolName: t.Name(),
+				Success:  false,
+				Error:    "limit parameter must be a number",
+			}, nil
 		}
 		if limit <= 0 {
-			return nil, fmt.Errorf("limit must be greater than 0")
+			return &Result{
+				ToolName: t.Name(),
+				Success:  false,
+				Error:    "limit must be greater than 0",
+			}, nil
 		}
 	}
 
@@ -83,7 +95,11 @@ func (t *WebSearchTool) Execute(ctx context.Context, params map[string]interface
 	// Perform the search
 	results, err := t.search(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("search failed: %w", err)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("search failed: %v", err),
+		}, nil
 	}
 
 	// Filter results by domains

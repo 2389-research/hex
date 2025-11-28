@@ -13,7 +13,7 @@ import (
 type TodoWriteTool struct{}
 
 // NewTodoWriteTool creates a new TodoWrite tool instance
-func NewTodoWriteTool() *TodoWriteTool {
+func NewTodoWriteTool() Tool {
 	return &TodoWriteTool{}
 }
 

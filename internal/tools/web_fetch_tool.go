@@ -22,7 +22,7 @@ type WebFetchTool struct {
 }
 
 // NewWebFetchTool creates a new WebFetch tool instance
-func NewWebFetchTool() *WebFetchTool {
+func NewWebFetchTool() Tool {
 	return &WebFetchTool{
 		client: &http.Client{
 			Timeout: 30 * time.Second,
@@ -51,29 +51,49 @@ func (t *WebFetchTool) Execute(ctx context.Context, params map[string]interface{
 	// Validate URL parameter
 	urlStr, ok := params["url"].(string)
 	if !ok || urlStr == "" {
-		return nil, fmt.Errorf("url parameter is required")
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    "url parameter is required",
+		}, nil
 	}
 
 	// Validate prompt parameter
 	_, ok = params["prompt"].(string)
 	if !ok {
-		return nil, fmt.Errorf("prompt parameter is required")
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    "prompt parameter is required",
+		}, nil
 	}
 
 	// Parse and validate URL
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid url: %w", err)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("invalid url: %v", err),
+		}, nil
 	}
 
 	if parsedURL.Scheme == "" {
-		return nil, fmt.Errorf("invalid url: missing scheme (http/https)")
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    "invalid url: missing scheme (http/https)",
+		}, nil
 	}
 
 	// Create HTTP request with context
 	req, err := http.NewRequestWithContext(ctx, "GET", urlStr, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("failed to create request: %v", err),
+		}, nil
 	}
 
 	// Set user agent
@@ -82,19 +102,31 @@ func (t *WebFetchTool) Execute(ctx context.Context, params map[string]interface{
 	// Execute request
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch url: %w", err)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("failed to fetch url: %v", err),
+		}, nil
 	}
 	defer resp.Body.Close()
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("http error: %d %s", resp.StatusCode, resp.Status)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("http error: %d %s", resp.StatusCode, resp.Status),
+		}, nil
 	}
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("failed to read response: %v", err),
+		}, nil
 	}
 
 	content := string(body)
@@ -104,7 +136,11 @@ func (t *WebFetchTool) Execute(ctx context.Context, params map[string]interface{
 	if strings.Contains(contentType, "text/html") || strings.Contains(contentType, "application/xhtml") {
 		markdown, err := t.converter.ConvertString(content)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert html to markdown: %w", err)
+			return &Result{
+				ToolName: t.Name(),
+				Success:  false,
+				Error:    fmt.Sprintf("failed to convert html to markdown: %v", err),
+			}, nil
 		}
 		content = markdown
 	}
