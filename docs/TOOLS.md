@@ -2466,6 +2466,374 @@ The tool performs a two-stage kill:
 
 ---
 
+## MCP (Model Context Protocol) Tools
+
+**Overview**: MCP integration allows Clem to use external tools from MCP servers, dramatically extending capabilities beyond built-in tools.
+
+### What is MCP?
+
+MCP (Model Context Protocol) is an open standard that enables AI assistants to securely connect to external data sources and tools. MCP servers can provide:
+
+- File system operations
+- Database queries
+- Web scraping and API access
+- Custom business logic
+- Cloud service integrations
+- And much more
+
+### Why Use MCP?
+
+**Extensibility**: Add new capabilities without modifying Clem's source code
+
+**Ecosystem**: Use community-built servers from the MCP marketplace
+
+**Customization**: Build your own MCP servers for domain-specific needs
+
+**Standardization**: MCP is an open protocol supported across multiple AI tools
+
+### Configuration File (.mcp.json)
+
+MCP servers are configured in `.mcp.json` in your project root:
+
+```json
+{
+  "version": "1.0",
+  "servers": {
+    "filesystem": {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"]
+    },
+    "fetch": {
+      "name": "fetch",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    }
+  }
+}
+```
+
+### CLI Commands
+
+#### clem mcp add
+
+Add a new MCP server configuration:
+
+```bash
+# Basic syntax
+clem mcp add <name> <command> [args...]
+
+# Examples
+clem mcp add weather node weather-server.js
+clem mcp add database python -m database_server --port 8080
+clem mcp add files npx -y @modelcontextprotocol/server-filesystem /data
+```
+
+**Parameters**:
+- `name`: Unique identifier for the server
+- `command`: Executable to launch the server
+- `args`: Command-line arguments (optional)
+
+The server configuration is saved to `.mcp.json` in the current directory.
+
+#### clem mcp list
+
+List all configured MCP servers:
+
+```bash
+clem mcp list
+```
+
+**Output**:
+```
+Configured MCP servers:
+
+  filesystem
+    Transport: stdio
+    Command:   npx -y @modelcontextprotocol/server-filesystem /data
+
+  fetch
+    Transport: stdio
+    Command:   npx -y @modelcontextprotocol/server-fetch
+
+Total: 2 server(s)
+Config: /path/to/project/.mcp.json
+```
+
+#### clem mcp remove
+
+Remove an MCP server configuration:
+
+```bash
+clem mcp remove <name>
+
+# Example
+clem mcp remove weather
+```
+
+This removes the server from `.mcp.json` but doesn't affect the server binary or scripts.
+
+### Using MCP Tools in Conversations
+
+Once configured, MCP tools are automatically available in conversations:
+
+**Example workflow**:
+
+1. **Configure server**:
+   ```bash
+   clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
+   ```
+
+2. **Start Clem**:
+   ```bash
+   clem
+   ```
+
+3. **MCP tools load automatically** at startup
+
+4. **Use tools naturally**:
+   ```
+   You: "List all markdown files in my Documents directory"
+
+   Claude: [Uses filesystem MCP tool to list files]
+
+   "I found 23 markdown files:
+   - notes.md
+   - project-plan.md
+   - ..."
+   ```
+
+### Tool Naming Convention
+
+MCP tools are prefixed with their server name to avoid collisions:
+
+```
+Built-in tool:    read_file
+MCP tool:         filesystem_read_file
+                  ^^^^^^^^^ server name prefix
+```
+
+This ensures clarity about which tools come from which sources.
+
+### Example: Filesystem Server
+
+**Setup**:
+```bash
+# Install the official filesystem server
+npm install -g @modelcontextprotocol/server-filesystem
+
+# Configure it
+clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+```
+
+**Available tools**:
+- `filesystem_read_file` - Read file contents
+- `filesystem_write_file` - Write file contents
+- `filesystem_list_directory` - List directory contents
+- `filesystem_create_directory` - Create directories
+- `filesystem_move_file` - Move/rename files
+
+**Usage**:
+```
+You: "Read the contents of config.json in the project directory"
+
+Claude: [Uses filesystem_read_file tool]
+
+"The config.json file contains:
+{
+  'database': 'postgres',
+  'port': 5432,
+  ..."
+```
+
+### Example: Fetch Server
+
+**Setup**:
+```bash
+clem mcp add fetch npx -y @modelcontextprotocol/server-fetch
+```
+
+**Available tools**:
+- `fetch_fetch` - Fetch content from URLs
+- `fetch_post` - HTTP POST requests
+- `fetch_get_json` - Fetch and parse JSON
+
+**Usage**:
+```
+You: "Fetch the latest release info from https://api.github.com/repos/anthropics/anthropic-sdk-python/releases/latest"
+
+Claude: [Uses fetch_fetch tool]
+
+"The latest release is v0.18.1, released on 2024-03-15..."
+```
+
+### Troubleshooting
+
+#### Server Not Starting
+
+**Symptom**: Tools not appearing, connection errors
+
+**Solutions**:
+- Verify command is correct: `clem mcp list`
+- Test command manually: `npx -y @modelcontextprotocol/server-filesystem /path`
+- Check server is installed: `npm list -g @modelcontextprotocol/server-filesystem`
+- Review server logs (stderr output)
+
+#### Tools Not Appearing
+
+**Symptom**: Clem starts but MCP tools aren't available
+
+**Solutions**:
+- Verify `.mcp.json` exists in project directory
+- Check JSON syntax: `cat .mcp.json | jq`
+- Ensure server supports `tools/list` method
+- Check Clem output for initialization errors
+
+#### Permission Errors
+
+**Symptom**: "Permission denied" when MCP tool executes
+
+**Solutions**:
+- For filesystem server: verify allowed directory is accessible
+- Check file/directory permissions
+- Ensure server user has required access
+- Use absolute paths in server configuration
+
+#### Protocol Version Mismatch
+
+**Symptom**: "Unsupported protocol version" error
+
+**Solutions**:
+- Update MCP server to latest version
+- Check server documentation for supported MCP versions
+- Verify server implements MCP correctly
+
+### Writing Custom MCP Servers
+
+You can create custom MCP servers for your specific needs:
+
+**Basic structure** (Node.js example):
+```javascript
+// my-server.js
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+
+const server = new Server({
+  name: "my-custom-server",
+  version: "1.0.0"
+}, {
+  capabilities: {
+    tools: {}
+  }
+});
+
+// Define a tool
+server.setRequestHandler("tools/list", async () => ({
+  tools: [{
+    name: "my_tool",
+    description: "Does something useful",
+    inputSchema: {
+      type: "object",
+      properties: {
+        param: { type: "string", description: "A parameter" }
+      },
+      required: ["param"]
+    }
+  }]
+}));
+
+// Handle tool execution
+server.setRequestHandler("tools/call", async (request) => {
+  if (request.params.name === "my_tool") {
+    return {
+      content: [{
+        type: "text",
+        text: `Result for: ${request.params.arguments.param}`
+      }]
+    };
+  }
+});
+
+// Start server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+**Add to Clem**:
+```bash
+clem mcp add custom node my-server.js
+```
+
+**See [MCP_INTEGRATION.md](MCP_INTEGRATION.md) for detailed server development guide.**
+
+### Security Considerations
+
+**MCP tools run with your user permissions**:
+- Filesystem server: can read/write files in allowed directories
+- Fetch server: makes network requests from your IP
+- Database server: accesses databases with your credentials
+
+**Best practices**:
+1. **Review server code** before trusting it
+2. **Use allowlists** for filesystem and network access
+3. **Limit server scope** to specific directories/APIs
+4. **Monitor tool usage** in Clem conversations
+5. **Remove unused servers** to reduce attack surface
+
+### Official MCP Servers
+
+Anthropic provides several official MCP servers:
+
+**@modelcontextprotocol/server-filesystem**
+- File and directory operations
+- Safe by default (requires allowed directory list)
+
+**@modelcontextprotocol/server-fetch**
+- HTTP GET/POST requests
+- JSON parsing and response handling
+
+**@modelcontextprotocol/server-sqlite**
+- SQLite database queries
+- Read and write operations
+
+**@modelcontextprotocol/server-postgres**
+- PostgreSQL database access
+- Schema inspection and queries
+
+Find more at: https://github.com/modelcontextprotocol
+
+### Advanced Configuration
+
+**Environment variables in server commands**:
+```json
+{
+  "servers": {
+    "api": {
+      "name": "api",
+      "transport": "stdio",
+      "command": "node",
+      "args": ["api-server.js"],
+      "env": {
+        "API_KEY": "${API_KEY}",
+        "DEBUG": "true"
+      }
+    }
+  }
+}
+```
+
+**Note**: Environment variable support is planned for a future release.
+
+### See Also
+
+- **[MCP_INTEGRATION.md](MCP_INTEGRATION.md)** - Architecture and server development
+- **[MCP Specification](https://spec.modelcontextprotocol.io/)** - Official protocol docs
+- **[examples/mcp/](../examples/mcp/)** - Example configurations and use cases
+
+---
+
 ## Safety Features
 
 ### Overall Security Model

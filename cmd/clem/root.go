@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/harper/clem/internal/core"
+	"github.com/harper/clem/internal/mcp"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
 	"github.com/harper/clem/internal/ui"
@@ -211,6 +212,12 @@ func runInteractive(prompt string) error {
 	}
 	if err := registry.Register(tools.NewKillShellTool()); err != nil {
 		return fmt.Errorf("register kill_shell tool: %w", err)
+	}
+
+	// Phase 5B: Load MCP tools from .mcp.json if present
+	if err := mcp.LoadMCPTools(".", registry); err != nil {
+		// Log error but don't fail - continue with built-in tools
+		fmt.Fprintf(os.Stderr, "Warning: Failed to load MCP tools: %v\n", err)
 	}
 
 	// Create executor with approval function

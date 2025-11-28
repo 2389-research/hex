@@ -1,0 +1,110 @@
+{
+  "version": "1.0",
+  "servers": {
+    "filesystem": {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/allowed/directory"
+      ],
+      "comment": "Official filesystem server - provides safe file operations. Replace /path/to/allowed/directory with your project path. Can specify multiple directories as additional args."
+    },
+    "fetch": {
+      "name": "fetch",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ],
+      "comment": "Official fetch server - enables HTTP requests to external APIs and websites. Useful for checking documentation, fetching data, etc."
+    },
+    "sqlite": {
+      "name": "sqlite",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "/path/to/database.db"
+      ],
+      "comment": "Official SQLite server - query and modify SQLite databases. Replace /path/to/database.db with your database file. Add --readonly flag for read-only access."
+    },
+    "postgres": {
+      "name": "postgres",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "--connection-string",
+        "postgresql://user:password@localhost:5432/dbname"
+      ],
+      "comment": "Official PostgreSQL server - query and modify PostgreSQL databases. SECURITY: Never commit credentials! Use environment variables instead (see custom-with-env example)."
+    },
+    "custom-nodejs": {
+      "name": "custom-nodejs",
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "/absolute/path/to/your/server.js"
+      ],
+      "comment": "Custom Node.js MCP server. Use absolute paths for reliability. Server must implement MCP protocol (initialize, tools/list, tools/call)."
+    },
+    "custom-python": {
+      "name": "custom-python",
+      "transport": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "your_server_module"
+      ],
+      "comment": "Custom Python MCP server as module. Server must be importable and implement MCP protocol."
+    },
+    "custom-with-env": {
+      "name": "custom-with-env",
+      "transport": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "API_KEY=$API_KEY node /path/to/server.js"
+      ],
+      "comment": "Custom server with environment variables. This passes $API_KEY from your shell environment to the server. More secure than hardcoding credentials."
+    }
+  },
+  "_documentation": {
+    "description": "MCP server configuration file for Clem",
+    "version": "Configuration format version (always '1.0')",
+    "servers": "Map of server name to configuration",
+    "server_fields": {
+      "name": "Unique identifier for the server (must match key in servers map)",
+      "transport": "Transport protocol - currently only 'stdio' is supported (HTTP/SSE coming in future)",
+      "command": "Executable command to launch the server (node, python, npx, or absolute path to binary)",
+      "args": "Array of command-line arguments passed to the command"
+    },
+    "notes": {
+      "naming": "Choose descriptive server names (e.g., 'project-files', 'api-fetch', 'test-db')",
+      "security": "Never commit credentials or API keys. Use environment variables or shell expansion",
+      "paths": "Use absolute paths for reliability, especially in production",
+      "testing": "Test servers manually before adding to Clem: echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"test\",\"version\":\"1.0\"}}}' | <your-command>",
+      "multiple_dirs": "For filesystem server, add multiple directories as separate args: [\"dir1\", \"dir2\", \"dir3\"]",
+      "tool_naming": "MCP tools are prefixed with server name: 'filesystem_read_file', 'fetch_fetch', etc."
+    },
+    "usage": {
+      "add": "clem mcp add <name> <command> [args...]",
+      "list": "clem mcp list",
+      "remove": "clem mcp remove <name>",
+      "config_location": "Place .mcp.json in project root or directory where you run clem"
+    },
+    "official_servers": {
+      "filesystem": "@modelcontextprotocol/server-filesystem - File operations (read, write, list, search)",
+      "fetch": "@modelcontextprotocol/server-fetch - HTTP requests (GET, POST, JSON parsing)",
+      "sqlite": "@modelcontextprotocol/server-sqlite - SQLite database queries",
+      "postgres": "@modelcontextprotocol/server-postgres - PostgreSQL database access",
+      "more": "See https://github.com/modelcontextprotocol/servers"
+    }
+  }
+}

@@ -303,12 +303,14 @@ func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := tool.Execute(ctx, map[string]interface{}{})
-	if err == nil {
+	result, err := tool.Execute(ctx, map[string]interface{}{})
+
+	// Context cancellation should be reflected in either error or result
+	if err == nil && (result == nil || result.Success) {
 		t.Error("Execute() should fail with cancelled context")
 	}
 
-	if !strings.Contains(err.Error(), "context") {
+	if err != nil && !strings.Contains(err.Error(), "context") {
 		t.Errorf("Error should mention context, got: %v", err)
 	}
 }

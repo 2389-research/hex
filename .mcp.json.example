@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "servers": {
+    "example-server": {
+      "name": "example-server",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-example"]
+    }
+  }
+}
