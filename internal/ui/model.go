@@ -336,10 +336,20 @@ func (m *Model) SetToolSystem(registry *tools.Registry, executor *tools.Executor
 	m.toolRegistry = registry
 	m.toolExecutor = executor
 
-	// Update autocomplete tool provider with available tools
+	// FIX: Update autocomplete tool provider with available tools
 	if m.autocomplete != nil && registry != nil {
-		toolProvider := NewToolProvider(registry.List())
-		m.autocomplete.RegisterProvider("tool", toolProvider)
+		// Get existing provider and update it, or create new one
+		provider, ok := m.autocomplete.GetProvider("tool")
+		if ok {
+			// Update existing provider's tool list
+			if toolProvider, ok := provider.(*ToolProvider); ok {
+				toolProvider.SetTools(registry.List())
+			}
+		} else {
+			// Create new provider if it doesn't exist
+			toolProvider := NewToolProvider(registry.List())
+			m.autocomplete.RegisterProvider("tool", toolProvider)
+		}
 	}
 }
 
@@ -750,6 +760,10 @@ func (m *Model) DismissSuggestions() {
 	// Record ignores for visible suggestions
 	if m.suggestionLearner != nil && m.showSuggestions {
 		for _, s := range m.suggestions {
+			// FIX: Skip nil suggestions to avoid panic
+			if s == nil {
+				continue
+			}
 			m.suggestionLearner.RecordFeedback(
 				s.ToolName,
 				"",

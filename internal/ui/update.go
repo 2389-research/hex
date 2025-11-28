@@ -191,6 +191,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Phase 6C Task 4: Handle autocomplete navigation
 		if m.autocomplete != nil && m.autocomplete.IsActive() {
 			switch msg.Type {
+			case tea.KeyTab:
+				// FIX: Accept autocomplete selection with Tab
+				selected := m.autocomplete.GetSelected()
+				if selected != nil {
+					m.Input.SetValue(selected.Value)
+					m.autocomplete.Hide()
+				}
+				return m, nil
 			case tea.KeyDown:
 				m.autocomplete.Next()
 				return m, nil
@@ -206,8 +214,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case tea.KeyEsc:
-				// Cancel autocomplete
+				// FIX: Cancel autocomplete AND dismiss suggestions if active
 				m.autocomplete.Hide()
+				if m.showSuggestions {
+					m.DismissSuggestions()
+				}
 				return m, nil
 			}
 		}

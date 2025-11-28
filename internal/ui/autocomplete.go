@@ -73,6 +73,12 @@ func (ac *Autocomplete) RegisterProvider(name string, provider CompletionProvide
 	ac.providers[name] = provider
 }
 
+// GetProvider retrieves a registered provider by name
+func (ac *Autocomplete) GetProvider(name string) (CompletionProvider, bool) {
+	provider, ok := ac.providers[name]
+	return provider, ok
+}
+
 // Show activates autocomplete for the given input and provider
 func (ac *Autocomplete) Show(input string, providerName string) {
 	provider, ok := ac.providers[providerName]

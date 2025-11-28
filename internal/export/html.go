@@ -170,32 +170,45 @@ func (e *HTMLExporter) processContent(content string) (string, error) {
 	// Find code blocks with language specifiers
 	codeBlockRegex := regexp.MustCompile("(?s)```(\\w+)?\\n(.*?)```")
 
-	// Replace code blocks with highlighted versions
-	result := codeBlockRegex.ReplaceAllStringFunc(content, func(match string) string {
-		parts := codeBlockRegex.FindStringSubmatch(match)
-		if len(parts) < 3 {
-			return html.EscapeString(match)
+	// Track positions of code blocks
+	matches := codeBlockRegex.FindAllStringIndex(content, -1)
+
+	var result strings.Builder
+	lastEnd := 0
+
+	for _, match := range matches {
+		// FIX: Escape text BEFORE this code block (non-code content)
+		if match[0] > lastEnd {
+			textBefore := content[lastEnd:match[0]]
+			result.WriteString(html.EscapeString(textBefore))
 		}
 
-		lang := parts[1]
-		code := parts[2]
-
-		if lang == "" {
-			lang = "text"
+		// Process the code block
+		codeBlock := content[match[0]:match[1]]
+		parts := codeBlockRegex.FindStringSubmatch(codeBlock)
+		if len(parts) >= 3 {
+			lang := parts[1]
+			code := parts[2]
+			if lang == "" {
+				lang = "text"
+			}
+			highlighted, err := e.highlightCode(code, lang)
+			if err != nil {
+				result.WriteString(fmt.Sprintf("<pre><code>%s</code></pre>", html.EscapeString(code)))
+			} else {
+				result.WriteString(highlighted)
+			}
 		}
 
-		highlighted, err := e.highlightCode(code, lang)
-		if err != nil {
-			// Fallback to plain pre tag on error
-			return fmt.Sprintf("<pre><code>%s</code></pre>", html.EscapeString(code))
-		}
+		lastEnd = match[1]
+	}
 
-		return highlighted
-	})
+	// FIX: Escape any remaining text after last code block
+	if lastEnd < len(content) {
+		result.WriteString(html.EscapeString(content[lastEnd:]))
+	}
 
-	// Escape remaining HTML in non-code parts
-	// This is a simplification; a more robust implementation would track positions
-	return result, nil
+	return result.String(), nil
 }
 
 // highlightCode highlights code using Chroma
