@@ -50,6 +50,10 @@ func TestBashTool_RequiresApproval_Always(t *testing.T) {
 			name:   "no command",
 			params: map[string]interface{}{},
 		},
+		{
+			name:   "background command",
+			params: map[string]interface{}{"command": "echo test", "run_in_background": true},
+		},
 	}
 
 	for _, tt := range tests {
@@ -412,4 +416,314 @@ func TestBashTool_Execute_EnvironmentVariables(t *testing.T) {
 	// Should have environment variables available
 	assert.Contains(t, result.Output, "User:")
 	assert.Contains(t, result.Output, "Home:")
+}
+
+// ========================================
+// NEW TESTS FOR run_in_background FEATURE
+// ========================================
+
+func TestBashTool_Execute_Background_InvalidRunInBackgroundType(t *testing.T) {
+	tool := tools.NewBashTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'test'",
+		"run_in_background": "not a boolean", // Invalid type
+	})
+
+	require.NoError(t, err)
+	assert.False(t, result.Success)
+	assert.Contains(t, result.Error, "run_in_background")
+	assert.Contains(t, result.Error, "boolean")
+}
+
+func TestBashTool_Execute_Background_RunInBackgroundFalse(t *testing.T) {
+	tool := tools.NewBashTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'sync test'",
+		"run_in_background": false,
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+	assert.Contains(t, result.Output, "sync test")
+	// Should NOT have bash_id in metadata (synchronous execution)
+	assert.NotContains(t, result.Metadata, "bash_id")
+}
+
+func TestBashTool_Execute_Background_LaunchProcess(t *testing.T) {
+	tool := tools.NewBashTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'background test'; sleep 1; echo 'done'",
+		"run_in_background": true,
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Should return a bash_id in metadata
+	bashID, ok := result.Metadata["bash_id"].(string)
+	assert.True(t, ok, "bash_id should be a string")
+	assert.NotEmpty(t, bashID)
+
+	// Should have status in metadata
+	status, ok := result.Metadata["status"].(string)
+	assert.True(t, ok)
+	assert.Equal(t, "running", status)
+
+	// Output should contain the bash_id
+	assert.Contains(t, result.Output, bashID)
+	assert.Contains(t, result.Output, "Background process started")
+
+	// Verify process is registered
+	proc, err := tools.GetBackgroundRegistry().Get(bashID)
+	require.NoError(t, err)
+	assert.Equal(t, "echo 'background test'; sleep 1; echo 'done'", proc.Command)
+
+	// Clean up
+	time.Sleep(2 * time.Second) // Let command finish
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_ProcessIDUnique(t *testing.T) {
+	tool := tools.NewBashTool()
+
+	// Launch two background processes
+	result1, err := tool.Execute(context.Background(), map[string]interface{}{
+		"command":           "sleep 2",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result1.Success)
+
+	result2, err := tool.Execute(context.Background(), map[string]interface{}{
+		"command":           "sleep 2",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result2.Success)
+
+	// IDs should be different
+	bashID1 := result1.Metadata["bash_id"].(string)
+	bashID2 := result2.Metadata["bash_id"].(string)
+	assert.NotEqual(t, bashID1, bashID2)
+
+	// Clean up
+	time.Sleep(3 * time.Second)
+	tools.GetBackgroundRegistry().Remove(bashID1)
+	tools.GetBackgroundRegistry().Remove(bashID2)
+}
+
+func TestBashTool_Execute_Background_RetrieveOutputWithBashOutput(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	// Launch background process
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'line1'; sleep 0.5; echo 'line2'; sleep 0.5; echo 'line3'",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// Wait for some output
+	time.Sleep(1 * time.Second)
+
+	// Retrieve output using BashOutput tool
+	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult.Success)
+	assert.Contains(t, outputResult.Output, "line1")
+
+	// Wait for process to complete
+	time.Sleep(2 * time.Second)
+
+	// Retrieve remaining output
+	outputResult2, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult2.Success)
+
+	// Should have done=true in metadata
+	done, ok := outputResult2.Metadata["done"].(bool)
+	assert.True(t, ok)
+	assert.True(t, done)
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_ProcessCompletesSuccessfully(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	// Launch quick background process
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'test' && exit 0",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// Wait for completion
+	time.Sleep(1 * time.Second)
+
+	// Check process status
+	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult.Success)
+
+	done, _ := outputResult.Metadata["done"].(bool)
+	assert.True(t, done)
+
+	exitCode, _ := outputResult.Metadata["exit_code"].(int)
+	assert.Equal(t, 0, exitCode)
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_ProcessFailsWithNonZeroExit(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	// Launch background process that fails
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "exit 42",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success) // Launch succeeds
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// Wait for completion
+	time.Sleep(1 * time.Second)
+
+	// Check process exit code
+	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult.Success)
+
+	done, _ := outputResult.Metadata["done"].(bool)
+	assert.True(t, done)
+
+	exitCode, _ := outputResult.Metadata["exit_code"].(int)
+	assert.Equal(t, 42, exitCode)
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_IncrementalOutputRetrieval(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	// Launch background process that outputs over time
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'first'; sleep 0.5; echo 'second'; sleep 0.5; echo 'third'",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// First read - should get early output
+	time.Sleep(700 * time.Millisecond)
+	output1, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.Contains(t, output1.Output, "first")
+
+	// Second read - should get new output only
+	time.Sleep(700 * time.Millisecond)
+	output2, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	// Should have new output (second/third)
+	// Due to incremental reading, first should not appear again
+	assert.NotContains(t, output2.Output, "first")
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	var workingDir string
+	if runtime.GOOS == "windows" {
+		workingDir = "C:\\Windows"
+	} else {
+		workingDir = "/tmp"
+	}
+
+	// Launch background process with working directory
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "pwd",
+		"working_dir":       workingDir,
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// Wait and retrieve output
+	time.Sleep(1 * time.Second)
+	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult.Success)
+	assert.Contains(t, outputResult.Output, workingDir)
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
+}
+
+func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
+	bashTool := tools.NewBashTool()
+	outputTool := tools.NewBashOutputTool()
+
+	// Launch background process with both stdout and stderr
+	result, err := bashTool.Execute(context.Background(), map[string]interface{}{
+		"command":           "echo 'to stdout'; echo 'to stderr' >&2",
+		"run_in_background": true,
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	bashID := result.Metadata["bash_id"].(string)
+
+	// Wait and retrieve output
+	time.Sleep(1 * time.Second)
+	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
+		"bash_id": bashID,
+	})
+	require.NoError(t, err)
+	assert.True(t, outputResult.Success)
+	assert.Contains(t, outputResult.Output, "to stdout")
+	assert.Contains(t, outputResult.Output, "to stderr")
+	assert.Contains(t, outputResult.Output, "STDOUT:")
+	assert.Contains(t, outputResult.Output, "STDERR:")
+
+	// Clean up
+	tools.GetBackgroundRegistry().Remove(bashID)
 }

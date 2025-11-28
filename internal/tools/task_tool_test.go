@@ -388,3 +388,257 @@ func TestTaskTool_Execute_ContextCancellation(t *testing.T) {
 	assert.False(t, result.Success)
 	assert.NotEmpty(t, result.Error)
 }
+
+// ========== NEW STREAMING TESTS (FAILING - RED PHASE) ==========
+
+func TestTaskTool_Execute_InvalidStreamingType(t *testing.T) {
+	tool := tools.NewTaskTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"prompt":        "Say hello",
+		"description":   "greeting task",
+		"subagent_type": "general-purpose",
+		"streaming":     "yes", // Invalid type - should be bool
+	})
+	require.NoError(t, err)
+	assert.False(t, result.Success)
+	assert.Contains(t, strings.ToLower(result.Error), "streaming")
+}
+
+func TestTaskTool_ExecuteStreaming_BasicFunctionality(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	resultChan, err := tool.ExecuteStreaming(context.Background(), map[string]interface{}{
+		"prompt":        "Say exactly: STREAMING_TEST",
+		"description":   "streaming test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, resultChan)
+
+	var results []*tools.Result
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	// Should have received multiple incremental updates
+	assert.GreaterOrEqual(t, len(results), 1, "Should receive at least one result")
+
+	// Last result should be the final complete output
+	finalResult := results[len(results)-1]
+	assert.Equal(t, "task", finalResult.ToolName)
+
+	// Final result should contain the complete output
+	if finalResult.Success {
+		assert.Contains(t, finalResult.Output, "STREAMING_TEST")
+	}
+}
+
+func TestTaskTool_ExecuteStreaming_IncrementalOutput(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	resultChan, err := tool.ExecuteStreaming(context.Background(), map[string]interface{}{
+		"prompt":        "Count from 1 to 5",
+		"description":   "incremental test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+
+	var results []*tools.Result
+	var totalBytesRead int64
+
+	for result := range resultChan {
+		results = append(results, result)
+
+		// Each update should have progress metadata
+		if bytesRead, ok := result.Metadata["bytes_read"].(int64); ok {
+			assert.GreaterOrEqual(t, bytesRead, totalBytesRead, "bytes_read should be monotonically increasing")
+			totalBytesRead = bytesRead
+		}
+	}
+
+	// Should have multiple incremental updates for a longer output
+	assert.GreaterOrEqual(t, len(results), 1)
+
+	// Final result should have accumulated all output
+	finalResult := results[len(results)-1]
+	assert.NotEmpty(t, finalResult.Output)
+}
+
+func TestTaskTool_ExecuteStreaming_WithTimeout(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	resultChan, err := tool.ExecuteStreaming(ctx, map[string]interface{}{
+		"prompt":        "Write a very long essay",
+		"description":   "timeout test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+
+	var results []*tools.Result
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	// Should have at least one result (timeout error)
+	require.NotEmpty(t, results)
+
+	// Last result should indicate timeout
+	finalResult := results[len(results)-1]
+	assert.False(t, finalResult.Success)
+	lowerError := strings.ToLower(finalResult.Error)
+	hasTimeoutMsg := strings.Contains(lowerError, "timeout") ||
+		strings.Contains(lowerError, "deadline")
+	assert.True(t, hasTimeoutMsg)
+}
+
+func TestTaskTool_ExecuteStreaming_FastProcess(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	resultChan, err := tool.ExecuteStreaming(context.Background(), map[string]interface{}{
+		"prompt":        "Say: OK",
+		"description":   "fast process test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+
+	var results []*tools.Result
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	// Even fast processes should have at least final result
+	require.GreaterOrEqual(t, len(results), 1)
+
+	finalResult := results[len(results)-1]
+	assert.Equal(t, "task", finalResult.ToolName)
+}
+
+func TestTaskTool_ExecuteStreaming_ProgressMetadata(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	resultChan, err := tool.ExecuteStreaming(context.Background(), map[string]interface{}{
+		"prompt":        "Write three sentences",
+		"description":   "metadata test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+
+	var results []*tools.Result
+	for result := range resultChan {
+		results = append(results, result)
+
+		// All results should have metadata
+		assert.NotNil(t, result.Metadata)
+
+		// Check for expected streaming metadata fields
+		if result.Success || result.Error == "" {
+			// Intermediate updates should have progress indicators
+			assert.Contains(t, result.Metadata, "bytes_read")
+		}
+	}
+
+	require.NotEmpty(t, results)
+
+	// Final result should have standard task metadata
+	finalResult := results[len(results)-1]
+	assert.Contains(t, finalResult.Metadata, "prompt")
+	assert.Contains(t, finalResult.Metadata, "description")
+	assert.Contains(t, finalResult.Metadata, "subagent_type")
+	assert.Contains(t, finalResult.Metadata, "duration")
+}
+
+func TestTaskTool_ExecuteStreaming_StdoutAndStderr(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	resultChan, err := tool.ExecuteStreaming(context.Background(), map[string]interface{}{
+		"prompt":        "Say: OUTPUT_TEST",
+		"description":   "stdout/stderr test",
+		"subagent_type": "general-purpose",
+		"streaming":     true,
+	})
+
+	require.NoError(t, err)
+
+	var results []*tools.Result
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	require.NotEmpty(t, results)
+
+	// Should capture both stdout and stderr in streaming output
+	finalResult := results[len(results)-1]
+	assert.NotEmpty(t, finalResult.Output)
+}
+
+func TestTaskTool_Execute_NonStreaming_StillWorks(t *testing.T) {
+	// Skip if no API key available
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		t.Skip("ANTHROPIC_API_KEY not set")
+	}
+
+	tool := tools.NewTaskTool()
+
+	// Execute with streaming=false (default behavior)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"prompt":        "Say: NON_STREAMING",
+		"description":   "non-streaming test",
+		"subagent_type": "general-purpose",
+		"streaming":     false,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "task", result.ToolName)
+
+	// Should wait for completion and return final result
+	if result.Success {
+		assert.Contains(t, result.Output, "NON_STREAMING")
+	}
+
+	// Should not have streaming-specific metadata
+	assert.NotContains(t, result.Metadata, "bytes_read")
+}

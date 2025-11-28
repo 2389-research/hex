@@ -5,12 +5,15 @@ package tools_test
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
 
+	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "modernc.org/sqlite"
 )
 
 func TestTodoWriteTool_Name(t *testing.T) {
@@ -452,4 +455,248 @@ func TestTodoWriteTool_Execute_WhitespaceOnlyStrings(t *testing.T) {
 	assert.False(t, result.Success)
 	assert.Contains(t, result.Error, "content")
 	assert.Contains(t, result.Error, "empty")
+}
+
+// Persistence tests
+
+func setupTestDBForTools(t *testing.T) (*sql.DB, func()) {
+	db, err := sql.Open("sqlite", ":memory:")
+	require.NoError(t, err)
+
+	// Enable foreign keys
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	require.NoError(t, err)
+
+	err = storage.InitializeSchema(db)
+	require.NoError(t, err)
+
+	cleanup := func() {
+		db.Close()
+	}
+
+	return db, cleanup
+}
+
+func TestTodoWriteTool_Persistence_AutoSave(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	tool := tools.NewTodoWriteToolWithDB(db)
+
+	// Create todos
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"todos": []interface{}{
+			map[string]interface{}{
+				"content":    "Task 1",
+				"activeForm": "Working on task 1",
+				"status":     "pending",
+			},
+			map[string]interface{}{
+				"content":    "Task 2",
+				"activeForm": "Working on task 2",
+				"status":     "completed",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Verify they were saved to DB
+	loaded, err := storage.LoadTodos(db, nil)
+	require.NoError(t, err)
+	assert.Len(t, loaded, 2)
+	assert.Equal(t, "Task 1", loaded[0].Content)
+	assert.Equal(t, "pending", loaded[0].Status)
+	assert.Equal(t, "Task 2", loaded[1].Content)
+	assert.Equal(t, "completed", loaded[1].Status)
+}
+
+func TestTodoWriteTool_Persistence_LoadFromDB(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	// Manually save todos to DB
+	todos := []storage.Todo{
+		{Content: "Loaded Task 1", ActiveForm: "Loading 1", Status: "pending"},
+		{Content: "Loaded Task 2", ActiveForm: "Loading 2", Status: "in_progress"},
+	}
+	require.NoError(t, storage.SaveTodos(db, todos, nil))
+
+	// Load them via the tool
+	tool := tools.NewTodoWriteToolWithDB(db)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"load_from_db": true,
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Verify output contains loaded todos
+	assert.Contains(t, result.Output, "Loaded Task 1")
+	assert.Contains(t, result.Output, "Loading 2") // in_progress shows activeForm
+
+	// Verify metadata
+	assert.Equal(t, 2, result.Metadata["total_count"])
+	assert.Equal(t, 1, result.Metadata["pending_count"])
+	assert.Equal(t, 1, result.Metadata["in_progress_count"])
+}
+
+func TestTodoWriteTool_Persistence_LoadFromDB_Empty(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	tool := tools.NewTodoWriteToolWithDB(db)
+
+	// Try to load from empty DB - should fail gracefully
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"load_from_db": true,
+	})
+
+	require.NoError(t, err)
+	assert.False(t, result.Success)
+	assert.Contains(t, result.Error, "todos")
+}
+
+func TestTodoWriteTool_Persistence_WithConversationID(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	// Create a conversation
+	conv := &storage.Conversation{
+		ID:    "conv-123",
+		Title: "Test Conversation",
+		Model: "claude-sonnet-4-5-20250929",
+	}
+	require.NoError(t, storage.CreateConversation(db, conv))
+
+	tool := tools.NewTodoWriteToolWithDB(db)
+
+	// Save todos with conversation_id
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"conversation_id": "conv-123",
+		"todos": []interface{}{
+			map[string]interface{}{
+				"content":    "Conv Task",
+				"activeForm": "Working",
+				"status":     "pending",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Verify saved with conversation_id
+	convID := "conv-123"
+	loaded, err := storage.LoadTodos(db, &convID)
+	require.NoError(t, err)
+	assert.Len(t, loaded, 1)
+	assert.Equal(t, "Conv Task", loaded[0].Content)
+	assert.NotNil(t, loaded[0].ConversationID)
+	assert.Equal(t, "conv-123", *loaded[0].ConversationID)
+}
+
+func TestTodoWriteTool_Persistence_LoadFromDB_WithConversationID(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	// Create conversation and save todos
+	conv := &storage.Conversation{ID: "conv-456", Title: "Test", Model: "claude-sonnet-4-5-20250929"}
+	require.NoError(t, storage.CreateConversation(db, conv))
+
+	convID := "conv-456"
+	todos := []storage.Todo{
+		{Content: "Conv Task", ActiveForm: "Working", Status: "pending"},
+	}
+	require.NoError(t, storage.SaveTodos(db, todos, &convID))
+
+	// Load via tool with conversation_id
+	tool := tools.NewTodoWriteToolWithDB(db)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"load_from_db":    true,
+		"conversation_id": "conv-456",
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+	assert.Contains(t, result.Output, "Conv Task")
+}
+
+func TestTodoWriteTool_Persistence_UpdateExisting(t *testing.T) {
+	db, cleanup := setupTestDBForTools(t)
+	defer cleanup()
+
+	tool := tools.NewTodoWriteToolWithDB(db)
+
+	// Create initial todos
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"todos": []interface{}{
+			map[string]interface{}{
+				"content":    "Task 1",
+				"activeForm": "Working 1",
+				"status":     "pending",
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Update todos (replace with new list)
+	result, err = tool.Execute(context.Background(), map[string]interface{}{
+		"todos": []interface{}{
+			map[string]interface{}{
+				"content":    "Task 1 Updated",
+				"activeForm": "Working 1 Updated",
+				"status":     "completed",
+			},
+			map[string]interface{}{
+				"content":    "Task 2 New",
+				"activeForm": "Working 2",
+				"status":     "pending",
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+
+	// Verify database has updated todos
+	loaded, err := storage.LoadTodos(db, nil)
+	require.NoError(t, err)
+	assert.Len(t, loaded, 2)
+	assert.Equal(t, "Task 1 Updated", loaded[0].Content)
+	assert.Equal(t, "completed", loaded[0].Status)
+	assert.Equal(t, "Task 2 New", loaded[1].Content)
+}
+
+func TestTodoWriteTool_NoPersistence_WithoutDB(t *testing.T) {
+	// Tool without DB should work but not persist
+	tool := tools.NewTodoWriteTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"todos": []interface{}{
+			map[string]interface{}{
+				"content":    "Task",
+				"activeForm": "Working",
+				"status":     "pending",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+	assert.Contains(t, result.Output, "Task")
+}
+
+func TestTodoWriteTool_LoadFromDB_WithoutDB_Ignored(t *testing.T) {
+	// load_from_db should be ignored if no DB
+	tool := tools.NewTodoWriteTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"load_from_db": true,
+	})
+
+	require.NoError(t, err)
+	assert.False(t, result.Success)
+	assert.Contains(t, result.Error, "todos") // Falls through to normal validation
 }

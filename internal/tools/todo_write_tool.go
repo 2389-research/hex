@@ -5,16 +5,26 @@ package tools
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/harper/clem/internal/storage"
 )
 
 // TodoWriteTool implements the todo_write tool for managing todo lists
-type TodoWriteTool struct{}
+type TodoWriteTool struct {
+	db *sql.DB
+}
 
 // NewTodoWriteTool creates a new TodoWrite tool instance
 func NewTodoWriteTool() Tool {
-	return &TodoWriteTool{}
+	return &TodoWriteTool{db: nil}
+}
+
+// NewTodoWriteToolWithDB creates a new TodoWrite tool with database persistence
+func NewTodoWriteToolWithDB(db *sql.DB) Tool {
+	return &TodoWriteTool{db: db}
 }
 
 // Name returns the tool identifier
@@ -34,7 +44,41 @@ func (t *TodoWriteTool) RequiresApproval(params map[string]interface{}) bool {
 
 // Execute creates and formats a todo list
 func (t *TodoWriteTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
-	// Validate todos parameter exists
+	// Check if we should load from database
+	loadFromDB := false
+	if loadParam, ok := params["load_from_db"]; ok {
+		if loadBool, ok := loadParam.(bool); ok {
+			loadFromDB = loadBool
+		}
+	}
+
+	// Extract optional conversation_id for scoping
+	var conversationID *string
+	if convIDParam, ok := params["conversation_id"]; ok {
+		if convIDStr, ok := convIDParam.(string); ok && convIDStr != "" {
+			conversationID = &convIDStr
+		}
+	}
+
+	// If load_from_db is true and we have a DB, load existing todos
+	if loadFromDB && t.db != nil {
+		loadedTodos, err := storage.LoadTodos(t.db, conversationID)
+		if err != nil {
+			return &Result{
+				ToolName: t.Name(),
+				Success:  false,
+				Error:    fmt.Sprintf("failed to load todos from database: %v", err),
+			}, nil
+		}
+
+		// If we have loaded todos, format and return them
+		if len(loadedTodos) > 0 {
+			return t.formatTodos(loadedTodos), nil
+		}
+		// If no todos found, fall through to normal processing
+	}
+
+	// Validate todos parameter exists (unless we're loading from DB)
 	todosParam, ok := params["todos"]
 	if !ok {
 		return &Result{
@@ -64,13 +108,7 @@ func (t *TodoWriteTool) Execute(ctx context.Context, params map[string]interface
 	}
 
 	// Parse and validate each todo
-	type todo struct {
-		content    string
-		activeForm string
-		status     string
-	}
-
-	var todos []todo
+	var todos []storage.Todo
 	for i, todoParam := range todosArray {
 		// Validate todo is a map
 		todoMap, ok := todoParam.(map[string]interface{})
@@ -159,35 +197,51 @@ func (t *TodoWriteTool) Execute(ctx context.Context, params map[string]interface
 			}, nil
 		}
 
-		todos = append(todos, todo{
-			content:    content,
-			activeForm: activeForm,
-			status:     status,
+		todos = append(todos, storage.Todo{
+			Content:    content,
+			ActiveForm: activeForm,
+			Status:     status,
 		})
 	}
 
-	// Format the todo list
+	// Auto-save todos to database if available
+	if t.db != nil {
+		if err := storage.SaveTodos(t.db, todos, conversationID); err != nil {
+			return &Result{
+				ToolName: t.Name(),
+				Success:  false,
+				Error:    fmt.Sprintf("failed to save todos to database: %v", err),
+			}, nil
+		}
+	}
+
+	// Format and return the todos
+	return t.formatTodos(todos), nil
+}
+
+// formatTodos formats a list of todos for display
+func (t *TodoWriteTool) formatTodos(todos []storage.Todo) *Result {
 	var output strings.Builder
 	pendingCount := 0
 	inProgressCount := 0
 	completedCount := 0
 
-	for _, t := range todos {
+	for _, todo := range todos {
 		var statusIcon string
 		var displayText string
 
-		switch t.status {
+		switch todo.Status {
 		case "pending":
 			statusIcon = "☐"
-			displayText = t.content
+			displayText = todo.Content
 			pendingCount++
 		case "in_progress":
 			statusIcon = "⏳"
-			displayText = t.activeForm
+			displayText = todo.ActiveForm
 			inProgressCount++
 		case "completed":
 			statusIcon = "✅"
-			displayText = t.content
+			displayText = todo.Content
 			completedCount++
 		}
 
@@ -204,5 +258,5 @@ func (t *TodoWriteTool) Execute(ctx context.Context, params map[string]interface
 			"in_progress_count": inProgressCount,
 			"completed_count":   completedCount,
 		},
-	}, nil
+	}
 }

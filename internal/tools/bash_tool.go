@@ -4,6 +4,7 @@
 package tools
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -45,7 +48,7 @@ func (t *BashTool) Name() string {
 
 // Description returns the tool description
 func (t *BashTool) Description() string {
-	return "Executes a shell command in a subprocess. Parameters: command (required), timeout (optional, seconds), working_dir (optional)"
+	return "Executes a shell command in a subprocess. Parameters: command (required), timeout (optional, seconds), working_dir (optional), run_in_background (optional, boolean)"
 }
 
 // RequiresApproval always returns true for command execution
@@ -67,6 +70,151 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]interface{}) (
 		}, nil
 	}
 
+	// Check if run_in_background is specified
+	runInBackground := false
+	if bgParam, exists := params["run_in_background"]; exists {
+		bgBool, ok := bgParam.(bool)
+		if !ok {
+			return &Result{
+				ToolName: "bash",
+				Success:  false,
+				Error:    "invalid 'run_in_background' parameter: must be a boolean",
+			}, nil
+		}
+		runInBackground = bgBool
+	}
+
+	// If background execution is requested, launch background process
+	if runInBackground {
+		return t.executeBackground(ctx, command, params)
+	}
+
+	// Otherwise, execute synchronously (existing behavior)
+	return t.executeSynchronous(ctx, command, params)
+}
+
+// executeBackground launches a command as a background process
+func (t *BashTool) executeBackground(ctx context.Context, command string, params map[string]interface{}) (*Result, error) {
+	// Generate unique ID for this background process
+	bashID := uuid.New().String()
+
+	// Get working directory (same as synchronous)
+	workingDir := ""
+	if dir, ok := params["working_dir"].(string); ok && dir != "" {
+		// Clean and validate working directory
+		cleanDir := filepath.Clean(dir)
+		absDir, err := filepath.Abs(cleanDir)
+		if err != nil {
+			return &Result{
+				ToolName: "bash",
+				Success:  false,
+				Error:    fmt.Sprintf("invalid working_dir: %v", err),
+			}, nil
+		}
+		workingDir = absDir
+	}
+
+	// Create BackgroundProcess
+	proc := &BackgroundProcess{
+		ID:        bashID,
+		Command:   command,
+		StartTime: time.Now(),
+		Stdout:    []string{},
+		Stderr:    []string{},
+		Done:      false,
+		ExitCode:  0,
+	}
+
+	// Register the process
+	err := GetBackgroundRegistry().Register(proc)
+	if err != nil {
+		return &Result{
+			ToolName: "bash",
+			Success:  false,
+			Error:    fmt.Sprintf("failed to register background process: %v", err),
+		}, nil
+	}
+
+	// Launch the command in a goroutine
+	go func() {
+		// Create command
+		cmd := exec.Command("sh", "-c", command)
+
+		// Set working directory if specified
+		if workingDir != "" {
+			cmd.Dir = workingDir
+		}
+
+		// Create pipes for stdout and stderr
+		stdoutPipe, err := cmd.StdoutPipe()
+		if err != nil {
+			proc.MarkDone(-1)
+			return
+		}
+
+		stderrPipe, err := cmd.StderrPipe()
+		if err != nil {
+			proc.MarkDone(-1)
+			return
+		}
+
+		// Start the command
+		if err := cmd.Start(); err != nil {
+			proc.MarkDone(-1)
+			return
+		}
+
+		// Store the OS process
+		proc.mu.Lock()
+		proc.Process = cmd.Process
+		proc.mu.Unlock()
+
+		// Read stdout in a goroutine
+		go func() {
+			scanner := bufio.NewScanner(stdoutPipe)
+			for scanner.Scan() {
+				proc.AppendStdout(scanner.Text())
+			}
+		}()
+
+		// Read stderr in a goroutine
+		go func() {
+			scanner := bufio.NewScanner(stderrPipe)
+			for scanner.Scan() {
+				proc.AppendStderr(scanner.Text())
+			}
+		}()
+
+		// Wait for command to complete
+		err = cmd.Wait()
+		exitCode := 0
+		if err != nil {
+			if exitError, ok := err.(*exec.ExitError); ok {
+				exitCode = exitError.ExitCode()
+			} else {
+				exitCode = -1
+			}
+		}
+
+		// Mark as done with exit code
+		proc.MarkDone(exitCode)
+	}()
+
+	// Return immediately with bash_id
+	return &Result{
+		ToolName: "bash",
+		Success:  true,
+		Output:   fmt.Sprintf("Background process started with ID: %s", bashID),
+		Metadata: map[string]interface{}{
+			"bash_id": bashID,
+			"command": command,
+			"status":  "running",
+		},
+	}, nil
+}
+
+// executeSynchronous executes a command synchronously (original behavior)
+func (t *BashTool) executeSynchronous(ctx context.Context, command string, params map[string]interface{}) (*Result, error) {
 	// Get timeout (default: 30s)
 	timeout := t.DefaultTimeout
 	if timeoutParam, ok := params["timeout"].(float64); ok && timeoutParam > 0 {

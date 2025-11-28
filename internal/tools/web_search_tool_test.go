@@ -98,12 +98,15 @@ func TestWebSearchTool_Execute_MissingQuery(t *testing.T) {
 
 	params := map[string]interface{}{}
 
-	_, err := tool.Execute(ctx, params)
-	if err == nil {
-		t.Error("Execute() with missing query should return error")
+	result, err := tool.Execute(ctx, params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "query") {
-		t.Errorf("Execute() error = %v, should mention 'query'", err)
+	if result.Success {
+		t.Error("Execute() with missing query should fail")
+	}
+	if !strings.Contains(result.Error, "query") {
+		t.Errorf("Error should mention 'query': %s", result.Error)
 	}
 }
 
@@ -126,12 +129,15 @@ func TestWebSearchTool_Execute_InvalidLimit(t *testing.T) {
 				"limit": tt.limit,
 			}
 
-			_, err := tool.Execute(ctx, params)
-			if err == nil {
-				t.Error("Execute() with invalid limit should return error")
+			result, err := tool.Execute(ctx, params)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
 			}
-			if !strings.Contains(err.Error(), "limit") {
-				t.Errorf("Execute() error = %v, should mention 'limit'", err)
+			if result.Success {
+				t.Error("Execute() with invalid limit should fail")
+			}
+			if !strings.Contains(result.Error, "limit") {
+				t.Errorf("Error should mention 'limit': %s", result.Error)
 			}
 		})
 	}
@@ -323,9 +329,15 @@ func TestWebSearchTool_Execute_ContextCancellation(t *testing.T) {
 		"query": "test",
 	}
 
-	_, err := tool.Execute(ctx, params)
-	if err == nil {
-		t.Error("Execute() with cancelled context should return error")
+	result, err := tool.Execute(ctx, params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result.Success {
+		t.Error("Execute() with cancelled context should fail")
+	}
+	if !strings.Contains(result.Error, "search failed") {
+		t.Errorf("Error should mention 'search failed': %s", result.Error)
 	}
 }
 

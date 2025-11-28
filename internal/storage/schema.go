@@ -15,15 +15,22 @@ var migrations embed.FS
 
 // InitializeSchema creates tables and indexes
 func InitializeSchema(db *sql.DB) error {
-	// Read migration file
-	migrationSQL, err := migrations.ReadFile("migrations/001_initial.sql")
-	if err != nil {
-		return fmt.Errorf("read migration: %w", err)
+	// List of migrations to run in order
+	migrationFiles := []string{
+		"migrations/001_initial.sql",
+		"migrations/002_todos.sql",
 	}
 
-	// Execute migration
-	if _, err := db.Exec(string(migrationSQL)); err != nil {
-		return fmt.Errorf("execute migration: %w", err)
+	// Execute each migration
+	for _, filename := range migrationFiles {
+		migrationSQL, err := migrations.ReadFile(filename)
+		if err != nil {
+			return fmt.Errorf("read migration %s: %w", filename, err)
+		}
+
+		if _, err := db.Exec(string(migrationSQL)); err != nil {
+			return fmt.Errorf("execute migration %s: %w", filename, err)
+		}
 	}
 
 	return nil

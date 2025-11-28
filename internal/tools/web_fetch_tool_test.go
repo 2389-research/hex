@@ -56,12 +56,15 @@ func TestWebFetchTool_MissingURL(t *testing.T) {
 		"prompt": "extract title",
 	}
 
-	_, err := tool.Execute(context.Background(), params)
-	if err == nil {
-		t.Error("Expected error when URL is missing")
+	result, err := tool.Execute(context.Background(), params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "url") {
-		t.Errorf("Error should mention 'url': %v", err)
+	if result.Success {
+		t.Error("Expected failure when URL is missing")
+	}
+	if !strings.Contains(result.Error, "url") {
+		t.Errorf("Error should mention 'url': %s", result.Error)
 	}
 }
 
@@ -71,12 +74,15 @@ func TestWebFetchTool_MissingPrompt(t *testing.T) {
 		"url": "https://example.com",
 	}
 
-	_, err := tool.Execute(context.Background(), params)
-	if err == nil {
-		t.Error("Expected error when prompt is missing")
+	result, err := tool.Execute(context.Background(), params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "prompt") {
-		t.Errorf("Error should mention 'prompt': %v", err)
+	if result.Success {
+		t.Error("Expected failure when prompt is missing")
+	}
+	if !strings.Contains(result.Error, "prompt") {
+		t.Errorf("Error should mention 'prompt': %s", result.Error)
 	}
 }
 
@@ -87,9 +93,15 @@ func TestWebFetchTool_InvalidURL(t *testing.T) {
 		"prompt": "extract title",
 	}
 
-	_, err := tool.Execute(context.Background(), params)
-	if err == nil {
-		t.Error("Expected error for invalid URL")
+	result, err := tool.Execute(context.Background(), params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result.Success {
+		t.Error("Expected failure for invalid URL")
+	}
+	if !strings.Contains(result.Error, "url") && !strings.Contains(result.Error, "scheme") {
+		t.Errorf("Error should mention 'url' or 'scheme': %s", result.Error)
 	}
 }
 
@@ -180,12 +192,15 @@ func TestWebFetchTool_HTTP404(t *testing.T) {
 		"prompt": "extract content",
 	}
 
-	_, err := tool.Execute(context.Background(), params)
-	if err == nil {
-		t.Error("Expected error for 404 response")
+	result, err := tool.Execute(context.Background(), params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "404") {
-		t.Errorf("Error should mention 404: %v", err)
+	if result.Success {
+		t.Error("Expected failure for 404 response")
+	}
+	if !strings.Contains(result.Error, "404") {
+		t.Errorf("Error should mention 404: %s", result.Error)
 	}
 }
 
@@ -203,12 +218,15 @@ func TestWebFetchTool_HTTP500(t *testing.T) {
 		"prompt": "extract content",
 	}
 
-	_, err := tool.Execute(context.Background(), params)
-	if err == nil {
-		t.Error("Expected error for 500 response")
+	result, err := tool.Execute(context.Background(), params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "500") {
-		t.Errorf("Error should mention 500: %v", err)
+	if result.Success {
+		t.Error("Expected failure for 500 response")
+	}
+	if !strings.Contains(result.Error, "500") {
+		t.Errorf("Error should mention 500: %s", result.Error)
 	}
 }
 
@@ -230,12 +248,15 @@ func TestWebFetchTool_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	_, err := tool.Execute(ctx, params)
-	if err == nil {
-		t.Error("Expected error for cancelled context")
+	result, err := tool.Execute(ctx, params)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
-	if !strings.Contains(err.Error(), "context") && !strings.Contains(err.Error(), "timeout") {
-		t.Errorf("Error should mention context or timeout: %v", err)
+	if result.Success {
+		t.Error("Expected failure for cancelled context")
+	}
+	if !strings.Contains(result.Error, "context") && !strings.Contains(result.Error, "timeout") {
+		t.Errorf("Error should mention context or timeout: %s", result.Error)
 	}
 }
 
@@ -254,11 +275,14 @@ func TestWebFetchTool_Timeout(t *testing.T) {
 
 	// Should timeout with default timeout
 	start := time.Now()
-	_, err := tool.Execute(context.Background(), params)
+	result, err := tool.Execute(context.Background(), params)
 	duration := time.Since(start)
 
-	if err == nil {
-		t.Error("Expected timeout error")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if result.Success {
+		t.Error("Expected timeout failure")
 	}
 
 	// Should timeout in reasonable time (not 60s)
