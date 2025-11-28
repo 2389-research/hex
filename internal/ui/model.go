@@ -117,6 +117,28 @@ type Model struct {
 	// Phase 6B: Context Management
 	contextManager *ctxmgr.Manager
 	contextUsage   ctxmgr.ContextUsage
+
+	// Phase 6C Task 6: Quick Actions Menu
+	quickActionsMode     bool               // Quick actions menu is open
+	quickActionsInput    string             // Current input in quick actions
+	quickActionsFiltered []*QuickAction     // Filtered actions from search
+	quickActionsRegistry *QuickActionsRegistry // Registry of available actions
+
+	// Phase 6C Task 4: Autocomplete System
+	autocomplete *Autocomplete
+
+	// Phase 6C Task 8: Smart Suggestions
+	suggestions        []*Suggestion // Current suggestions based on input
+	showSuggestions    bool          // Whether to display suggestions
+	suggestionDetector *SuggestionDetector
+	suggestionLearner  *SuggestionLearner
+	lastAnalyzedInput  string        // Track last input to avoid re-analyzing
+
+	// Phase 6C Task 3: Template System
+	systemPrompt string // System prompt from template or custom
+
+	// Phase 6C Task 5: Conversation Favorites
+	IsFavorite bool // Track if current conversation is favorite
 }
 
 // ToolResult represents a tool execution result for the API
@@ -152,6 +174,12 @@ func NewModel(conversationID, model string) *Model {
 	spinner := NewToolSpinner()
 	streamingDisplay := NewStreamingDisplay()
 	statusBar := NewStatusBar(model, 80)
+	quickActionsRegistry := NewQuickActionsRegistry()
+	autocomplete := NewAutocomplete()
+
+	// Phase 6C Task 8: Initialize suggestion system
+	suggestionDetector := NewSuggestionDetector()
+	suggestionLearner := NewSuggestionLearner()
 
 	return &Model{
 		ConversationID:   conversationID,
@@ -164,11 +192,21 @@ func NewModel(conversationID, model string) *Model {
 		CurrentView:      ViewModeChat,
 		Status:           StatusIdle,
 		renderer:         renderer,
-		spinner:          spinner,
-		streamingDisplay: streamingDisplay,
-		statusBar:        statusBar,
-		helpVisible:      false,
-		typewriterMode:   false,
+		spinner:              spinner,
+		streamingDisplay:     streamingDisplay,
+		statusBar:            statusBar,
+		helpVisible:          false,
+		typewriterMode:       false,
+		quickActionsRegistry: quickActionsRegistry,
+		quickActionsMode:     false,
+		quickActionsInput:    "",
+		quickActionsFiltered: []*QuickAction{},
+		autocomplete:         autocomplete,
+		suggestionDetector:   suggestionDetector,
+		suggestionLearner:    suggestionLearner,
+		suggestions:          []*Suggestion{},
+		showSuggestions:      false,
+		lastAnalyzedInput:    "",
 	}
 }
 
@@ -297,6 +335,12 @@ func (m *Model) SetDB(db *sql.DB) {
 func (m *Model) SetToolSystem(registry *tools.Registry, executor *tools.Executor) {
 	m.toolRegistry = registry
 	m.toolExecutor = executor
+
+	// Update autocomplete tool provider with available tools
+	if m.autocomplete != nil && registry != nil {
+		toolProvider := NewToolProvider(registry.List())
+		m.autocomplete.RegisterProvider("tool", toolProvider)
+	}
 }
 
 // Phase 6B: Context Management Methods
@@ -305,6 +349,13 @@ func (m *Model) SetToolSystem(registry *tools.Registry, executor *tools.Executor
 func (m *Model) SetContextManager(manager *ctxmgr.Manager) {
 	m.contextManager = manager
 	m.updateContextUsage()
+}
+
+// Phase 6C: Template System Methods
+
+// SetSystemPrompt sets the system prompt for this conversation
+func (m *Model) SetSystemPrompt(prompt string) {
+	m.systemPrompt = prompt
 }
 
 // updateContextUsage updates the context usage statistics and status bar
@@ -456,6 +507,11 @@ type toolExecutionMsg struct {
 
 // Phase 6C: Enhanced UI Methods
 
+// GetAutocomplete returns the autocomplete instance
+func (m *Model) GetAutocomplete() *Autocomplete {
+	return m.autocomplete
+}
+
 // ToggleHelp toggles the help display
 func (m *Model) ToggleHelp() {
 	m.helpVisible = !m.helpVisible
@@ -513,6 +569,70 @@ func (m *Model) SaveConversation() error {
 	return nil
 }
 
+// ToggleFavorite toggles the favorite status of the current conversation
+func (m *Model) ToggleFavorite() error {
+	if m.db == nil {
+		return fmt.Errorf("database not available")
+	}
+
+	// Toggle the local state
+	m.IsFavorite = !m.IsFavorite
+
+	// Update in database
+	err := storage.SetFavorite(m.db, m.ConversationID, m.IsFavorite)
+	if err != nil {
+		// Revert local state on error
+		m.IsFavorite = !m.IsFavorite
+		return fmt.Errorf("toggle favorite: %w", err)
+	}
+
+	return nil
+}
+
+// Phase 6C Task 6: Quick Actions Methods
+
+// EnterQuickActionsMode opens the quick actions menu
+func (m *Model) EnterQuickActionsMode() {
+	m.quickActionsMode = true
+	m.quickActionsInput = ""
+	m.quickActionsFiltered = m.quickActionsRegistry.ListActions()
+}
+
+// ExitQuickActionsMode closes the quick actions menu
+func (m *Model) ExitQuickActionsMode() {
+	m.quickActionsMode = false
+	m.quickActionsInput = ""
+	m.quickActionsFiltered = []*QuickAction{}
+}
+
+// UpdateQuickActionsInput updates the search query and filters actions
+func (m *Model) UpdateQuickActionsInput(input string) {
+	m.quickActionsInput = input
+	m.quickActionsFiltered = m.quickActionsRegistry.FuzzySearch(input)
+}
+
+// ExecuteQuickAction executes the selected or first filtered action
+func (m *Model) ExecuteQuickAction() error {
+	if len(m.quickActionsFiltered) == 0 {
+		return fmt.Errorf("no actions available")
+	}
+
+	// Parse command and args from input
+	command, args := ParseActionCommand(m.quickActionsInput)
+
+	// Use the command name from parsed input, or first filtered action
+	actionName := command
+	if actionName == "" && len(m.quickActionsFiltered) > 0 {
+		actionName = m.quickActionsFiltered[0].Name
+	}
+
+	// Exit quick actions mode
+	m.ExitQuickActionsMode()
+
+	// Execute the action
+	return m.quickActionsRegistry.Execute(actionName, args)
+}
+
 // sendToolResults sends tool results back to the API and continues the conversation
 func (m *Model) sendToolResults() tea.Cmd {
 	if len(m.toolResults) == 0 || m.apiClient == nil {
@@ -545,6 +665,7 @@ func (m *Model) sendToolResults() tea.Cmd {
 			Messages:  messages,
 			MaxTokens: 4096,
 			Stream:    true,
+			System:    m.systemPrompt, // Phase 6C: Use system prompt from template
 		}
 
 		// Create cancellable context for this stream
@@ -559,5 +680,110 @@ func (m *Model) sendToolResults() tea.Cmd {
 		}
 
 		return &streamStartMsg{channel: streamChan}
+	}
+}
+
+// Phase 6C Task 8: Smart Suggestion Methods
+
+// AnalyzeSuggestions analyzes current input and updates suggestions
+func (m *Model) AnalyzeSuggestions() {
+	if m.suggestionDetector == nil {
+		return
+	}
+
+	input := m.Input.Value()
+
+	// Don't re-analyze if input hasn't changed
+	if input == m.lastAnalyzedInput {
+		return
+	}
+
+	m.lastAnalyzedInput = input
+
+	// Get suggestions from detector
+	rawSuggestions := m.suggestionDetector.AnalyzeInput(input)
+
+	// Apply learning adjustments
+	if m.suggestionLearner != nil {
+		for i := range rawSuggestions {
+			m.suggestionLearner.AdjustSuggestion(&rawSuggestions[i])
+		}
+	}
+
+	// Convert to pointers and update model
+	m.suggestions = make([]*Suggestion, len(rawSuggestions))
+	for i := range rawSuggestions {
+		s := rawSuggestions[i]
+		m.suggestions[i] = &s
+	}
+
+	// Show suggestions if we have any
+	m.showSuggestions = len(m.suggestions) > 0
+}
+
+// AcceptSuggestion accepts the top suggestion and applies it
+func (m *Model) AcceptSuggestion() {
+	if len(m.suggestions) == 0 {
+		return
+	}
+
+	suggestion := m.suggestions[0]
+
+	// Record acceptance
+	if m.suggestionLearner != nil {
+		m.suggestionLearner.RecordFeedback(
+			suggestion.ToolName,
+			"",
+			FeedbackAccepted,
+		)
+	}
+
+	// Apply the suggestion action to input
+	m.Input.SetValue(suggestion.Action)
+
+	// Clear suggestions
+	m.DismissSuggestions()
+}
+
+// DismissSuggestions hides and clears suggestions
+func (m *Model) DismissSuggestions() {
+	// Record ignores for visible suggestions
+	if m.suggestionLearner != nil && m.showSuggestions {
+		for _, s := range m.suggestions {
+			m.suggestionLearner.RecordFeedback(
+				s.ToolName,
+				"",
+				FeedbackIgnored,
+			)
+		}
+	}
+
+	m.showSuggestions = false
+	m.suggestions = []*Suggestion{}
+	m.lastAnalyzedInput = ""
+}
+
+// RejectTopSuggestion explicitly rejects the top suggestion
+func (m *Model) RejectTopSuggestion() {
+	if len(m.suggestions) == 0 {
+		return
+	}
+
+	suggestion := m.suggestions[0]
+
+	// Record rejection
+	if m.suggestionLearner != nil {
+		m.suggestionLearner.RecordFeedback(
+			suggestion.ToolName,
+			"",
+			FeedbackRejected,
+		)
+	}
+
+	// Remove the top suggestion and keep the rest
+	if len(m.suggestions) > 1 {
+		m.suggestions = m.suggestions[1:]
+	} else {
+		m.DismissSuggestions()
 	}
 }

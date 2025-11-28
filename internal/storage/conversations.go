@@ -18,6 +18,7 @@ type Conversation struct {
 	SystemPrompt string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	IsFavorite   bool
 }
 
 // CreateConversation inserts a new conversation
@@ -50,7 +51,7 @@ func CreateConversation(db *sql.DB, conv *Conversation) error {
 // GetConversation retrieves a conversation by ID
 func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at
+		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		WHERE id = ?
 	`
@@ -64,6 +65,7 @@ func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 		&systemPrompt,
 		&conv.CreatedAt,
 		&conv.UpdatedAt,
+		&conv.IsFavorite,
 	)
 	if err != nil {
 		return nil, err
@@ -79,7 +81,7 @@ func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 // GetLatestConversation retrieves the most recently updated conversation
 func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at
+		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		ORDER BY updated_at DESC
 		LIMIT 1
@@ -94,6 +96,7 @@ func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 		&systemPrompt,
 		&conv.CreatedAt,
 		&conv.UpdatedAt,
+		&conv.IsFavorite,
 	)
 	if err != nil {
 		return nil, err
@@ -109,7 +112,7 @@ func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 // ListConversations returns conversations ordered by updated_at DESC
 func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at
+		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		ORDER BY updated_at DESC
 		LIMIT ? OFFSET ?
@@ -125,7 +128,7 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 	for rows.Next() {
 		conv := &Conversation{}
 		var systemPrompt sql.NullString
-		err := rows.Scan(&conv.ID, &conv.Title, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt)
+		err := rows.Scan(&conv.ID, &conv.Title, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
 		if err != nil {
 			return nil, fmt.Errorf("scan conversation: %w", err)
 		}
@@ -167,4 +170,47 @@ func DeleteConversation(db *sql.DB, id string) error {
 		return fmt.Errorf("delete conversation: %w", err)
 	}
 	return nil
+}
+
+// SetFavorite sets or unsets a conversation as favorite
+func SetFavorite(db *sql.DB, id string, isFavorite bool) error {
+	query := `UPDATE conversations SET is_favorite = ?, updated_at = ? WHERE id = ?`
+	_, err := db.Exec(query, isFavorite, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("set favorite: %w", err)
+	}
+	return nil
+}
+
+// ListFavorites returns all favorite conversations ordered by updated_at DESC
+func ListFavorites(db *sql.DB) ([]*Conversation, error) {
+	query := `
+		SELECT id, title, model, system_prompt, created_at, updated_at, is_favorite
+		FROM conversations
+		WHERE is_favorite = 1
+		ORDER BY updated_at DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("list favorites: %w", err)
+	}
+	defer rows.Close()
+
+	var convs []*Conversation
+	for rows.Next() {
+		conv := &Conversation{}
+		var systemPrompt sql.NullString
+		err := rows.Scan(&conv.ID, &conv.Title, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
+		if err != nil {
+			return nil, fmt.Errorf("scan conversation: %w", err)
+		}
+
+		if systemPrompt.Valid {
+			conv.SystemPrompt = systemPrompt.String
+		}
+
+		convs = append(convs, conv)
+	}
+	return convs, nil
 }

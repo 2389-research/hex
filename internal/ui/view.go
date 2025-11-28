@@ -57,6 +57,25 @@ var (
 
 	toolExecutingStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("214"))
+
+	// Phase 6C Task 8: Suggestion UI styles
+	suggestionBoxStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("111")).
+				Background(lipgloss.Color("235")).
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("111")).
+				Padding(0, 1)
+
+	suggestionToolStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("45")).
+				Bold(true)
+
+	suggestionReasonStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("243")).
+				Italic(true)
+
+	suggestionHintStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("241"))
 )
 
 // View renders the UI
@@ -67,8 +86,12 @@ func (m *Model) View() string {
 
 	var b strings.Builder
 
-	// Title with status indicator
-	title := titleStyle.Render(fmt.Sprintf("Clem • %s", m.Model))
+	// Title with status indicator and favorite star
+	titleText := fmt.Sprintf("Clem • %s", m.Model)
+	if m.IsFavorite {
+		titleText = "⭐ " + titleText
+	}
+	title := titleStyle.Render(titleText)
 	statusIndicator := m.renderStatusIndicator()
 	b.WriteString(title + " " + statusIndicator)
 
@@ -103,6 +126,14 @@ func (m *Model) View() string {
 
 	b.WriteString("\n")
 
+	// Phase 6C Task 6: Quick actions modal (takes precedence over everything except tool approval)
+	if m.quickActionsMode {
+		b.WriteString(m.renderQuickActionsModal() + "\n")
+		// Skip input and other prompts
+		b.WriteString("\n" + m.renderStatusBarEnhanced())
+		return b.String()
+	}
+
 	// Phase 6C: Tool approval prompt (takes precedence over everything)
 	if m.toolApprovalMode {
 		b.WriteString(m.renderToolApprovalPromptEnhanced() + "\n")
@@ -117,6 +148,16 @@ func (m *Model) View() string {
 		// Input (only in chat view)
 		if m.CurrentView == ViewModeChat {
 			b.WriteString(inputStyle.Render(m.Input.View()) + "\n")
+
+			// Phase 6C Task 4: Render autocomplete dropdown
+			if m.autocomplete != nil && m.autocomplete.IsActive() {
+				b.WriteString(m.renderAutocompleteDropdown() + "\n")
+			}
+
+			// Phase 6C Task 8: Render smart suggestions
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				b.WriteString(m.renderSuggestions() + "\n")
+			}
 		}
 	}
 
@@ -323,3 +364,197 @@ func (m *Model) renderStatusBarEnhanced() string {
 
 	return m.statusBar.View()
 }
+
+// Phase 6C Task 6: Quick Actions Modal Rendering
+
+// renderQuickActionsModal renders the quick actions menu overlay
+func (m *Model) renderQuickActionsModal() string {
+	// Styles for the modal
+	modalStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("99")).
+		Padding(1, 2).
+		Width(60)
+
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("99"))
+
+	inputStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("214"))
+
+	actionStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("243"))
+
+	selectedActionStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("39")).
+		Bold(true)
+
+	helpStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Italic(true)
+
+	// Build content
+	var content strings.Builder
+
+	// Title
+	content.WriteString(titleStyle.Render("Quick Actions"))
+	content.WriteString("\n\n")
+
+	// Input with prompt
+	content.WriteString(inputStyle.Render(":"))
+	content.WriteString(inputStyle.Render(m.quickActionsInput))
+	content.WriteString(inputStyle.Render("_"))
+	content.WriteString("\n\n")
+
+	// Show filtered actions
+	if len(m.quickActionsFiltered) == 0 {
+		content.WriteString(actionStyle.Render("No matching actions"))
+	} else {
+		// Show up to 5 actions
+		maxDisplay := 5
+		if len(m.quickActionsFiltered) < maxDisplay {
+			maxDisplay = len(m.quickActionsFiltered)
+		}
+
+		for i := 0; i < maxDisplay; i++ {
+			action := m.quickActionsFiltered[i]
+
+			// First action is "selected" (will be executed on Enter)
+			var actionLine string
+			if i == 0 {
+				actionLine = fmt.Sprintf("▸ %s - %s", action.Usage, action.Description)
+				content.WriteString(selectedActionStyle.Render(actionLine))
+			} else {
+				actionLine = fmt.Sprintf("  %s - %s", action.Usage, action.Description)
+				content.WriteString(actionStyle.Render(actionLine))
+			}
+			content.WriteString("\n")
+		}
+
+		// Show count if there are more
+		if len(m.quickActionsFiltered) > maxDisplay {
+			more := fmt.Sprintf("\n  ... and %d more", len(m.quickActionsFiltered)-maxDisplay)
+			content.WriteString(actionStyle.Render(more))
+		}
+	}
+
+	content.WriteString("\n\n")
+
+	// Help text
+	helpText := "Enter: execute • Esc: cancel"
+	content.WriteString(helpStyle.Render(helpText))
+
+	return modalStyle.Render(content.String())
+}
+
+// Phase 6C Task 4: Autocomplete Rendering
+
+// renderAutocompleteDropdown renders the autocomplete suggestions dropdown
+func (m *Model) renderAutocompleteDropdown() string {
+	if m.autocomplete == nil || !m.autocomplete.IsActive() {
+		return ""
+	}
+
+	completions := m.autocomplete.GetCompletions()
+	if len(completions) == 0 {
+		return ""
+	}
+
+	// Styles
+	dropdownStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("99")).
+		Padding(0, 1).
+		MaxWidth(60)
+
+	selectedStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("39")).
+		Bold(true).
+		Background(lipgloss.Color("237"))
+
+	normalStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("243"))
+
+	typeStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Italic(true)
+
+	// Build dropdown content
+	var content strings.Builder
+
+	selectedIndex := m.autocomplete.GetSelectedIndex()
+
+	for i, completion := range completions {
+		var line strings.Builder
+
+		// Selection indicator and styling
+		if i == selectedIndex {
+			line.WriteString("▸ ")
+			// Highlight the completion
+			line.WriteString(completion.Display)
+
+			// Add description if available
+			if completion.Description != "" {
+				line.WriteString(" ")
+				line.WriteString(typeStyle.Render("(" + completion.Description + ")"))
+			}
+
+			content.WriteString(selectedStyle.Render(line.String()))
+		} else {
+			line.WriteString("  ")
+			line.WriteString(completion.Display)
+
+			// Add description if available
+			if completion.Description != "" {
+				line.WriteString(" ")
+				line.WriteString(typeStyle.Render("(" + completion.Description + ")"))
+			}
+
+			content.WriteString(normalStyle.Render(line.String()))
+		}
+
+		content.WriteString("\n")
+	}
+
+	// Add help text
+	helpText := typeStyle.Render("↑↓: navigate • Enter: accept • Esc: cancel")
+	content.WriteString("\n")
+	content.WriteString(helpText)
+
+	return dropdownStyle.Render(content.String())
+}
+
+// Phase 6C Task 8: renderSuggestions renders smart tool suggestions
+func (m *Model) renderSuggestions() string {
+	if !m.showSuggestions || len(m.suggestions) == 0 {
+		return ""
+	}
+
+	var content strings.Builder
+
+	// Title
+	content.WriteString(suggestionToolStyle.Render("💡 Suggestions") + "\n\n")
+
+	// Show top suggestion prominently
+	topSuggestion := m.suggestions[0]
+	content.WriteString(suggestionToolStyle.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
+	content.WriteString("  " + suggestionReasonStyle.Render(topSuggestion.Reason) + "\n")
+	content.WriteString("  " + suggestionHintStyle.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
+
+	// Show additional suggestions if any
+	if len(m.suggestions) > 1 {
+		content.WriteString("\n" + suggestionReasonStyle.Render("Other suggestions:") + "\n")
+		for i := 1; i < len(m.suggestions) && i < 3; i++ {
+			s := m.suggestions[i]
+			content.WriteString(fmt.Sprintf("  • %s ", s.ToolName))
+			content.WriteString(suggestionReasonStyle.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
+		}
+	}
+
+	// Help text
+	content.WriteString("\n" + suggestionHintStyle.Render("Tab: accept • Esc: dismiss"))
+
+	return suggestionBoxStyle.Render(content.String())
+}
+

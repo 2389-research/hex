@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -20,6 +21,7 @@ func InitializeSchema(db *sql.DB) error {
 		"migrations/001_initial.sql",
 		"migrations/002_todos.sql",
 		"migrations/003_history.sql",
+		"migrations/004_favorites.sql",
 	}
 
 	// Execute each migration
@@ -30,7 +32,14 @@ func InitializeSchema(db *sql.DB) error {
 		}
 
 		if _, err := db.Exec(string(migrationSQL)); err != nil {
-			return fmt.Errorf("execute migration %s: %w", filename, err)
+			// Ignore "duplicate column" errors (happens when migrations run multiple times)
+			// This is a workaround until proper migration tracking is implemented
+			errStr := err.Error()
+			isDuplicateColumn := strings.Contains(errStr, "duplicate column")
+			if !isDuplicateColumn {
+				return fmt.Errorf("execute migration %s: %w", filename, err)
+			}
+			// Silently ignore duplicate column errors
 		}
 	}
 

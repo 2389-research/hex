@@ -146,3 +146,93 @@ func TestDeleteConversationCascade(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, messages, 0, "messages should be deleted via CASCADE")
 }
+
+func TestSetFavorite(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Create conversation
+	conv := &storage.Conversation{ID: "conv-fav", Title: "Favorite Test", Model: "claude-sonnet-4-5-20250929"}
+	require.NoError(t, storage.CreateConversation(db, conv))
+
+	// Initially not favorite
+	retrieved, err := storage.GetConversation(db, "conv-fav")
+	require.NoError(t, err)
+	assert.False(t, retrieved.IsFavorite)
+
+	// Set as favorite
+	err = storage.SetFavorite(db, "conv-fav", true)
+	require.NoError(t, err)
+
+	// Verify it's now favorite
+	retrieved, err = storage.GetConversation(db, "conv-fav")
+	require.NoError(t, err)
+	assert.True(t, retrieved.IsFavorite)
+
+	// Unset favorite
+	err = storage.SetFavorite(db, "conv-fav", false)
+	require.NoError(t, err)
+
+	// Verify it's no longer favorite
+	retrieved, err = storage.GetConversation(db, "conv-fav")
+	require.NoError(t, err)
+	assert.False(t, retrieved.IsFavorite)
+}
+
+func TestListFavorites(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Create multiple conversations
+	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
+	conv2 := &storage.Conversation{ID: "conv-2", Title: "Chat 2", Model: "claude-sonnet-4-5-20250929"}
+	conv3 := &storage.Conversation{ID: "conv-3", Title: "Chat 3", Model: "claude-sonnet-4-5-20250929"}
+
+	require.NoError(t, storage.CreateConversation(db, conv1))
+	time.Sleep(10 * time.Millisecond)
+	require.NoError(t, storage.CreateConversation(db, conv2))
+	time.Sleep(10 * time.Millisecond)
+	require.NoError(t, storage.CreateConversation(db, conv3))
+
+	// Mark conv-1 and conv-3 as favorites
+	require.NoError(t, storage.SetFavorite(db, "conv-1", true))
+	time.Sleep(10 * time.Millisecond) // Ensure different updated_at
+	require.NoError(t, storage.SetFavorite(db, "conv-3", true))
+
+	// List favorites
+	favorites, err := storage.ListFavorites(db)
+	require.NoError(t, err)
+	assert.Len(t, favorites, 2)
+	assert.Equal(t, "conv-3", favorites[0].ID) // Most recently updated first
+	assert.Equal(t, "conv-1", favorites[1].ID)
+	assert.True(t, favorites[0].IsFavorite)
+	assert.True(t, favorites[1].IsFavorite)
+}
+
+func TestListFavoritesEmpty(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Create conversations but don't favorite any
+	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
+	require.NoError(t, storage.CreateConversation(db, conv1))
+
+	// List favorites should be empty
+	favorites, err := storage.ListFavorites(db)
+	require.NoError(t, err)
+	assert.Len(t, favorites, 0)
+}
+
+func TestFavoriteBackwardCompatibility(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Create conversation and verify is_favorite defaults to false
+	conv := &storage.Conversation{ID: "conv-compat", Title: "Backward Compat", Model: "claude-sonnet-4-5-20250929"}
+	require.NoError(t, storage.CreateConversation(db, conv))
+
+	// Verify IsFavorite is false by default
+	retrieved, err := storage.GetConversation(db, "conv-compat")
+	require.NoError(t, err)
+	assert.False(t, retrieved.IsFavorite)
+}

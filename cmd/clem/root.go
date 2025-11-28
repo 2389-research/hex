@@ -13,6 +13,7 @@ import (
 	"github.com/harper/clem/internal/logging"
 	"github.com/harper/clem/internal/mcp"
 	"github.com/harper/clem/internal/storage"
+	"github.com/harper/clem/internal/templates"
 	"github.com/harper/clem/internal/tools"
 	"github.com/harper/clem/internal/ui"
 	"github.com/spf13/cobra"
@@ -45,6 +46,9 @@ var (
 	// Phase 6B: Context management flags
 	maxContextTokens int
 	contextStrategy  string
+
+	// Phase 6C: Template system flags
+	templateName string
 )
 
 var rootCmd = &cobra.Command{
@@ -82,6 +86,9 @@ func init() {
 	// Phase 6B: Context management flags
 	rootCmd.PersistentFlags().IntVar(&maxContextTokens, "max-context-tokens", 180000, "Maximum context window size in tokens")
 	rootCmd.PersistentFlags().StringVar(&contextStrategy, "context-strategy", "prune", "Context management strategy: keep-all, prune, summarize")
+
+	// Phase 6C: Template system flags
+	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'clem templates list')")
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -128,10 +135,27 @@ func runInteractive(prompt string) error {
 	defer db.Close()
 	logging.InfoWith("Database opened successfully", "path", dbPath)
 
-	// Use default model if not specified
+	// Phase 6C: Load template if specified
+	var template *templates.Template
+	var systemPrompt string
+	if templateName != "" {
+		var err error
+		template, err = loadTemplateByName(templateName)
+		if err != nil {
+			return fmt.Errorf("load template: %w", err)
+		}
+		systemPrompt = template.SystemPrompt
+		logging.InfoWith("Loaded template", "name", template.Name)
+	}
+
+	// Use default model if not specified, or from template
 	modelName := model
 	if modelName == "" {
-		modelName = "claude-sonnet-4-5-20250929"
+		if template != nil && template.Model != "" {
+			modelName = template.Model
+		} else {
+			modelName = "claude-sonnet-4-5-20250929"
+		}
 	}
 
 	var conversationID string
@@ -175,6 +199,9 @@ func runInteractive(prompt string) error {
 		uiModel = ui.NewModel(conversationID, modelName)
 		uiModel.SetDB(db)
 
+		// Load favorite status
+		uiModel.IsFavorite = conv.IsFavorite
+
 		// Load messages into UI
 		for _, msg := range messages {
 			uiModel.AddMessage(msg.Role, msg.Content)
@@ -187,14 +214,30 @@ func runInteractive(prompt string) error {
 		uiModel = ui.NewModel(conversationID, modelName)
 		uiModel.SetDB(db)
 
+		// Phase 6C: Set system prompt from template if available
+		if systemPrompt != "" {
+			uiModel.SetSystemPrompt(systemPrompt)
+		}
+
 		// Create conversation in database
+		title := "New Conversation"
+		if template != nil && template.Name != "" {
+			title = template.Name + " Session"
+		}
 		conv := &storage.Conversation{
 			ID:    conversationID,
-			Title: "New Conversation",
+			Title: title,
 			Model: modelName,
 		}
 		if err := storage.CreateConversation(db, conv); err != nil {
 			return fmt.Errorf("create conversation: %w", err)
+		}
+
+		// Phase 6C: Add initial messages from template
+		if template != nil && len(template.InitialMessages) > 0 {
+			for _, msg := range template.InitialMessages {
+				uiModel.AddMessage(msg.Role, msg.Content)
+			}
 		}
 	}
 

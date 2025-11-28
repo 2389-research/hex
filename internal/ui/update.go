@@ -64,6 +64,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.sendToolResults()
 
 	case tea.KeyMsg:
+		// Phase 6C Task 6: Handle quick actions mode first
+		if m.quickActionsMode {
+			return m.handleQuickActionsKey(msg)
+		}
+
 		// Task 12: Handle tool approval keys
 		if m.toolApprovalMode {
 			switch msg.Type {
@@ -137,8 +142,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Esc key - can quit or exit search mode
+		// Ctrl+F: Toggle favorite (only in chat mode)
+		if msg.Type == tea.KeyCtrlF && m.CurrentView == ViewModeChat {
+			err := m.ToggleFavorite()
+			if err != nil {
+				m.ErrorMessage = "Failed to toggle favorite: " + err.Error()
+			} else if m.statusBar != nil {
+				if m.IsFavorite {
+					m.statusBar.SetCustomMessage("⭐ Added to favorites")
+				} else {
+					m.statusBar.SetCustomMessage("Removed from favorites")
+				}
+			}
+			return m, nil
+		}
+
+		// Handle Esc key - dismiss suggestions, quit, or exit search mode
 		if msg.Type == tea.KeyEsc {
+			// Phase 6C Task 8: Dismiss suggestions first
+			if m.showSuggestions {
+				m.DismissSuggestions()
+				return m, nil
+			}
 			if m.SearchMode {
 				m.ExitSearchMode()
 				return m, nil
@@ -163,8 +188,45 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-		// Handle Tab to switch views
+		// Phase 6C Task 4: Handle autocomplete navigation
+		if m.autocomplete != nil && m.autocomplete.IsActive() {
+			switch msg.Type {
+			case tea.KeyDown:
+				m.autocomplete.Next()
+				return m, nil
+			case tea.KeyUp:
+				m.autocomplete.Previous()
+				return m, nil
+			case tea.KeyEnter:
+				// Accept completion
+				selected := m.autocomplete.GetSelected()
+				if selected != nil {
+					m.Input.SetValue(selected.Value)
+					m.autocomplete.Hide()
+				}
+				return m, nil
+			case tea.KeyEsc:
+				// Cancel autocomplete
+				m.autocomplete.Hide()
+				return m, nil
+			}
+		}
+
+		// Handle Tab - accept suggestion, trigger autocomplete, or switch views
 		if msg.Type == tea.KeyTab {
+			// Phase 6C Task 8: Accept suggestion if visible
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				m.AcceptSuggestion()
+				return m, nil
+			}
+
+			// If textarea is focused and has content, show autocomplete
+			if m.Input.Focused() && m.Input.Value() != "" {
+				provider := DetectProvider(m.Input.Value())
+				m.autocomplete.Show(m.Input.Value(), provider)
+				return m, nil
+			}
+			// Otherwise, switch views
 			m.NextView()
 			return m, nil
 		}
@@ -226,6 +288,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Phase 6C: Handle '?' for help
 			if r == '?' {
 				m.ToggleHelp()
+				return m, nil
+			}
+
+			// Phase 6C Task 6: Handle ':' for quick actions
+			if r == ':' {
+				m.EnterQuickActionsMode()
 				return m, nil
 			}
 
@@ -295,8 +363,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Update input (only if not in search mode)
 	if !m.SearchMode {
+		oldValue := m.Input.Value()
 		m.Input, cmd = m.Input.Update(msg)
 		cmds = append(cmds, cmd)
+
+		// Phase 6C Task 4: Update autocomplete as user types
+		if m.autocomplete != nil && m.autocomplete.IsActive() {
+			newValue := m.Input.Value()
+			if newValue != oldValue {
+				m.autocomplete.Update(newValue)
+			}
+		}
+
+		// Phase 6C Task 8: Update suggestions as user types
+		newValue := m.Input.Value()
+		if newValue != oldValue {
+			m.AnalyzeSuggestions()
+		}
 	}
 
 	// Update viewport
@@ -442,6 +525,7 @@ func (m *Model) streamMessage(userInput string) tea.Cmd {
 		Messages:  messages,
 		MaxTokens: 4096,
 		Stream:    true,
+		System:    m.systemPrompt, // Phase 6C: Use system prompt from template
 	}
 
 	return func() tea.Msg {
@@ -551,4 +635,46 @@ func formatToolResult(result *tools.Result) string {
 	}
 
 	return output
+}
+
+// Phase 6C Task 6: Quick Actions Key Handler
+
+// handleQuickActionsKey handles keyboard input when quick actions mode is active
+func (m *Model) handleQuickActionsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyEsc:
+		// Exit quick actions mode
+		m.ExitQuickActionsMode()
+		return m, nil
+
+	case tea.KeyEnter:
+		// Execute the selected action
+		err := m.ExecuteQuickAction()
+		if err != nil {
+			// Show error in status bar
+			m.ErrorMessage = err.Error()
+			if m.statusBar != nil {
+				m.statusBar.SetCustomMessage("Error: " + err.Error())
+			}
+		}
+		return m, nil
+
+	case tea.KeyBackspace:
+		// Remove last character
+		if len(m.quickActionsInput) > 0 {
+			m.quickActionsInput = m.quickActionsInput[:len(m.quickActionsInput)-1]
+			m.UpdateQuickActionsInput(m.quickActionsInput)
+		}
+		return m, nil
+
+	case tea.KeyRunes:
+		// Add typed character to input
+		if len(msg.Runes) > 0 {
+			m.quickActionsInput += string(msg.Runes[0])
+			m.UpdateQuickActionsInput(m.quickActionsInput)
+		}
+		return m, nil
+	}
+
+	return m, nil
 }
