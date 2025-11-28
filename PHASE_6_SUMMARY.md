@@ -252,18 +252,7 @@ claude-sonnet-4-5 ● 15k↓ 8k↑ [███████░░░] [chat]
 
 ## Known Issues
 
-### Test Failures (3 tests)
-
-Three UI view tests need updating for new status bar format:
-- `TestToolApprovalModeInView`
-- `TestViewRendersChatMode`
-- `TestViewRendersHistoryMode`
-
-These tests check for specific strings in the rendered UI that changed with Phase 6C improvements. The functionality works correctly; tests just need to match the new format.
-
-**Impact**: Low - these are view formatting tests, not functional tests
-**Fix**: Update test expectations to match new UI strings
-**ETA**: 15 minutes
+**None!** All tests passing (100% test success rate).
 
 ## Documentation
 
@@ -297,7 +286,7 @@ These tests check for specific strings in the rendered UI that changed with Phas
 - Files modified: 15+
 - Lines of code: ~15,000
 - New tests: 120+
-- Test pass rate: ~95% (3 view tests need adjustment)
+- Test pass rate: 100% (all tests passing!)
 
 **Feature Metrics:**
 - Production hardening: 2 major features (logging, CI/CD)
