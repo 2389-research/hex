@@ -186,6 +186,33 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("register glob tool: %w", err)
 	}
 
+	// Phase 4A: Register Interactive tools (AskUserQuestion, TodoWrite)
+	if err := registry.Register(tools.NewAskUserQuestionTool()); err != nil {
+		return fmt.Errorf("register ask_user_question tool: %w", err)
+	}
+	if err := registry.Register(tools.NewTodoWriteTool()); err != nil {
+		return fmt.Errorf("register todo_write tool: %w", err)
+	}
+
+	// Phase 4B: Register Research tools (WebFetch, WebSearch)
+	if err := registry.Register(tools.NewWebFetchTool()); err != nil {
+		return fmt.Errorf("register web_fetch tool: %w", err)
+	}
+	if err := registry.Register(tools.NewWebSearchTool()); err != nil {
+		return fmt.Errorf("register web_search tool: %w", err)
+	}
+
+	// Phase 4C: Register Advanced Execution tools (Task, BashOutput, KillShell)
+	if err := registry.Register(tools.NewTaskTool()); err != nil {
+		return fmt.Errorf("register task tool: %w", err)
+	}
+	if err := registry.Register(tools.NewBashOutputTool()); err != nil {
+		return fmt.Errorf("register bash_output tool: %w", err)
+	}
+	if err := registry.Register(tools.NewKillShellTool()); err != nil {
+		return fmt.Errorf("register kill_shell tool: %w", err)
+	}
+
 	// Create executor with approval function
 	// The actual approval is handled by the UI, so we return true here
 	approvalFunc := func(toolName string, params map[string]interface{}) bool {

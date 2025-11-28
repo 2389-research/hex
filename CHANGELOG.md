@@ -5,6 +5,106 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-11-28
+
+### Added
+
+#### Phase 4: Extended Capabilities
+
+Seven new tools expanding Clem's capabilities for interactive decision-making, research, and advanced execution:
+
+**Phase 4A: Interactive Tools**
+
+**AskUserQuestion Tool** (`ask_user_question`)
+- Interactive multiple-choice question prompts (1-4 questions per call)
+- Single-select and multi-select support
+- 2-4 options per question with automatic "Other: ..." option
+- Always requires approval (user interaction)
+- 14 comprehensive unit tests
+
+**TodoWrite Tool** (`todo_write`)
+- Structured task list management with visual indicators
+- Three status levels: pending (☐), in_progress (⏳), completed (✅)
+- Progress metadata tracking (total, pending, in_progress, completed)
+- Never requires approval (display-only)
+- 21 comprehensive unit tests
+
+**Phase 4B: Research Tools**
+
+**WebFetch Tool** (`web_fetch`)
+- HTTP GET requests with HTML-to-markdown conversion
+- 30-second timeout with context cancellation support
+- Auto-detects content type (HTML, JSON, text, XML)
+- User-Agent header set to "Clem/1.0"
+- Always requires approval (network access)
+- 12 comprehensive unit tests
+- New dependency: `github.com/JohannesKaufmann/html-to-markdown v1.6.0`
+
+**WebSearch Tool** (`web_search`)
+- DuckDuckGo search integration (no API key required)
+- Result limiting (default 10, configurable)
+- Domain filtering (allowed/blocked lists, case-insensitive)
+- Formatted markdown output with titles, URLs, snippets
+- Always requires approval (network access)
+- 12 comprehensive unit tests
+- New dependency: `golang.org/x/net v0.47.0`
+
+**Phase 4C: Advanced Execution Tools**
+
+**Task Tool** (`task`)
+- Sub-agent spawning for complex multi-step tasks
+- Spawns `clem --print` as subprocess
+- Environment inheritance (API keys, working directory, config)
+- Configurable timeout (5min default, 30min max)
+- Auto-builds clem binary if not in PATH
+- Always requires approval (spawns processes, uses API)
+- 21 comprehensive unit tests (15 validation, 6 integration)
+
+**BashOutput Tool** (`bash_output`)
+- Retrieves output from background bash processes by ID
+- Incremental reading (only new output since last check)
+- Optional regex filtering for stdout/stderr
+- Thread-safe with mutex-protected read offsets
+- Process metadata (done status, exit code)
+- Never requires approval (read-only)
+- 13 comprehensive unit tests
+
+**KillShell Tool** (`kill_shell`)
+- Terminates running background bash processes
+- Two-stage shutdown: SIGTERM (graceful) → SIGKILL (force)
+- Automatic registry cleanup
+- Handles already-terminated processes gracefully
+- Always requires approval (destructive operation)
+- 10 comprehensive unit tests
+
+**Background Process Registry**
+- Shared thread-safe registry for background bash processes
+- Supports both new BackgroundProcess struct (with output buffering) and legacy Process registration
+- Mutex-protected operations for concurrent access
+- Used by BashOutput and KillShell tools
+
+### Changed
+
+- Tool registry expanded from 6 to 13 tools
+- Updated TOOLS.md with 1,546 lines of Phase 4 documentation
+- Integration test suite updated to verify all 13 tools
+- Table of contents and tools summary table updated
+
+### Technical Details
+
+- **Test Coverage**:
+  - Phase 4A: 35 tests (14 AskUserQuestion + 21 TodoWrite)
+  - Phase 4B: 24 tests (12 WebFetch + 12 WebSearch)
+  - Phase 4C: 44 tests (21 Task + 13 BashOutput + 10 KillShell)
+  - Total Phase 4: 103 new tests
+- **Total Tests**: ~341 tests, all passing
+- **New Files**: 14 implementation files + 14 test files + docs
+- **Modified Files**: root.go, tools_test.go, TOOLS.md
+- **New Dependencies**:
+  - `github.com/JohannesKaufmann/html-to-markdown v1.6.0`
+  - `golang.org/x/net v0.47.0`
+- **Lines Added**: ~8,500 lines (code + tests + docs)
+
 ## [0.3.0] - 2025-11-28
 
 ### Added

@@ -410,13 +410,16 @@ func TestGlobToolIntegration(t *testing.T) {
 func TestAllToolsRegistered(t *testing.T) {
 	registry := tools.NewRegistry()
 
-	// Register all 6 tools
+	// Register all 13 tools (Phase 1-4)
+	// Phase 1: Read, Write, Bash
 	err := registry.Register(tools.NewReadTool())
 	require.NoError(t, err)
 	err = registry.Register(tools.NewWriteTool())
 	require.NoError(t, err)
 	err = registry.Register(tools.NewBashTool())
 	require.NoError(t, err)
+
+	// Phase 3: Edit, Grep, Glob
 	err = registry.Register(tools.NewEditTool())
 	require.NoError(t, err)
 	err = registry.Register(tools.NewGrepTool())
@@ -424,13 +427,50 @@ func TestAllToolsRegistered(t *testing.T) {
 	err = registry.Register(tools.NewGlobTool())
 	require.NoError(t, err)
 
-	// Verify all 6 tools are registered
+	// Phase 4A: AskUserQuestion, TodoWrite
+	err = registry.Register(tools.NewAskUserQuestionTool())
+	require.NoError(t, err)
+	err = registry.Register(tools.NewTodoWriteTool())
+	require.NoError(t, err)
+
+	// Phase 4B: WebFetch, WebSearch
+	err = registry.Register(tools.NewWebFetchTool())
+	require.NoError(t, err)
+	err = registry.Register(tools.NewWebSearchTool())
+	require.NoError(t, err)
+
+	// Phase 4C: Task, BashOutput, KillShell
+	err = registry.Register(tools.NewTaskTool())
+	require.NoError(t, err)
+	err = registry.Register(tools.NewBashOutputTool())
+	require.NoError(t, err)
+	err = registry.Register(tools.NewKillShellTool())
+	require.NoError(t, err)
+
+	// Verify all 13 tools are registered
 	toolNames := registry.List()
-	assert.Len(t, toolNames, 6, "should have 6 tools registered")
+	assert.Len(t, toolNames, 13, "should have 13 tools registered")
+
+	// Phase 1 tools
 	assert.Contains(t, toolNames, "read_file")
 	assert.Contains(t, toolNames, "write_file")
 	assert.Contains(t, toolNames, "bash")
+
+	// Phase 3 tools
 	assert.Contains(t, toolNames, "edit")
 	assert.Contains(t, toolNames, "grep")
 	assert.Contains(t, toolNames, "glob")
+
+	// Phase 4A tools
+	assert.Contains(t, toolNames, "ask_user_question")
+	assert.Contains(t, toolNames, "todo_write")
+
+	// Phase 4B tools
+	assert.Contains(t, toolNames, "web_fetch")
+	assert.Contains(t, toolNames, "web_search")
+
+	// Phase 4C tools
+	assert.Contains(t, toolNames, "task")
+	assert.Contains(t, toolNames, "bash_output")
+	assert.Contains(t, toolNames, "kill_shell")
 }
