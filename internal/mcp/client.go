@@ -224,20 +224,35 @@ func (c *Client) CallTool(ctx context.Context, name string, arguments map[string
 // Shutdown gracefully shuts down the client connection
 func (c *Client) Shutdown() error {
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Return early if already shut down
+	if !c.initialized {
+		return nil
+	}
+
 	c.initialized = false
-	c.mu.Unlock()
 
 	// Close stdin to signal server to exit
 	if c.stdin != nil {
 		c.stdin.Close()
 	}
 
-	// Wait for command to exit
+	// Wait for command to exit (unlock first to avoid deadlock)
+	c.mu.Unlock()
 	if c.cmd != nil && c.cmd.Process != nil {
 		c.cmd.Wait()
 	}
+	c.mu.Lock()
 
-	close(c.done)
+	// Close done channel safely (only once)
+	select {
+	case <-c.done:
+		// Already closed, do nothing
+	default:
+		close(c.done)
+	}
+
 	return nil
 }
 

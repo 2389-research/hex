@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -169,8 +170,13 @@ func (t *BashTool) executeBackground(ctx context.Context, command string, params
 		proc.Process = cmd.Process
 		proc.mu.Unlock()
 
+		// Use WaitGroup to synchronize output readers
+		var wg sync.WaitGroup
+
 		// Read stdout in a goroutine
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			scanner := bufio.NewScanner(stdoutPipe)
 			for scanner.Scan() {
 				proc.AppendStdout(scanner.Text())
@@ -178,7 +184,9 @@ func (t *BashTool) executeBackground(ctx context.Context, command string, params
 		}()
 
 		// Read stderr in a goroutine
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			scanner := bufio.NewScanner(stderrPipe)
 			for scanner.Scan() {
 				proc.AppendStderr(scanner.Text())
@@ -187,6 +195,10 @@ func (t *BashTool) executeBackground(ctx context.Context, command string, params
 
 		// Wait for command to complete
 		err = cmd.Wait()
+
+		// Wait for all output to be read before marking done
+		wg.Wait()
+
 		exitCode := 0
 		if err != nil {
 			if exitError, ok := err.(*exec.ExitError); ok {
