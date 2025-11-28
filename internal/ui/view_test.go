@@ -16,7 +16,7 @@ func TestViewRendersChatMode(t *testing.T) {
 
 	view := model.View()
 	assert.Contains(t, view, "Clem")
-	assert.Contains(t, view, "[Chat]")
+	assert.Contains(t, view, "[chat]") // Phase 6C: lowercase in status bar
 }
 
 func TestViewRendersHistoryMode(t *testing.T) {
@@ -26,7 +26,7 @@ func TestViewRendersHistoryMode(t *testing.T) {
 
 	view := model.View()
 	assert.Contains(t, view, "History Browser")
-	assert.Contains(t, view, "[History]")
+	assert.Contains(t, view, "[history]") // Phase 6C: lowercase in status bar
 }
 
 func TestViewRendersToolsMode(t *testing.T) {

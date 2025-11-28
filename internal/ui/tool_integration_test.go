@@ -155,5 +155,5 @@ func TestToolApprovalModeInView(t *testing.T) {
 	assert.Contains(t, view, "read")
 	assert.Contains(t, view, "path")
 	assert.Contains(t, view, "/test.txt")
-	assert.Contains(t, view, "Allow this tool to execute?")
+	assert.Contains(t, view, "[A]pprove") // Phase 6C: New approval UI format
 }
