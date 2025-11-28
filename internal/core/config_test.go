@@ -1,0 +1,133 @@
+package core_test
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/harper/clem/internal/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestLoadConfig(t *testing.T) {
+	// Create temp config file
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	configYAML := `api_key: test-key-123
+model: claude-sonnet-4-5-20250929
+`
+	err := os.WriteFile(configPath, []byte(configYAML), 0644)
+	require.NoError(t, err)
+
+	// Set config path
+	os.Setenv("CLEM_CONFIG_PATH", configPath)
+	defer os.Unsetenv("CLEM_CONFIG_PATH")
+
+	// Load config
+	cfg, err := core.LoadConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "test-key-123", cfg.APIKey)
+	assert.Equal(t, "claude-sonnet-4-5-20250929", cfg.Model)
+}
+
+func TestConfigFromEnv(t *testing.T) {
+	// Clean up any existing config path
+	os.Unsetenv("CLEM_CONFIG_PATH")
+
+	os.Setenv("CLEM_API_KEY", "env-key-456")
+	os.Setenv("CLEM_MODEL", "claude-opus-4-5-20250929")
+	defer os.Unsetenv("CLEM_API_KEY")
+	defer os.Unsetenv("CLEM_MODEL")
+
+	cfg, err := core.LoadConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "env-key-456", cfg.APIKey)
+	assert.Equal(t, "claude-opus-4-5-20250929", cfg.Model)
+}
+
+func TestConfigPrecedence(t *testing.T) {
+	// Env var should override config file
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	configYAML := `api_key: file-key`
+	err := os.WriteFile(configPath, []byte(configYAML), 0644)
+	require.NoError(t, err)
+
+	os.Setenv("CLEM_CONFIG_PATH", configPath)
+	os.Setenv("CLEM_API_KEY", "env-key")
+	defer os.Unsetenv("CLEM_CONFIG_PATH")
+	defer os.Unsetenv("CLEM_API_KEY")
+
+	cfg, err := core.LoadConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "env-key", cfg.APIKey, "env var should override file")
+}
+
+func TestConfigDefaults(t *testing.T) {
+	// Clean all env vars that might affect the test
+	os.Unsetenv("CLEM_CONFIG_PATH")
+	os.Unsetenv("CLEM_API_KEY")
+	os.Unsetenv("CLEM_MODEL")
+	os.Unsetenv("CLEM_PERMISSION_MODE")
+	os.Unsetenv("CLEM_DEFAULT_TOOLS")
+
+	cfg, err := core.LoadConfig()
+	require.NoError(t, err)
+
+	// Should have defaults
+	assert.Equal(t, "claude-sonnet-4-5-20250929", cfg.Model)
+	assert.Equal(t, "ask", cfg.PermissionMode)
+	assert.NotEmpty(t, cfg.DefaultTools)
+}
+
+func TestConfigGetAPIKey(t *testing.T) {
+	t.Run("with API key", func(t *testing.T) {
+		cfg := &core.Config{
+			APIKey: "test-key",
+		}
+
+		key, err := cfg.GetAPIKey()
+		require.NoError(t, err)
+		assert.Equal(t, "test-key", key)
+	})
+
+	t.Run("without API key", func(t *testing.T) {
+		cfg := &core.Config{
+			APIKey: "",
+		}
+
+		_, err := cfg.GetAPIKey()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "API key not configured")
+	})
+}
+
+func TestConfigFromDotEnv(t *testing.T) {
+	// Create temp directory with .env file
+	tmpDir := t.TempDir()
+	dotEnvPath := filepath.Join(tmpDir, ".env")
+
+	dotEnvContent := `CLEM_API_KEY=dotenv-key-789
+CLEM_MODEL=claude-sonnet-4-5-20250929
+`
+	err := os.WriteFile(dotEnvPath, []byte(dotEnvContent), 0644)
+	require.NoError(t, err)
+
+	// Change to temp directory so LoadConfig finds the .env file
+	originalDir, _ := os.Getwd()
+	defer os.Chdir(originalDir)
+	os.Chdir(tmpDir)
+
+	// Clean env vars
+	os.Unsetenv("CLEM_API_KEY")
+	os.Unsetenv("CLEM_MODEL")
+	os.Unsetenv("CLEM_CONFIG_PATH")
+
+	cfg, err := core.LoadConfig()
+	require.NoError(t, err)
+	assert.Equal(t, "dotenv-key-789", cfg.APIKey)
+	assert.Equal(t, "claude-sonnet-4-5-20250929", cfg.Model)
+}

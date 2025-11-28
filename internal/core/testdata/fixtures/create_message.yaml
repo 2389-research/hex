@@ -1,0 +1,27 @@
+---
+version: 1
+interactions:
+    - request:
+        body: '{"model":"claude-sonnet-4-5-20250929","messages":[{"role":"user","content":"Say hello","created_at":"0001-01-01T00:00:00Z"}],"max_tokens":1024}'
+        form: {}
+        headers:
+            Anthropic-Version:
+                - "2023-06-01"
+            Content-Type:
+                - application/json
+            X-Api-Key:
+                - test-api-key
+        url: https://api.anthropic.com/v1/messages
+        method: POST
+      response:
+        body: '{"id":"msg_01ABC123","type":"message","role":"assistant","content":[{"type":"text","text":"Hello! How can I help you today?"}],"model":"claude-sonnet-4-5-20250929","stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":10,"output_tokens":12}}'
+        headers:
+            Content-Type:
+                - application/json
+            Date:
+                - Mon, 25 Nov 2025 12:00:00 GMT
+            Request-Id:
+                - req_123456
+        status: 200 OK
+        code: 200
+        duration: 1234567ms
