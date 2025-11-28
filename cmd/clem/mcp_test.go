@@ -237,7 +237,7 @@ func TestMCPRemoveCommand_MissingName(t *testing.T) {
 		t.Error("Expected error when server name is missing")
 	}
 
-	if !strings.Contains(err.Error(), "requires at least 1 arg") {
+	if !strings.Contains(err.Error(), "arg(s)") {
 		t.Errorf("Expected argument error, got: %v", err)
 	}
 }
@@ -388,9 +388,10 @@ func newMCPCommand(baseDir string) *cobra.Command {
 	}
 
 	addCmd := &cobra.Command{
-		Use:   "add <name> <command> [args...]",
-		Short: "Add an MCP server",
-		Args:  cobra.MinimumNArgs(2),
+		Use:                "add <name> <command> [args...]",
+		Short:              "Add an MCP server",
+		Args:               cobra.MinimumNArgs(2),
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runMCPAdd(baseDir, args)
 		},

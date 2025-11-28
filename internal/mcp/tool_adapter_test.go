@@ -4,8 +4,8 @@
 package mcp
 
 import (
-	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -93,12 +93,7 @@ func TestMCPTool_Execute_Success(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	// Custom handler
 	server.RegisterToolHandler("echo", func(args map[string]interface{}) (interface{}, error) {
@@ -112,10 +107,6 @@ func TestMCPTool_Execute_Success(t *testing.T) {
 			},
 		}, nil
 	})
-
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -159,15 +150,12 @@ func TestMCPTool_Execute_Error(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
+	// Register handler that returns an error
+	server.RegisterToolHandler("error_tool", func(args map[string]interface{}) (interface{}, error) {
+		return nil, fmt.Errorf("simulated tool error")
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -179,7 +167,7 @@ func TestMCPTool_Execute_Error(t *testing.T) {
 	// Create adapter
 	tool := NewMCPToolAdapter(client, testTools[0])
 
-	// Execute - will fail because mock server returns error for undefined handler
+	// Execute - will fail because handler returns an error
 	result, err := tool.Execute(ctx, map[string]interface{}{})
 
 	// Should get a result, not a catastrophic error
@@ -204,12 +192,7 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	server.RegisterToolHandler("get_data", func(args map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
@@ -226,9 +209,8 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 		}, nil
 	})
 
-	go server.Run()
+	
 
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -264,12 +246,7 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	server.RegisterToolHandler("empty_tool", func(args map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
@@ -277,9 +254,8 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 		}, nil
 	})
 
-	go server.Run()
+	
 
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -311,15 +287,8 @@ func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
+	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -445,12 +414,7 @@ func TestMCPTool_Integration(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	server.RegisterToolHandler("weather", func(args map[string]interface{}) (interface{}, error) {
 		city := args["city"].(string)
@@ -464,9 +428,8 @@ func TestMCPTool_Integration(t *testing.T) {
 		}, nil
 	})
 
-	go server.Run()
+	
 
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

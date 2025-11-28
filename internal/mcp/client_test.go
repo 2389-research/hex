@@ -27,11 +27,22 @@ type nopReadCloser struct {
 
 func (nopReadCloser) Close() error { return nil }
 
-// createTestClient creates a client with mock I/O for testing
-func createTestClient(mockStdin, mockStdout, mockStderr *bytes.Buffer) *Client {
+// createTestClientAndServer creates a connected client-server pair for testing
+func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (*Client, *MockMCPServer, *bytes.Buffer) {
+	// Create bidirectional pipes for client-server communication
+	clientToServer_r, clientToServer_w := io.Pipe()
+	serverToClient_r, serverToClient_w := io.Pipe()
+	mockStderr := &bytes.Buffer{}
+
+	// Create and start server
+	server := NewMockMCPServer(serverName, serverVersion, tools)
+	server.SetIOStreams(clientToServer_r, serverToClient_w, mockStderr)
+	go server.Run()
+
+	// Create client
 	client := &Client{
-		stdin:   nopWriteCloser{mockStdin},
-		stdout:  nopReadCloser{mockStdout},
+		stdin:   clientToServer_w,  // Client writes here, server reads from clientToServer_r
+		stdout:  serverToClient_r,  // Client reads here, server writes to serverToClient_w
 		stderr:  nopReadCloser{mockStderr},
 		pending: make(map[int64]chan *jsonrpcResponse),
 		done:    make(chan struct{}),
@@ -42,7 +53,7 @@ func createTestClient(mockStdin, mockStdout, mockStderr *bytes.Buffer) *Client {
 	go client.readLoop()
 	go client.stderrLoop()
 
-	return client
+	return client, server, mockStderr
 }
 
 func TestClient_Initialize(t *testing.T) {
@@ -65,17 +76,7 @@ func TestClient_Initialize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockStdin := &bytes.Buffer{}
-			mockStdout := &bytes.Buffer{}
-			mockStderr := &bytes.Buffer{}
-
-			// Start mock server in background
-			server := NewMockMCPServer("test-server", tt.version, []Tool{})
-			server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-			go server.Run()
-
-			// Create client
-			client := createTestClient(mockStdin, mockStdout, mockStderr)
+			client, _, _ := createTestClientAndServer("test-server", tt.version, []Tool{})
 
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
@@ -97,16 +98,7 @@ func TestClient_Initialize(t *testing.T) {
 }
 
 func TestClient_Initialize_ProtocolVersionMismatch(t *testing.T) {
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	// Server supports 2024-11-05, client requests 2099-99-99
-	server := NewMockMCPServer("test-server", "2024-11-05", []Tool{})
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
+	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -148,15 +140,7 @@ func TestClient_ListTools(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
+	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -217,12 +201,7 @@ func TestClient_CallTool(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	// Register custom handler for echo tool
 	server.RegisterToolHandler("echo", func(args map[string]interface{}) (interface{}, error) {
@@ -236,10 +215,6 @@ func TestClient_CallTool(t *testing.T) {
 			},
 		}, nil
 	})
-
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -279,15 +254,7 @@ func TestClient_CallTool(t *testing.T) {
 }
 
 func TestClient_CallTool_NonexistentTool(t *testing.T) {
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", []Tool{})
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
+	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -360,15 +327,7 @@ func TestClient_JSONRPCMessageFormat(t *testing.T) {
 }
 
 func TestClient_Shutdown(t *testing.T) {
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", []Tool{})
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
+	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -401,12 +360,7 @@ func TestClient_ConcurrentToolCalls(t *testing.T) {
 		},
 	}
 
-	mockStdin := &bytes.Buffer{}
-	mockStdout := &bytes.Buffer{}
-	mockStderr := &bytes.Buffer{}
-
-	server := NewMockMCPServer("test-server", "2024-11-05", testTools)
-	server.SetIOStreams(mockStdout, mockStdin, mockStderr)
+	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	counter := 0
 	server.RegisterToolHandler("test_tool", func(args map[string]interface{}) (interface{}, error) {
@@ -420,10 +374,6 @@ func TestClient_ConcurrentToolCalls(t *testing.T) {
 			},
 		}, nil
 	})
-
-	go server.Run()
-
-	client := createTestClient(mockStdin, mockStdout, mockStderr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
