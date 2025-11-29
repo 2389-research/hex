@@ -13,14 +13,14 @@ type Message struct {
 
 // Template represents a session template loaded from YAML
 type Template struct {
-	Name            string    `yaml:"name"`                        // Template name
-	Description     string    `yaml:"description"`                 // Human-readable description
-	SystemPrompt    string    `yaml:"system_prompt,omitempty"`     // System prompt to use
-	InitialMessages []Message `yaml:"initial_messages,omitempty"`  // Pre-populated messages
-	ToolsEnabled    []string  `yaml:"tools_enabled,omitempty"`     // Tools to enable (empty = all)
-	Model           string    `yaml:"model,omitempty"`             // Preferred model
-	MaxTokens       int       `yaml:"max_tokens,omitempty"`        // Max tokens for responses
-	CreatedAt       time.Time `yaml:"-"`                           // When template was created (not in YAML)
+	Name            string    `yaml:"name"`                       // Template name
+	Description     string    `yaml:"description"`                // Human-readable description
+	SystemPrompt    string    `yaml:"system_prompt,omitempty"`    // System prompt to use
+	InitialMessages []Message `yaml:"initial_messages,omitempty"` // Pre-populated messages
+	ToolsEnabled    []string  `yaml:"tools_enabled,omitempty"`    // Tools to enable (empty = all)
+	Model           string    `yaml:"model,omitempty"`            // Preferred model
+	MaxTokens       int       `yaml:"max_tokens,omitempty"`       // Max tokens for responses
+	CreatedAt       time.Time `yaml:"-"`                          // When template was created (not in YAML)
 }
 
 // Validate checks if a template is valid

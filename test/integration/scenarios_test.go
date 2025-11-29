@@ -81,8 +81,8 @@ func TestScenario_MultipleToolsSequence(t *testing.T) {
 	CreateTestMessage(t, db, convID, "user", "Write a file")
 
 	writeParams := map[string]interface{}{
-		"path": outputFile,
-		"content":   "Test content",
+		"path":    outputFile,
+		"content": "Test content",
 	}
 
 	writeResult, err := executor.Execute(ctx, "write_file", writeParams)
@@ -219,8 +219,8 @@ func TestScenario_ToolDenial(t *testing.T) {
 
 	ctx := context.Background()
 	params := map[string]interface{}{
-		"path": testFile,
-		"content":   "Should not be written",
+		"path":    testFile,
+		"content": "Should not be written",
 	}
 
 	result, err := executor.Execute(ctx, "write_file", params)

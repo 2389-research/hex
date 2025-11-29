@@ -41,8 +41,8 @@ func setupTestData() (*storage.Conversation, []*storage.Message) {
 			ID:             "msg-2",
 			ConversationID: "test-conv-123",
 			Role:           "assistant",
-			Content: "Of course! Here's a simple example:\n\n```python\ndef greet(name):\n    return f\"Hello, {name}!\"\n```\n\nThis function takes a name and returns a greeting.",
-			CreatedAt: now.Add(-45 * time.Minute),
+			Content:        "Of course! Here's a simple example:\n\n```python\ndef greet(name):\n    return f\"Hello, {name}!\"\n```\n\nThis function takes a name and returns a greeting.",
+			CreatedAt:      now.Add(-45 * time.Minute),
 		},
 		{
 			ID:             "msg-3",
@@ -55,10 +55,10 @@ func setupTestData() (*storage.Conversation, []*storage.Message) {
 			ID:             "msg-4",
 			ConversationID: "test-conv-123",
 			Role:           "assistant",
-			Content: "Sure! Here's the improved version:\n\n```python\ndef greet(name):\n    if not isinstance(name, str):\n        raise TypeError(\"Name must be a string\")\n    if not name.strip():\n        raise ValueError(\"Name cannot be empty\")\n    return f\"Hello, {name}!\"\n```",
-			ToolCalls: `[{"type":"tool_use","id":"tool-123","name":"python_repl","input":{"code":"print('test')"}}]`,
-			Metadata:  `{"tokens":{"input":100,"output":150}}`,
-			CreatedAt: now.Add(-35 * time.Minute),
+			Content:        "Sure! Here's the improved version:\n\n```python\ndef greet(name):\n    if not isinstance(name, str):\n        raise TypeError(\"Name must be a string\")\n    if not name.strip():\n        raise ValueError(\"Name cannot be empty\")\n    return f\"Hello, {name}!\"\n```",
+			ToolCalls:      `[{"type":"tool_use","id":"tool-123","name":"python_repl","input":{"code":"print('test')"}}]`,
+			Metadata:       `{"tokens":{"input":100,"output":150}}`,
+			CreatedAt:      now.Add(-35 * time.Minute),
 		},
 	}
 
@@ -283,7 +283,7 @@ func TestHTMLExporter(t *testing.T) {
 	// Check that code blocks are present
 	// Chroma should have highlighted the code, so we look for its output
 	// The code will be wrapped in spans with inline styles
-	assert.Contains(t, output, "greet") // Function name should be present
+	assert.Contains(t, output, "greet")       // Function name should be present
 	assert.Contains(t, output, "<pre style=") // Should have syntax highlighting
 
 	// Check tool calls
@@ -307,7 +307,7 @@ func TestHTMLExporterSpecialChars(t *testing.T) {
 
 	// Check that HTML special characters are escaped
 	// The title should be escaped in the HTML
-	assert.NotContains(t, output, `Test "Conversation" with: special & chars <html>` )
+	assert.NotContains(t, output, `Test "Conversation" with: special & chars <html>`)
 	// But it should contain the escaped versions or be in a safe context
 	assert.Contains(t, output, "Test")
 	assert.Contains(t, output, "special")

@@ -52,7 +52,7 @@ func TestTaskTool_RequiresApproval_Always(t *testing.T) {
 			},
 		},
 		{
-			name: "empty params",
+			name:   "empty params",
 			params: map[string]interface{}{},
 		},
 	}

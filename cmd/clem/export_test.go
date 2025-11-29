@@ -333,7 +333,7 @@ func TestExportSpecialCharacters(t *testing.T) {
 			lowerOutput := strings.ToLower(output)
 			assert.True(t,
 				strings.Contains(lowerOutput, "special") ||
-				strings.Contains(output, "special"),
+					strings.Contains(output, "special"),
 				"Output should contain 'special'")
 		})
 	}

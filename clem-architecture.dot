@@ -1,0 +1,396 @@
+// Clem - Claude CLI Architecture
+// A comprehensive system architecture diagram showing all components,
+// data flows, and relationships in the Clem project.
+//
+// Generate with: dot -Tpng clem-architecture.dot -o clem-architecture.png
+// Or: dot -Tsvg clem-architecture.dot -o clem-architecture.svg
+
+digraph ClemArchitecture {
+    // Graph settings for optimal layout
+    rankdir=TB;
+    compound=true;
+    newrank=true;
+    splines=ortho;
+    nodesep=0.6;
+    ranksep=0.8;
+
+    // Default styles
+    node [shape=box, style=rounded, fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=9, color="#666666"];
+
+    // Color scheme
+    // User/External: lightblue
+    // CLI/Commands: lightgreen
+    // Core/API: lightyellow
+    // UI: lightcoral
+    // Storage: lightgray
+    // Tools: lightsalmon
+    // MCP: lightsteelblue
+    // Advanced Features: plum
+
+    // ========================================
+    // CLUSTER: User & External Systems
+    // ========================================
+    subgraph cluster_external {
+        label="External Systems & User";
+        style=filled;
+        fillcolor=aliceblue;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        user [label="User\n(Developer)", shape=ellipse, fillcolor=lightblue, style=filled];
+        anthropic_api [label="Anthropic API\nmessages endpoint\n(streaming)", fillcolor=lightblue, style="filled,dashed"];
+        mcp_servers [label="MCP Servers\n(filesystem, fetch,\ncustom)", fillcolor=lightblue, style="filled,dashed"];
+        filesystem [label="File System\n~/.clem/\nproject files", fillcolor=lightblue, style="filled,dashed"];
+    }
+
+    // ========================================
+    // CLUSTER: CLI Layer (Entry Point)
+    // ========================================
+    subgraph cluster_cli {
+        label="CLI Layer (cmd/clem)";
+        style=filled;
+        fillcolor=honeydew;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        main [label="main.go\nCobra Root\nApp Entry", fillcolor=lightgreen, style=filled];
+
+        // Core commands
+        subgraph cluster_core_commands {
+            label="Core Commands";
+            style=filled;
+            fillcolor=white;
+
+            root_cmd [label="root.go\nInteractive Mode\nDefault Entry", fillcolor=lightgreen, style=filled];
+            print_cmd [label="print.go\nOne-shot Query\n--print flag", fillcolor=lightgreen, style=filled];
+            setup_cmd [label="setup.go\nAPI Key Config\nsetup-token", fillcolor=lightgreen, style=filled];
+            doctor_cmd [label="doctor.go\nHealth Check\nDiagnostics", fillcolor=lightgreen, style=filled];
+        }
+
+        // Storage commands
+        subgraph cluster_storage_commands {
+            label="Storage Commands (Phase 6C.2)";
+            style=filled;
+            fillcolor=white;
+
+            history_cmd [label="history.go\nSearch History\nFTS5 Full-text", fillcolor=lightgreen, style=filled];
+            favorites_cmd [label="favorites.go\nManage Favorites\nToggle ⭐", fillcolor=lightgreen, style=filled];
+            export_cmd [label="export.go\nExport Conversations\nMD/JSON/HTML", fillcolor=lightgreen, style=filled];
+        }
+
+        // Template commands
+        subgraph cluster_template_commands {
+            label="Template Commands (Phase 6C.2)";
+            style=filled;
+            fillcolor=white;
+
+            templates_cmd [label="templates.go\nSession Templates\nYAML-based", fillcolor=lightgreen, style=filled];
+        }
+
+        // MCP commands
+        subgraph cluster_mcp_commands {
+            label="MCP Commands";
+            style=filled;
+            fillcolor=white;
+
+            mcp_cmd [label="mcp.go\nMCP Server Mgmt\nadd/remove/list", fillcolor=lightgreen, style=filled];
+        }
+    }
+
+    // ========================================
+    // CLUSTER: Core Package (API & Config)
+    // ========================================
+    subgraph cluster_core {
+        label="Core Package (internal/core)";
+        style=filled;
+        fillcolor=lightyellow;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        client [label="client.go\nHTTP Client\nMessages API", fillcolor=lightyellow, style=filled];
+        stream [label="stream.go\nSSE Parser\nDelta Accumulation", fillcolor=lightyellow, style=filled];
+        types [label="types.go\nAPI Types\nRequest/Response", fillcolor=lightyellow, style=filled];
+        config [label="config.go\nViper Config\nMulti-source", fillcolor=lightyellow, style=filled];
+    }
+
+    // ========================================
+    // CLUSTER: UI Package (Bubbletea TUI)
+    // ========================================
+    subgraph cluster_ui {
+        label="UI Package (internal/ui) - Bubbletea";
+        style=filled;
+        fillcolor=mistyrose;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        // Core UI components
+        model [label="model.go\nUI State\nBubbletea Model", fillcolor=lightcoral, style=filled];
+        update [label="update.go\nEvent Handler\nKeyboard/Msgs", fillcolor=lightcoral, style=filled];
+        view [label="view.go\nRenderer\nLipgloss/Glamour", fillcolor=lightcoral, style=filled];
+        styles [label="styles.go\nUI Styling\nColors/Borders", fillcolor=lightcoral, style=filled];
+
+        // Advanced UI features (Phase 6C.2)
+        subgraph cluster_ui_features {
+            label="Advanced Features (Phase 6C.2)";
+            style=filled;
+            fillcolor=white;
+
+            autocomplete [label="autocomplete.go\nTab Completion\nFuzzy Matching\n3 Providers", fillcolor=plum, style=filled];
+            quickactions [label="quickactions.go\nCommand Palette\n: trigger\n6 Actions", fillcolor=plum, style=filled];
+            suggestions [label="suggestions.go\nSmart Suggestions\nPattern Detection\nAdaptive Learning", fillcolor=plum, style=filled];
+        }
+    }
+
+    // ========================================
+    // CLUSTER: Storage Package (SQLite)
+    // ========================================
+    subgraph cluster_storage {
+        label="Storage Package (internal/storage) - SQLite";
+        style=filled;
+        fillcolor=lightgray;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        schema [label="schema.go\nDB Init\nMigrations", fillcolor=lightgray, style=filled];
+        conversations [label="conversations.go\nConversation CRUD\nFavorites\nFTS5 Search", fillcolor=lightgray, style=filled];
+        messages [label="messages.go\nMessage CRUD\nJSON Tool Calls", fillcolor=lightgray, style=filled];
+        migrations [label="migrations/\n001_initial.sql\n002_fts.sql\n003_tokens.sql\n004_favorites.sql", fillcolor=lightgray, style="filled,dashed"];
+
+        db_file [label="~/.clem/clem.db\nSQLite Database\nWAL Mode", shape=cylinder, fillcolor=gray, style=filled, fontcolor=white];
+    }
+
+    // ========================================
+    // CLUSTER: Tools Package (Execution)
+    // ========================================
+    subgraph cluster_tools {
+        label="Tools Package (internal/tools)";
+        style=filled;
+        fillcolor=lightsalmon;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        // Tool system
+        registry [label="registry.go\nTool Registry\nName→Tool Map", fillcolor=lightsalmon, style=filled];
+        executor [label="executor.go\nExecution Engine\nApproval Callback", fillcolor=lightsalmon, style=filled];
+        tool_interface [label="tool.go\nTool Interface\nName/Desc/Execute", fillcolor=lightsalmon, style=filled];
+        result [label="result.go\nResult Types\nSuccess/Error", fillcolor=lightsalmon, style=filled];
+
+        // Built-in tools
+        subgraph cluster_builtin_tools {
+            label="Built-in Tools";
+            style=filled;
+            fillcolor=white;
+
+            read_tool [label="read_tool.go\nRead Files\nSensitive Path Check", fillcolor=lightsalmon, style=filled];
+            write_tool [label="write_tool.go\nWrite Files\nAtomic Writes", fillcolor=lightsalmon, style=filled];
+            edit_tool [label="edit_tool.go\nString Replace\nSingle/Bulk", fillcolor=lightsalmon, style=filled];
+            bash_tool [label="bash_tool.go\nShell Commands\nTimeout/Sandbox", fillcolor=lightsalmon, style=filled];
+            grep_tool [label="grep_tool.go\nCode Search\nripgrep", fillcolor=lightsalmon, style=filled];
+            glob_tool [label="glob_tool.go\nFile Pattern\nRecursive", fillcolor=lightsalmon, style=filled];
+        }
+
+        // Advanced tools
+        subgraph cluster_advanced_tools {
+            label="Advanced Tools (Phase 4)";
+            style=filled;
+            fillcolor=white;
+
+            ask_tool [label="ask_user_question.go\nInteractive Q&A\nMultiple Choice", fillcolor=lightsalmon, style=filled];
+            todo_tool [label="todo_write.go\nTask Lists\nProgress Tracking", fillcolor=lightsalmon, style=filled];
+            web_fetch_tool [label="web_fetch.go\nHTTP GET\nHTML→Markdown", fillcolor=lightsalmon, style=filled];
+            web_search_tool [label="web_search.go\nDuckDuckGo\nDomain Filter", fillcolor=lightsalmon, style=filled];
+            task_tool [label="task.go\nSub-agents\nParallel Work", fillcolor=lightsalmon, style=filled];
+            bash_output_tool [label="bash_output.go\nBackground Monitor\nIncremental Read", fillcolor=lightsalmon, style=filled];
+            kill_shell_tool [label="kill_shell.go\nProcess Kill\nSIGTERM→SIGKILL", fillcolor=lightsalmon, style=filled];
+        }
+    }
+
+    // ========================================
+    // CLUSTER: MCP Package (Model Context Protocol)
+    // ========================================
+    subgraph cluster_mcp {
+        label="MCP Package (internal/mcp)";
+        style=filled;
+        fillcolor=lightsteelblue;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        mcp_registry [label="registry.go\nServer Configs\n.mcp.json", fillcolor=lightsteelblue, style=filled];
+        mcp_client [label="client.go\nJSON-RPC Client\nstdio Transport", fillcolor=lightsteelblue, style=filled];
+        tool_adapter [label="tool_adapter.go\nMCP→Clem Bridge\nTool Wrapper", fillcolor=lightsteelblue, style=filled];
+        tool_manager [label="tool_manager.go\nMCP Tool Registry\nMulti-server", fillcolor=lightsteelblue, style=filled];
+
+        mcp_config_file [label=".mcp.json\nServer Definitions\nstdio config", shape=note, fillcolor=lightsteelblue, style="filled,dashed"];
+    }
+
+    // ========================================
+    // CLUSTER: Templates & Export
+    // ========================================
+    subgraph cluster_templates_export {
+        label="Templates & Export (Phase 6C.2)";
+        style=filled;
+        fillcolor=lavender;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        // Templates
+        template_types [label="templates/types.go\nTemplate Structs\nYAML Schema", fillcolor=lavender, style=filled];
+        template_loader [label="templates/loader.go\nYAML Loader\nValidation", fillcolor=lavender, style=filled];
+        template_files [label="~/.clem/templates/\ncode-review.yaml\ndebug-session.yaml\nrefactor.yaml", shape=folder, fillcolor=lavender, style="filled,dashed"];
+
+        // Export
+        exporter [label="export/exporter.go\nExporter Interface\nFormat Dispatch", fillcolor=lavender, style=filled];
+        markdown_export [label="export/markdown.go\nMarkdown Export\nYAML Frontmatter", fillcolor=lavender, style=filled];
+        json_export [label="export/json.go\nJSON Export\nRound-trip", fillcolor=lavender, style=filled];
+        html_export [label="export/html.go\nHTML Export\nChroma Syntax\nXSS Safe", fillcolor=lavender, style=filled];
+    }
+
+    // ========================================
+    // CLUSTER: Suggestions System
+    // ========================================
+    subgraph cluster_suggestions {
+        label="Smart Suggestions (Phase 6C.2)";
+        style=filled;
+        fillcolor=thistle;
+        fontsize=14;
+        fontname="Arial Bold";
+
+        detector [label="suggestions/detector.go\nPattern Detection\n15+ Patterns\nContext-aware", fillcolor=thistle, style=filled];
+        learner [label="suggestions/learner.go\nAdaptive Learning\nSuccess/Failure\nDecay Model", fillcolor=thistle, style=filled];
+    }
+
+    // ========================================
+    // Main Flow: User → CLI → Components
+    // ========================================
+
+    // User interactions
+    user -> main [label="Run clem", style=bold, color=blue];
+    user -> filesystem [label="Read/Write", style=dashed];
+
+    // CLI routing
+    main -> root_cmd [label="default"];
+    main -> print_cmd [label="--print"];
+    main -> setup_cmd [label="setup-token"];
+    main -> doctor_cmd [label="doctor"];
+    main -> history_cmd [label="history"];
+    main -> favorites_cmd [label="favorite"];
+    main -> export_cmd [label="export"];
+    main -> templates_cmd [label="templates"];
+    main -> mcp_cmd [label="mcp"];
+
+    // Config loading
+    setup_cmd -> config [label="write"];
+    {print_cmd, root_cmd} -> config [label="load"];
+    config -> filesystem [label="read .env\nconfig.yaml"];
+
+    // Interactive mode flow
+    root_cmd -> model [label="Initialize\nBubbletea", style=bold, color=green];
+    model -> update [label="Event Loop"];
+    update -> view [label="Render"];
+    view -> user [label="Display", style=bold, color=green];
+
+    // UI feature integration
+    model -> autocomplete [label="Tab pressed"];
+    model -> quickactions [label=": pressed"];
+    model -> suggestions [label="Analyze input"];
+
+    autocomplete -> model [label="Completion\nselected"];
+    quickactions -> model [label="Action\nexecuted"];
+    suggestions -> model [label="Show\nsuggestions"];
+
+    // Template loading
+    templates_cmd -> template_loader;
+    template_loader -> template_files [label="Load YAML"];
+    root_cmd -> template_loader [label="--template"];
+
+    // API communication
+    {print_cmd, model} -> client [label="Send message", style=bold, color=purple];
+    client -> types [label="Marshal"];
+    client -> stream [label="Parse SSE"];
+    client -> anthropic_api [label="HTTPS POST", style=bold, color=purple];
+    anthropic_api -> stream [label="SSE chunks", style=bold, color=purple];
+    stream -> model [label="Deltas", style=bold, color=purple];
+
+    // Storage operations
+    model -> conversations [label="Save/Load"];
+    conversations -> schema [label="Use"];
+    conversations -> db_file [label="SQL Query"];
+    messages -> db_file [label="SQL Query"];
+    history_cmd -> conversations [label="FTS5 Search"];
+    favorites_cmd -> conversations [label="Set Favorite"];
+    export_cmd -> conversations [label="Fetch"];
+    export_cmd -> messages [label="Fetch"];
+
+    // Migration management
+    schema -> migrations [label="Apply"];
+    migrations -> db_file [label="Execute"];
+
+    // Tool execution flow
+    stream -> executor [label="Tool use\ndetected", style=bold, color=red];
+    executor -> registry [label="Get tool"];
+    registry -> tool_interface [label="Return"];
+    executor -> user [label="Approval\nprompt", style=dashed, color=orange];
+    user -> executor [label="y/n", style=dashed, color=orange];
+    executor -> {read_tool, write_tool, edit_tool, bash_tool, grep_tool, glob_tool, ask_tool, todo_tool, web_fetch_tool, web_search_tool, task_tool, bash_output_tool, kill_shell_tool} [label="Execute", style=bold, color=red];
+
+    // Tool → Filesystem interactions
+    read_tool -> filesystem [label="read"];
+    write_tool -> filesystem [label="write"];
+    edit_tool -> filesystem [label="modify"];
+    bash_tool -> filesystem [label="execute"];
+    grep_tool -> filesystem [label="search"];
+    glob_tool -> filesystem [label="find"];
+
+    // Tool → Network interactions
+    web_fetch_tool -> anthropic_api [label="HTTP GET", style=dashed];
+    web_search_tool -> anthropic_api [label="DuckDuckGo", style=dashed];
+
+    // Tool results
+    {read_tool, write_tool, edit_tool, bash_tool, grep_tool, glob_tool, ask_tool, todo_tool, web_fetch_tool, web_search_tool, task_tool, bash_output_tool, kill_shell_tool} -> result [label="Return"];
+    result -> executor [label="Success/Error"];
+    executor -> model [label="Tool result", style=bold, color=red];
+
+    // MCP integration
+    mcp_cmd -> mcp_registry [label="Add/Remove"];
+    mcp_registry -> mcp_config_file [label="Save"];
+    root_cmd -> mcp_registry [label="Load servers"];
+    mcp_registry -> mcp_client [label="Spawn process"];
+    mcp_client -> mcp_servers [label="JSON-RPC\nstdin/stdout", style=bold, color=darkblue];
+    mcp_client -> tool_manager [label="List tools"];
+    tool_manager -> tool_adapter [label="Wrap each"];
+    tool_adapter -> registry [label="Register\nMCP tools", style=bold, color=darkblue];
+
+    // Export flow
+    export_cmd -> exporter [label="Format"];
+    exporter -> {markdown_export, json_export, html_export} [label="Dispatch"];
+    {markdown_export, json_export, html_export} -> filesystem [label="Write file"];
+
+    // Suggestions flow
+    model -> detector [label="Analyze message"];
+    detector -> learner [label="Check history"];
+    learner -> suggestions [label="Rank suggestions"];
+    suggestions -> model [label="Display hints"];
+    model -> learner [label="Record feedback\n(accept/ignore)"];
+
+    // Legend
+    subgraph cluster_legend {
+        label="Legend";
+        style=filled;
+        fillcolor=white;
+        fontsize=12;
+        fontname="Arial Bold";
+
+        legend_user [label="User/External", fillcolor=lightblue, style=filled, shape=box];
+        legend_cli [label="CLI Commands", fillcolor=lightgreen, style=filled, shape=box];
+        legend_core [label="Core/API", fillcolor=lightyellow, style=filled, shape=box];
+        legend_ui [label="UI Components", fillcolor=lightcoral, style=filled, shape=box];
+        legend_storage [label="Storage", fillcolor=lightgray, style=filled, shape=box];
+        legend_tools [label="Tools", fillcolor=lightsalmon, style=filled, shape=box];
+        legend_mcp [label="MCP", fillcolor=lightsteelblue, style=filled, shape=box];
+        legend_features [label="Phase 6C.2", fillcolor=plum, style=filled, shape=box];
+
+        {rank=same; legend_user; legend_cli; legend_core; legend_ui;}
+        {rank=same; legend_storage; legend_tools; legend_mcp; legend_features;}
+    }
+}

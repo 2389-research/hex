@@ -59,7 +59,7 @@ func TestWriteTool_RequiresApproval_AlwaysTrue(t *testing.T) {
 			},
 		},
 		{
-			name: "empty params",
+			name:   "empty params",
 			params: map[string]interface{}{},
 		},
 		{

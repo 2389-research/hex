@@ -209,9 +209,6 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 		}, nil
 	})
 
-	
-
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -254,9 +251,6 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 		}, nil
 	})
 
-	
-
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -288,7 +282,6 @@ func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
 	}
 
 	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
-
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -351,9 +344,9 @@ func TestMCPTool_AsToolDefinition(t *testing.T) {
 
 func TestMCPTool_ConvertParams(t *testing.T) {
 	tests := []struct {
-		name   string
-		input  map[string]interface{}
-		want   map[string]interface{}
+		name  string
+		input map[string]interface{}
+		want  map[string]interface{}
 	}{
 		{
 			name: "simple params",
@@ -429,9 +422,6 @@ func TestMCPTool_Integration(t *testing.T) {
 			},
 		}, nil
 	})
-
-	
-
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

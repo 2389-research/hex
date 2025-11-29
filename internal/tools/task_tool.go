@@ -26,7 +26,7 @@ const (
 // TaskTool implements sub-agent task delegation functionality
 type TaskTool struct {
 	DefaultTimeout time.Duration // Default timeout for tasks
-	ClembinPath    string         // Path to clem binary (empty = search PATH)
+	ClembinPath    string        // Path to clem binary (empty = search PATH)
 }
 
 // NewTaskTool creates a new task tool with default settings

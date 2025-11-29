@@ -256,7 +256,7 @@ func TestWebSearchTool_Execute_WithBlockedDomains(t *testing.T) {
 	ctx := context.Background()
 
 	params := map[string]interface{}{
-		"query":            "test",
+		"query":           "test",
 		"blocked_domains": []interface{}{"blocked.com"},
 	}
 

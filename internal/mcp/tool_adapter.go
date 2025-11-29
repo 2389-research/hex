@@ -140,9 +140,9 @@ func (a *MCPToolAdapter) GetInputSchema() map[string]interface{} {
 
 // MCPToolManager manages MCP tool adapters for a server
 type MCPToolManager struct {
-	client  *Client
-	tools   map[string]*MCPToolAdapter
-	mu      sync.RWMutex
+	client *Client
+	tools  map[string]*MCPToolAdapter
+	mu     sync.RWMutex
 }
 
 // NewMCPToolManager creates a new tool manager for an MCP server

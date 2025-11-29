@@ -284,9 +284,9 @@ func TestGrepTool_TypeFilter(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	files := map[string]string{
-		"test.go":  "func main",
-		"test.py":  "def main",
-		"main.go":  "func test",
+		"test.go": "func main",
+		"test.py": "def main",
+		"main.go": "func test",
 	}
 
 	for name, content := range files {

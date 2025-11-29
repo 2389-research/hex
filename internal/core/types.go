@@ -104,7 +104,7 @@ func (m *Message) Validate() error {
 
 // ToolUse represents a tool invocation from the API
 type ToolUse struct {
-	Type  string                 `json:"type"`  // "tool_use"
+	Type  string                 `json:"type"` // "tool_use"
 	ID    string                 `json:"id"`
 	Name  string                 `json:"name"`
 	Input map[string]interface{} `json:"input"`

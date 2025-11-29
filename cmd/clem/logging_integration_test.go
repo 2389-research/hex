@@ -30,7 +30,7 @@ func TestLoggingIntegration(t *testing.T) {
 
 	// Set flags
 	logLevel = "debug"
-	logFile = logFile
+	logFile = "" // Use stderr (default)
 	logFormat = "text"
 
 	// Initialize logging

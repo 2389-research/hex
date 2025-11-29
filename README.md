@@ -7,7 +7,7 @@
 
 A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
 
-**Latest Version**: v0.5.0
+**Latest Version**: v1.0.0
 
 ## Features
 
@@ -46,6 +46,9 @@ A Go implementation of Claude Code CLI with interactive mode and tool execution 
 ```bash
 # macOS and Linux
 curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+
+# Windows (PowerShell as Administrator)
+iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
 
 # Verify installation
 clem --version
@@ -293,13 +296,37 @@ clem
 
 ## Development
 
-### Build
+### Prerequisites
+
+```bash
+# Install pre-commit for Git hooks
+# macOS
+brew install pre-commit
+
+# Linux
+pip install pre-commit
+
+# Verify installation
+pre-commit --version
+```
+
+### Setup Development Environment
 
 ```bash
 # Clone repository
 git clone https://github.com/harper/clem.git
 cd clem
 
+# Install pre-commit hooks
+pre-commit install
+
+# Run hooks manually (optional)
+pre-commit run --all-files
+```
+
+### Build
+
+```bash
 # Build
 make build
 
@@ -319,6 +346,33 @@ go test ./...
 # With coverage
 go test -cover ./...
 ```
+
+### Pre-commit Hooks
+
+We use pre-commit hooks to maintain code quality. Hooks run automatically on `git commit`:
+
+**Configured Hooks**:
+- `go fmt` - Format Go code
+- `go vet` - Check for suspicious constructs
+- `goimports` - Organize imports
+- `go test` - Run all tests (60s timeout)
+- `go mod tidy` - Keep dependencies clean
+- `golangci-lint` - Comprehensive linting (uses `.golangci.yml`)
+- File checks (trailing whitespace, YAML syntax, etc.)
+
+**Manual Execution**:
+```bash
+# Run all hooks
+pre-commit run --all-files
+
+# Run specific hook
+pre-commit run go-fmt --all-files
+
+# Skip hooks for emergency commits (not recommended)
+git commit --no-verify
+```
+
+**Note**: Hooks ensure code quality and prevent common mistakes. They run quickly (typically < 10s).
 
 ### Project Structure
 

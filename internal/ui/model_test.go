@@ -5,8 +5,8 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/harper/clem/internal/ui"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewModel(t *testing.T) {

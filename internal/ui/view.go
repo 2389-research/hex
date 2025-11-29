@@ -557,4 +557,3 @@ func (m *Model) renderSuggestions() string {
 
 	return suggestionBoxStyle.Render(content.String())
 }
-

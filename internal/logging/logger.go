@@ -50,11 +50,11 @@ type Config struct {
 
 // Logger wraps slog.Logger with additional functionality
 type Logger struct {
-	slog      *slog.Logger
-	level     Level
-	format    Format
-	file      *os.File
-	mu        sync.Mutex
+	slog   *slog.Logger
+	level  Level
+	format Format
+	file   *os.File
+	mu     sync.Mutex
 }
 
 var (

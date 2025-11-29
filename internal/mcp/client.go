@@ -16,17 +16,17 @@ import (
 
 // Client represents an MCP client connected to a server via stdio
 type Client struct {
-	cmd        *exec.Cmd
-	stdin      io.WriteCloser
-	stdout     io.ReadCloser
-	stderr     io.ReadCloser
-	nextID     atomic.Int64
-	mu         sync.Mutex
-	pending    map[int64]chan *jsonrpcResponse
+	cmd         *exec.Cmd
+	stdin       io.WriteCloser
+	stdout      io.ReadCloser
+	stderr      io.ReadCloser
+	nextID      atomic.Int64
+	mu          sync.Mutex
+	pending     map[int64]chan *jsonrpcResponse
 	initialized bool
-	serverInfo ServerInfo
-	reader     *bufio.Scanner
-	done       chan struct{}
+	serverInfo  ServerInfo
+	reader      *bufio.Scanner
+	done        chan struct{}
 }
 
 // ServerInfo contains information about the connected MCP server

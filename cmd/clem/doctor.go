@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
 	"github.com/harper/clem/internal/core"
+	"github.com/spf13/cobra"
 )
 
 var doctorCmd = &cobra.Command{

@@ -22,14 +22,14 @@ const (
 
 // ToolSpinner manages spinner state for tool execution
 type ToolSpinner struct {
-	spinner      spinner.Model
-	spinnerType  SpinnerType
-	message      string
-	active       bool
-	startTime    time.Time
-	tokenRate    int // tokens per second for streaming
-	tokensCount  int
-	style        lipgloss.Style
+	spinner     spinner.Model
+	spinnerType SpinnerType
+	message     string
+	active      bool
+	startTime   time.Time
+	tokenRate   int // tokens per second for streaming
+	tokensCount int
+	style       lipgloss.Style
 }
 
 var (

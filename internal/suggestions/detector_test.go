@@ -11,11 +11,11 @@ func TestDetector_AnalyzeInput_FilePaths(t *testing.T) {
 	detector := NewDetector()
 
 	tests := []struct {
-		name           string
-		input          string
-		expectedTool   string
-		minConfidence  float64
-		shouldSuggest  bool
+		name          string
+		input         string
+		expectedTool  string
+		minConfidence float64
+		shouldSuggest bool
 	}{
 		{
 			name:          "absolute path",

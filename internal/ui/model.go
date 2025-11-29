@@ -10,8 +10,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/glamour"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
@@ -100,11 +100,11 @@ type Model struct {
 	// Task 12: Tool Execution UI
 	toolRegistry     *tools.Registry
 	toolExecutor     *tools.Executor
-	pendingToolUse   *core.ToolUse    // Tool waiting for approval/execution
-	toolApprovalMode bool              // Showing approval prompt
-	executingTool    bool              // Tool is running
-	currentToolID    string            // ID of currently executing tool
-	toolResults      []ToolResult      // Results to send back to API
+	pendingToolUse   *core.ToolUse // Tool waiting for approval/execution
+	toolApprovalMode bool          // Showing approval prompt
+	executingTool    bool          // Tool is running
+	currentToolID    string        // ID of currently executing tool
+	toolResults      []ToolResult  // Results to send back to API
 
 	// Phase 6C: Enhanced UI Components
 	spinner          *ToolSpinner
@@ -119,9 +119,9 @@ type Model struct {
 	contextUsage   ctxmgr.ContextUsage
 
 	// Phase 6C Task 6: Quick Actions Menu
-	quickActionsMode     bool               // Quick actions menu is open
-	quickActionsInput    string             // Current input in quick actions
-	quickActionsFiltered []*QuickAction     // Filtered actions from search
+	quickActionsMode     bool                  // Quick actions menu is open
+	quickActionsInput    string                // Current input in quick actions
+	quickActionsFiltered []*QuickAction        // Filtered actions from search
 	quickActionsRegistry *QuickActionsRegistry // Registry of available actions
 
 	// Phase 6C Task 4: Autocomplete System
@@ -132,7 +132,7 @@ type Model struct {
 	showSuggestions    bool          // Whether to display suggestions
 	suggestionDetector *SuggestionDetector
 	suggestionLearner  *SuggestionLearner
-	lastAnalyzedInput  string        // Track last input to avoid re-analyzing
+	lastAnalyzedInput  string // Track last input to avoid re-analyzing
 
 	// Phase 6C Task 3: Template System
 	systemPrompt string // System prompt from template or custom
@@ -182,16 +182,16 @@ func NewModel(conversationID, model string) *Model {
 	suggestionLearner := NewSuggestionLearner()
 
 	return &Model{
-		ConversationID:   conversationID,
-		Model:            model,
-		Messages:         []Message{},
-		Input:            ta,
-		Viewport:         vp,
-		Width:            80,
-		Height:           24,
-		CurrentView:      ViewModeChat,
-		Status:           StatusIdle,
-		renderer:         renderer,
+		ConversationID:       conversationID,
+		Model:                model,
+		Messages:             []Message{},
+		Input:                ta,
+		Viewport:             vp,
+		Width:                80,
+		Height:               24,
+		CurrentView:          ViewModeChat,
+		Status:               StatusIdle,
+		renderer:             renderer,
 		spinner:              spinner,
 		streamingDisplay:     streamingDisplay,
 		statusBar:            statusBar,

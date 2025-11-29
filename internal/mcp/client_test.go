@@ -41,8 +41,8 @@ func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (
 
 	// Create client
 	client := &Client{
-		stdin:   clientToServer_w,  // Client writes here, server reads from clientToServer_r
-		stdout:  serverToClient_r,  // Client reads here, server writes to serverToClient_w
+		stdin:   clientToServer_w, // Client writes here, server reads from clientToServer_r
+		stdout:  serverToClient_r, // Client reads here, server writes to serverToClient_w
 		stderr:  nopReadCloser{mockStderr},
 		pending: make(map[int64]chan *jsonrpcResponse),
 		done:    make(chan struct{}),

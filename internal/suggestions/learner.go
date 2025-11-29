@@ -27,11 +27,11 @@ type FeedbackEvent struct {
 
 // Learner tracks suggestion effectiveness and adjusts confidence
 type Learner struct {
-	mu            sync.RWMutex
-	history       []FeedbackEvent
-	adjustments   map[string]float64 // tool name -> confidence adjustment (-0.2 to +0.2)
-	maxHistory    int
-	decayFactor   float64 // How much to decay old adjustments (0.0 - 1.0)
+	mu          sync.RWMutex
+	history     []FeedbackEvent
+	adjustments map[string]float64 // tool name -> confidence adjustment (-0.2 to +0.2)
+	maxHistory  int
+	decayFactor float64 // How much to decay old adjustments (0.0 - 1.0)
 }
 
 // NewLearner creates a new learning system
@@ -39,8 +39,8 @@ func NewLearner() *Learner {
 	return &Learner{
 		history:     make([]FeedbackEvent, 0),
 		adjustments: make(map[string]float64),
-		maxHistory:  100,      // Keep last 100 events
-		decayFactor: 0.95,     // Slowly decay adjustments
+		maxHistory:  100,  // Keep last 100 events
+		decayFactor: 0.95, // Slowly decay adjustments
 	}
 }
 

@@ -51,12 +51,12 @@ type Autocomplete struct {
 // NewAutocomplete creates a new autocomplete instance
 func NewAutocomplete() *Autocomplete {
 	ac := &Autocomplete{
-		providers:      make(map[string]CompletionProvider),
-		active:         false,
-		completions:    []Completion{},
-		selectedIndex:  0,
-		maxCompletions: 10,
-		currentInput:   "",
+		providers:       make(map[string]CompletionProvider),
+		active:          false,
+		completions:     []Completion{},
+		selectedIndex:   0,
+		maxCompletions:  10,
+		currentInput:    "",
 		currentProvider: "",
 	}
 

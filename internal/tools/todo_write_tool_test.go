@@ -295,7 +295,7 @@ func TestTodoWriteTool_Execute_SingleInProgressTodo(t *testing.T) {
 
 	// Check output format
 	assert.Contains(t, result.Output, "⏳")
-	assert.Contains(t, result.Output, "Writing code") // activeForm shown for in_progress
+	assert.Contains(t, result.Output, "Writing code")  // activeForm shown for in_progress
 	assert.NotContains(t, result.Output, "Write code") // content not shown when in_progress
 
 	// Check metadata

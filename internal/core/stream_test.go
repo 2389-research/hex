@@ -6,9 +6,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/harper/clem/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/harper/clem/internal/core"
 )
 
 func TestParseSSEChunk(t *testing.T) {

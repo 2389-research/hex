@@ -143,7 +143,7 @@ func TestKillShellTool_Execute_KillRunningProcess(t *testing.T) {
 	}
 
 	// Verify process is actually dead
-	time.Sleep(100 * time.Millisecond) // Give it time to die
+	time.Sleep(100 * time.Millisecond)  // Give it time to die
 	checkErr := cmd.Process.Signal(nil) // Signal(nil) checks if process exists
 	if checkErr == nil {
 		t.Error("Process should be dead but is still running")

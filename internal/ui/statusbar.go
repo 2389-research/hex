@@ -21,16 +21,16 @@ const (
 
 // StatusBar manages the bottom status bar display
 type StatusBar struct {
-	model          string
-	tokensInput    int
-	tokensOutput   int
-	tokensTotal    int
-	contextSize    int
-	connection     ConnectionStatus
-	currentMode    string
-	width          int
-	helpVisible    bool
-	customMessage  string
+	model         string
+	tokensInput   int
+	tokensOutput  int
+	tokensTotal   int
+	contextSize   int
+	connection    ConnectionStatus
+	currentMode   string
+	width         int
+	helpVisible   bool
+	customMessage string
 }
 
 var (
@@ -51,7 +51,7 @@ var (
 			Bold(true)
 
 	contextSizeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("99"))
+				Foreground(lipgloss.Color("99"))
 
 	connectionConnectedStyle = lipgloss.NewStyle().
 					Foreground(lipgloss.Color("35")).

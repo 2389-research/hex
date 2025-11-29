@@ -90,8 +90,8 @@ func TestWriteToolExecution(t *testing.T) {
 	// Execute
 	ctx := context.Background()
 	params := map[string]interface{}{
-		"path": testFile,
-		"content":   "Test content written by tool",
+		"path":    testFile,
+		"content": "Test content written by tool",
 	}
 
 	result, err := writeTool.Execute(ctx, params)
@@ -189,8 +189,8 @@ func TestToolExecutorWithDenial(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "denied.txt")
 
 	params := map[string]interface{}{
-		"path": testFile,
-		"content":   "This should be denied",
+		"path":    testFile,
+		"content": "This should be denied",
 	}
 
 	ctx := context.Background()
@@ -232,8 +232,8 @@ func TestWriteToolCreatesDirectories(t *testing.T) {
 
 	ctx := context.Background()
 	params := map[string]interface{}{
-		"path": nestedPath,
-		"content":   "Nested file content",
+		"path":    nestedPath,
+		"content": "Nested file content",
 	}
 
 	result, err := writeTool.Execute(ctx, params)
