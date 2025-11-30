@@ -177,7 +177,7 @@ func writeFile(path, content string, append bool) (int, error) {
 		file, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) //nolint:gosec // G304: Path validated by caller
 	} else {
 		file, err = os.Create(path) //nolint:gosec // G304: Path validated by caller
-	} //nolint:gosec // G304: Path validated by caller
+	}
 
 	if err != nil {
 		return 0, err

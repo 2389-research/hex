@@ -134,8 +134,7 @@ func (t *ReadTool) Execute(ctx context.Context, params map[string]interface{}) (
 	}
 
 	// Read file contents
-	//nolint:gosec // G304: Tool accepts user file paths as intended functionality
-	content, err := os.ReadFile(absPath)
+	content, err := os.ReadFile(absPath) //nolint:gosec // G304: Tool accepts user file paths as intended functionality
 	if err != nil {
 		return &Result{
 			ToolName: "read_file",

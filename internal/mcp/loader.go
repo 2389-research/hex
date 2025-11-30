@@ -27,8 +27,7 @@ func LoadMCPTools(baseDir string, registry *tools.Registry) error {
 	}
 
 	// Read and parse config file
-	//nolint:gosec // G304: Loading config/template files from validated paths
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) //nolint:gosec // G304: Loading config/template files from validated paths
 	if err != nil {
 		return fmt.Errorf("failed to read .mcp.json: %w", err)
 	}

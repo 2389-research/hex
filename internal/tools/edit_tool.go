@@ -80,8 +80,7 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]interface{}) (
 	}
 
 	// Read the file
-	//nolint:gosec // G304: Tool accepts user file paths as intended functionality
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filePath) //nolint:gosec // G304: Tool accepts user file paths as intended functionality
 	if err != nil {
 		return &Result{
 			ToolName: t.Name(),

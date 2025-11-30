@@ -139,8 +139,7 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]interface{}) (
 	args = append(args, pattern, searchPath)
 
 	// Execute ripgrep
-	//nolint:gosec // G204: Args are constructed from validated flags and user search parameters (intended tool functionality)
-	cmd := exec.CommandContext(ctx, "rg", args...)
+	cmd := exec.CommandContext(ctx, "rg", args...) //nolint:gosec // G204: Args are constructed from validated flags and user search parameters (intended tool functionality)
 	output, err := cmd.CombinedOutput()
 
 	// ripgrep returns exit code 1 when no matches found (not an error)

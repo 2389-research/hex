@@ -170,8 +170,7 @@ func (t *TaskTool) Execute(ctx context.Context, params map[string]interface{}) (
 		args = append([]string{"--resume", resumeID}, args...)
 	}
 
-	//nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
-	cmd := exec.CommandContext(cmdCtx, clembinPath, args...)
+	cmd := exec.CommandContext(cmdCtx, clembinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()
@@ -317,8 +316,7 @@ func (t *TaskTool) buildClem(ctx context.Context) (string, error) {
 	// Build to temporary location
 	tempBin := filepath.Join(os.TempDir(), "clem-"+fmt.Sprintf("%d", time.Now().Unix()))
 
-	//nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
-	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/clem")
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/clem") //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 	buildCmd.Dir = projectRoot
 
 	var buildOutput bytes.Buffer
@@ -455,8 +453,7 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 		args = append([]string{"--resume", resumeID}, args...)
 	}
 
-	//nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
-	cmd := exec.CommandContext(cmdCtx, clembinPath, args...)
+	cmd := exec.CommandContext(cmdCtx, clembinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()

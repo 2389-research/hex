@@ -15,8 +15,7 @@ import (
 // LoadTemplate loads a single template from a file path
 func LoadTemplate(path string) (*Template, error) {
 	// Read file
-	//nolint:gosec // G304: Loading config/template files from validated paths
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // G304: Loading config/template files from validated paths
 	if err != nil {
 		return nil, fmt.Errorf("read template file: %w", err)
 	}

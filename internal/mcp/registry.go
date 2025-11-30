@@ -145,7 +145,7 @@ func (r *Registry) Load() error {
 		return nil
 	}
 
-	data, err := os.ReadFile(configPath) //nolint:gosec // G304: Path validated by caller
+	data, err := os.ReadFile(configPath) //nolint:gosec // G304: Loading config/template files from validated paths
 	if err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
