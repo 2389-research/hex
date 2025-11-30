@@ -259,28 +259,48 @@ func (m *Model) renderStatusBar() string {
 
 // renderToolApprovalPrompt renders the tool approval UI
 func (m *Model) renderToolApprovalPrompt() string {
-	if !m.toolApprovalMode || m.pendingToolUse == nil {
+	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
 		return ""
 	}
 
 	var prompt strings.Builder
 	prompt.WriteString("⚠ Tool Approval Required\n\n")
-	prompt.WriteString(fmt.Sprintf("Tool: %s\n", m.pendingToolUse.Name))
 
-	// Format parameters nicely
-	if len(m.pendingToolUse.Input) > 0 {
-		prompt.WriteString("Parameters:\n")
-		for key, value := range m.pendingToolUse.Input {
-			// Truncate long values
-			valueStr := fmt.Sprintf("%v", value)
-			if len(valueStr) > 100 {
-				valueStr = valueStr[:97] + "..."
+	// Handle single vs multiple tools
+	if len(m.pendingToolUses) == 1 {
+		tool := m.pendingToolUses[0]
+		prompt.WriteString(fmt.Sprintf("Tool: %s\n", tool.Name))
+
+		// Format parameters nicely
+		if len(tool.Input) > 0 {
+			prompt.WriteString("Parameters:\n")
+			for key, value := range tool.Input {
+				// Truncate long values
+				valueStr := fmt.Sprintf("%v", value)
+				if len(valueStr) > 100 {
+					valueStr = valueStr[:97] + "..."
+				}
+				prompt.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
 			}
-			prompt.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
+		}
+	} else {
+		// Multiple tools - show summary
+		prompt.WriteString(fmt.Sprintf("The assistant wants to execute %d tools:\n\n", len(m.pendingToolUses)))
+		for i, tool := range m.pendingToolUses {
+			prompt.WriteString(fmt.Sprintf("%d. %s", i+1, tool.Name))
+			if len(tool.Input) > 0 {
+				// Show brief parameter summary
+				keys := make([]string, 0, len(tool.Input))
+				for k := range tool.Input {
+					keys = append(keys, k)
+				}
+				prompt.WriteString(fmt.Sprintf(" (%s)", strings.Join(keys, ", ")))
+			}
+			prompt.WriteString("\n")
 		}
 	}
 
-	prompt.WriteString("\nAllow this tool to execute? (y/n): ")
+	prompt.WriteString("\nAllow these tool(s) to execute? (y/n): ")
 
 	return toolApprovalStyle.Render(prompt.String())
 }
@@ -292,11 +312,15 @@ func (m *Model) renderToolStatus() string {
 	}
 
 	toolName := "unknown"
-	if m.pendingToolUse != nil {
-		toolName = m.pendingToolUse.Name
+	if len(m.executingToolUses) > 0 {
+		if len(m.executingToolUses) == 1 {
+			toolName = m.executingToolUses[0].Name
+		} else {
+			toolName = fmt.Sprintf("%d tools", len(m.executingToolUses))
+		}
 	}
 
-	return toolExecutingStyle.Render(fmt.Sprintf("⏳ Executing tool: %s...", toolName))
+	return toolExecutingStyle.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
 }
 
 // Phase 6C: Enhanced rendering methods
@@ -318,17 +342,22 @@ func (m *Model) renderHelpPanel() string {
 
 // renderToolApprovalPromptEnhanced renders enhanced tool approval UI
 func (m *Model) renderToolApprovalPromptEnhanced() string {
-	if !m.toolApprovalMode || m.pendingToolUse == nil {
+	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
 		return m.renderToolApprovalPrompt() // Fallback to basic version
 	}
 
 	// Use the new ApprovalPrompt component if available
-	if m.approvalPrompt == nil {
-		m.approvalPrompt = NewApprovalPrompt(m.pendingToolUse)
-		m.approvalPrompt.SetWidth(m.Width)
+	// For now, only use enhanced prompt for single tools
+	if len(m.pendingToolUses) == 1 {
+		if m.approvalPrompt == nil {
+			m.approvalPrompt = NewApprovalPrompt(m.pendingToolUses[0])
+			m.approvalPrompt.SetWidth(m.Width)
+		}
+		return m.approvalPrompt.View()
 	}
 
-	return m.approvalPrompt.View()
+	// For multiple tools, fall back to basic version which handles the list
+	return m.renderToolApprovalPrompt()
 }
 
 // renderStatusBarEnhanced renders the enhanced status bar

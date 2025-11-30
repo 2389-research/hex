@@ -362,7 +362,8 @@ func TestGrepTool_CaseInsensitive(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	content := "Hello HELLO hello"
+	// Put each "hello" on a separate line so rg -c counts 3 lines
+	content := "Hello\nHELLO\nhello"
 	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -384,7 +385,7 @@ func TestGrepTool_CaseInsensitive(t *testing.T) {
 	}
 
 	output := result.Output
-	// Should match all three
+	// Should match all three lines
 	if !strings.Contains(output, "3") {
 		t.Errorf("Expected count of 3 (case insensitive), got: %s", output)
 	}

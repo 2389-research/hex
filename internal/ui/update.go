@@ -4,7 +4,9 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,10 +33,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case *streamStartMsg:
 		// Store the stream channel and start reading
 		m.streamChan = msg.channel
+		m.SetStatus(StatusStreaming)
+		m.updateViewport()
 		return m, m.readStreamChunks(m.streamChan)
 
 	// Task 12: Handle tool execution results
 	case toolExecutionMsg:
+		fmt.Fprintf(os.Stderr, "[TOOL_RESULT_RECEIVED] tool_use_id=%s, err=%v\n", msg.toolUseID, msg.err)
+
 		m.executingTool = false
 		m.currentToolID = ""
 
@@ -44,14 +50,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.err != nil {
+			fmt.Fprintf(os.Stderr, "[TOOL_RESULT_ERROR] tool_use_id=%s, error=%s\n", msg.toolUseID, msg.err.Error())
 			m.ErrorMessage = "Tool execution error: " + msg.err.Error()
 			m.AddMessage("tool", "Tool error: "+msg.err.Error())
 		} else {
+			fmt.Fprintf(os.Stderr, "[TOOL_RESULT_SUCCESS] tool_use_id=%s, storing result\n", msg.toolUseID)
+
+			// Validate that tool_use exists in message history before storing result
+			m.validateToolUseExists(msg.toolUseID)
+
 			// Store result
 			m.toolResults = append(m.toolResults, ToolResult{
 				ToolUseID: msg.toolUseID,
 				Result:    msg.result,
 			})
+
+			fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
 
 			// Display result in UI
 			resultMsg := formatToolResult(msg.result)
@@ -61,6 +75,34 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateViewport()
 
 		// Send tool results back to API and continue conversation
+		fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
+		return m, m.sendToolResults()
+
+	// Handle batch tool execution results
+	case toolBatchExecutionMsg:
+		fmt.Fprintf(os.Stderr, "[BATCH_RESULT_RECEIVED] received results for %d tool(s)\n", len(msg.results))
+
+		m.executingTool = false
+		m.executingToolUses = nil // Clear executing tools
+
+		// Phase 6C: Stop spinner
+		if m.spinner != nil {
+			m.spinner.Stop()
+		}
+
+		// Store all results
+		m.toolResults = append(m.toolResults, msg.results...)
+
+		// Display results in UI
+		for _, result := range msg.results {
+			resultMsg := formatToolResult(result.Result)
+			m.AddMessage("tool", resultMsg)
+		}
+
+		m.updateViewport()
+
+		// Send ALL tool results back to API in one user message
+		fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
 	case tea.KeyMsg:
@@ -457,21 +499,53 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Task 12: Handle tool_use content blocks
 	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
 		if chunk.ContentBlock.Type == "tool_use" {
-			// Commit any streaming text before handling tool
-			m.CommitStreamingText()
+			fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
 
-			// Extract tool use
-			toolUse := &core.ToolUse{
+			// DON'T commit streaming text yet - it will be included in the same
+			// assistant message as the tool_use blocks when the stream ends
+			// (see lines 584-603 which creates one message with both text and tool_use blocks)
+
+			// Start assembling tool use - Input will come in delta events
+			m.assemblingToolUse = &core.ToolUse{
 				Type:  "tool_use",
 				ID:    chunk.ContentBlock.ID,
 				Name:  chunk.ContentBlock.Name,
-				Input: chunk.ContentBlock.Input,
+				Input: make(map[string]interface{}), // Will be populated when JSON is complete
 			}
-
-			// Pause streaming and handle tool
-			m.streamChan = nil // Pause stream processing
-			return m, m.HandleToolUse(toolUse)
+			m.toolInputJSONBuf = "" // Reset JSON buffer
+			// Continue processing stream to get input_json_delta events
 		}
+	}
+
+	// Handle input_json_delta events to build tool parameters
+	if chunk.Type == "content_block_delta" && chunk.Delta != nil && m.assemblingToolUse != nil {
+		if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" {
+			// Accumulate JSON chunks
+			m.toolInputJSONBuf += chunk.Delta.PartialJSON
+		}
+	}
+
+	// Handle content_block_stop - tool parameters are complete
+	if chunk.Type == "content_block_stop" && m.assemblingToolUse != nil {
+		// Parse accumulated JSON into Input map
+		if m.toolInputJSONBuf != "" {
+			var input map[string]interface{}
+			if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
+				m.assemblingToolUse.Input = input
+				fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
+			} else {
+				fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
+			}
+		}
+
+		// Tool use is complete, append to pending tools list
+		// Don't handle yet - wait for message_stop to ensure full response is received
+		m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
+		fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
+			len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
+		m.assemblingToolUse = nil
+		m.toolInputJSONBuf = ""
+		// Continue streaming to get rest of response
 	}
 
 	// Handle content deltas
@@ -502,11 +576,59 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle message completion
 	if chunk.Type == "message_stop" || chunk.Done {
-		m.CommitStreamingText()
+		fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
+
+		// Commit streaming text, including tool_use blocks if present
+		if len(m.pendingToolUses) > 0 {
+			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
+
+			// Create assistant message with both text and ALL tool_use content blocks
+			blocks := []core.ContentBlock{}
+
+			// Add text block if there's any text content
+			if m.StreamingText != "" {
+				blocks = append(blocks, core.NewTextBlock(m.StreamingText))
+				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
+			}
+
+			// Add ALL tool_use blocks
+			for i, toolUse := range m.pendingToolUses {
+				blocks = append(blocks, core.ContentBlock{
+					Type:  "tool_use",
+					ID:    toolUse.ID,
+					Name:  toolUse.Name,
+					Input: toolUse.Input,
+				})
+				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
+					i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
+			}
+
+			// Add assistant message with content blocks
+			assistantMsg := Message{
+				Role:         "assistant",
+				ContentBlock: blocks,
+			}
+			m.Messages = append(m.Messages, assistantMsg)
+			m.StreamingText = ""
+
+			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
+
+			// Dump messages after adding assistant message with tool_use blocks
+			m.dumpMessages("AFTER stream completion with tool_use blocks")
+
+			// Show tool approval dialog
+			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
+			m.toolApprovalMode = true
+		} else {
+			// No tool, just commit regular text
+			m.CommitStreamingText()
+		}
+
 		m.SetStatus(StatusIdle)
 		m.streamChan = nil
 		m.streamCancel = nil
 		m.streamCtx = nil
+
 		m.updateViewport()
 		return m, nil
 	}
@@ -521,13 +643,25 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 // streamMessage starts streaming a message from the API
 func (m *Model) streamMessage(userInput string) tea.Cmd {
-	// Build message history for API
+	// Build message history for API, filtering out "tool" role messages
+	// (Anthropic API only accepts user/assistant/system roles)
 	messages := make([]core.Message, 0, len(m.Messages))
 	for _, msg := range m.Messages {
+		// Skip messages with "tool" role - they're for UI display only
+		if msg.Role == "tool" {
+			continue
+		}
 		messages = append(messages, core.Message{
-			Role:    msg.Role,
-			Content: msg.Content,
+			Role:         msg.Role,
+			Content:      msg.Content,
+			ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
 		})
+	}
+
+	// Get tool definitions from registry
+	var tools []core.ToolDefinition
+	if m.toolRegistry != nil {
+		tools = m.toolRegistry.GetDefinitions()
 	}
 
 	// Create API request
@@ -537,20 +671,30 @@ func (m *Model) streamMessage(userInput string) tea.Cmd {
 		MaxTokens: 4096,
 		Stream:    true,
 		System:    m.systemPrompt, // Phase 6C: Use system prompt from template
+		Tools:     tools,          // Include registered tools
 	}
 
-	return func() tea.Msg {
-		// Create cancellable context for this stream
-		m.streamCtx, m.streamCancel = context.WithCancel(context.Background())
+	// Cancel any existing stream context before creating a new one
+	if m.streamCancel != nil {
+		m.streamCancel()
+	}
 
-		// Start stream
-		streamChan, err := m.apiClient.CreateMessageStream(m.streamCtx, req)
+	// Create cancellable context for this stream BEFORE the async command
+	ctx, cancel := context.WithCancel(context.Background())
+	// Store these in the model NOW (synchronously in Update context)
+	m.streamCtx = ctx
+	m.streamCancel = cancel
+
+	// Capture API client reference
+	apiClient := m.apiClient
+
+	return func() tea.Msg {
+		// Start stream with the context we created
+		streamChan, err := apiClient.CreateMessageStream(ctx, req)
 		if err != nil {
 			return &StreamChunkMsg{Error: err}
 		}
 
-		// Store the channel in the model (this is a bit tricky with Bubbletea)
-		// We'll need to return a special message to store it
 		return &streamStartMsg{channel: streamChan}
 	}
 }

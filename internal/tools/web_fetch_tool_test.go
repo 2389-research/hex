@@ -261,6 +261,10 @@ func TestWebFetchTool_ContextCancellation(t *testing.T) {
 }
 
 func TestWebFetchTool_Timeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping slow timeout test in short mode")
+	}
+
 	// Create test server that never responds
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(60 * time.Second) // Long delay

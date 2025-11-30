@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -39,8 +40,9 @@ const (
 
 // Message represents a chat message in the UI
 type Message struct {
-	Role    string
-	Content string
+	Role         string
+	Content      string
+	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -98,13 +100,16 @@ type Model struct {
 	db *sql.DB
 
 	// Task 12: Tool Execution UI
-	toolRegistry     *tools.Registry
-	toolExecutor     *tools.Executor
-	pendingToolUse   *core.ToolUse // Tool waiting for approval/execution
-	toolApprovalMode bool          // Showing approval prompt
-	executingTool    bool          // Tool is running
-	currentToolID    string        // ID of currently executing tool
-	toolResults      []ToolResult  // Results to send back to API
+	toolRegistry      *tools.Registry
+	toolExecutor      *tools.Executor
+	pendingToolUses   []*core.ToolUse // Tools waiting for approval/execution (can be multiple)
+	executingToolUses []*core.ToolUse // Tools currently being executed (for display)
+	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
+	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
+	toolApprovalMode  bool            // Showing approval prompt
+	executingTool     bool            // Tool is running
+	currentToolID     string          // ID of currently executing tool
+	toolResults       []ToolResult    // Results to send back to API
 
 	// Phase 6C: Enhanced UI Components
 	spinner          *ToolSpinner
@@ -430,45 +435,42 @@ func (m *Model) GetPrunedMessages() []core.Message {
 	return coreMessages
 }
 
-// HandleToolUse processes a tool_use request from the API
-func (m *Model) HandleToolUse(toolUse *core.ToolUse) tea.Cmd {
-	// Store the pending tool use
-	m.pendingToolUse = toolUse
-	m.toolApprovalMode = true
-	m.updateViewport()
-	return nil
-}
-
-// ApproveToolUse executes the pending tool
+// ApproveToolUse executes ALL pending tools
 func (m *Model) ApproveToolUse() tea.Cmd {
-	if m.pendingToolUse == nil || m.toolExecutor == nil {
+	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
 		return nil
 	}
 
-	toolUse := m.pendingToolUse
+	fmt.Fprintf(os.Stderr, "[TOOL_APPROVAL] approving %d tool(s)\n", len(m.pendingToolUses))
+
+	// Validate that all tool_use blocks exist in message history
+	for _, toolUse := range m.pendingToolUses {
+		m.validateToolUseExists(toolUse.ID)
+	}
+
+	// Capture tools and clear pending
+	toolUses := m.pendingToolUses
+	m.pendingToolUses = nil
+	m.executingToolUses = toolUses // Save for status display
 	m.toolApprovalMode = false
+	m.approvalPrompt = nil // Clear approval prompt for next time
 	m.executingTool = true
-	m.currentToolID = toolUse.ID
 
 	// Phase 6C: Start spinner for tool execution
 	var spinnerCmd tea.Cmd
 	if m.spinner != nil {
-		spinnerCmd = m.spinner.Start(SpinnerTypeToolExecution, "Running "+toolUse.Name+"...")
+		if len(toolUses) == 1 {
+			spinnerCmd = m.spinner.Start(SpinnerTypeToolExecution, "Running "+toolUses[0].Name+"...")
+		} else {
+			spinnerCmd = m.spinner.Start(SpinnerTypeToolExecution, fmt.Sprintf("Running %d tools...", len(toolUses)))
+		}
 	}
 
 	m.updateViewport()
 
-	// Execute tool in background
-	toolCmd := func() tea.Msg {
-		ctx := context.Background()
-		result, err := m.toolExecutor.Execute(ctx, toolUse.Name, toolUse.Input)
-		return toolExecutionMsg{
-			toolUseID: toolUse.ID,
-			result:    result,
-			err:       err,
-		}
-	}
+	// Execute all tools in batch
+	toolCmd := m.executeToolsBatch(toolUses)
 
 	// Return batch of spinner start and tool execution
 	if spinnerCmd != nil {
@@ -477,42 +479,88 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	return toolCmd
 }
 
-// DenyToolUse rejects the pending tool
+// DenyToolUse rejects ALL pending tools
 func (m *Model) DenyToolUse() tea.Cmd {
-	if m.pendingToolUse == nil {
+	if len(m.pendingToolUses) == 0 {
 		m.toolApprovalMode = false
 		return nil
 	}
 
-	// Create error result for denied tool
-	result := &tools.Result{
-		ToolName: m.pendingToolUse.Name,
-		Success:  false,
-		Error:    "User denied permission",
+	fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying %d tool(s)\n", len(m.pendingToolUses))
+
+	// Create error results for all denied tools
+	for _, toolUse := range m.pendingToolUses {
+		result := &tools.Result{
+			ToolName: toolUse.Name,
+			Success:  false,
+			Error:    "User denied permission",
+		}
+
+		// Validate that tool_use exists in message history
+		m.validateToolUseExists(toolUse.ID)
+
+		m.toolResults = append(m.toolResults, ToolResult{
+			ToolUseID: toolUse.ID,
+			Result:    result,
+		})
+
+		m.AddMessage("tool", "Tool denied: "+toolUse.Name)
 	}
 
-	toolUseID := m.pendingToolUse.ID
-	m.pendingToolUse = nil
+	m.pendingToolUses = nil
 	m.toolApprovalMode = false
-
-	// Store result and continue conversation
-	m.toolResults = append(m.toolResults, ToolResult{
-		ToolUseID: toolUseID,
-		Result:    result,
-	})
-
-	m.AddMessage("tool", "Tool denied: "+result.ToolName)
 	m.updateViewport()
 
-	// Send tool results back to API
+	// Send all denial results back to API
 	return m.sendToolResults()
 }
 
-// toolExecutionMsg is sent when a tool finishes executing
+// toolExecutionMsg is sent when a single tool finishes executing
 type toolExecutionMsg struct {
 	toolUseID string
 	result    *tools.Result
 	err       error
+}
+
+// toolBatchExecutionMsg is sent when a batch of tools finishes executing
+type toolBatchExecutionMsg struct {
+	results []ToolResult
+}
+
+// executeToolsBatch executes multiple tools sequentially and collects all results
+func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
+	return func() tea.Msg {
+		results := make([]ToolResult, 0, len(toolUses))
+
+		for i, toolUse := range toolUses {
+			fmt.Fprintf(os.Stderr, "[BATCH_EXEC] executing tool %d/%d: %s (id=%s)\n",
+				i+1, len(toolUses), toolUse.Name, toolUse.ID)
+
+			ctx := context.Background()
+			result, err := m.toolExecutor.Execute(ctx, toolUse.Name, toolUse.Input)
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[BATCH_EXEC_ERROR] tool %s failed: %v\n", toolUse.Name, err)
+				results = append(results, ToolResult{
+					ToolUseID: toolUse.ID,
+					Result: &tools.Result{
+						ToolName: toolUse.Name,
+						Success:  false,
+						Error:    err.Error(),
+					},
+				})
+			} else {
+				fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
+				results = append(results, ToolResult{
+					ToolUseID: toolUse.ID,
+					Result:    result,
+				})
+			}
+		}
+
+		fmt.Fprintf(os.Stderr, "[BATCH_EXEC_DONE] executed %d tools\n", len(results))
+		return toolBatchExecutionMsg{results: results}
+	}
 }
 
 // Phase 6C: Enhanced UI Methods
@@ -643,52 +691,168 @@ func (m *Model) ExecuteQuickAction() error {
 	return m.quickActionsRegistry.Execute(actionName, args)
 }
 
+// dumpMessages logs all messages with their content blocks for debugging
+func (m *Model) dumpMessages(label string) {
+	fmt.Fprintf(os.Stderr, "\n========== MESSAGE DUMP: %s ==========\n", label)
+	for i, msg := range m.Messages {
+		fmt.Fprintf(os.Stderr, "[%d] Role: %s\n", i, msg.Role)
+		if msg.Content != "" {
+			fmt.Fprintf(os.Stderr, "    Content (string): %q\n", msg.Content)
+		}
+		if len(msg.ContentBlock) > 0 {
+			fmt.Fprintf(os.Stderr, "    ContentBlocks (%d):\n", len(msg.ContentBlock))
+			for j, block := range msg.ContentBlock {
+				fmt.Fprintf(os.Stderr, "      [%d] Type: %s\n", j, block.Type)
+				if block.Text != "" {
+					fmt.Fprintf(os.Stderr, "          Text: %q\n", block.Text)
+				}
+				if block.ID != "" {
+					fmt.Fprintf(os.Stderr, "          ID: %s\n", block.ID)
+				}
+				if block.Name != "" {
+					fmt.Fprintf(os.Stderr, "          Name: %s\n", block.Name)
+				}
+				if block.Input != nil {
+					fmt.Fprintf(os.Stderr, "          Input: %+v\n", block.Input)
+				}
+				if block.ToolUseID != "" {
+					fmt.Fprintf(os.Stderr, "          ToolUseID: %s\n", block.ToolUseID)
+				}
+				if block.Content != "" {
+					fmt.Fprintf(os.Stderr, "          Content: %q\n", block.Content)
+				}
+			}
+		}
+	}
+	fmt.Fprintf(os.Stderr, "========================================\n\n")
+}
+
+// validateToolUseExists checks if a tool_use block with the given ID exists in message history
+func (m *Model) validateToolUseExists(toolUseID string) bool {
+	fmt.Fprintf(os.Stderr, "[VALIDATION] Looking for tool_use with ID: %s\n", toolUseID)
+
+	for i, msg := range m.Messages {
+		if msg.Role != "assistant" {
+			continue
+		}
+		for j, block := range msg.ContentBlock {
+			if block.Type == "tool_use" && block.ID == toolUseID {
+				fmt.Fprintf(os.Stderr, "[VALIDATION] ✓ Found tool_use at message[%d].ContentBlock[%d]\n", i, j)
+				return true
+			}
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "[VALIDATION] ✗ WARNING: tool_use with ID %s NOT FOUND in message history!\n", toolUseID)
+	return false
+}
+
 // sendToolResults sends tool results back to the API and continues the conversation
 func (m *Model) sendToolResults() tea.Cmd {
 	if len(m.toolResults) == 0 || m.apiClient == nil {
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no results (%d) or no client (%v)\n", len(m.toolResults), m.apiClient != nil)
 		return nil
 	}
 
-	// Build message with tool results
-	// In the Anthropic API, tool results are sent as user messages with tool_result content blocks
-	// TODO: Use toolResults to construct proper tool_result content blocks
-	// results := m.toolResults
+	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: preparing to send %d tool result(s)\n", len(m.toolResults))
+
+	// Dump messages BEFORE adding tool results
+	m.dumpMessages("BEFORE adding tool results")
+
+	// Capture tool results before clearing
+	results := m.toolResults
 	m.toolResults = nil // Clear results
 
-	return func() tea.Msg {
-		// For now, we'll format tool results as a simple message
-		// In a full implementation, this would construct proper tool_result content blocks
-		// and send them as part of the conversation history
+	// Build tool_result content blocks for the API
+	// According to Anthropic API spec, tool results must be sent as content blocks
+	// in a user message, with type="tool_result" and tool_use_id matching the original request
+	toolResultBlocks := make([]core.ContentBlock, 0, len(results))
+	for _, result := range results {
+		content := formatToolResult(result.Result)
+		toolResultBlocks = append(toolResultBlocks, core.NewToolResultBlock(result.ToolUseID, content))
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created tool_result block for tool_use_id=%s\n", result.ToolUseID)
+	}
 
-		// Build messages including tool results
-		messages := make([]core.Message, 0, len(m.Messages)+1)
-		for _, msg := range m.Messages {
-			messages = append(messages, core.Message{
-				Role:    msg.Role,
-				Content: msg.Content,
+	// Add a user message with tool_result content blocks
+	// The API requires tool results to be in this specific format
+	userMsg := Message{
+		Role:         "user",
+		ContentBlock: toolResultBlocks,
+	}
+	m.Messages = append(m.Messages, userMsg)
+	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: added user message with %d tool_result blocks, total messages now: %d\n", len(toolResultBlocks), len(m.Messages))
+
+	// Dump messages AFTER adding tool results
+	m.dumpMessages("AFTER adding tool results")
+
+	// Cancel any existing stream context before creating a new one
+	if m.streamCancel != nil {
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
+		m.streamCancel()
+	} else {
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no old context to cancel\n")
+	}
+
+	// Create cancellable context for this stream BEFORE the async command
+	ctx, cancel := context.WithCancel(context.Background())
+	// Store these in the model NOW (synchronously)
+	m.streamCtx = ctx
+	m.streamCancel = cancel
+	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created new context\n")
+
+	// Capture necessary state for the command
+	apiClient := m.apiClient
+	toolRegistry := m.toolRegistry
+	model := m.Model
+	messages := make([]Message, len(m.Messages))
+	copy(messages, m.Messages)
+	systemPrompt := m.systemPrompt
+	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d messages for API request\n", len(messages))
+
+	return func() tea.Msg {
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing\n")
+		// Build messages from captured state, filtering out "tool" role messages
+		// (Anthropic API only accepts user/assistant/system roles)
+		apiMessages := make([]core.Message, 0, len(messages))
+		for _, msg := range messages {
+			// Skip messages with "tool" role - they're for UI display only
+			if msg.Role == "tool" {
+				fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: skipping tool role message\n")
+				continue
+			}
+			apiMessages = append(apiMessages, core.Message{
+				Role:         msg.Role,
+				Content:      msg.Content,
+				ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
 			})
+		}
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: filtered to %d API messages (from %d total)\n", len(apiMessages), len(messages))
+
+		// Get tool definitions from registry
+		var tools []core.ToolDefinition
+		if toolRegistry != nil {
+			tools = toolRegistry.GetDefinitions()
 		}
 
 		// Create API request to continue conversation with tool results
 		req := core.MessageRequest{
-			Model:     m.Model,
-			Messages:  messages,
+			Model:     model,
+			Messages:  apiMessages,
 			MaxTokens: 4096,
 			Stream:    true,
-			System:    m.systemPrompt, // Phase 6C: Use system prompt from template
+			System:    systemPrompt,
+			Tools:     tools, // Include tool definitions
 		}
 
-		// Create cancellable context for this stream
-		ctx, cancel := context.WithCancel(context.Background())
-		m.streamCtx = ctx
-		m.streamCancel = cancel
-
-		// Start stream
-		streamChan, err := m.apiClient.CreateMessageStream(ctx, req)
+		// Start stream with the context we created
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: calling CreateMessageStream with %d messages\n", len(apiMessages))
+		streamChan, err := apiClient.CreateMessageStream(ctx, req)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: ERROR creating stream: %v\n", err)
 			return &StreamChunkMsg{Error: err}
 		}
 
+		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: stream created successfully, returning streamStartMsg\n")
 		return &streamStartMsg{channel: streamChan}
 	}
 }
@@ -800,4 +964,9 @@ func (m *Model) RejectTopSuggestion() {
 	} else {
 		m.DismissSuggestions()
 	}
+}
+
+// GetPendingToolUses returns the current pending tool uses for testing
+func (m *Model) GetPendingToolUses() []*core.ToolUse {
+	return m.pendingToolUses
 }

@@ -32,3 +32,5 @@ build/
 # Config
 .env
 config.yaml
+.scratch/
+test-react/

@@ -274,6 +274,10 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 }
 
 func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping flaky context cancellation test in short mode")
+	}
+
 	testTools := []Tool{
 		{
 			Name:        "slow_tool",

@@ -21,14 +21,13 @@ repos:
         language: system
         pass_filenames: false
 
-      # Temporarily disabled - timing out on pre-existing tests
-      # - id: go-test
-      #   name: go test
-      #   description: Run go test for all packages
-      #   entry: go test
-      #   args: ["-timeout=60s", "./..."]
-      #   language: system
-      #   pass_filenames: false
+      - id: go-test
+        name: go test
+        description: Run go test for all packages (short mode - skips slow VCR tests)
+        entry: go test
+        args: ["-short", "-timeout=60s", "./..."]
+        language: system
+        pass_filenames: false
 
       - id: go-mod-tidy
         name: go mod tidy
@@ -53,10 +52,12 @@ repos:
       - id: trailing-whitespace
         name: trim trailing whitespace
         description: Trim trailing whitespace
+        exclude: ^test-react/
 
       - id: end-of-file-fixer
         name: fix end of files
         description: Ensure files end with a newline
+        exclude: ^test-react/
 
       - id: check-yaml
         name: check yaml
@@ -66,6 +67,7 @@ repos:
         name: check for large files
         description: Prevent committing large files
         args: ["--maxkb=1000"]
+        exclude: ^test-react/
 
       - id: check-merge-conflict
         name: check merge conflicts

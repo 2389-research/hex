@@ -1,0 +1,262 @@
+// ABOUTME: Print mode handler for non-interactive CLI usage with tool support
+// ABOUTME: Implements multi-turn tool execution loop like Claude Code
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/harper/clem/internal/core"
+	"github.com/harper/clem/internal/logging"
+	"github.com/harper/clem/internal/tools"
+)
+
+func runPrintMode(prompt string) error {
+	if prompt == "" && len(imagePaths) == 0 {
+		return fmt.Errorf("prompt or image required in print mode")
+	}
+
+	// Load config
+	cfg, err := core.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	// Get API key
+	apiKey, err := cfg.GetAPIKey()
+	if err != nil {
+		return fmt.Errorf("get API key: %w", err)
+	}
+
+	// Create client
+	client := core.NewClient(apiKey)
+
+	// Use model from flag if set, otherwise use config/default
+	modelToUse := model
+	if modelToUse == "" && cfg.Model != "" {
+		modelToUse = cfg.Model
+	}
+	if modelToUse == "" {
+		modelToUse = core.DefaultModel // fallback default
+	}
+
+	// Build message content
+	var msg core.Message
+	msg.Role = "user"
+
+	// If images are provided, use ContentBlock array
+	if len(imagePaths) > 0 {
+		contentBlocks := []core.ContentBlock{}
+
+		// Add images first
+		for _, imgPath := range imagePaths {
+			imgSrc, err := core.LoadImage(imgPath)
+			if err != nil {
+				return fmt.Errorf("load image %s: %w", imgPath, err)
+			}
+			contentBlocks = append(contentBlocks, core.NewImageBlock(imgSrc))
+		}
+
+		// Add text prompt if provided
+		if prompt != "" {
+			contentBlocks = append(contentBlocks, core.NewTextBlock(prompt))
+		}
+
+		msg.ContentBlock = contentBlocks
+	} else {
+		// Text-only message
+		msg.Content = prompt
+	}
+
+	// Setup tool registry and executor if tools are enabled
+	var registry *tools.Registry
+	var executor *tools.Executor
+	var toolDefs []core.ToolDefinition
+
+	if len(enabledTools) > 0 || dangerouslySkipPermissions {
+		logging.Debug("Setting up tool registry and executor for print mode")
+
+		// Create registry
+		registry = tools.NewRegistry()
+
+		// Register tools based on enabledTools flag
+		toolsToRegister := enabledTools
+		if len(toolsToRegister) == 0 && dangerouslySkipPermissions {
+			// If --dangerously-skip-permissions is set but no tools specified, enable all
+			toolsToRegister = []string{"write_file", "read_file", "edit_file", "bash", "grep", "glob"}
+		}
+
+		for _, toolName := range toolsToRegister {
+			toolName = strings.TrimSpace(strings.ToLower(toolName))
+			var tool tools.Tool
+
+			switch toolName {
+			case "write_file", "write":
+				tool = tools.NewWriteFileTool()
+			case "read_file", "read":
+				tool = tools.NewReadFileTool()
+			case "edit_file", "edit":
+				tool = tools.NewEditFileTool()
+			case "bash":
+				tool = tools.NewBashTool()
+			case "grep":
+				tool = tools.NewGrepTool()
+			case "glob":
+				tool = tools.NewGlobTool()
+			default:
+				logging.Warn("Unknown tool: " + toolName)
+				continue
+			}
+
+			if err := registry.Register(tool); err != nil {
+				return fmt.Errorf("register tool %s: %w", toolName, err)
+			}
+		}
+
+		// Create executor with auto-approve if flag is set
+		executor = tools.NewExecutor(registry)
+		if dangerouslySkipPermissions {
+			executor.SetAutoApprove(true)
+		}
+
+		// Get tool definitions for API
+		toolDefs = registry.GetDefinitions()
+		logging.InfoWith("Tools enabled for print mode", "count", len(toolDefs), "auto_approve", dangerouslySkipPermissions)
+	}
+
+	// Build conversation history
+	messages := []core.Message{msg}
+
+	// Multi-turn tool execution loop (like Claude Code)
+	maxTurns := 20 // Prevent infinite loops
+	for turn := 0; turn < maxTurns; turn++ {
+		logging.DebugWith("Print mode turn", "turn", turn+1, "messages", len(messages))
+
+		// Create API request
+		req := core.MessageRequest{
+			Model:     modelToUse,
+			MaxTokens: 4096,
+			Messages:  messages,
+		}
+
+		// Add system prompt if provided
+		if systemPrompt != "" {
+			req.System = systemPrompt
+		}
+
+		// Add tools if enabled
+		if len(toolDefs) > 0 {
+			req.Tools = toolDefs
+		}
+
+		// Send request
+		resp, err := client.CreateMessage(context.Background(), req)
+		if err != nil {
+			return fmt.Errorf("API error: %w", err)
+		}
+
+		// Check stop reason
+		logging.DebugWith("Response received", "stop_reason", resp.StopReason, "content_blocks", len(resp.Content))
+
+		// If no tools or stop reason is end_turn, we're done
+		if resp.StopReason == "end_turn" || resp.StopReason == "max_tokens" {
+			return formatOutput(resp, outputFormat)
+		}
+
+		// If stop reason is tool_use, execute tools
+		if resp.StopReason == "tool_use" {
+			if executor == nil {
+				return fmt.Errorf("received tool_use response but no executor configured")
+			}
+
+			// Extract tool uses from response
+			var toolUses []core.ToolUse
+			for _, content := range resp.Content {
+				if content.Type == "tool_use" {
+					toolUses = append(toolUses, core.ToolUse{
+						ID:    content.ID,
+						Name:  content.Name,
+						Input: content.Input,
+					})
+				}
+			}
+
+			if len(toolUses) == 0 {
+				return fmt.Errorf("stop_reason was tool_use but no tool_use blocks found")
+			}
+
+			logging.InfoWith("Executing tools", "count", len(toolUses))
+
+			// Add assistant message to conversation
+			assistantMsg := core.Message{
+				Role:    "assistant",
+				Content: resp.Content,
+			}
+			messages = append(messages, assistantMsg)
+
+			// Execute all tools and collect results
+			var toolResults []core.ContentBlock
+			for _, toolUse := range toolUses {
+				logging.InfoWith("Executing tool", "name", toolUse.Name, "id", toolUse.ID)
+
+				result, err := executor.Execute(context.Background(), toolUse.Name, toolUse.Input)
+				if err != nil {
+					// Create error result
+					toolResults = append(toolResults, core.ContentBlock{
+						Type:      "tool_result",
+						ToolUseID: toolUse.ID,
+						Content:   fmt.Sprintf("Error: %v", err),
+						IsError:   true,
+					})
+					continue
+				}
+
+				// Create success result
+				toolResults = append(toolResults, core.ContentBlock{
+					Type:      "tool_result",
+					ToolUseID: toolUse.ID,
+					Content:   result.Output,
+				})
+			}
+
+			// Add tool results as user message
+			userMsg := core.Message{
+				Role:    "user",
+				Content: toolResults,
+			}
+			messages = append(messages, userMsg)
+
+			// Continue loop to send tool results back to API
+			continue
+		}
+
+		// Unknown stop reason, just output and return
+		logging.WarnWith("Unknown stop reason", "stop_reason", resp.StopReason)
+		return formatOutput(resp, outputFormat)
+	}
+
+	return fmt.Errorf("exceeded maximum turns (%d) in tool execution loop", maxTurns)
+}
+
+func formatOutput(resp *core.MessageResponse, format string) error {
+	switch format {
+	case "text":
+		// Simple text output - just the assistant's response
+		fmt.Println(resp.GetTextContent())
+	case "json":
+		// Full JSON response for programmatic use
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(resp); err != nil {
+			return fmt.Errorf("encode JSON: %w", err)
+		}
+	case "stream-json":
+		return fmt.Errorf("streaming not yet implemented")
+	default:
+		return fmt.Errorf("unknown output format: %s", format)
+	}
+	return nil
+}
