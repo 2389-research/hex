@@ -56,7 +56,7 @@ func setupPrintModeTools() (*tools.Registry, *tools.Executor, error) {
 	// 1. --dangerously-skip-permissions: approve everything
 	// 2. --tools specified: approve only those tools
 	// 3. Default: approve only safe read-only tools
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(toolName string, _ map[string]interface{}) bool {
 		// Strategy 1: Skip all permissions
 		if dangerouslySkipPermissions {
 			logging.DebugWith("Approving via --dangerously-skip-permissions", "tool", toolName)

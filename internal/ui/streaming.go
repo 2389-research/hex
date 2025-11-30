@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Streaming UI enhancements for displaying streaming responses
 // ABOUTME: Provides token rate display, progressive rendering, and typewriter effects
 package ui
@@ -86,10 +87,8 @@ func (s *StreamingDisplay) AppendText(chunk string) {
 
 	s.lastUpdateTime = now
 
-	// In typewriter mode, advance position gradually
-	if s.typewriterMode {
-		// Position will be advanced by Update()
-	}
+	// In typewriter mode, position will be advanced by Update()
+	// (no action needed here)
 }
 
 // GetText returns the current text (respecting typewriter mode)

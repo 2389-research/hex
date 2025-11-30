@@ -83,7 +83,7 @@ func ExampleBashTool_withExecutor() {
 	_ = registry.Register(bashTool)
 
 	// Create an executor with approval function
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, params map[string]interface{}) bool {
 		// In real use, prompt the user for approval
 		command := params["command"].(string)
 		fmt.Printf("Approve command '%s'? ", command)

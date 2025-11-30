@@ -76,7 +76,7 @@ func BenchmarkResponseUnmarshaling(b *testing.B) {
 // BenchmarkHTTPRoundTrip measures complete HTTP request/response cycle
 func BenchmarkHTTPRoundTrip(b *testing.B) {
 	// Mock server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:   "msg_test",
@@ -111,7 +111,7 @@ func BenchmarkHTTPRoundTrip(b *testing.B) {
 
 // BenchmarkLargeMessagePayload measures performance with large messages
 func BenchmarkLargeMessagePayload(b *testing.B) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:         "msg_test",
@@ -148,7 +148,7 @@ func BenchmarkLargeMessagePayload(b *testing.B) {
 
 // BenchmarkCreateMessageWithTools measures request with tool definitions
 func BenchmarkCreateMessageWithTools(b *testing.B) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:         "msg_test",

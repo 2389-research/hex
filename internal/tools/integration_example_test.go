@@ -25,11 +25,11 @@ func Example_completeWorkflow() {
 	// Implement Tool interface for FileSystemTool
 	getName := func(t *FileSystemTool) string { return t.name }
 	getDesc := func(t *FileSystemTool) string { return fmt.Sprintf("Tool: %s", t.name) }
-	requiresApproval := func(t *FileSystemTool, params map[string]interface{}) bool {
+	requiresApproval := func(t *FileSystemTool, _ map[string]interface{}) bool {
 		// Write operations require approval
 		return t.name == "write_file"
 	}
-	execute := func(t *FileSystemTool, ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+	execute := func(t *FileSystemTool, _ context.Context, params map[string]interface{}) (*tools.Result, error) {
 		path := params["path"].(string)
 		if t.name == "read_file" {
 			return &tools.Result{

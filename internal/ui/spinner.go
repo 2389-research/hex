@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Spinner component for showing loading and tool execution states
 // ABOUTME: Provides animated spinners with different styles for various operations
 package ui
@@ -14,9 +15,13 @@ import (
 type SpinnerType int
 
 const (
+	// SpinnerTypeDefault is the standard loading spinner
 	SpinnerTypeDefault SpinnerType = iota
+	// SpinnerTypeToolExecution is used when executing tools
 	SpinnerTypeToolExecution
+	// SpinnerTypeStreaming is used when streaming responses
 	SpinnerTypeStreaming
+	// SpinnerTypeLoading is used for general loading states
 	SpinnerTypeLoading
 )
 
@@ -178,9 +183,13 @@ type ProgressIndicator struct {
 type ProgressState int
 
 const (
+	// StateQueued indicates a tool is waiting to execute
 	StateQueued ProgressState = iota
+	// StateRunning indicates a tool is currently executing
 	StateRunning
+	// StateCompleted indicates a tool has finished execution
 	StateCompleted
+	// StateFailed indicates a tool execution failed
 	StateFailed
 )
 

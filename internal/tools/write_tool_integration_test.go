@@ -43,7 +43,7 @@ func TestWriteTool_Integration_WithExecutor(t *testing.T) {
 	require.NoError(t, registry.Register(writeTool))
 
 	// Create executor with auto-approve (for testing)
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true // Auto-approve for testing
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
@@ -105,7 +105,7 @@ func TestWriteTool_Integration_WithExecutor_ApprovalDenied(t *testing.T) {
 	require.NoError(t, registry.Register(writeTool))
 
 	// Create executor that denies approval
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return false // Deny approval
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
@@ -133,7 +133,7 @@ func TestWriteTool_Integration_MultipleOperations(t *testing.T) {
 	writeTool := tools.NewWriteTool()
 	require.NoError(t, registry.Register(writeTool))
 
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
@@ -188,7 +188,7 @@ func TestWriteTool_Integration_WithNestedDirectories(t *testing.T) {
 	writeTool := tools.NewWriteTool()
 	require.NoError(t, registry.Register(writeTool))
 
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)

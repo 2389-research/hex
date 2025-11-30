@@ -1,6 +1,7 @@
 // ABOUTME: Pattern-based tool suggestion system
 // ABOUTME: Analyzes user input to suggest relevant tools based on context patterns
 
+// Package suggestions provides template suggestion and smart completion functionality.
 package suggestions
 
 import (
@@ -140,7 +141,7 @@ func (d *Detector) registerDefaultPatterns() {
 		toolName:   "bash",
 		confidence: 0.85,
 		reason:     "Input looks like a shell command",
-		actionFunc: func(matches []string) string {
+		actionFunc: func(_ []string) string {
 			return ":bash"
 		},
 	})

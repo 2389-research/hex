@@ -1,3 +1,4 @@
+// Package core provides the Anthropic API client and core conversation functionality.
 // ABOUTME: Application-wide constants and default values
 // ABOUTME: Centralizes magic strings and configuration defaults
 package core

@@ -107,7 +107,7 @@ func TestWebFetchTool_InvalidURL(t *testing.T) {
 
 func TestWebFetchTool_FetchHTML(t *testing.T) {
 	// Create test server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = fmt.Fprint(w, "<html><body><h1>Test Title</h1><p>Test paragraph</p></body></html>")
 	}))
@@ -148,7 +148,7 @@ func TestWebFetchTool_FetchHTML(t *testing.T) {
 
 func TestWebFetchTool_FetchPlainText(t *testing.T) {
 	// Create test server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		_, _ = fmt.Fprint(w, "This is plain text content.\nSecond line.")
 	}))
@@ -180,7 +180,7 @@ func TestWebFetchTool_FetchPlainText(t *testing.T) {
 
 func TestWebFetchTool_HTTP404(t *testing.T) {
 	// Create test server that returns 404
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = fmt.Fprint(w, "Not Found")
 	}))
@@ -206,7 +206,7 @@ func TestWebFetchTool_HTTP404(t *testing.T) {
 
 func TestWebFetchTool_HTTP500(t *testing.T) {
 	// Create test server that returns 500
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = fmt.Fprint(w, "Internal Server Error")
 	}))
@@ -232,7 +232,7 @@ func TestWebFetchTool_HTTP500(t *testing.T) {
 
 func TestWebFetchTool_ContextCancellation(t *testing.T) {
 	// Create test server that delays response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(2 * time.Second)
 		_, _ = fmt.Fprint(w, "Delayed response")
 	}))
@@ -266,7 +266,7 @@ func TestWebFetchTool_Timeout(t *testing.T) {
 	}
 
 	// Create test server that never responds
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		time.Sleep(60 * time.Second) // Long delay
 	}))
 	defer server.Close()

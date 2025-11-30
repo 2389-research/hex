@@ -1,3 +1,4 @@
+// Package storage provides database operations for conversations, messages, and metadata.
 // ABOUTME: SQLite schema initialization and migration management
 // ABOUTME: Handles database setup, table creation, and version tracking
 package storage
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	// Import SQLite driver for database/sql
 	_ "modernc.org/sqlite"
 )
 

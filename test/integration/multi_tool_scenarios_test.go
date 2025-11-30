@@ -24,7 +24,7 @@ func TestScenario_BatchToolExecutionWithThreeWrites(t *testing.T) {
 
 	// Track which tools were approved
 	approvedTools := make([]string, 0)
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(toolName string, _ map[string]interface{}) bool {
 		approvedTools = append(approvedTools, toolName)
 		return true // Auto-approve
 	}
@@ -88,7 +88,7 @@ func TestScenario_MixedToolBatchExecution(t *testing.T) {
 	require.NoError(t, registry.Register(tools.NewReadTool()))
 	require.NoError(t, registry.Register(tools.NewWriteTool()))
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -129,7 +129,7 @@ func TestScenario_BatchWithPartialFailure(t *testing.T) {
 	require.NoError(t, registry.Register(tools.NewWriteTool()))
 	require.NoError(t, registry.Register(tools.NewReadTool()))
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -180,7 +180,7 @@ func TestScenario_ToolDenialInBatch(t *testing.T) {
 
 	// Deny the second tool only
 	callCount := 0
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		callCount++
 		return callCount != 2 // Deny second tool
 	})
@@ -234,7 +234,7 @@ func TestScenario_LargeBatchExecution(t *testing.T) {
 	registry := tools.NewRegistry()
 	require.NoError(t, registry.Register(tools.NewWriteTool()))
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -276,7 +276,7 @@ func TestIntegration_SequentialToolBatches(t *testing.T) {
 	require.NoError(t, registry.Register(tools.NewWriteTool()))
 	require.NoError(t, registry.Register(tools.NewReadTool()))
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -349,7 +349,7 @@ func TestIntegration_ToolBatchErrorRecovery(t *testing.T) {
 	require.NoError(t, registry.Register(tools.NewReadTool()))
 	require.NoError(t, registry.Register(tools.NewWriteTool()))
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 

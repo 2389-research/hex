@@ -1,3 +1,4 @@
+// Package core provides the Anthropic API client and core conversation functionality.
 // ABOUTME: HTTP client for Anthropic Messages API
 // ABOUTME: Handles authentication, request formatting, and response parsing
 package core

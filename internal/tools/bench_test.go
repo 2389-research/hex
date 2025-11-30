@@ -259,7 +259,7 @@ func BenchmarkExecutorApprovalOverhead(b *testing.B) {
 	_ = registry.Register(NewReadTool())
 
 	// Auto-approve callback
-	approver := func(name string, params map[string]interface{}) bool {
+	approver := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 

@@ -1,3 +1,4 @@
+// Package export provides conversation export functionality in multiple formats.
 // ABOUTME: JSON exporter for conversations with full structure
 // ABOUTME: Produces complete JSON export suitable for parsing and round-trip
 package export

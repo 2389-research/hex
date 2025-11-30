@@ -30,19 +30,19 @@ func (nopReadCloser) Close() error { return nil }
 // createTestClientAndServer creates a connected client-server pair for testing
 func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (*Client, *MockMCPServer, *bytes.Buffer) {
 	// Create bidirectional pipes for client-server communication
-	clientToServer_r, clientToServer_w := io.Pipe()
-	serverToClient_r, serverToClient_w := io.Pipe()
+	clientToServerR, clientToServerW := io.Pipe()
+	serverToClientR, serverToClientW := io.Pipe()
 	mockStderr := &bytes.Buffer{}
 
 	// Create and start server
 	server := NewMockMCPServer(serverName, serverVersion, tools)
-	server.SetIOStreams(clientToServer_r, serverToClient_w, mockStderr)
+	server.SetIOStreams(clientToServerR, serverToClientW, mockStderr)
 	go func() { _ = server.Run() }()
 
 	// Create client
 	client := &Client{
-		stdin:   clientToServer_w, // Client writes here, server reads from clientToServer_r
-		stdout:  serverToClient_r, // Client reads here, server writes to serverToClient_w
+		stdin:   clientToServerW, // Client writes here, server reads from clientToServerR
+		stdout:  serverToClientR, // Client reads here, server writes to serverToClientW
 		stderr:  nopReadCloser{mockStderr},
 		pending: make(map[int64]chan *jsonrpcResponse),
 		done:    make(chan struct{}),
@@ -363,7 +363,7 @@ func TestClient_ConcurrentToolCalls(t *testing.T) {
 	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	counter := 0
-	server.RegisterToolHandler("test_tool", func(args map[string]interface{}) (interface{}, error) {
+	server.RegisterToolHandler("test_tool", func(_ map[string]interface{}) (interface{}, error) {
 		counter++
 		return map[string]interface{}{
 			"content": []map[string]interface{}{

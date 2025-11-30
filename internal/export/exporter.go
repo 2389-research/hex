@@ -1,3 +1,4 @@
+// Package export provides conversation export functionality in multiple formats.
 // ABOUTME: Export interface and dispatcher for conversation exports
 // ABOUTME: Supports multiple export formats (Markdown, JSON, HTML)
 package export
@@ -14,9 +15,12 @@ import (
 type Format string
 
 const (
+	// FormatMarkdown exports conversations as Markdown with YAML frontmatter
 	FormatMarkdown Format = "markdown"
-	FormatJSON     Format = "json"
-	FormatHTML     Format = "html"
+	// FormatJSON exports conversations as structured JSON
+	FormatJSON Format = "json"
+	// FormatHTML exports conversations as styled HTML
+	FormatHTML Format = "html"
 )
 
 // Exporter defines the interface for conversation exporters

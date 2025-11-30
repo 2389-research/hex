@@ -53,7 +53,7 @@ func (t *BashTool) Description() string {
 }
 
 // RequiresApproval always returns true for command execution
-func (t *BashTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *BashTool) RequiresApproval(_ map[string]interface{}) bool {
 	// ALWAYS require approval for command execution
 	// Running arbitrary shell commands is extremely dangerous
 	return true
@@ -95,7 +95,7 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]interface{}) (
 }
 
 // executeBackground launches a command as a background process
-func (t *BashTool) executeBackground(ctx context.Context, command string, params map[string]interface{}) (*Result, error) {
+func (t *BashTool) executeBackground(_ context.Context, command string, params map[string]interface{}) (*Result, error) {
 	// Generate unique ID for this background process
 	bashID := uuid.New().String()
 

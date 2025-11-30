@@ -74,7 +74,7 @@ func (t *ReadTool) RequiresApproval(params map[string]interface{}) bool {
 }
 
 // Execute reads the file and returns its contents
-func (t *ReadTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *ReadTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Validate and extract path parameter
 	path, ok := params["path"].(string)
 	if !ok || path == "" {

@@ -48,7 +48,7 @@ func (t *TaskTool) Description() string {
 }
 
 // RequiresApproval always returns true for task execution
-func (t *TaskTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *TaskTool) RequiresApproval(_ map[string]interface{}) bool {
 	// ALWAYS require approval for task execution
 	// - Spawns new processes (resource usage)
 	// - Uses API (costs money)

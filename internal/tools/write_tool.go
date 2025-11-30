@@ -14,10 +14,12 @@ const (
 	// DefaultMaxContentSize is the default maximum content size to write (10MB)
 	DefaultMaxContentSize = 10 * 1024 * 1024
 
-	// Write modes
-	ModeCreate    = "create"    // Create new file, fail if exists
-	ModeOverwrite = "overwrite" // Overwrite existing file or create new
-	ModeAppend    = "append"    // Append to existing file or create new
+	// ModeCreate creates a new file, failing if it already exists
+	ModeCreate = "create"
+	// ModeOverwrite overwrites an existing file or creates a new one
+	ModeOverwrite = "overwrite"
+	// ModeAppend appends to an existing file or creates a new one
+	ModeAppend = "append"
 )
 
 // WriteTool implements file writing functionality
@@ -43,14 +45,14 @@ func (t *WriteTool) Description() string {
 }
 
 // RequiresApproval always returns true for write operations
-func (t *WriteTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *WriteTool) RequiresApproval(_ map[string]interface{}) bool {
 	// ALWAYS require approval for write operations
 	// Writing to disk is a dangerous operation
 	return true
 }
 
 // Execute writes content to a file
-func (t *WriteTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *WriteTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Validate and extract path parameter
 	path, ok := params["path"].(string)
 	if !ok || path == "" {
@@ -169,11 +171,11 @@ func (t *WriteTool) Execute(ctx context.Context, params map[string]interface{}) 
 }
 
 // writeFile writes content to a file
-func writeFile(path, content string, append bool) (int, error) {
+func writeFile(path, content string, appendMode bool) (int, error) {
 	var file *os.File
 	var err error
 
-	if append {
+	if appendMode {
 		file, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) //nolint:gosec // G304: Path validated by caller
 	} else {
 		file, err = os.Create(path) //nolint:gosec // G304: Path validated by caller

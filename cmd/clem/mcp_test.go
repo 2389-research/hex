@@ -392,7 +392,7 @@ func newMCPCommand(baseDir string) *cobra.Command {
 		Short:              "Add an MCP server",
 		Args:               cobra.MinimumNArgs(2),
 		DisableFlagParsing: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return runMCPAdd(baseDir, args)
 		},
 	}
@@ -401,7 +401,7 @@ func newMCPCommand(baseDir string) *cobra.Command {
 		Use:   "list",
 		Short: "List MCP servers",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runMCPList(cmd, baseDir)
 		},
 	}
@@ -410,7 +410,7 @@ func newMCPCommand(baseDir string) *cobra.Command {
 		Use:   "remove <name>",
 		Short: "Remove an MCP server",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return runMCPRemove(baseDir, args[0])
 		},
 	}

@@ -1,3 +1,4 @@
+// Package context provides context window management and message pruning for conversations.
 // ABOUTME: Message summarization using Claude API
 // ABOUTME: Reduces token usage by summarizing old conversation context
 package context

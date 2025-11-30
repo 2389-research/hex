@@ -23,7 +23,7 @@ var historyCmd = &cobra.Command{
 Shows recent conversations with timestamps, message previews, and conversation IDs.
 Use the search subcommand to find specific topics.`,
 	Args: cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		return runHistory(cmd)
 	},
 }

@@ -51,7 +51,7 @@ Examples:
 	RunE: runExport,
 }
 
-func runExport(cmd *cobra.Command, args []string) error {
+func runExport(_ *cobra.Command, args []string) error {
 	conversationID := args[0]
 
 	// Validate format

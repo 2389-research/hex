@@ -101,7 +101,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&systemPrompt, "system-prompt", "", "System prompt to use for the session")
 }
 
-func runRoot(cmd *cobra.Command, args []string) error {
+func runRoot(_ *cobra.Command, args []string) error {
 	// Initialize logging
 	if err := initializeLogging(); err != nil {
 		return fmt.Errorf("initialize logging: %w", err)
@@ -331,7 +331,7 @@ func runInteractive(prompt string) error {
 
 	// Create executor with approval function
 	// The actual approval is handled by the UI, so we return true here
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)

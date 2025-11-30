@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Tool approval UI component for displaying and handling tool approval prompts
 // ABOUTME: Shows formatted tool information with risk levels and interactive approval controls
 package ui
@@ -15,8 +16,11 @@ import (
 type RiskLevel int
 
 const (
+	// RiskSafe indicates a tool operation is safe and requires no approval
 	RiskSafe RiskLevel = iota
+	// RiskCaution indicates a tool operation should be reviewed before execution
 	RiskCaution
+	// RiskDanger indicates a tool operation is potentially dangerous
 	RiskDanger
 )
 

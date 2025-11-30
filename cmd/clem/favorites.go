@@ -14,7 +14,7 @@ var favoriteCmd = &cobra.Command{
 	Use:   "favorite <conversation-id>",
 	Short: "Toggle favorite status of a conversation",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		convID := args[0]
 
 		// Open database
@@ -50,7 +50,7 @@ var favoriteCmd = &cobra.Command{
 var favoritesCmd = &cobra.Command{
 	Use:   "favorites",
 	Short: "List all favorite conversations",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		// Open database
 		db, err := openDatabase(dbPath)
 		if err != nil {

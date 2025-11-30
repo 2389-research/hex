@@ -99,7 +99,7 @@ func CreateTestDir(t *testing.T) string {
 
 // MockAPIClient returns a mock API client for testing
 // This is a placeholder - actual implementation depends on whether you have mocking infrastructure
-func MockAPIClient(t *testing.T, responses []core.MessageResponse) *core.Client {
+func MockAPIClient(t *testing.T, _ []core.MessageResponse) *core.Client {
 	t.Helper()
 
 	// For now, just create a real client

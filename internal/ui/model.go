@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Bubbletea model for interactive chat UI
 // ABOUTME: Manages state, messages, input, viewport, and streaming
 package ui
@@ -23,8 +24,11 @@ import (
 type ViewMode int
 
 const (
+	// ViewModeChat is the main chat interface view
 	ViewModeChat ViewMode = iota
+	// ViewModeHistory displays conversation history
 	ViewModeHistory
+	// ViewModeTools shows available tools and their status
 	ViewModeTools
 )
 
@@ -32,9 +36,13 @@ const (
 type Status int
 
 const (
+	// StatusIdle indicates the assistant is not processing
 	StatusIdle Status = iota
+	// StatusTyping indicates the user is typing
 	StatusTyping
+	// StatusStreaming indicates the assistant is streaming a response
 	StatusStreaming
+	// StatusError indicates an error occurred
 	StatusError
 )
 

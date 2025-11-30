@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Status bar component for displaying connection, token, and mode information
 // ABOUTME: Provides comprehensive bottom status bar with color-coded indicators
 package ui
@@ -13,9 +14,13 @@ import (
 type ConnectionStatus int
 
 const (
+	// ConnectionDisconnected indicates no active connection
 	ConnectionDisconnected ConnectionStatus = iota
+	// ConnectionConnected indicates an active connection
 	ConnectionConnected
+	// ConnectionStreaming indicates an active streaming connection
 	ConnectionStreaming
+	// ConnectionError indicates a connection error
 	ConnectionError
 )
 

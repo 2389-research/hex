@@ -1,6 +1,7 @@
 // ABOUTME: Structured logging implementation using Go's standard log/slog package
 // ABOUTME: Provides thread-safe, context-aware logging with multiple output formats and levels
 
+// Package logging provides structured logging with multiple output formats and levels.
 package logging
 
 import (
@@ -17,9 +18,13 @@ import (
 type Level int
 
 const (
+	// LevelDebug enables debug-level logging
 	LevelDebug Level = iota
+	// LevelInfo enables info-level logging
 	LevelInfo
+	// LevelWarn enables warning-level logging
 	LevelWarn
+	// LevelError enables error-level logging
 	LevelError
 )
 
@@ -27,7 +32,9 @@ const (
 type Format int
 
 const (
+	// FormatText outputs logs in plain text format
 	FormatText Format = iota
+	// FormatJSON outputs logs in JSON format
 	FormatJSON
 )
 

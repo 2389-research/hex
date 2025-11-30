@@ -1,6 +1,7 @@
 // ABOUTME: MCP client implementation using JSON-RPC 2.0 over stdio transport
 // ABOUTME: Handles initialization, tool listing, and tool execution with MCP servers
 
+// Package mcp provides Model Context Protocol client and server management.
 package mcp
 
 import (

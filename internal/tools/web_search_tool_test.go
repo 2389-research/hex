@@ -189,7 +189,7 @@ func TestWebSearchTool_Execute_BasicSearch(t *testing.T) {
 }
 
 func TestWebSearchTool_Execute_WithLimit(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
@@ -217,7 +217,7 @@ func TestWebSearchTool_Execute_WithLimit(t *testing.T) {
 }
 
 func TestWebSearchTool_Execute_WithAllowedDomains(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
@@ -246,7 +246,7 @@ func TestWebSearchTool_Execute_WithAllowedDomains(t *testing.T) {
 }
 
 func TestWebSearchTool_Execute_WithBlockedDomains(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
@@ -286,7 +286,7 @@ func TestWebSearchTool_Execute_NoResults(t *testing.T) {
 </html>
 `
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte(emptyResponse))
 	}))
@@ -316,7 +316,7 @@ func TestWebSearchTool_Execute_NoResults(t *testing.T) {
 
 func TestWebSearchTool_Execute_ContextCancellation(t *testing.T) {
 	// Create a server that delays response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		<-r.Context().Done() // Wait for context cancellation
 	}))
 	defer server.Close()
@@ -342,7 +342,7 @@ func TestWebSearchTool_Execute_ContextCancellation(t *testing.T) {
 }
 
 func TestWebSearchTool_Execute_DomainFilteringCaseInsensitive(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte(mockDDGResponse))
 	}))

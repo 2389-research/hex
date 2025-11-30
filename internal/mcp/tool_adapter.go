@@ -40,7 +40,7 @@ func (a *MCPToolAdapter) Description() string {
 // RequiresApproval determines if this tool execution needs user approval
 // For MCP tools, we default to not requiring approval unless specific
 // patterns are detected (can be enhanced later)
-func (a *MCPToolAdapter) RequiresApproval(params map[string]interface{}) bool {
+func (a *MCPToolAdapter) RequiresApproval(_ map[string]interface{}) bool {
 	// Future enhancement: check tool name patterns, params, etc.
 	// For now, MCP tools don't require approval by default
 	return false

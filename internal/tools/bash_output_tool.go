@@ -29,12 +29,12 @@ func (t *BashOutputTool) Description() string {
 }
 
 // RequiresApproval always returns false - this is a read-only tool
-func (t *BashOutputTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *BashOutputTool) RequiresApproval(_ map[string]interface{}) bool {
 	return false
 }
 
 // Execute retrieves output from a background process
-func (t *BashOutputTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *BashOutputTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Validate and extract bash_id parameter
 	bashID, ok := params["bash_id"].(string)
 	if !ok || bashID == "" {

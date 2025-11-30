@@ -20,7 +20,7 @@ func Example() {
 		NameValue:             "echo",
 		DescriptionValue:      "Echoes back the input",
 		RequiresApprovalValue: false,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, params map[string]interface{}) (*tools.Result, error) {
 			message := params["message"].(string)
 			return &tools.Result{
 				ToolName: "echo",
@@ -36,7 +36,7 @@ func Example() {
 		NameValue:             "delete_file",
 		DescriptionValue:      "Deletes a file",
 		RequiresApprovalValue: true,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, params map[string]interface{}) (*tools.Result, error) {
 			path := params["path"].(string)
 			return &tools.Result{
 				ToolName: "delete_file",

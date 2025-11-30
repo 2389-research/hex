@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Bubbletea update function for handling events
 // ABOUTME: Processes keyboard input, window resize, streaming chunks
 package ui
@@ -117,11 +118,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyRunes:
 				if len(msg.Runes) > 0 {
 					r := msg.Runes[0]
-					if r == 'y' || r == 'Y' || r == 'a' || r == 'A' {
+					switch r {
+					case 'y', 'Y', 'a', 'A':
 						return m, m.ApproveToolUse()
-					} else if r == 'n' || r == 'N' || r == 'd' || r == 'D' {
+					case 'n', 'N', 'd', 'D':
 						return m, m.DenyToolUse()
-					} else if r == 'v' || r == 'V' {
+					case 'v', 'V':
 						// Phase 6C: Toggle approval details
 						if m.approvalPrompt != nil {
 							m.approvalPrompt.ToggleDetails()
@@ -642,7 +644,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 }
 
 // streamMessage starts streaming a message from the API
-func (m *Model) streamMessage(userInput string) tea.Cmd {
+func (m *Model) streamMessage(_ string) tea.Cmd {
 	// Build message history for API, filtering out "tool" role messages
 	// (Anthropic API only accepts user/assistant/system roles)
 	messages := make([]core.Message, 0, len(m.Messages))

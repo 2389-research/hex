@@ -153,7 +153,7 @@ func TestMCPTool_Execute_Error(t *testing.T) {
 	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
 	// Register handler that returns an error
-	server.RegisterToolHandler("error_tool", func(args map[string]interface{}) (interface{}, error) {
+	server.RegisterToolHandler("error_tool", func(_ map[string]interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("simulated tool error")
 	})
 
@@ -194,7 +194,7 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 
 	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
-	server.RegisterToolHandler("get_data", func(args map[string]interface{}) (interface{}, error) {
+	server.RegisterToolHandler("get_data", func(_ map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
 			"content": []map[string]interface{}{
 				{
@@ -245,7 +245,7 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 
 	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
 
-	server.RegisterToolHandler("empty_tool", func(args map[string]interface{}) (interface{}, error) {
+	server.RegisterToolHandler("empty_tool", func(_ map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
 			"content": []map[string]interface{}{},
 		}, nil

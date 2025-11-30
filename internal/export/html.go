@@ -1,3 +1,4 @@
+// Package export provides conversation export functionality in multiple formats.
 // ABOUTME: HTML exporter for conversations with syntax highlighting
 // ABOUTME: Uses Chroma for code block syntax highlighting with color themes
 package export

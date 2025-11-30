@@ -14,17 +14,20 @@ import (
 	"golang.org/x/net/html"
 )
 
+// WebSearchTool searches the web using DuckDuckGo and returns formatted results
 type WebSearchTool struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
+// SearchResult represents a single web search result
 type SearchResult struct {
 	Title   string
 	URL     string
 	Snippet string
 }
 
+// NewWebSearchTool creates a new web search tool instance
 func NewWebSearchTool() Tool {
 	return &WebSearchTool{
 		baseURL:    "https://html.duckduckgo.com/html/",
@@ -40,19 +43,23 @@ func newWebSearchToolWithURL(baseURL string) *WebSearchTool {
 	}
 }
 
+// Name returns the tool's identifier
 func (t *WebSearchTool) Name() string {
 	return "web_search"
 }
 
+// Description returns a human-readable description of the tool
 func (t *WebSearchTool) Description() string {
 	return "Search the web using DuckDuckGo and return results"
 }
 
-func (t *WebSearchTool) RequiresApproval(params map[string]interface{}) bool {
+// RequiresApproval returns true since this tool makes network requests
+func (t *WebSearchTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Always requires approval since it makes network requests
 	return true
 }
 
+// Execute performs the web search and returns formatted results
 func (t *WebSearchTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
 	// Extract and validate query parameter
 	query, ok := params["query"].(string)

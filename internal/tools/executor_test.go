@@ -26,7 +26,7 @@ func TestExecutor_Execute_NoApprovalNeeded(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "safe_tool",
 		RequiresApprovalValue: false,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "safe_tool",
 				Success:  true,
@@ -53,7 +53,7 @@ func TestExecutor_Execute_ApprovalNeeded_Approved(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "dangerous_tool",
 		RequiresApprovalValue: true,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "dangerous_tool",
 				Success:  true,
@@ -65,7 +65,7 @@ func TestExecutor_Execute_ApprovalNeeded_Approved(t *testing.T) {
 	require.NoError(t, registry.Register(tool))
 
 	// Approval function that always approves
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 
@@ -85,7 +85,7 @@ func TestExecutor_Execute_ApprovalNeeded_Denied(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "dangerous_tool",
 		RequiresApprovalValue: true,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			// Should not be called
 			t.Fatal("Execute should not be called when approval is denied")
 			return nil, nil
@@ -95,7 +95,7 @@ func TestExecutor_Execute_ApprovalNeeded_Denied(t *testing.T) {
 	require.NoError(t, registry.Register(tool))
 
 	// Approval function that always denies
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return false
 	}
 
@@ -115,7 +115,7 @@ func TestExecutor_Execute_ApprovalNeeded_NoApprovalFunc(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "dangerous_tool",
 		RequiresApprovalValue: true,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "dangerous_tool",
 				Success:  true,
@@ -156,7 +156,7 @@ func TestExecutor_Execute_ToolReturnsError(t *testing.T) {
 	expectedErr := errors.New("tool execution failed")
 	tool := &tools.MockTool{
 		NameValue: "error_tool",
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return nil, expectedErr
 		},
 	}
@@ -178,7 +178,7 @@ func TestExecutor_Execute_ContextCancellation(t *testing.T) {
 
 	tool := &tools.MockTool{
 		NameValue: "slow_tool",
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(ctx context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			// Check if context is cancelled
 			select {
 			case <-ctx.Done():
@@ -218,7 +218,7 @@ func TestExecutor_Execute_ApprovalFuncReceivesCorrectParams(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "param_tool",
 		RequiresApprovalValue: true,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "param_tool",
 				Success:  true,
@@ -260,7 +260,7 @@ func TestExecutor_Execute_NilParams(t *testing.T) {
 	tool := &tools.MockTool{
 		NameValue:             "test_tool",
 		RequiresApprovalValue: false,
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, params map[string]interface{}) (*tools.Result, error) {
 			// Verify params is not nil
 			assert.NotNil(t, params)
 			assert.Empty(t, params)

@@ -29,12 +29,12 @@ func (t *KillShellTool) Description() string {
 }
 
 // RequiresApproval always returns true (killing processes is destructive)
-func (t *KillShellTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *KillShellTool) RequiresApproval(_ map[string]interface{}) bool {
 	return true
 }
 
 // Execute terminates a background process
-func (t *KillShellTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *KillShellTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Validate and extract shell_id parameter
 	shellID, ok := params["shell_id"].(string)
 	if !ok || shellID == "" {

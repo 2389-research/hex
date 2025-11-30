@@ -12,8 +12,11 @@ import (
 type FeedbackType int
 
 const (
+	// FeedbackAccepted indicates the user accepted a suggestion
 	FeedbackAccepted FeedbackType = iota
+	// FeedbackRejected indicates the user rejected a suggestion
 	FeedbackRejected
+	// FeedbackIgnored indicates the user ignored a suggestion
 	FeedbackIgnored
 )
 

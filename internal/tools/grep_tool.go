@@ -31,7 +31,7 @@ func (t *GrepTool) Description() string {
 }
 
 // RequiresApproval returns false for normal paths (grep is read-only)
-func (t *GrepTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *GrepTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Grep is read-only, no approval needed
 	return false
 }

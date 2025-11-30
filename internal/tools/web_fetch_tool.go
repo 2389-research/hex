@@ -42,7 +42,7 @@ func (t *WebFetchTool) Description() string {
 }
 
 // RequiresApproval always returns true since this makes network requests
-func (t *WebFetchTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *WebFetchTool) RequiresApproval(_ map[string]interface{}) bool {
 	return true
 }
 

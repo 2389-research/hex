@@ -1,3 +1,4 @@
+// Package core provides the Anthropic API client and core conversation functionality.
 // ABOUTME: Image loading and encoding for vision API support
 // ABOUTME: Handles file validation, size limits, and base64 encoding
 package core
@@ -59,7 +60,7 @@ func LoadImage(path string) (*ImageSource, error) {
 }
 
 // EncodeImage encodes image data to base64
-func EncodeImage(data []byte, mediaType string) string {
+func EncodeImage(data []byte, _ string) string {
 	return base64.StdEncoding.EncodeToString(data)
 }
 

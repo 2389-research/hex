@@ -29,13 +29,13 @@ func (t *EditTool) Description() string {
 }
 
 // RequiresApproval always returns true - editing files is destructive
-func (t *EditTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *EditTool) RequiresApproval(_ map[string]interface{}) bool {
 	// ALWAYS require approval for file edits
 	return true
 }
 
 // Execute performs the string replacement
-func (t *EditTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *EditTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Extract and validate parameters
 	filePath, ok := params["file_path"].(string)
 	if !ok || filePath == "" {

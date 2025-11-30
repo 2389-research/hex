@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMockTool_Interface(t *testing.T) {
+func TestMockTool_Interface(_ *testing.T) {
 	// Verify MockTool implements Tool interface
 	var _ tools.Tool = (*tools.MockTool)(nil)
 }
@@ -69,7 +69,7 @@ func TestMockTool_RequiresApproval(t *testing.T) {
 func TestMockTool_Execute_Success(t *testing.T) {
 	mock := &tools.MockTool{
 		NameValue: "test_tool",
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "test_tool",
 				Success:  true,
@@ -91,7 +91,7 @@ func TestMockTool_Execute_Success(t *testing.T) {
 func TestMockTool_Execute_Error(t *testing.T) {
 	mock := &tools.MockTool{
 		NameValue: "test_tool",
-		ExecuteFunc: func(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
+		ExecuteFunc: func(_ context.Context, _ map[string]interface{}) (*tools.Result, error) {
 			return &tools.Result{
 				ToolName: "test_tool",
 				Success:  false,

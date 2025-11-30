@@ -27,7 +27,7 @@ func TestScenario_StorageAndTools(t *testing.T) {
 	registry := tools.NewRegistry()
 	_ = registry.Register(tools.NewReadTool())
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true // Auto-approve for test
 	})
 
@@ -71,7 +71,7 @@ func TestScenario_MultipleToolsSequence(t *testing.T) {
 	_ = registry.Register(tools.NewWriteTool())
 	_ = registry.Register(tools.NewReadTool())
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -148,7 +148,7 @@ func TestScenario_ToolErrorHandling(t *testing.T) {
 	registry := tools.NewRegistry()
 	_ = registry.Register(tools.NewReadTool())
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -213,7 +213,7 @@ func TestScenario_ToolDenial(t *testing.T) {
 	_ = registry.Register(tools.NewWriteTool())
 
 	// Executor that denies all requests
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return false // Deny
 	})
 

@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Bubbletea view function for rendering UI
 // ABOUTME: Renders viewport with messages and input textarea
 package ui

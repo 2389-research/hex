@@ -31,7 +31,7 @@ func TestVersionFlag(t *testing.T) {
 	assert.Contains(t, buf.String(), "1.0.0")
 }
 
-func TestPrintFlag(t *testing.T) {
+func TestPrintFlag(_ *testing.T) {
 	rootCmd.SetArgs([]string{"--print", "test"})
 	// Should not panic
 	// Actual functionality tested in integration tests

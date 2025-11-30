@@ -31,13 +31,13 @@ func (t *GlobTool) Description() string {
 }
 
 // RequiresApproval returns false (glob is read-only)
-func (t *GlobTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *GlobTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Glob is read-only, no approval needed
 	return false
 }
 
 // Execute performs the glob search
-func (t *GlobTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *GlobTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Extract pattern (required)
 	pattern, ok := params["pattern"].(string)
 	if !ok || pattern == "" {

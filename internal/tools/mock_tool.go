@@ -24,7 +24,7 @@ func (m *MockTool) Description() string {
 }
 
 // RequiresApproval returns whether approval is needed
-func (m *MockTool) RequiresApproval(params map[string]interface{}) bool {
+func (m *MockTool) RequiresApproval(_ map[string]interface{}) bool {
 	return m.RequiresApprovalValue
 }
 

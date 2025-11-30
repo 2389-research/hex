@@ -41,7 +41,7 @@ func init() {
 	rootCmd.AddCommand(templatesCmd)
 }
 
-func runTemplatesList(cmd *cobra.Command, args []string) error {
+func runTemplatesList(_ *cobra.Command, _ []string) error {
 	// Get templates directory
 	dir, err := templates.GetTemplatesDir()
 	if err != nil {

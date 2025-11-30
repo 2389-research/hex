@@ -1,6 +1,7 @@
 // ABOUTME: Template loader for reading and parsing YAML session templates
 // ABOUTME: Handles loading from ~/.clem/templates/ directory with validation
 
+// Package templates provides template loading and rendering for conversations.
 package templates
 
 import (

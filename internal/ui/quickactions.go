@@ -1,3 +1,4 @@
+// Package ui provides the Bubble Tea terminal user interface components.
 // ABOUTME: Quick actions menu system for keyboard shortcuts
 // ABOUTME: Provides fuzzy-searchable command palette for tools and actions
 package ui
@@ -37,33 +38,33 @@ func NewQuickActionsRegistry() *QuickActionsRegistry {
 // registerBuiltInActions registers the default quick actions
 func (r *QuickActionsRegistry) registerBuiltInActions() {
 	// Read file action
-	_ = r.RegisterAction("read", "Read a file", "read <file>", func(args string) error {
+	_ = r.RegisterAction("read", "Read a file", "read <file>", func(_ string) error {
 		// This will be connected to the tool system in the model
 		return fmt.Errorf("read action not yet connected to tool system")
 	})
 
 	// Grep action
-	_ = r.RegisterAction("grep", "Search files with grep", "grep <pattern>", func(args string) error {
+	_ = r.RegisterAction("grep", "Search files with grep", "grep <pattern>", func(_ string) error {
 		return fmt.Errorf("grep action not yet connected to tool system")
 	})
 
 	// Web fetch action
-	_ = r.RegisterAction("web", "Fetch web page", "web <url>", func(args string) error {
+	_ = r.RegisterAction("web", "Fetch web page", "web <url>", func(_ string) error {
 		return fmt.Errorf("web action not yet connected to tool system")
 	})
 
 	// Attach image action
-	_ = r.RegisterAction("attach", "Attach an image", "attach <file>", func(args string) error {
+	_ = r.RegisterAction("attach", "Attach an image", "attach <file>", func(_ string) error {
 		return fmt.Errorf("attach action not yet connected to tool system")
 	})
 
 	// Save conversation action
-	_ = r.RegisterAction("save", "Save conversation", "save", func(args string) error {
+	_ = r.RegisterAction("save", "Save conversation", "save", func(_ string) error {
 		return fmt.Errorf("save action not yet connected to model")
 	})
 
 	// Export action
-	_ = r.RegisterAction("export", "Export conversation as markdown", "export", func(args string) error {
+	_ = r.RegisterAction("export", "Export conversation as markdown", "export", func(_ string) error {
 		return fmt.Errorf("export action not yet connected to model")
 	})
 }

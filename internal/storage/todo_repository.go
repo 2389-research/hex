@@ -1,3 +1,4 @@
+// Package storage provides database operations for conversations, messages, and metadata.
 // ABOUTME: Todo repository for CRUD operations on todo items
 // ABOUTME: Handles saving, loading, and clearing todo lists with optional conversation scoping
 package storage

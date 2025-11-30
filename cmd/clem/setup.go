@@ -25,7 +25,7 @@ func init() {
 	rootCmd.AddCommand(setupCmd)
 }
 
-func runSetup(cmd *cobra.Command, args []string) error {
+func runSetup(_ *cobra.Command, args []string) error {
 	var apiKey string
 
 	if len(args) > 0 {

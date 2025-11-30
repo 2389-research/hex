@@ -1,3 +1,4 @@
+// Package tools provides the tool system for extending Clem with external capabilities.
 // ABOUTME: AskUserQuestion tool for interactive decision-making
 // ABOUTME: Presents multiple-choice questions to users and collects answers
 package tools
@@ -27,13 +28,13 @@ func (t *AskUserQuestionTool) Description() string {
 }
 
 // RequiresApproval returns whether this tool needs user confirmation
-func (t *AskUserQuestionTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *AskUserQuestionTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Interactive tool - requires approval to show questions
 	return true
 }
 
 // Execute runs the tool with the given parameters
-func (t *AskUserQuestionTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *AskUserQuestionTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Extract questions
 	questionsRaw, ok := params["questions"]
 	if !ok {

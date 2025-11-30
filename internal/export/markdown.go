@@ -1,3 +1,4 @@
+// Package export provides conversation export functionality in multiple formats.
 // ABOUTME: Markdown exporter for conversations with frontmatter metadata
 // ABOUTME: Produces clean, readable Markdown with YAML frontmatter
 package export

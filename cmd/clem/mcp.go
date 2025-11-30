@@ -34,7 +34,7 @@ Examples:
   clem mcp add files /usr/local/bin/file-server`,
 	Args:               cobra.MinimumNArgs(2),
 	DisableFlagParsing: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		return runMCPAdd(".", args)
 	},
 }
@@ -47,7 +47,7 @@ var mcpListCmd = &cobra.Command{
 Shows the server name, transport type, command, and arguments
 for each configured server.`,
 	Args: cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		return runMCPList(cmd, ".")
 	},
 }
@@ -60,7 +60,7 @@ var mcpRemoveCmd = &cobra.Command{
 This removes the server from the configuration file. It does not
 affect the actual server binary or scripts.`,
 	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		return runMCPRemove(".", args[0])
 	},
 }

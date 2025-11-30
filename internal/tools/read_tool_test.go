@@ -15,7 +15,7 @@ import (
 )
 
 // TestReadTool_Interface verifies ReadTool implements Tool interface
-func TestReadTool_Interface(t *testing.T) {
+func TestReadTool_Interface(_ *testing.T) {
 	var _ tools.Tool = (*tools.ReadTool)(nil)
 }
 

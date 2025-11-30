@@ -65,7 +65,7 @@ func TestReadTool_Integration_WithExecutor(t *testing.T) {
 	_ = registry.Register(tools.NewReadTool())
 
 	approvalCalled := false
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		approvalCalled = true
 		return true
 	})
@@ -87,7 +87,7 @@ func TestReadTool_Integration_WithExecutor_Approval(t *testing.T) {
 	_ = registry.Register(tools.NewReadTool())
 
 	approvalParams := make(map[string]interface{})
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, params map[string]interface{}) bool {
 		approvalParams = params
 		return true // Approve
 	})
@@ -109,7 +109,7 @@ func TestReadTool_Integration_WithExecutor_ApprovalDenied(t *testing.T) {
 	registry := tools.NewRegistry()
 	_ = registry.Register(tools.NewReadTool())
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return false // Deny
 	})
 

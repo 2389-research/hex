@@ -154,7 +154,7 @@ func TestToolExecutorWithApproval(t *testing.T) {
 	_ = registry.Register(tools.NewReadTool())
 
 	// Create executor with auto-approve
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true // Always approve
 	})
 
@@ -181,7 +181,7 @@ func TestToolExecutorWithDenial(t *testing.T) {
 	_ = registry.Register(tools.NewWriteTool())
 
 	// Create executor with denial callback
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return false // Always deny
 	})
 
@@ -254,7 +254,7 @@ func TestConcurrentToolExecution(t *testing.T) {
 	registry := tools.NewRegistry()
 	_ = registry.Register(tools.NewReadTool())
 
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true
 	})
 
@@ -304,7 +304,7 @@ func TestEditToolIntegration(t *testing.T) {
 	err = registry.Register(editTool)
 	require.NoError(t, err)
 
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true // Auto-approve for test
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
@@ -347,7 +347,7 @@ func TestGrepToolIntegration(t *testing.T) {
 	err = registry.Register(grepTool)
 	require.NoError(t, err)
 
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
@@ -386,7 +386,7 @@ func TestGlobToolIntegration(t *testing.T) {
 	err := registry.Register(globTool)
 	require.NoError(t, err)
 
-	approvalFunc := func(toolName string, params map[string]interface{}) bool {
+	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)

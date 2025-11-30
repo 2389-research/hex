@@ -20,7 +20,7 @@ func init() {
 	rootCmd.AddCommand(doctorCmd)
 }
 
-func runDoctor(cmd *cobra.Command, args []string) error {
+func runDoctor(_ *cobra.Command, _ []string) error {
 	fmt.Println("Clem Health Check")
 	fmt.Println("=================")
 	fmt.Println()

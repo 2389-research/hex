@@ -1,3 +1,4 @@
+// Package core provides the Anthropic API client and core conversation functionality.
 // ABOUTME: SSE streaming support for Anthropic API
 // ABOUTME: Parses server-sent events, accumulates deltas, yields chunks
 package core

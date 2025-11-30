@@ -1,3 +1,4 @@
+// Package core provides the Anthropic API client and core conversation functionality.
 // ABOUTME: Configuration loading with multi-source precedence support
 // ABOUTME: Handles env vars, .env files, YAML config, and defaults via Viper
 package core

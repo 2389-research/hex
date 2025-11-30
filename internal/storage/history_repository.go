@@ -1,3 +1,4 @@
+// Package storage provides database operations for conversations, messages, and metadata.
 // ABOUTME: Repository for command history with FTS5 full-text search
 // ABOUTME: Manages storage and retrieval of user messages and assistant responses
 package storage

@@ -1,3 +1,4 @@
+// Package storage provides database operations for conversations, messages, and metadata.
 // ABOUTME: Message CRUD operations for SQLite storage
 // ABOUTME: Create, read, and list messages within conversations
 package storage

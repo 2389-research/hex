@@ -1,5 +1,7 @@
 // ABOUTME: Context pruning and token management for conversations
 // ABOUTME: Keeps conversations within token limits while preserving important context
+
+// Package context provides context window management and message pruning for conversations.
 package context
 
 import (
@@ -27,8 +29,11 @@ type Manager struct {
 type PruneStrategy int
 
 const (
+	// StrategyKeepAll preserves all messages without pruning
 	StrategyKeepAll PruneStrategy = iota
+	// StrategyPrune removes old messages when context limit is reached
 	StrategyPrune
+	// StrategySummarize summarizes old messages to save tokens
 	StrategySummarize
 )
 

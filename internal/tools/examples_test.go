@@ -99,7 +99,7 @@ func ExampleReadTool_withExecutor() {
 	_ = registry.Register(tools.NewReadTool())
 
 	// Create executor with auto-approval
-	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
+	executor := tools.NewExecutor(registry, func(_ string, _ map[string]interface{}) bool {
 		return true // Auto-approve for this example
 	})
 

@@ -22,7 +22,7 @@ func TestRegisterAction(t *testing.T) {
 	registry := NewQuickActionsRegistry()
 
 	// Register a custom action
-	handler := func(args string) error {
+	handler := func(_ string) error {
 		return nil
 	}
 
@@ -41,7 +41,7 @@ func TestRegisterAction(t *testing.T) {
 func TestRegisterActionDuplicate(t *testing.T) {
 	registry := NewQuickActionsRegistry()
 
-	handler := func(args string) error {
+	handler := func(_ string) error {
 		return nil
 	}
 
@@ -229,7 +229,7 @@ func TestActionHandlerError(t *testing.T) {
 	registry := NewQuickActionsRegistry()
 
 	// Register action that returns error
-	handler := func(args string) error {
+	handler := func(_ string) error {
 		return assert.AnError
 	}
 

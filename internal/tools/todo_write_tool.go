@@ -38,12 +38,12 @@ func (t *TodoWriteTool) Description() string {
 }
 
 // RequiresApproval returns false (TodoWrite is read-only display)
-func (t *TodoWriteTool) RequiresApproval(params map[string]interface{}) bool {
+func (t *TodoWriteTool) RequiresApproval(_ map[string]interface{}) bool {
 	return false
 }
 
 // Execute creates and formats a todo list
-func (t *TodoWriteTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+func (t *TodoWriteTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	// Check if we should load from database
 	loadFromDB := false
 	if loadParam, ok := params["load_from_db"]; ok {

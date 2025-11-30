@@ -1,6 +1,7 @@
 // ABOUTME: API integration tests for Anthropic client interaction
 // ABOUTME: Tests message creation, streaming, tool use flows (with VCR or mocks)
 
+// Package integration provides end-to-end integration tests for Clem.
 package integration
 
 import (
