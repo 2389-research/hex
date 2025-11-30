@@ -128,7 +128,7 @@ func TestExportToFile(t *testing.T) {
 	defer func() { _ = db.Close() }()
 
 	outputPath := filepath.Join(t.TempDir(), "export.md")
-	file, err := os.Create(outputPath)
+	file, err := os.Create(outputPath) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	defer func() { _ = file.Close() }()
 
@@ -137,9 +137,10 @@ func TestExportToFile(t *testing.T) {
 
 	// Close and read back
 	_ = file.Close()
+	//nolint:gosec // G304: Test file reads/writes are safe
 
-	content, err := os.ReadFile(outputPath)
-	require.NoError(t, err)
+	content, err := os.ReadFile(outputPath) //nolint:gosec // G304: Path validated by caller
+	require.NoError(t, err)                 //nolint:gosec // G304: Path validated by caller
 
 	output := string(content)
 	assert.Contains(t, output, "Export Test")

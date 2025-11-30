@@ -21,7 +21,7 @@ func TestEditTool_BasicEdit(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "Hello World\nThis is a test\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -41,6 +41,7 @@ func TestEditTool_BasicEdit(t *testing.T) {
 	}
 
 	// Verify file was modified
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)
@@ -58,7 +59,7 @@ func TestEditTool_MultilineEdit(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "multiline.txt")
 	content := "func main() {\n\tfmt.Println(\"old\")\n}\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -76,8 +77,9 @@ func TestEditTool_MultilineEdit(t *testing.T) {
 	if !result.Success {
 		t.Fatalf("Expected success, got error: %s", result.Error)
 	}
+	//nolint:gosec // G304: Test file reads/writes are safe
 
-	newContent, err := os.ReadFile(testFile)
+	newContent, err := os.ReadFile(testFile) //nolint:gosec // G304: Path validated by caller
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)
 	}
@@ -94,7 +96,7 @@ func TestEditTool_PreserveIndentation(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "indent.txt")
 	content := "func test() {\n\t\tif true {\n\t\t\treturn \"old\"\n\t\t}\n}\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -111,8 +113,10 @@ func TestEditTool_PreserveIndentation(t *testing.T) {
 
 	if !result.Success {
 		t.Fatalf("Expected success, got error: %s", result.Error)
+		//nolint:gosec // G304: Test file reads/writes are safe
 	}
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)
@@ -134,7 +138,7 @@ func TestEditTool_ReplaceAll(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "replaceall.txt")
 	content := "foo bar foo baz foo"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -151,9 +155,11 @@ func TestEditTool_ReplaceAll(t *testing.T) {
 	}
 
 	if !result.Success {
+		//nolint:gosec // G304: Test file reads/writes are safe
 		t.Fatalf("Expected success, got error: %s", result.Error)
 	}
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)
@@ -171,7 +177,7 @@ func TestEditTool_ReplaceAllWithNewlines(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "replaceall_newlines.txt")
 	content := "log.Println(\"test\")\nlog.Println(\"foo\")\nlog.Println(\"bar\")\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -187,10 +193,12 @@ func TestEditTool_ReplaceAllWithNewlines(t *testing.T) {
 		t.Fatalf("Execute failed: %v", err)
 	}
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	if !result.Success {
 		t.Fatalf("Expected success, got error: %s", result.Error)
 	}
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)
@@ -212,7 +220,7 @@ func TestEditTool_AmbiguousMatch(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "ambiguous.txt")
 	content := "foo bar foo baz foo"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -243,7 +251,7 @@ func TestEditTool_StringNotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "notfound.txt")
 	content := "Hello World"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -394,7 +402,7 @@ func TestEditTool_EmptyFile(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "empty.txt")
-	if err := os.WriteFile(testFile, []byte(""), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(""), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -420,7 +428,7 @@ func TestEditTool_SameOldAndNew(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "same.txt")
 	content := "Hello World"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -446,7 +454,7 @@ func TestEditTool_UnicodeContent(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "unicode.txt")
 	content := "Hello 世界 🌍"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -460,11 +468,13 @@ func TestEditTool_UnicodeContent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
+	//nolint:gosec // G304: Test file reads/writes are safe
 
 	if !result.Success {
 		t.Fatalf("Expected success with unicode, got error: %s", result.Error)
 	}
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read modified file: %v", err)

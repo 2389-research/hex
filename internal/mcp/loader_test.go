@@ -41,7 +41,7 @@ func TestLoadMCPTools_EmptyConfig(t *testing.T) {
 		Servers: make(map[string]ServerConfig),
 	}
 	configData, _ := json.Marshal(config)
-	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), configData, 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), configData, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestLoadMCPTools_InvalidConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Write invalid JSON to .mcp.json
-	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), []byte("not valid json"), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), []byte("not valid json"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestLoadMCPTools_ServerInitializationFailure(t *testing.T) {
 		},
 	}
 	configData, _ := json.MarshalIndent(config, "", "  ")
-	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), configData, 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, ".mcp.json"), configData, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}

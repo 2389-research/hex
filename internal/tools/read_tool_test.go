@@ -378,7 +378,7 @@ func TestReadTool_PathSafety(t *testing.T) {
 
 	// Create a file in tmpDir
 	testFile := filepath.Join(tmpDir, "test.txt")
-	err = os.WriteFile(testFile, []byte("test content"), 0644)
+	err = os.WriteFile(testFile, []byte("test content"), 0600)
 	require.NoError(t, err)
 
 	tool := tools.NewReadTool()

@@ -191,7 +191,7 @@ tools_enabled:
 model: claude-sonnet-4-5-20250929
 max_tokens: 8192
 `
-		if err := os.WriteFile(codeReviewPath, []byte(codeReview), 0644); err != nil {
+		if err := os.WriteFile(codeReviewPath, []byte(codeReview), 0600); err != nil {
 			return fmt.Errorf("write code-review template: %w", err)
 		}
 	}
@@ -234,7 +234,7 @@ tools_enabled:
 model: claude-sonnet-4-5-20250929
 max_tokens: 8192
 `
-		if err := os.WriteFile(debugPath, []byte(debugSession), 0644); err != nil {
+		if err := os.WriteFile(debugPath, []byte(debugSession), 0600); err != nil {
 			return fmt.Errorf("write debug-session template: %w", err)
 		}
 	}
@@ -275,7 +275,7 @@ tools_enabled:
 model: claude-sonnet-4-5-20250929
 max_tokens: 8192
 `
-		if err := os.WriteFile(refactorPath, []byte(refactor), 0644); err != nil {
+		if err := os.WriteFile(refactorPath, []byte(refactor), 0600); err != nil {
 			return fmt.Errorf("write refactor template: %w", err)
 		}
 	}

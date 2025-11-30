@@ -296,7 +296,7 @@ func TestEditToolIntegration(t *testing.T) {
 
 	// Create test file
 	content := "Hello World\nThis is a test\n"
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0600)
 	require.NoError(t, err)
 
 	registry := tools.NewRegistry()
@@ -320,6 +320,7 @@ func TestEditToolIntegration(t *testing.T) {
 	assert.True(t, result.Success, "Edit should succeed")
 
 	// Verify file was modified
+	//nolint:gosec // G304: Test file reads/writes are safe
 	newContent, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Contains(t, string(newContent), "Universe")
@@ -334,11 +335,11 @@ func TestGrepToolIntegration(t *testing.T) {
 	file2 := filepath.Join(tmpDir, "main.go")
 	file3 := filepath.Join(tmpDir, "readme.txt")
 
-	err := os.WriteFile(file1, []byte("package main\nfunc test() {}\n"), 0644)
+	err := os.WriteFile(file1, []byte("package main\nfunc test() {}\n"), 0600)
 	require.NoError(t, err)
-	err = os.WriteFile(file2, []byte("package main\nfunc main() {}\n"), 0644)
+	err = os.WriteFile(file2, []byte("package main\nfunc main() {}\n"), 0600)
 	require.NoError(t, err)
-	err = os.WriteFile(file3, []byte("This is a readme\n"), 0644)
+	err = os.WriteFile(file3, []byte("This is a readme\n"), 0600)
 	require.NoError(t, err)
 
 	registry := tools.NewRegistry()
@@ -376,7 +377,7 @@ func TestGlobToolIntegration(t *testing.T) {
 	files := []string{"test.go", "main.go", "test.txt", "README.md"}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		err := os.WriteFile(path, []byte("content"), 0644)
+		err := os.WriteFile(path, []byte("content"), 0600)
 		require.NoError(t, err)
 	}
 

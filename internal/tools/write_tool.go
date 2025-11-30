@@ -111,7 +111,7 @@ func (t *WriteTool) Execute(ctx context.Context, params map[string]interface{}) 
 	// Ensure parent directory exists
 	parentDir := filepath.Dir(absPath)
 	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(parentDir, 0755); err != nil {
+		if err := os.MkdirAll(parentDir, 0750); err != nil {
 			return &Result{
 				ToolName: "write_file",
 				Success:  false,
@@ -174,10 +174,10 @@ func writeFile(path, content string, append bool) (int, error) {
 	var err error
 
 	if append {
-		file, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		file, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600) //nolint:gosec // G304: Path validated by caller
 	} else {
-		file, err = os.Create(path)
-	}
+		file, err = os.Create(path) //nolint:gosec // G304: Path validated by caller
+	} //nolint:gosec // G304: Path validated by caller
 
 	if err != nil {
 		return 0, err

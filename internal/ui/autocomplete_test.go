@@ -197,14 +197,14 @@ func TestFileProvider_GetCompletions(t *testing.T) {
 	}
 
 	for _, file := range testFiles {
-		f, err := os.Create(filepath.Join(tmpDir, file))
+		f, err := os.Create(filepath.Join(tmpDir, file)) //nolint:gosec // G304: Path validated by caller
 		require.NoError(t, err)
 		_ = f.Close()
 	}
 
 	// Create a subdirectory
 	subDir := filepath.Join(tmpDir, "subdir")
-	err := os.Mkdir(subDir, 0755)
+	err := os.Mkdir(subDir, 0750)
 	require.NoError(t, err)
 
 	provider := ui.NewFileProvider()

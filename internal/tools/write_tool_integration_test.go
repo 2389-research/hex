@@ -59,6 +59,7 @@ func TestWriteTool_Integration_WithExecutor(t *testing.T) {
 	assert.Empty(t, result.Error)
 
 	// Verify file was written
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, "Hello from executor!", string(written))
@@ -156,8 +157,9 @@ func TestWriteTool_Integration_MultipleOperations(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, result.Success)
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Verify overwrite
-	content, err := os.ReadFile(file1)
+	content, err := os.ReadFile(file1) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	assert.Equal(t, "new content", string(content))
 
@@ -169,10 +171,12 @@ func TestWriteTool_Integration_MultipleOperations(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.True(t, result.Success)
+	//nolint:gosec // G304: Test file reads/writes are safe
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Verify append
-	content, err = os.ReadFile(file1)
-	require.NoError(t, err)
+	content, err = os.ReadFile(file1) //nolint:gosec // G304: Path validated by caller
+	require.NoError(t, err)           //nolint:gosec // G304: Path validated by caller
 	assert.Equal(t, "new content appended", string(content))
 }
 
@@ -197,9 +201,11 @@ func TestWriteTool_Integration_WithNestedDirectories(t *testing.T) {
 	})
 
 	require.NoError(t, err)
+	//nolint:gosec // G304: Test file reads/writes are safe
 	assert.True(t, result.Success)
 
 	// Verify file and directories were created
+	//nolint:gosec // G304: Test file reads/writes are safe
 	content, err := os.ReadFile(nestedFile)
 	require.NoError(t, err)
 	assert.Equal(t, "nested content", string(content))

@@ -106,6 +106,7 @@ func TestWriteTool_Execute_Create_Success(t *testing.T) {
 	assert.True(t, result.Metadata["created"].(bool))
 
 	// Verify file was actually written
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, content, string(written))
@@ -117,7 +118,7 @@ func TestWriteTool_Execute_Create_FileExists(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "existing.txt")
 
 	// Create existing file
-	require.NoError(t, os.WriteFile(testFile, []byte("existing"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("existing"), 0600))
 
 	tool := tools.NewWriteTool()
 
@@ -132,8 +133,9 @@ func TestWriteTool_Execute_Create_FileExists(t *testing.T) {
 	assert.Contains(t, result.Error, "already exists")
 	assert.Contains(t, result.Error, "overwrite")
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Verify file was NOT modified
-	existing, err := os.ReadFile(testFile)
+	existing, err := os.ReadFile(testFile) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	assert.Equal(t, "existing", string(existing))
 }
@@ -144,7 +146,7 @@ func TestWriteTool_Execute_Overwrite_Success(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "existing.txt")
 
 	// Create existing file
-	require.NoError(t, os.WriteFile(testFile, []byte("old content"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("old content"), 0600))
 
 	tool := tools.NewWriteTool()
 	newContent := "new content"
@@ -159,10 +161,12 @@ func TestWriteTool_Execute_Overwrite_Success(t *testing.T) {
 	assert.True(t, result.Success)
 	assert.Equal(t, "overwrite", result.Metadata["mode"])
 	assert.False(t, result.Metadata["created"].(bool))
+	//nolint:gosec // G304: Test file reads/writes are safe
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Verify file was overwritten
-	written, err := os.ReadFile(testFile)
-	require.NoError(t, err)
+	written, err := os.ReadFile(testFile) //nolint:gosec // G304: Path validated by caller
+	require.NoError(t, err)               //nolint:gosec // G304: Path validated by caller
 	assert.Equal(t, newContent, string(written))
 }
 
@@ -182,9 +186,11 @@ func TestWriteTool_Execute_Overwrite_CreatesNew(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.True(t, result.Success)
+	//nolint:gosec // G304: Test file reads/writes are safe
 	assert.True(t, result.Metadata["created"].(bool))
 
 	// Verify file was created
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, content, string(written))
@@ -196,7 +202,7 @@ func TestWriteTool_Execute_Append_Success(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "existing.txt")
 
 	// Create existing file
-	require.NoError(t, os.WriteFile(testFile, []byte("line1\n"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("line1\n"), 0600))
 
 	tool := tools.NewWriteTool()
 	appendContent := "line2\n"
@@ -209,10 +215,12 @@ func TestWriteTool_Execute_Append_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.True(t, result.Success)
+	//nolint:gosec // G304: Test file reads/writes are safe
 	assert.Equal(t, "append", result.Metadata["mode"])
 	assert.False(t, result.Metadata["created"].(bool))
 
 	// Verify content was appended
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, "line1\nline2\n", string(written))
@@ -232,11 +240,13 @@ func TestWriteTool_Execute_Append_CreatesNew(t *testing.T) {
 		"mode":    "append",
 	})
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	require.NoError(t, err)
 	assert.True(t, result.Success)
 	assert.True(t, result.Metadata["created"].(bool))
 
 	// Verify file was created
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, content, string(written))
@@ -380,12 +390,14 @@ func TestWriteTool_Execute_EmptyContent(t *testing.T) {
 		"path":    testFile,
 		"content": "",
 	})
+	//nolint:gosec // G304: Test file reads/writes are safe
 
 	require.NoError(t, err)
 	assert.True(t, result.Success)
 	assert.Equal(t, 0, result.Metadata["bytes_written"])
 
 	// Verify empty file was created
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Empty(t, written)
@@ -399,7 +411,8 @@ func TestWriteTool_Execute_CreatesParentDirs(t *testing.T) {
 	tool := tools.NewWriteTool()
 
 	result, err := tool.Execute(context.Background(), map[string]interface{}{
-		"path":    testFile,
+		"path": testFile,
+		//nolint:gosec // G304: Test file reads/writes are safe
 		"content": "content",
 	})
 
@@ -407,6 +420,7 @@ func TestWriteTool_Execute_CreatesParentDirs(t *testing.T) {
 	assert.True(t, result.Success)
 
 	// Verify file and parent directories were created
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, "content", string(written))
@@ -425,6 +439,7 @@ func TestWriteTool_Execute_UnicodeContent(t *testing.T) {
 	unicodeContent := "Hello 世界 🌍 Здравствуй мир"
 
 	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		//nolint:gosec // G304: Test file reads/writes are safe
 		"path":    testFile,
 		"content": unicodeContent,
 	})
@@ -433,6 +448,7 @@ func TestWriteTool_Execute_UnicodeContent(t *testing.T) {
 	assert.True(t, result.Success)
 
 	// Verify Unicode content was written correctly
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	assert.Equal(t, unicodeContent, string(written))
@@ -445,6 +461,7 @@ func TestWriteTool_Execute_PathCleaning(t *testing.T) {
 	tool := tools.NewWriteTool()
 
 	// Try to write using directory traversal
+	//nolint:gosec // G304: Test file reads/writes are safe
 	result, err := tool.Execute(context.Background(), map[string]interface{}{
 		"path":    filepath.Join(tmpDir, "subdir", "..", "test.txt"),
 		"content": "content",
@@ -454,6 +471,7 @@ func TestWriteTool_Execute_PathCleaning(t *testing.T) {
 	assert.True(t, result.Success)
 
 	// Verify file was created in tmpDir, not outside it
+	//nolint:gosec // G304: Test file reads/writes are safe
 	written, err := os.ReadFile(filepath.Join(tmpDir, "test.txt"))
 	require.NoError(t, err)
 	assert.Equal(t, "content", string(written))

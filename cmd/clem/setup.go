@@ -44,7 +44,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 
 	// Create .clem directory
 	clemDir := filepath.Join(home, ".clem")
-	if err := os.MkdirAll(clemDir, 0755); err != nil {
+	if err := os.MkdirAll(clemDir, 0750); err != nil {
 		return fmt.Errorf("create .clem dir: %w", err)
 	}
 

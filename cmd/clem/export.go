@@ -79,6 +79,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 	if exportOutput == "" {
 		writer = os.Stdout
 	} else {
+		//nolint:gosec // G304: User-provided output path is intentional for export functionality
 		file, err := os.Create(exportOutput)
 		if err != nil {
 			return fmt.Errorf("create output file: %w", err)

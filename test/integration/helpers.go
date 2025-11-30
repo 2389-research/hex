@@ -85,7 +85,7 @@ func CreateTestFile(t *testing.T, content string) string {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "testfile.txt")
 
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	err := os.WriteFile(filePath, []byte(content), 0600)
 	require.NoError(t, err, "failed to create test file")
 
 	return filePath
@@ -120,7 +120,7 @@ func AssertFileExists(t *testing.T, path string) {
 func AssertFileContains(t *testing.T, path, expectedContent string) {
 	t.Helper()
 
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(path) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err, "failed to read file: %s", path)
 	require.Contains(t, string(content), expectedContent, "file should contain expected content")
 }

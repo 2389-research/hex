@@ -32,7 +32,7 @@ func TestLoadTemplateByName_Success(t *testing.T) {
 	// Create temp templates directory
 	tmpDir := t.TempDir()
 	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
-	err := os.MkdirAll(templatesDir, 0755)
+	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
 	// Create a test template
@@ -41,7 +41,7 @@ description: A test template
 system_prompt: You are helpful
 `
 	templatePath := filepath.Join(templatesDir, "test-template.yaml")
-	err = os.WriteFile(templatePath, []byte(templateContent), 0644)
+	err = os.WriteFile(templatePath, []byte(templateContent), 0600)
 	require.NoError(t, err)
 
 	// Override home directory for test
@@ -62,7 +62,7 @@ func TestLoadTemplateByName_NotFound(t *testing.T) {
 	// Create temp templates directory
 	tmpDir := t.TempDir()
 	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
-	err := os.MkdirAll(templatesDir, 0755)
+	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
 	// Create a different template
@@ -70,7 +70,7 @@ func TestLoadTemplateByName_NotFound(t *testing.T) {
 description: Different template
 `
 	templatePath := filepath.Join(templatesDir, "other.yaml")
-	err = os.WriteFile(templatePath, []byte(templateContent), 0644)
+	err = os.WriteFile(templatePath, []byte(templateContent), 0600)
 	require.NoError(t, err)
 
 	// Override home directory for test
@@ -89,7 +89,7 @@ func TestLoadTemplateByName_EmptyDirectory(t *testing.T) {
 	// Create empty templates directory
 	tmpDir := t.TempDir()
 	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
-	err := os.MkdirAll(templatesDir, 0755)
+	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
 	// Override home directory for test
@@ -131,6 +131,7 @@ func TestCreateExampleTemplates(t *testing.T) {
 		assert.NoError(t, err, "Template file should exist: %s", templateFile)
 
 		// Verify it's valid YAML by reading it
+		//nolint:gosec // G304: Test file reads/writes are safe
 		content, err := os.ReadFile(path)
 		require.NoError(t, err)
 		assert.NotEmpty(t, content)
@@ -143,7 +144,7 @@ func TestCreateExampleTemplates_DoesNotOverwrite(t *testing.T) {
 	// Create temp directory
 	tmpDir := t.TempDir()
 	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
-	err := os.MkdirAll(templatesDir, 0755)
+	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
 	// Override home directory for test
@@ -154,15 +155,16 @@ func TestCreateExampleTemplates_DoesNotOverwrite(t *testing.T) {
 	// Create existing template with custom content
 	customContent := "name: custom\ndescription: my custom template\n"
 	customPath := filepath.Join(templatesDir, "code-review.yaml")
-	err = os.WriteFile(customPath, []byte(customContent), 0644)
+	err = os.WriteFile(customPath, []byte(customContent), 0600)
 	require.NoError(t, err)
 
 	// Call createExampleTemplates
 	err = createExampleTemplates()
 	require.NoError(t, err)
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Verify custom template was not overwritten
-	content, err := os.ReadFile(customPath)
+	content, err := os.ReadFile(customPath) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	assert.Equal(t, customContent, string(content))
 }

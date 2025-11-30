@@ -199,6 +199,7 @@ func TestRegistry_Persist(t *testing.T) {
 	}
 
 	// Verify file contents
+	//nolint:gosec // G304: Test file reads/writes are safe
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("Failed to read .mcp.json: %v", err)
@@ -242,7 +243,7 @@ func TestRegistry_Load(t *testing.T) {
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		t.Fatalf("Failed to write config: %v", err)
 	}
 

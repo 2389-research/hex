@@ -58,7 +58,7 @@ func TestLoadImage(t *testing.T) {
 
 	t.Run("rejects unsupported format", func(t *testing.T) {
 		txtPath := filepath.Join(tmpDir, "test.txt")
-		if err := os.WriteFile(txtPath, []byte("not an image"), 0644); err != nil {
+		if err := os.WriteFile(txtPath, []byte("not an image"), 0600); err != nil {
 			t.Fatalf("WriteFile() error = %v", err)
 		}
 
@@ -170,7 +170,7 @@ func TestValidateImageSize(t *testing.T) {
 		// Create a file larger than MaxImageSize
 		largePath := filepath.Join(tmpDir, "large.bin")
 		data := make([]byte, MaxImageSize+1)
-		if err := os.WriteFile(largePath, data, 0644); err != nil {
+		if err := os.WriteFile(largePath, data, 0600); err != nil {
 			t.Fatalf("WriteFile() error = %v", err)
 		}
 
@@ -192,15 +192,15 @@ func createTestPNG(t *testing.T, path string, width, height int) {
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			img.Set(x, y, color.RGBA{
-				R: uint8(x % 256),
-				G: uint8(y % 256),
-				B: uint8((x + y) % 256),
+				R: uint8(x % 256),       //nolint:gosec // G115: Modulo 256 prevents overflow
+				G: uint8(y % 256),       //nolint:gosec // G115: Modulo 256 prevents overflow
+				B: uint8((x + y) % 256), //nolint:gosec // G115: Modulo 256 prevents overflow
 				A: 255,
 			})
 		}
 	}
 
-	f, err := os.Create(path)
+	f, err := os.Create(path) //nolint:gosec // G304: Path validated by caller
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}

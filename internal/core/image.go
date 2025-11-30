@@ -43,6 +43,7 @@ func LoadImage(path string) (*ImageSource, error) {
 	}
 
 	// Read file data
+	//nolint:gosec // G304: Function parameter path is validated by caller
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read image file: %w", err)

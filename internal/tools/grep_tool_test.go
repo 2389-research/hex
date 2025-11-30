@@ -26,7 +26,7 @@ func main() {
 	fmt.Println("hello")
 }
 `
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -65,7 +65,7 @@ func TestGrepTool_FilesWithMatches(t *testing.T) {
 
 	for name, content := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -103,7 +103,7 @@ func TestGrepTool_CountMode(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "foo\nbar\nfoo\nbaz\nfoo\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -138,7 +138,7 @@ func TestGrepTool_ContextBefore(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "line1\nline2\nline3\nTARGET\nline5\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -171,7 +171,7 @@ func TestGrepTool_ContextAfter(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "line1\nTARGET\nline3\nline4\nline5\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -204,7 +204,7 @@ func TestGrepTool_ContextAround(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "line1\nline2\nTARGET\nline4\nline5\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -248,7 +248,7 @@ func TestGrepTool_GlobFilter(t *testing.T) {
 
 	for name, content := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -291,7 +291,7 @@ func TestGrepTool_TypeFilter(t *testing.T) {
 
 	for name, content := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -331,7 +331,7 @@ func TestGrepTool_CaseSensitive(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "Hello HELLO hello"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -364,7 +364,7 @@ func TestGrepTool_CaseInsensitive(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "test.txt")
 	// Put each "hello" on a separate line so rg -c counts 3 lines
 	content := "Hello\nHELLO\nhello"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -436,7 +436,7 @@ func TestGrepTool_NoMatches(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "foo bar baz"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -501,7 +501,7 @@ func TestGrepTool_RegexPattern(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	content := "error: something\nwarning: else\nerror: another\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

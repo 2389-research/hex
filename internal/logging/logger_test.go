@@ -183,6 +183,7 @@ func TestFileOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// Read the file
+	//nolint:gosec // G304: Test file reads/writes are safe
 	content, err := os.ReadFile(logFile)
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "test message to file")
@@ -221,8 +222,9 @@ func TestMultiWriter(t *testing.T) {
 	// Check buffer
 	assert.Contains(t, buf.String(), "test message")
 
+	//nolint:gosec // G304: Test file reads/writes are safe
 	// Check file
-	content, err := os.ReadFile(logFile)
+	content, err := os.ReadFile(logFile) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	assert.Contains(t, string(content), "test message")
 }

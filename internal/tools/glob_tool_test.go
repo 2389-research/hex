@@ -24,7 +24,7 @@ func TestGlobTool_BasicPattern(t *testing.T) {
 	files := []string{"test.go", "main.go", "test.txt", "README.md"}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -64,7 +64,7 @@ func TestGlobTool_RecursivePattern(t *testing.T) {
 		"test",
 	}
 	for _, dir := range subdirs {
-		if err := os.MkdirAll(filepath.Join(tmpDir, dir), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(tmpDir, dir), 0750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
@@ -77,7 +77,7 @@ func TestGlobTool_RecursivePattern(t *testing.T) {
 	}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -114,7 +114,7 @@ func TestGlobTool_MultipleExtensions(t *testing.T) {
 	files := []string{"test.ts", "test.tsx", "test.js", "test.go"}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -157,19 +157,19 @@ func TestGlobTool_SortByModTime(t *testing.T) {
 	newest := filepath.Join(tmpDir, "newest.txt")
 
 	// Create oldest first
-	if err := os.WriteFile(oldest, []byte("old"), 0644); err != nil {
+	if err := os.WriteFile(oldest, []byte("old"), 0600); err != nil {
 		t.Fatalf("Failed to create oldest: %v", err)
 	}
 	time.Sleep(10 * time.Millisecond)
 
 	// Create middle
-	if err := os.WriteFile(middle, []byte("mid"), 0644); err != nil {
+	if err := os.WriteFile(middle, []byte("mid"), 0600); err != nil {
 		t.Fatalf("Failed to create middle: %v", err)
 	}
 	time.Sleep(10 * time.Millisecond)
 
 	// Create newest
-	if err := os.WriteFile(newest, []byte("new"), 0644); err != nil {
+	if err := os.WriteFile(newest, []byte("new"), 0600); err != nil {
 		t.Fatalf("Failed to create newest: %v", err)
 	}
 
@@ -251,7 +251,7 @@ func TestGlobTool_NoMatches(t *testing.T) {
 	files := []string{"test.txt", "README.md"}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}
@@ -344,7 +344,7 @@ func TestGlobTool_DirectoryPattern(t *testing.T) {
 		"test/unit",
 	}
 	for _, dir := range subdirs {
-		if err := os.MkdirAll(filepath.Join(tmpDir, dir), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(tmpDir, dir), 0750); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
@@ -356,7 +356,7 @@ func TestGlobTool_DirectoryPattern(t *testing.T) {
 	}
 	for _, name := range files {
 		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
 			t.Fatalf("Failed to create %s: %v", name, err)
 		}
 	}

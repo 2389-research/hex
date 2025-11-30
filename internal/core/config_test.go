@@ -18,7 +18,7 @@ func TestLoadConfig(t *testing.T) {
 	configYAML := `api_key: test-key-123
 model: claude-sonnet-4-5-20250929
 `
-	err := os.WriteFile(configPath, []byte(configYAML), 0644)
+	err := os.WriteFile(configPath, []byte(configYAML), 0600)
 	require.NoError(t, err)
 
 	// Set config path
@@ -53,7 +53,7 @@ func TestConfigPrecedence(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yaml")
 
 	configYAML := `api_key: file-key`
-	err := os.WriteFile(configPath, []byte(configYAML), 0644)
+	err := os.WriteFile(configPath, []byte(configYAML), 0600)
 	require.NoError(t, err)
 
 	_ = os.Setenv("CLEM_CONFIG_PATH", configPath)
@@ -113,7 +113,7 @@ func TestConfigFromDotEnv(t *testing.T) {
 	dotEnvContent := `CLEM_API_KEY=dotenv-key-789
 CLEM_MODEL=claude-sonnet-4-5-20250929
 `
-	err := os.WriteFile(dotEnvPath, []byte(dotEnvContent), 0644)
+	err := os.WriteFile(dotEnvPath, []byte(dotEnvContent), 0600)
 	require.NoError(t, err)
 
 	// Change to temp directory so LoadConfig finds the .env file

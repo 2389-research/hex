@@ -81,7 +81,7 @@ func TestScenario_MixedToolBatchExecution(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "input.txt")
 
 	// Create input file for read
-	require.NoError(t, os.WriteFile(testFile, []byte("Input content"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("Input content"), 0600))
 
 	// Setup tools
 	registry := tools.NewRegistry()
@@ -160,11 +160,13 @@ func TestScenario_BatchWithPartialFailure(t *testing.T) {
 	assert.True(t, result3.Success)
 
 	// Verify successful tools created their files
+	//nolint:gosec // G304: Test file reads/writes are safe
 	content1, err := os.ReadFile(filepath.Join(tmpDir, "success1.txt"))
 	require.NoError(t, err)
 	assert.Equal(t, "Success 1", string(content1))
+	//nolint:gosec // G304: Test file reads/writes are safe
 
-	content3, err := os.ReadFile(filepath.Join(tmpDir, "success2.txt"))
+	content3, err := os.ReadFile(filepath.Join(tmpDir, "success2.txt")) //nolint:gosec // G304: Path validated by caller
 	require.NoError(t, err)
 	assert.Equal(t, "Success 2", string(content3))
 }
@@ -257,6 +259,7 @@ func TestScenario_LargeBatchExecution(t *testing.T) {
 	}
 
 	// Verify all files exist
+	//nolint:gosec // G304: Test file reads/writes are safe
 	for i := 0; i < batchSize; i++ {
 		filename := filepath.Join(tmpDir, "file_"+string(rune('A'+i))+".txt")
 		content, err := os.ReadFile(filename)

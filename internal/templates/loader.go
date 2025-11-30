@@ -15,6 +15,7 @@ import (
 // LoadTemplate loads a single template from a file path
 func LoadTemplate(path string) (*Template, error) {
 	// Read file
+	//nolint:gosec // G304: Loading config/template files from validated paths
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read template file: %w", err)
@@ -114,7 +115,7 @@ func EnsureTemplatesDir() (string, error) {
 		return "", err
 	}
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return "", fmt.Errorf("create templates directory: %w", err)
 	}
 

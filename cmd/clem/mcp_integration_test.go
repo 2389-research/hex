@@ -62,7 +62,7 @@ func TestMCPToolsRegistration_EmptyConfig(t *testing.T) {
 		Servers: make(map[string]mcp.ServerConfig),
 	}
 	configData, _ := json.Marshal(config)
-	if err := os.WriteFile(".mcp.json", configData, 0644); err != nil {
+	if err := os.WriteFile(".mcp.json", configData, 0600); err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
 
@@ -97,7 +97,7 @@ func TestMCPToolsRegistration_InvalidConfig(t *testing.T) {
 	_ = os.Chdir(tmpDir)
 
 	// Write invalid JSON
-	if err := os.WriteFile(".mcp.json", []byte("invalid json"), 0644); err != nil {
+	if err := os.WriteFile(".mcp.json", []byte("invalid json"), 0600); err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
 
@@ -185,7 +185,7 @@ func TestMCPToolsGracefulDegradation(t *testing.T) {
 		},
 	}
 	configData, _ := json.MarshalIndent(config, "", "  ")
-	if err := os.WriteFile(".mcp.json", configData, 0644); err != nil {
+	if err := os.WriteFile(".mcp.json", configData, 0600); err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
 
@@ -222,7 +222,7 @@ func TestMCPConfigInSubdirectory(t *testing.T) {
 
 	// Create a subdirectory with .mcp.json
 	subDir := filepath.Join(tmpDir, "subdir")
-	if err := os.Mkdir(subDir, 0755); err != nil {
+	if err := os.Mkdir(subDir, 0750); err != nil {
 		t.Fatalf("Failed to create subdir: %v", err)
 	}
 
@@ -232,7 +232,7 @@ func TestMCPConfigInSubdirectory(t *testing.T) {
 		Servers: make(map[string]mcp.ServerConfig),
 	}
 	configData, _ := json.Marshal(config)
-	if err := os.WriteFile(filepath.Join(subDir, ".mcp.json"), configData, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(subDir, ".mcp.json"), configData, 0600); err != nil {
 		t.Fatalf("Failed to write test config: %v", err)
 	}
 

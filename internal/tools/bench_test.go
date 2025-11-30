@@ -20,7 +20,7 @@ func BenchmarkReadToolSmallFile(b *testing.B) {
 	for i := range content {
 		content[i] = byte('a' + (i % 26))
 	}
-	if err := os.WriteFile(testFile, content, 0644); err != nil {
+	if err := os.WriteFile(testFile, content, 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -49,7 +49,7 @@ func BenchmarkReadToolLargeFile(b *testing.B) {
 	for i := range content {
 		content[i] = byte('a' + (i % 26))
 	}
-	if err := os.WriteFile(testFile, content, 0644); err != nil {
+	if err := os.WriteFile(testFile, content, 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -98,7 +98,7 @@ func BenchmarkEditTool(b *testing.B) {
 
 	// Create file with content to edit
 	initialContent := "This is line 1\nThis is line 2\nThis is line 3\nThis is line 4\n"
-	if err := os.WriteFile(testFile, []byte(initialContent), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(initialContent), 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -109,7 +109,7 @@ func BenchmarkEditTool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		// Reset file content
-		_ = os.WriteFile(testFile, []byte(initialContent), 0644)
+		_ = os.WriteFile(testFile, []byte(initialContent), 0600)
 		b.StartTimer()
 
 		params := map[string]interface{}{
@@ -132,7 +132,7 @@ func BenchmarkGrepTool(b *testing.B) {
 	for i := 0; i < 100; i++ {
 		content := fmt.Sprintf("This is file %d\nIt contains some searchable content\nAnd some other lines\n", i)
 		testFile := filepath.Join(tmpDir, fmt.Sprintf("file_%d.txt", i))
-		if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -160,13 +160,13 @@ func BenchmarkGlobTool(b *testing.B) {
 	// Create directory structure with various files
 	for i := 0; i < 50; i++ {
 		testFile := filepath.Join(tmpDir, fmt.Sprintf("file_%d.txt", i))
-		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("content"), 0600); err != nil {
 			b.Fatal(err)
 		}
 	}
 	for i := 0; i < 50; i++ {
 		testFile := filepath.Join(tmpDir, fmt.Sprintf("script_%d.sh", i))
-		if err := os.WriteFile(testFile, []byte("#!/bin/bash"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("#!/bin/bash"), 0600); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -251,7 +251,7 @@ func BenchmarkToolRegistryListAll(b *testing.B) {
 func BenchmarkExecutorApprovalOverhead(b *testing.B) {
 	tmpDir := b.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("content"), 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -285,7 +285,7 @@ func BenchmarkConcurrentToolExecution(b *testing.B) {
 	testFile := filepath.Join(tmpDir, "test.txt")
 
 	content := "This is test content\n"
-	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(content), 0600); err != nil {
 		b.Fatal(err)
 	}
 

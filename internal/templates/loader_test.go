@@ -32,7 +32,7 @@ model: claude-sonnet-4-5-20250929
 max_tokens: 4096
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	// Load template
@@ -64,7 +64,7 @@ func TestLoadTemplate_MinimalValid(t *testing.T) {
 description: Minimal template with just required fields
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	template, err := LoadTemplate(tmpFile)
@@ -83,7 +83,7 @@ func TestLoadTemplate_InvalidYAML(t *testing.T) {
 invalid yaml here: [unclosed bracket
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	_, err = LoadTemplate(tmpFile)
@@ -98,7 +98,7 @@ func TestLoadTemplate_MissingName(t *testing.T) {
 	yamlContent := `description: No name field
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	_, err = LoadTemplate(tmpFile)
@@ -116,7 +116,7 @@ initial_messages:
     content: Test
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	_, err = LoadTemplate(tmpFile)
@@ -134,7 +134,7 @@ initial_messages:
     content: ""
 `
 
-	err := os.WriteFile(tmpFile, []byte(yamlContent), 0644)
+	err := os.WriteFile(tmpFile, []byte(yamlContent), 0600)
 	require.NoError(t, err)
 
 	_, err = LoadTemplate(tmpFile)
@@ -164,17 +164,17 @@ func TestLoadTemplates_MultipleTemplates(t *testing.T) {
 	template1 := `name: Template One
 description: First template
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "one.yaml"), []byte(template1), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "one.yaml"), []byte(template1), 0600)
 	require.NoError(t, err)
 
 	template2 := `name: Template Two
 description: Second template
 `
-	err = os.WriteFile(filepath.Join(tmpDir, "two.yml"), []byte(template2), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "two.yml"), []byte(template2), 0600)
 	require.NoError(t, err)
 
 	// Create a non-YAML file (should be ignored)
-	err = os.WriteFile(filepath.Join(tmpDir, "ignore.txt"), []byte("not yaml"), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "ignore.txt"), []byte("not yaml"), 0600)
 	require.NoError(t, err)
 
 	// Load templates
@@ -200,13 +200,13 @@ func TestLoadTemplates_SkipInvalidTemplates(t *testing.T) {
 	valid := `name: Valid
 description: This one is good
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "valid.yaml"), []byte(valid), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "valid.yaml"), []byte(valid), 0600)
 	require.NoError(t, err)
 
 	// Invalid template (missing name)
 	invalid := `description: Missing name field
 `
-	err = os.WriteFile(filepath.Join(tmpDir, "invalid.yaml"), []byte(invalid), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "invalid.yaml"), []byte(invalid), 0600)
 	require.NoError(t, err)
 
 	// Should load only the valid one
