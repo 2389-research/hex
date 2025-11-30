@@ -6,11 +6,16 @@ import (
 	"time"
 )
 
-// ContentBlock represents a single block of content (text or image)
+// ContentBlock represents a single block of content (text, image, tool_use, or tool_result)
 type ContentBlock struct {
-	Type   string       `json:"type"`             // "text" or "image"
-	Text   string       `json:"text,omitempty"`   // For text blocks
-	Source *ImageSource `json:"source,omitempty"` // For image blocks
+	Type      string                 `json:"type"`                  // "text", "image", "tool_use", or "tool_result"
+	Text      string                 `json:"text,omitempty"`        // For text blocks
+	Source    *ImageSource           `json:"source,omitempty"`      // For image blocks
+	ID        string                 `json:"id,omitempty"`          // For tool_use and tool_result blocks
+	Name      string                 `json:"name,omitempty"`        // For tool_use blocks
+	Input     map[string]interface{} `json:"input,omitempty"`       // For tool_use blocks
+	ToolUseID string                 `json:"tool_use_id,omitempty"` // For tool_result blocks (ID field above is for tool_use)
+	Content   string                 `json:"content,omitempty"`     // For tool_result blocks
 }
 
 // NewTextBlock creates a text content block
@@ -26,6 +31,15 @@ func NewImageBlock(source *ImageSource) ContentBlock {
 	return ContentBlock{
 		Type:   "image",
 		Source: source,
+	}
+}
+
+// NewToolResultBlock creates a tool_result content block
+func NewToolResultBlock(toolUseID string, content string) ContentBlock {
+	return ContentBlock{
+		Type:      "tool_result",
+		ToolUseID: toolUseID,
+		Content:   content,
 	}
 }
 
@@ -166,6 +180,9 @@ type StreamChunk struct {
 
 // Delta represents incremental content in streaming
 type Delta struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
+	Type         string `json:"type"`
+	Text         string `json:"text,omitempty"`
+	PartialJSON  string `json:"partial_json,omitempty"`  // For input_json_delta
+	StopReason   string `json:"stop_reason,omitempty"`   // For message_delta
+	StopSequence string `json:"stop_sequence,omitempty"` // For message_delta
 }

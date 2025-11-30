@@ -28,7 +28,7 @@ func TestVersionFlag(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.NoError(t, err)
-	assert.Contains(t, buf.String(), "0.1.0")
+	assert.Contains(t, buf.String(), "1.0.0")
 }
 
 func TestPrintFlag(t *testing.T) {

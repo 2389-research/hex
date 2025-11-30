@@ -49,6 +49,11 @@ var (
 
 	// Phase 6C: Template system flags
 	templateName string
+
+	// Print mode tool flags (like Claude Code)
+	dangerouslySkipPermissions bool
+	enabledTools               []string
+	systemPrompt               string
 )
 
 var rootCmd = &cobra.Command{
@@ -89,6 +94,11 @@ func init() {
 
 	// Phase 6C: Template system flags
 	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'clem templates list')")
+
+	// Print mode tool support flags (like Claude Code)
+	rootCmd.PersistentFlags().BoolVar(&dangerouslySkipPermissions, "dangerously-skip-permissions", false, "Auto-approve all tool executions (use with caution)")
+	rootCmd.PersistentFlags().StringSliceVar(&enabledTools, "tools", []string{}, "Tools to enable in print mode (comma-separated, e.g. 'write_file,read_file')")
+	rootCmd.PersistentFlags().StringVar(&systemPrompt, "system-prompt", "", "System prompt to use for the session")
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -242,10 +252,23 @@ func runInteractive(prompt string) error {
 	}
 
 	// Task 6: Create and set API client
+	// Load config to get API key
+	cfg, err := core.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	// Prioritize environment variable, fall back to config file
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		apiKey = cfg.APIKey
+	}
+
 	if apiKey != "" {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
+	} else {
+		return fmt.Errorf("API key not configured. Run 'clem setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Task 12: Create tool registry and executor
