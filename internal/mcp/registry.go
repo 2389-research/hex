@@ -20,6 +20,8 @@ type ServerConfig struct {
 }
 
 // MCPConfig represents the .mcp.json configuration file format
+//
+//nolint:revive // MCP prefix clarifies this is MCP protocol config vs generic config
 type MCPConfig struct {
 	Version string                  `json:"version"`
 	Servers map[string]ServerConfig `json:"servers"`

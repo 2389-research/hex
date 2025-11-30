@@ -14,6 +14,8 @@ import (
 )
 
 // MCPToolAdapter wraps an MCP tool to implement Clem's Tool interface
+//
+//nolint:revive // MCP prefix clarifies this adapts MCP tools vs other tool types
 type MCPToolAdapter struct {
 	client  *Client
 	mcpTool Tool
@@ -139,6 +141,8 @@ func (a *MCPToolAdapter) GetInputSchema() map[string]interface{} {
 }
 
 // MCPToolManager manages MCP tool adapters for a server
+//
+//nolint:revive // MCP prefix clarifies this manages MCP tools vs other tool types
 type MCPToolManager struct {
 	client *Client
 	tools  map[string]*MCPToolAdapter

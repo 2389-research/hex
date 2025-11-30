@@ -38,6 +38,8 @@ const (
 )
 
 // ContextUsage provides information about context token usage
+//
+//nolint:revive // Explicit name improves clarity and searchability
 type ContextUsage struct {
 	EstimatedTokens int
 	MaxTokens       int

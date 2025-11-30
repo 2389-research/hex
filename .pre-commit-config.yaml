@@ -36,14 +36,13 @@ repos:
         language: system
         pass_filenames: false
 
-      # Temporarily disabled - 663 pre-existing linter issues
-      # - id: golangci-lint
-      #   name: golangci-lint
-      #   description: Run golangci-lint with project config
-      #   entry: golangci-lint
-      #   args: ["run", "--config=.golangci.yml"]
-      #   language: system
-      #   pass_filenames: false
+      - id: golangci-lint
+        name: golangci-lint
+        description: Run golangci-lint with project config
+        entry: golangci-lint
+        args: ["run", "--config=.golangci.yml"]
+        language: system
+        pass_filenames: false
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
