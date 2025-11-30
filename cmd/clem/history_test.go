@@ -24,7 +24,7 @@ func TestHistoryCommand_NoHistory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Set up command with output capture
 	rootCmd.SetArgs([]string{"history", "--db-path", dbPath})
@@ -54,7 +54,7 @@ func TestHistoryCommand_WithHistory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test conversation (required for foreign key)
 	conv := &storage.Conversation{
@@ -127,7 +127,7 @@ func TestHistoryCommand_CustomLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test conversation
 	conv := &storage.Conversation{
@@ -194,7 +194,7 @@ func TestHistorySearchCommand_NoResults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test conversation
 	conv := &storage.Conversation{
@@ -244,7 +244,7 @@ func TestHistorySearchCommand_WithResults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test conversations
 	for i := 1; i <= 2; i++ {

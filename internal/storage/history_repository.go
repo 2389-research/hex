@@ -52,7 +52,7 @@ func SearchHistory(db *sql.DB, query string, limit int) ([]*HistoryEntry, error)
 	if err != nil {
 		return nil, fmt.Errorf("search history: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []*HistoryEntry
 	for rows.Next() {
@@ -84,7 +84,7 @@ func GetRecentHistory(db *sql.DB, limit int) ([]*HistoryEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get recent history: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []*HistoryEntry
 	for rows.Next() {

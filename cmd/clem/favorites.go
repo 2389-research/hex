@@ -22,7 +22,7 @@ var favoriteCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("open database: %w", err)
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		// Get current conversation to check if it exists and get current favorite status
 		conv, err := storage.GetConversation(db, convID)
@@ -56,7 +56,7 @@ var favoritesCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("open database: %w", err)
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		// Get all favorites
 		favorites, err := storage.ListFavorites(db)

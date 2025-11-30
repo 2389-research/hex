@@ -101,7 +101,7 @@ func (s *MockMCPServer) handleInitialize(id interface{}, params map[string]inter
 	protocolVersion, _ := params["protocolVersion"].(string)
 
 	// Log to stderr (as real servers do)
-	fmt.Fprintf(s.stderr, "Initializing with protocol version: %s\n", protocolVersion)
+	_, _ = fmt.Fprintf(s.stderr, "Initializing with protocol version: %s\n", protocolVersion)
 
 	response := map[string]interface{}{
 		"jsonrpc": "2.0",
@@ -118,14 +118,14 @@ func (s *MockMCPServer) handleInitialize(id interface{}, params map[string]inter
 		},
 	}
 
-	encoder.Encode(response)
+	_ = encoder.Encode(response)
 }
 
 func (s *MockMCPServer) handleInitialized() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.initialized = true
-	fmt.Fprintf(s.stderr, "Server initialized and ready\n")
+	_, _ = fmt.Fprintf(s.stderr, "Server initialized and ready\n")
 }
 
 func (s *MockMCPServer) handleToolsList(id interface{}, encoder *json.Encoder) {
@@ -145,7 +145,7 @@ func (s *MockMCPServer) handleToolsList(id interface{}, encoder *json.Encoder) {
 		},
 	}
 
-	encoder.Encode(response)
+	_ = encoder.Encode(response)
 }
 
 func (s *MockMCPServer) handleToolsCall(id interface{}, params map[string]interface{}, encoder *json.Encoder) {
@@ -201,7 +201,7 @@ func (s *MockMCPServer) handleToolsCall(id interface{}, params map[string]interf
 		"result":  result,
 	}
 
-	encoder.Encode(response)
+	_ = encoder.Encode(response)
 }
 
 func (s *MockMCPServer) sendError(id interface{}, code int, message, data string) {
@@ -223,7 +223,7 @@ func (s *MockMCPServer) sendErrorWithEncoder(encoder *json.Encoder, id interface
 		errResp["error"].(map[string]interface{})["data"] = data
 	}
 
-	encoder.Encode(errResp)
+	_ = encoder.Encode(errResp)
 }
 
 // MockServerCommand represents a test helper to launch mock servers

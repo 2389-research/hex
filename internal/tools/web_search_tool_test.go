@@ -154,7 +154,7 @@ func TestWebSearchTool_Execute_BasicSearch(t *testing.T) {
 			t.Errorf("Expected query 'golang testing', got %q", query)
 		}
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(mockDDGResponse))
+		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
 	defer server.Close()
 
@@ -191,7 +191,7 @@ func TestWebSearchTool_Execute_BasicSearch(t *testing.T) {
 func TestWebSearchTool_Execute_WithLimit(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(mockDDGResponse))
+		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
 	defer server.Close()
 
@@ -219,7 +219,7 @@ func TestWebSearchTool_Execute_WithLimit(t *testing.T) {
 func TestWebSearchTool_Execute_WithAllowedDomains(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(mockDDGResponse))
+		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
 	defer server.Close()
 
@@ -248,7 +248,7 @@ func TestWebSearchTool_Execute_WithAllowedDomains(t *testing.T) {
 func TestWebSearchTool_Execute_WithBlockedDomains(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(mockDDGResponse))
+		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
 	defer server.Close()
 
@@ -288,7 +288,7 @@ func TestWebSearchTool_Execute_NoResults(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(emptyResponse))
+		_, _ = w.Write([]byte(emptyResponse))
 	}))
 	defer server.Close()
 
@@ -344,7 +344,7 @@ func TestWebSearchTool_Execute_ContextCancellation(t *testing.T) {
 func TestWebSearchTool_Execute_DomainFilteringCaseInsensitive(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(mockDDGResponse))
+		_, _ = w.Write([]byte(mockDDGResponse))
 	}))
 	defer server.Close()
 

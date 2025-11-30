@@ -46,8 +46,8 @@ system_prompt: You are helpful
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Load template
 	template, err := loadTemplateByName("test-template")
@@ -75,8 +75,8 @@ description: Different template
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Try to load non-existent template
 	_, err = loadTemplateByName("nonexistent")
@@ -94,8 +94,8 @@ func TestLoadTemplateByName_EmptyDirectory(t *testing.T) {
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Try to load template from empty directory
 	_, err = loadTemplateByName("any-template")
@@ -111,8 +111,8 @@ func TestCreateExampleTemplates(t *testing.T) {
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Create example templates
 	err := createExampleTemplates()
@@ -148,8 +148,8 @@ func TestCreateExampleTemplates_DoesNotOverwrite(t *testing.T) {
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Create existing template with custom content
 	customContent := "name: custom\ndescription: my custom template\n"

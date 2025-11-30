@@ -123,7 +123,7 @@ func TestKillShellTool_Execute_KillRunningProcess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start test process: %v", err)
 	}
-	defer cmd.Process.Kill() // Cleanup in case test fails
+	defer func() { _ = cmd.Process.Kill() }() // Cleanup in case test fails
 
 	// Register it in the background registry
 	RegisterBackgroundProcess(shellID, cmd.Process)
@@ -176,7 +176,7 @@ func TestKillShellTool_Execute_KillAlreadyExitedProcess(t *testing.T) {
 	RegisterBackgroundProcess(shellID, cmd.Process)
 
 	// Wait for it to exit
-	cmd.Wait()
+	_ = cmd.Wait()
 	time.Sleep(50 * time.Millisecond)
 
 	// Try to kill it (should still clean up registry)
@@ -216,7 +216,7 @@ func TestKillShellTool_Execute_Metadata(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start test process: %v", err)
 	}
-	defer cmd.Process.Kill() // Cleanup
+	defer func() { _ = cmd.Process.Kill() }() // Cleanup
 
 	RegisterBackgroundProcess(shellID, cmd.Process)
 
@@ -256,7 +256,7 @@ func TestKillShellTool_Execute_OutputMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start test process: %v", err)
 	}
-	defer cmd.Process.Kill() // Cleanup
+	defer func() { _ = cmd.Process.Kill() }() // Cleanup
 
 	RegisterBackgroundProcess(shellID, cmd.Process)
 
@@ -298,7 +298,7 @@ func TestKillShellTool_Execute_ContextCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start test process: %v", err)
 	}
-	defer cmd.Process.Kill() // Cleanup
+	defer func() { _ = cmd.Process.Kill() }() // Cleanup
 
 	RegisterBackgroundProcess(shellID, cmd.Process)
 
@@ -319,6 +319,6 @@ func TestKillShellTool_Execute_ContextCancellation(t *testing.T) {
 	}
 
 	// Clean up
-	cmd.Process.Kill()
+	_ = cmd.Process.Kill()
 	UnregisterBackgroundProcess(shellID)
 }

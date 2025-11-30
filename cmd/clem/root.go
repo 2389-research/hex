@@ -142,7 +142,7 @@ func runInteractive(prompt string) error {
 		logging.ErrorWithErr("Failed to open database", err, "path", dbPath)
 		return fmt.Errorf("failed to open database at %s: %w. Try:\n  - Check if parent directory exists\n  - Check write permissions\n  - Try different path with --db-path", dbPath, err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	logging.InfoWith("Database opened successfully", "path", dbPath)
 
 	// Phase 6C: Load template if specified
@@ -178,7 +178,7 @@ func runInteractive(prompt string) error {
 		if err == sql.ErrNoRows {
 			// No conversations found, start new one (this is OK)
 			conversationID = ""
-			fmt.Fprintf(os.Stderr, "No previous conversations found, starting new session\n")
+			_, _ = fmt.Fprintf(os.Stderr, "No previous conversations found, starting new session\n")
 		} else if err != nil {
 			// Real database error (corrupt DB, connection issue, etc.)
 			return fmt.Errorf("failed to load latest conversation: %w", err)
@@ -406,7 +406,7 @@ func initializeLogging() error {
 func closeLogger() {
 	if globalLogger != nil {
 		if err := globalLogger.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to close logger: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to close logger: %v\n", err)
 		}
 	}
 }

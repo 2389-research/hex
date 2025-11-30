@@ -22,8 +22,8 @@ model: claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 
 	// Set config path
-	os.Setenv("CLEM_CONFIG_PATH", configPath)
-	defer os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Setenv("CLEM_CONFIG_PATH", configPath)
+	defer func() { _ = os.Unsetenv("CLEM_CONFIG_PATH") }()
 
 	// Load config
 	cfg, err := core.LoadConfig()
@@ -34,12 +34,12 @@ model: claude-sonnet-4-5-20250929
 
 func TestConfigFromEnv(t *testing.T) {
 	// Clean up any existing config path
-	os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Unsetenv("CLEM_CONFIG_PATH")
 
-	os.Setenv("CLEM_API_KEY", "env-key-456")
-	os.Setenv("CLEM_MODEL", "claude-opus-4-5-20250929")
-	defer os.Unsetenv("CLEM_API_KEY")
-	defer os.Unsetenv("CLEM_MODEL")
+	_ = os.Setenv("CLEM_API_KEY", "env-key-456")
+	_ = os.Setenv("CLEM_MODEL", "claude-opus-4-5-20250929")
+	defer func() { _ = os.Unsetenv("CLEM_API_KEY") }()
+	defer func() { _ = os.Unsetenv("CLEM_MODEL") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -56,10 +56,10 @@ func TestConfigPrecedence(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0644)
 	require.NoError(t, err)
 
-	os.Setenv("CLEM_CONFIG_PATH", configPath)
-	os.Setenv("CLEM_API_KEY", "env-key")
-	defer os.Unsetenv("CLEM_CONFIG_PATH")
-	defer os.Unsetenv("CLEM_API_KEY")
+	_ = os.Setenv("CLEM_CONFIG_PATH", configPath)
+	_ = os.Setenv("CLEM_API_KEY", "env-key")
+	defer func() { _ = os.Unsetenv("CLEM_CONFIG_PATH") }()
+	defer func() { _ = os.Unsetenv("CLEM_API_KEY") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -68,11 +68,11 @@ func TestConfigPrecedence(t *testing.T) {
 
 func TestConfigDefaults(t *testing.T) {
 	// Clean all env vars that might affect the test
-	os.Unsetenv("CLEM_CONFIG_PATH")
-	os.Unsetenv("CLEM_API_KEY")
-	os.Unsetenv("CLEM_MODEL")
-	os.Unsetenv("CLEM_PERMISSION_MODE")
-	os.Unsetenv("CLEM_DEFAULT_TOOLS")
+	_ = os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Unsetenv("CLEM_API_KEY")
+	_ = os.Unsetenv("CLEM_MODEL")
+	_ = os.Unsetenv("CLEM_PERMISSION_MODE")
+	_ = os.Unsetenv("CLEM_DEFAULT_TOOLS")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -118,13 +118,13 @@ CLEM_MODEL=claude-sonnet-4-5-20250929
 
 	// Change to temp directory so LoadConfig finds the .env file
 	originalDir, _ := os.Getwd()
-	defer os.Chdir(originalDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(originalDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Clean env vars
-	os.Unsetenv("CLEM_API_KEY")
-	os.Unsetenv("CLEM_MODEL")
-	os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Unsetenv("CLEM_API_KEY")
+	_ = os.Unsetenv("CLEM_MODEL")
+	_ = os.Unsetenv("CLEM_CONFIG_PATH")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)

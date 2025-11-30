@@ -28,7 +28,7 @@ func setupBenchDB(b *testing.B) *sql.DB {
 // BenchmarkConversationCreate measures conversation creation
 func BenchmarkConversationCreate(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -44,7 +44,7 @@ func BenchmarkConversationCreate(b *testing.B) {
 // BenchmarkMessageInsert measures single message insertion
 func BenchmarkMessageInsert(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create a conversation first
 	conv := &Conversation{Title: "Test Conversation"}
@@ -68,7 +68,7 @@ func BenchmarkMessageInsert(b *testing.B) {
 // BenchmarkMessageGet measures message retrieval by ID
 func BenchmarkMessageGet(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &Conversation{Title: "Test Conversation"}
 	if err := CreateConversation(db, conv); err != nil {
@@ -102,7 +102,7 @@ func BenchmarkMessageGet(b *testing.B) {
 // BenchmarkConversationList measures listing conversations
 func BenchmarkConversationList(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create 100 conversations
 	for i := 0; i < 100; i++ {
@@ -126,7 +126,7 @@ func BenchmarkConversationList(b *testing.B) {
 // BenchmarkTransactionOverhead measures transaction cost
 func BenchmarkTransactionOverhead(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &Conversation{Title: "Test Conversation"}
 	if err := CreateConversation(db, conv); err != nil {
@@ -164,7 +164,7 @@ func BenchmarkTransactionOverhead(b *testing.B) {
 // BenchmarkPreparedStatement measures prepared statement performance
 func BenchmarkPreparedStatement(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &Conversation{Title: "Test Conversation"}
 	if err := CreateConversation(db, conv); err != nil {
@@ -177,7 +177,7 @@ func BenchmarkPreparedStatement(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -197,7 +197,7 @@ func BenchmarkPreparedStatement(b *testing.B) {
 // BenchmarkLargeMessageContent measures performance with large message content
 func BenchmarkLargeMessageContent(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &Conversation{Title: "Test Conversation"}
 	if err := CreateConversation(db, conv); err != nil {
@@ -226,7 +226,7 @@ func BenchmarkLargeMessageContent(b *testing.B) {
 // BenchmarkConcurrentReads measures parallel read performance
 func BenchmarkConcurrentReads(b *testing.B) {
 	db := setupBenchDB(b)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test data
 	conv := &Conversation{Title: "Test Conversation"}

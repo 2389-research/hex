@@ -31,7 +31,7 @@ func SetupTestDB(t *testing.T) *sql.DB {
 
 	// Cleanup on test end
 	t.Cleanup(func() {
-		db.Close()
+		_ = db.Close()
 	})
 
 	return db

@@ -72,7 +72,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("get database: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Determine output writer
 	var writer *os.File
@@ -83,7 +83,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("create output file: %w", err)
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		writer = file
 	}
 
@@ -94,7 +94,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 
 	// Print success message to stderr if writing to file
 	if exportOutput != "" {
-		fmt.Fprintf(os.Stderr, "Exported conversation %s to %s\n", conversationID, exportOutput)
+		_, _ = fmt.Fprintf(os.Stderr, "Exported conversation %s to %s\n", conversationID, exportOutput)
 	}
 
 	return nil

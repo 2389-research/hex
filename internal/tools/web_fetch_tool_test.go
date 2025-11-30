@@ -109,7 +109,7 @@ func TestWebFetchTool_FetchHTML(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, "<html><body><h1>Test Title</h1><p>Test paragraph</p></body></html>")
+		_, _ = fmt.Fprint(w, "<html><body><h1>Test Title</h1><p>Test paragraph</p></body></html>")
 	}))
 	defer server.Close()
 
@@ -150,7 +150,7 @@ func TestWebFetchTool_FetchPlainText(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-		fmt.Fprint(w, "This is plain text content.\nSecond line.")
+		_, _ = fmt.Fprint(w, "This is plain text content.\nSecond line.")
 	}))
 	defer server.Close()
 
@@ -182,7 +182,7 @@ func TestWebFetchTool_HTTP404(t *testing.T) {
 	// Create test server that returns 404
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Not Found")
+		_, _ = fmt.Fprint(w, "Not Found")
 	}))
 	defer server.Close()
 
@@ -208,7 +208,7 @@ func TestWebFetchTool_HTTP500(t *testing.T) {
 	// Create test server that returns 500
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Internal Server Error")
+		_, _ = fmt.Fprint(w, "Internal Server Error")
 	}))
 	defer server.Close()
 
@@ -234,7 +234,7 @@ func TestWebFetchTool_ContextCancellation(t *testing.T) {
 	// Create test server that delays response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)
-		fmt.Fprint(w, "Delayed response")
+		_, _ = fmt.Fprint(w, "Delayed response")
 	}))
 	defer server.Close()
 

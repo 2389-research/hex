@@ -235,13 +235,13 @@ func (c *Client) Shutdown() error {
 
 	// Close stdin to signal server to exit
 	if c.stdin != nil {
-		c.stdin.Close()
+		_ = c.stdin.Close()
 	}
 
 	// Wait for command to exit (unlock first to avoid deadlock)
 	c.mu.Unlock()
 	if c.cmd != nil && c.cmd.Process != nil {
-		c.cmd.Wait()
+		_ = c.cmd.Wait()
 	}
 	c.mu.Lock()
 

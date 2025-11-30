@@ -87,7 +87,7 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(httpResp.Body)

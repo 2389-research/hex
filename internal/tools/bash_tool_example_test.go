@@ -80,7 +80,7 @@ func ExampleBashTool_withExecutor() {
 	// Create a registry and register the bash tool
 	registry := NewRegistry()
 	bashTool := NewBashTool()
-	registry.Register(bashTool)
+	_ = registry.Register(bashTool)
 
 	// Create an executor with approval function
 	approvalFunc := func(toolName string, params map[string]interface{}) bool {

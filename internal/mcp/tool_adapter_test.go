@@ -439,7 +439,7 @@ func TestMCPTool_Integration(t *testing.T) {
 
 	// Use with Clem's tool registry
 	registry := tools.NewRegistry()
-	registry.Register(mcpTool)
+	_ = registry.Register(mcpTool)
 
 	// Execute via registry
 	foundTool, err := registry.Get("weather")

@@ -15,9 +15,9 @@ import (
 func ExampleReadTool() {
 	// Create a test file
 	tmpFile, _ := os.CreateTemp("", "example-*.txt")
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("Hello, World!")
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	_, _ = tmpFile.WriteString("Hello, World!")
+	_ = tmpFile.Close()
 
 	// Create and use the Read tool
 	tool := tools.NewReadTool()
@@ -35,9 +35,9 @@ func ExampleReadTool() {
 // ExampleReadTool_withOffset demonstrates reading with an offset
 func ExampleReadTool_withOffset() {
 	tmpFile, _ := os.CreateTemp("", "example-*.txt")
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("0123456789")
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	_, _ = tmpFile.WriteString("0123456789")
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 	result, _ := tool.Execute(context.Background(), map[string]interface{}{
@@ -52,9 +52,9 @@ func ExampleReadTool_withOffset() {
 // ExampleReadTool_withLimit demonstrates reading with a limit
 func ExampleReadTool_withLimit() {
 	tmpFile, _ := os.CreateTemp("", "example-*.txt")
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("0123456789")
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	_, _ = tmpFile.WriteString("0123456789")
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 	result, _ := tool.Execute(context.Background(), map[string]interface{}{
@@ -90,13 +90,13 @@ func ExampleReadTool_requiresApproval() {
 // ExampleReadTool_withExecutor demonstrates using the Read tool with Executor
 func ExampleReadTool_withExecutor() {
 	tmpFile, _ := os.CreateTemp("", "example-*.txt")
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("Hello from Executor!")
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	_, _ = tmpFile.WriteString("Hello from Executor!")
+	_ = tmpFile.Close()
 
 	// Create registry and register the Read tool
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	// Create executor with auto-approval
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {

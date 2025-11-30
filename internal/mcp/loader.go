@@ -66,14 +66,14 @@ func loadServerTools(serverConfig ServerConfig, registry *tools.Registry) error 
 
 	// Initialize the client
 	if err := client.Initialize(ctx, "clem", "0.1.0", "2024-11-05"); err != nil {
-		client.Shutdown()
+		_ = client.Shutdown()
 		return fmt.Errorf("failed to initialize: %w", err)
 	}
 
 	// List available tools
 	mcpTools, err := client.ListTools(ctx)
 	if err != nil {
-		client.Shutdown()
+		_ = client.Shutdown()
 		return fmt.Errorf("failed to list tools: %w", err)
 	}
 

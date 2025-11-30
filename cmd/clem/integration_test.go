@@ -21,7 +21,7 @@ func TestStorageIntegration(t *testing.T) {
 	// Test 1: Open database and create conversation
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -132,12 +132,12 @@ func TestDatabasePersistence(t *testing.T) {
 	err = storage.CreateMessage(db1, msg)
 	require.NoError(t, err)
 
-	db1.Close()
+	_ = db1.Close()
 
 	// Reopen database and verify data persists
 	db2, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db2.Close()
+	defer func() { _ = db2.Close() }()
 
 	loadedConv, messages, err := loadConversationHistory(db2, "persist-conv")
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestMultipleConversations(t *testing.T) {
 
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create multiple conversations
 	for i := 1; i <= 3; i++ {
@@ -216,7 +216,7 @@ func TestContinueFlagWithEmptyDatabase(t *testing.T) {
 
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Try to get latest conversation from empty database
 	conv, err := storage.GetLatestConversation(db)
@@ -244,7 +244,7 @@ func TestContinueFlagErrorDifferentiation(t *testing.T) {
 	require.NoError(t, err)
 
 	// Close database to simulate connection error
-	db.Close()
+	_ = db.Close()
 
 	// Now try to get latest conversation - should get a real error (not ErrNoRows)
 	_, err = storage.GetLatestConversation(db)

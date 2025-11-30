@@ -122,7 +122,7 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list conversations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var convs []*Conversation
 	for rows.Next() {
@@ -195,7 +195,7 @@ func ListFavorites(db *sql.DB) ([]*Conversation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list favorites: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var convs []*Conversation
 	for rows.Next() {

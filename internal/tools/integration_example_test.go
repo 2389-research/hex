@@ -69,8 +69,8 @@ func Example_completeWorkflow() {
 
 	// 1. Setup: Create registry and register tools
 	registry := tools.NewRegistry()
-	registry.Register(readMock)
-	registry.Register(writeMock)
+	_ = registry.Register(readMock)
+	_ = registry.Register(writeMock)
 
 	// 2. Create executor with approval logic
 	approvalFunc := func(toolName string, params map[string]interface{}) bool {
@@ -95,7 +95,7 @@ func Example_completeWorkflow() {
 	}`
 
 	var toolUse1 tools.ToolUse
-	json.Unmarshal([]byte(apiRequest1), &toolUse1)
+	_ = json.Unmarshal([]byte(apiRequest1), &toolUse1)
 
 	// 4. Execute tool
 	ctx := context.Background()
@@ -117,7 +117,7 @@ func Example_completeWorkflow() {
 	}`
 
 	var toolUse2 tools.ToolUse
-	json.Unmarshal([]byte(apiRequest2), &toolUse2)
+	_ = json.Unmarshal([]byte(apiRequest2), &toolUse2)
 
 	result2, _ := executor.Execute(ctx, toolUse2.Name, toolUse2.Input)
 	toolResult2 := tools.ResultToToolResult(result2, toolUse2.ID)
@@ -135,7 +135,7 @@ func Example_completeWorkflow() {
 	}`
 
 	var toolUse3 tools.ToolUse
-	json.Unmarshal([]byte(apiRequest3), &toolUse3)
+	_ = json.Unmarshal([]byte(apiRequest3), &toolUse3)
 
 	result3, _ := executor.Execute(ctx, toolUse3.Name, toolUse3.Input)
 	toolResult3 := tools.ResultToToolResult(result3, toolUse3.ID)

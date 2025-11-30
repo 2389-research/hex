@@ -25,7 +25,7 @@ func TestCreateMessage(t *testing.T) {
 	// To replay: go test -run TestCreateMessage
 	r, err := recorder.New("testdata/fixtures/create_message")
 	require.NoError(t, err)
-	defer r.Stop()
+	defer func() { _ = r.Stop() }()
 
 	// Add a custom matcher that ignores timestamp differences in request body
 	r.SetMatcher(func(r *http.Request, i cassette.Request) bool {
@@ -87,7 +87,7 @@ func TestCreateMessageWithImage(t *testing.T) {
 	// Create VCR recorder
 	r, err := recorder.New("testdata/fixtures/create_message_with_image")
 	require.NoError(t, err)
-	defer r.Stop()
+	defer func() { _ = r.Stop() }()
 
 	// Add custom matcher
 	r.SetMatcher(func(r *http.Request, i cassette.Request) bool {

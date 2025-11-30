@@ -28,7 +28,7 @@ func SaveTodos(db *sql.DB, todos []Todo, conversationID *string) error {
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Delete existing todos for this conversation (or all global if nil)
 	var deleteQuery string
@@ -125,7 +125,7 @@ func LoadTodos(db *sql.DB, conversationID *string) ([]Todo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query todos: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var todos []Todo
 	for rows.Next() {

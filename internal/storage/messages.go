@@ -37,7 +37,7 @@ func CreateMessage(db *sql.DB, msg *Message) error {
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Insert message
 	query := `
@@ -118,7 +118,7 @@ func ListMessages(db *sql.DB, conversationID string) ([]*Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list messages: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var msgs []*Message
 	for rows.Next() {

@@ -14,7 +14,7 @@ import (
 
 func TestCreateMessage(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation first
 	conv := &storage.Conversation{ID: "conv-1", Title: "Test", Model: "claude-sonnet-4-5-20250929"}
@@ -46,7 +46,7 @@ func TestCreateMessage(t *testing.T) {
 
 func TestListMessagesByConversation(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{ID: "conv-1", Title: "Test", Model: "claude-sonnet-4-5-20250929"}
 	require.NoError(t, storage.CreateConversation(db, conv))
@@ -68,7 +68,7 @@ func TestListMessagesByConversation(t *testing.T) {
 
 func TestMessageWithMetadata(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{ID: "conv-1", Title: "Test", Model: "claude-sonnet-4-5-20250929"}
 	require.NoError(t, storage.CreateConversation(db, conv))

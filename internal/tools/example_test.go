@@ -29,7 +29,7 @@ func Example() {
 			}, nil
 		},
 	}
-	registry.Register(safeTool)
+	_ = registry.Register(safeTool)
 
 	// 3. Create and register a dangerous tool (requires approval)
 	dangerousTool := &tools.MockTool{
@@ -45,7 +45,7 @@ func Example() {
 			}, nil
 		},
 	}
-	registry.Register(dangerousTool)
+	_ = registry.Register(dangerousTool)
 
 	// 4. Create an executor with approval function
 	approvalFunc := func(toolName string, params map[string]interface{}) bool {

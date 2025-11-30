@@ -182,7 +182,7 @@ func writeFile(path, content string, append bool) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	n, err := file.WriteString(content)
 	if err != nil {

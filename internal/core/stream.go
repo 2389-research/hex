@@ -93,7 +93,7 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 
 	if httpResp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(httpResp.Body)
-		httpResp.Body.Close()
+		_ = httpResp.Body.Close()
 		return nil, fmt.Errorf("API error %d: %s", httpResp.StatusCode, string(body))
 	}
 
@@ -103,7 +103,7 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 	// Start goroutine to read SSE stream
 	go func() {
 		defer close(chunks)
-		defer httpResp.Body.Close()
+		defer func() { _ = httpResp.Body.Close() }()
 
 		scanner := bufio.NewScanner(httpResp.Body)
 		for scanner.Scan() {

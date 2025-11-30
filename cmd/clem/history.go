@@ -61,7 +61,7 @@ func runHistory(cmd *cobra.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Get recent history
 	entries, err := storage.GetRecentHistory(db, historyLimit)
@@ -102,7 +102,7 @@ func runHistorySearch(cmd *cobra.Command, query string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Search history
 	entries, err := storage.SearchHistory(db, query, historyLimit)

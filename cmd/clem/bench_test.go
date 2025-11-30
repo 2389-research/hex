@@ -16,7 +16,7 @@ func BenchmarkStartupHelp(b *testing.B) {
 		b.Skipf("failed to build: %v", err)
 		return
 	}
-	defer os.Remove("clem_bench")
+	defer func() { _ = os.Remove("clem_bench") }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -34,7 +34,7 @@ func BenchmarkStartupVersion(b *testing.B) {
 		b.Skipf("failed to build: %v", err)
 		return
 	}
-	defer os.Remove("clem_bench")
+	defer func() { _ = os.Remove("clem_bench") }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

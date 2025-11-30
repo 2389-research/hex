@@ -17,8 +17,8 @@ func TestMCPToolsRegistration_NoConfig(t *testing.T) {
 	// Create temp directory without .mcp.json
 	tmpDir := t.TempDir()
 	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Create tool registry
 	registry := tools.NewRegistry()
@@ -53,8 +53,8 @@ func TestMCPToolsRegistration_NoConfig(t *testing.T) {
 func TestMCPToolsRegistration_EmptyConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Create empty .mcp.json
 	config := mcp.MCPConfig{
@@ -93,8 +93,8 @@ func TestMCPToolsRegistration_EmptyConfig(t *testing.T) {
 func TestMCPToolsRegistration_InvalidConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Write invalid JSON
 	if err := os.WriteFile(".mcp.json", []byte("invalid json"), 0644); err != nil {
@@ -125,8 +125,8 @@ func TestMCPToolsRegistration_InvalidConfig(t *testing.T) {
 func TestToolDiscovery(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Create registry with multiple built-in tools
 	registry := tools.NewRegistry()
@@ -170,8 +170,8 @@ func TestToolDiscovery(t *testing.T) {
 func TestMCPToolsGracefulDegradation(t *testing.T) {
 	tmpDir := t.TempDir()
 	oldDir, _ := os.Getwd()
-	defer os.Chdir(oldDir)
-	os.Chdir(tmpDir)
+	defer func() { _ = os.Chdir(oldDir) }()
+	_ = os.Chdir(tmpDir)
 
 	// Create config with non-existent server
 	config := mcp.MCPConfig{

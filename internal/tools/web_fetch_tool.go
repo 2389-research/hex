@@ -108,7 +108,7 @@ func (t *WebFetchTool) Execute(ctx context.Context, params map[string]interface{
 			Error:    fmt.Sprintf("failed to fetch url: %v", err),
 		}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {

@@ -25,7 +25,7 @@ func TestScenario_StorageAndTools(t *testing.T) {
 
 	// Setup tools
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
 		return true // Auto-approve for test
@@ -68,8 +68,8 @@ func TestScenario_MultipleToolsSequence(t *testing.T) {
 
 	// Setup tools
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewWriteTool())
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewWriteTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
 		return true
@@ -146,7 +146,7 @@ func TestScenario_ToolErrorHandling(t *testing.T) {
 	convID := CreateTestConversation(t, db, "claude-sonnet-4-5-20250929")
 
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
 		return true
@@ -210,7 +210,7 @@ func TestScenario_ToolDenial(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "denied.txt")
 
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewWriteTool())
+	_ = registry.Register(tools.NewWriteTool())
 
 	// Executor that denies all requests
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {

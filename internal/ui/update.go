@@ -39,7 +39,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Task 12: Handle tool execution results
 	case toolExecutionMsg:
-		fmt.Fprintf(os.Stderr, "[TOOL_RESULT_RECEIVED] tool_use_id=%s, err=%v\n", msg.toolUseID, msg.err)
+		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_RECEIVED] tool_use_id=%s, err=%v\n", msg.toolUseID, msg.err)
 
 		m.executingTool = false
 		m.currentToolID = ""
@@ -50,11 +50,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.err != nil {
-			fmt.Fprintf(os.Stderr, "[TOOL_RESULT_ERROR] tool_use_id=%s, error=%s\n", msg.toolUseID, msg.err.Error())
+			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_ERROR] tool_use_id=%s, error=%s\n", msg.toolUseID, msg.err.Error())
 			m.ErrorMessage = "Tool execution error: " + msg.err.Error()
 			m.AddMessage("tool", "Tool error: "+msg.err.Error())
 		} else {
-			fmt.Fprintf(os.Stderr, "[TOOL_RESULT_SUCCESS] tool_use_id=%s, storing result\n", msg.toolUseID)
+			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_SUCCESS] tool_use_id=%s, storing result\n", msg.toolUseID)
 
 			// Validate that tool_use exists in message history before storing result
 			m.validateToolUseExists(msg.toolUseID)
@@ -65,7 +65,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Result:    msg.result,
 			})
 
-			fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
+			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
 
 			// Display result in UI
 			resultMsg := formatToolResult(msg.result)
@@ -75,12 +75,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateViewport()
 
 		// Send tool results back to API and continue conversation
-		fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
+		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
 	// Handle batch tool execution results
 	case toolBatchExecutionMsg:
-		fmt.Fprintf(os.Stderr, "[BATCH_RESULT_RECEIVED] received results for %d tool(s)\n", len(msg.results))
+		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULT_RECEIVED] received results for %d tool(s)\n", len(msg.results))
 
 		m.executingTool = false
 		m.executingToolUses = nil // Clear executing tools
@@ -102,7 +102,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateViewport()
 
 		// Send ALL tool results back to API in one user message
-		fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
+		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
 	case tea.KeyMsg:
@@ -499,7 +499,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Task 12: Handle tool_use content blocks
 	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
 		if chunk.ContentBlock.Type == "tool_use" {
-			fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
 
 			// DON'T commit streaming text yet - it will be included in the same
 			// assistant message as the tool_use blocks when the stream ends
@@ -532,9 +532,9 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			var input map[string]interface{}
 			if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
 				m.assemblingToolUse.Input = input
-				fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
+				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
 			} else {
-				fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
+				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
 			}
 		}
 
@@ -576,11 +576,11 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle message completion
 	if chunk.Type == "message_stop" || chunk.Done {
-		fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
 
 		// Commit streaming text, including tool_use blocks if present
 		if len(m.pendingToolUses) > 0 {
-			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
 
 			// Create assistant message with both text and ALL tool_use content blocks
 			blocks := []core.ContentBlock{}
@@ -588,7 +588,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			// Add text block if there's any text content
 			if m.StreamingText != "" {
 				blocks = append(blocks, core.NewTextBlock(m.StreamingText))
-				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
+				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
 			}
 
 			// Add ALL tool_use blocks
@@ -611,13 +611,13 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			m.Messages = append(m.Messages, assistantMsg)
 			m.StreamingText = ""
 
-			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
 
 			// Dump messages after adding assistant message with tool_use blocks
 			m.dumpMessages("AFTER stream completion with tool_use blocks")
 
 			// Show tool approval dialog
-			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
 			m.toolApprovalMode = true
 		} else {
 			// No tool, just commit regular text

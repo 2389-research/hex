@@ -59,7 +59,7 @@ func (t *KillShellTool) Execute(ctx context.Context, params map[string]interface
 	process := bgProc.Process
 	if process == nil {
 		// Process struct exists but OS process is nil - clean up registry
-		GetBackgroundRegistry().Remove(shellID)
+		_ = GetBackgroundRegistry().Remove(shellID)
 		return &Result{
 			ToolName: "kill_shell",
 			Success:  true,
@@ -74,7 +74,7 @@ func (t *KillShellTool) Execute(ctx context.Context, params map[string]interface
 	killErr := process.Signal(syscall.SIGTERM)
 	if killErr != nil {
 		// Process might already be dead - try to remove from registry
-		GetBackgroundRegistry().Remove(shellID)
+		_ = GetBackgroundRegistry().Remove(shellID)
 		return &Result{
 			ToolName: "kill_shell",
 			Success:  true,
@@ -92,12 +92,12 @@ func (t *KillShellTool) Execute(ctx context.Context, params map[string]interface
 	checkErr := process.Signal(syscall.Signal(0)) // Signal 0 checks if process exists
 	if checkErr == nil {
 		// Still alive - force kill with SIGKILL
-		process.Kill()
+		_ = process.Kill()
 		time.Sleep(50 * time.Millisecond)
 	}
 
 	// Remove from registry
-	GetBackgroundRegistry().Remove(shellID)
+	_ = GetBackgroundRegistry().Remove(shellID)
 
 	return &Result{
 		ToolName: "kill_shell",

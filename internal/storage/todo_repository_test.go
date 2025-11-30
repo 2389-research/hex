@@ -13,7 +13,7 @@ import (
 
 func TestSaveTodos_CreatesNewTodos(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	todos := []storage.Todo{
 		{
@@ -48,7 +48,7 @@ func TestSaveTodos_CreatesNewTodos(t *testing.T) {
 
 func TestSaveTodos_UpdatesExistingTodos(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create initial todos
 	initial := []storage.Todo{
@@ -83,7 +83,7 @@ func TestSaveTodos_UpdatesExistingTodos(t *testing.T) {
 
 func TestSaveTodos_ReplacesAllTodos(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create 3 todos
 	initial := []storage.Todo{
@@ -111,7 +111,7 @@ func TestSaveTodos_ReplacesAllTodos(t *testing.T) {
 
 func TestLoadTodos_EmptyDatabase(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	todos, err := storage.LoadTodos(db, nil)
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestLoadTodos_EmptyDatabase(t *testing.T) {
 
 func TestLoadTodos_OrderedByCreatedAt(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create todos with slight delays to ensure ordering
 	for i := 1; i <= 3; i++ {
@@ -139,7 +139,7 @@ func TestLoadTodos_OrderedByCreatedAt(t *testing.T) {
 
 	// Note: Each SaveTodos replaces all, so we should only have the last one
 	// Let's modify the test to insert individually
-	db.Exec("DELETE FROM todos") // Clear first
+	_, _ = db.Exec("DELETE FROM todos") // Clear first
 
 	// Insert individually via SQL to test ordering
 	now := time.Now()
@@ -170,7 +170,7 @@ func TestLoadTodos_OrderedByCreatedAt(t *testing.T) {
 
 func TestClearCompleted_RemovesOnlyCompletedTodos(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Insert mixed todos directly
 	now := time.Now()
@@ -209,7 +209,7 @@ func TestClearCompleted_RemovesOnlyCompletedTodos(t *testing.T) {
 
 func TestClearCompleted_EmptyDatabase(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	err := storage.ClearCompleted(db, nil)
 	require.NoError(t, err)
@@ -221,7 +221,7 @@ func TestClearCompleted_EmptyDatabase(t *testing.T) {
 
 func TestSaveTodos_WithConversationID(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create a conversation first
 	conv := &storage.Conversation{
@@ -254,7 +254,7 @@ func TestSaveTodos_WithConversationID(t *testing.T) {
 
 func TestLoadTodos_FiltersByConversationID(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create two conversations
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Conv 1", Model: "claude-sonnet-4-5-20250929"}
@@ -291,7 +291,7 @@ func TestLoadTodos_FiltersByConversationID(t *testing.T) {
 
 func TestClearCompleted_FiltersByConversationID(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversations
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Conv 1", Model: "claude-sonnet-4-5-20250929"}
@@ -331,7 +331,7 @@ func TestClearCompleted_FiltersByConversationID(t *testing.T) {
 
 func TestTodo_ValidationConstraints(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	now := time.Now()
 
@@ -356,7 +356,7 @@ func TestTodo_ValidationConstraints(t *testing.T) {
 
 func TestTodo_CascadeDelete(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation with todos
 	conv := &storage.Conversation{ID: "conv-cascade", Title: "Test", Model: "claude-sonnet-4-5-20250929"}

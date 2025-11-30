@@ -471,7 +471,7 @@ func setupTestDBForTools(t *testing.T) (*sql.DB, func()) {
 	require.NoError(t, err)
 
 	cleanup := func() {
-		db.Close()
+		_ = db.Close()
 	}
 
 	return db, cleanup

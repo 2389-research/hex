@@ -64,7 +64,7 @@ func setupTestConversation(t *testing.T) (*sql.DB, string) {
 // TestExportMarkdown tests exporting to Markdown format
 func TestExportMarkdown(t *testing.T) {
 	db, convID := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err := export.Export(db, convID, export.FormatMarkdown, &buf)
@@ -86,7 +86,7 @@ func TestExportMarkdown(t *testing.T) {
 // TestExportJSON tests exporting to JSON format
 func TestExportJSON(t *testing.T) {
 	db, convID := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err := export.Export(db, convID, export.FormatJSON, &buf)
@@ -104,7 +104,7 @@ func TestExportJSON(t *testing.T) {
 // TestExportHTML tests exporting to HTML format
 func TestExportHTML(t *testing.T) {
 	db, convID := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err := export.Export(db, convID, export.FormatHTML, &buf)
@@ -125,18 +125,18 @@ func TestExportHTML(t *testing.T) {
 // TestExportToFile tests exporting to a file
 func TestExportToFile(t *testing.T) {
 	db, convID := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	outputPath := filepath.Join(t.TempDir(), "export.md")
 	file, err := os.Create(outputPath)
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	err = export.Export(db, convID, export.FormatMarkdown, file)
 	require.NoError(t, err)
 
 	// Close and read back
-	file.Close()
+	_ = file.Close()
 
 	content, err := os.ReadFile(outputPath)
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestExportToFile(t *testing.T) {
 // TestExportInvalidFormat tests error handling for invalid format
 func TestExportInvalidFormat(t *testing.T) {
 	db, convID := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err := export.Export(db, convID, export.Format("invalid"), &buf)
@@ -160,7 +160,7 @@ func TestExportInvalidFormat(t *testing.T) {
 // TestExportNonexistentConversation tests error handling for missing conversation
 func TestExportNonexistentConversation(t *testing.T) {
 	db, _ := setupTestConversation(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err := export.Export(db, "nonexistent-id", export.FormatMarkdown, &buf)
@@ -204,7 +204,7 @@ func TestExportEmptyConversation(t *testing.T) {
 
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation without messages
 	conv := &storage.Conversation{
@@ -241,7 +241,7 @@ func TestExportWithToolCalls(t *testing.T) {
 
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{
 		ID:        "tool-conv",
@@ -291,7 +291,7 @@ func TestExportSpecialCharacters(t *testing.T) {
 
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{
 		ID:           "special-conv",

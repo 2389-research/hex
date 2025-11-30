@@ -38,12 +38,12 @@ func TestReadTool_Execute_Success(t *testing.T) {
 	// Create temporary file
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Hello, World!"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create read tool
 	tool := tools.NewReadTool()
@@ -120,7 +120,7 @@ func TestReadTool_Execute_FileNotFound(t *testing.T) {
 func TestReadTool_Execute_Directory(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "test-dir-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	tool := tools.NewReadTool()
 
@@ -138,13 +138,13 @@ func TestReadTool_Execute_FileTooLarge(t *testing.T) {
 	// Create file larger than max size
 	tmpFile, err := os.CreateTemp("", "test-large-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// Write 2MB of data
 	data := make([]byte, 2*1024*1024)
 	_, err = tmpFile.Write(data)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create read tool with default max size (1MB)
 	tool := tools.NewReadTool()
@@ -162,12 +162,12 @@ func TestReadTool_Execute_FileTooLarge(t *testing.T) {
 func TestReadTool_Execute_WithOffset(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "0123456789"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 
@@ -186,12 +186,12 @@ func TestReadTool_Execute_WithOffset(t *testing.T) {
 func TestReadTool_Execute_WithLimit(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "0123456789"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 
@@ -210,12 +210,12 @@ func TestReadTool_Execute_WithLimit(t *testing.T) {
 func TestReadTool_Execute_WithOffsetAndLimit(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "0123456789"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 
@@ -236,12 +236,12 @@ func TestReadTool_Execute_WithOffsetAndLimit(t *testing.T) {
 func TestReadTool_Execute_OffsetBeyondFileSize(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Hello"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 
@@ -260,12 +260,12 @@ func TestReadTool_Execute_OffsetBeyondFileSize(t *testing.T) {
 func TestReadTool_Execute_LimitBeyondFileSize(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Hello"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 
@@ -374,7 +374,7 @@ func TestReadTool_PathSafety(t *testing.T) {
 	// Create a temporary directory structure
 	tmpDir, err := os.MkdirTemp("", "test-safety-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create a file in tmpDir
 	testFile := filepath.Join(tmpDir, "test.txt")
@@ -403,12 +403,12 @@ func TestReadTool_PathSafety(t *testing.T) {
 func TestReadTool_CustomMaxSize(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Hello, World!"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create tool with very small max size
 	tool := &tools.ReadTool{
@@ -428,12 +428,12 @@ func TestReadTool_CustomMaxSize(t *testing.T) {
 func TestReadTool_ContextCancellation(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Hello, World!"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tool := tools.NewReadTool()
 

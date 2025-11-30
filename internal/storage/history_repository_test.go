@@ -14,7 +14,7 @@ import (
 
 func TestAddHistoryEntry(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create a test conversation first
 	conv := &storage.Conversation{
@@ -39,7 +39,7 @@ func TestAddHistoryEntry(t *testing.T) {
 	// Verify it was saved
 	rows, err := db.Query("SELECT id, user_message, assistant_response FROM history WHERE id = ?", entry.ID)
 	require.NoError(t, err)
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	assert.True(t, rows.Next())
 	var id, userMsg, assistantResp string
@@ -53,7 +53,7 @@ func TestAddHistoryEntry(t *testing.T) {
 
 func TestSearchHistory(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -112,7 +112,7 @@ func TestSearchHistory(t *testing.T) {
 
 func TestSearchHistoryMultipleMatches(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -158,7 +158,7 @@ func TestSearchHistoryMultipleMatches(t *testing.T) {
 
 func TestGetRecentHistory(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -195,7 +195,7 @@ func TestGetRecentHistory(t *testing.T) {
 
 func TestSearchHistoryLimit(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -226,7 +226,7 @@ func TestSearchHistoryLimit(t *testing.T) {
 
 func TestSearchHistoryNoResults(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Search empty database
 	results, err := storage.SearchHistory(db, "nonexistent", 10)
@@ -236,7 +236,7 @@ func TestSearchHistoryNoResults(t *testing.T) {
 
 func TestSearchHistorySpecialCharacters(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{
@@ -265,7 +265,7 @@ func TestSearchHistorySpecialCharacters(t *testing.T) {
 
 func TestHistoryCascadeDelete(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{

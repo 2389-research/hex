@@ -28,7 +28,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 
 func TestCreateConversation(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{
 		ID:    "conv-123",
@@ -48,7 +48,7 @@ func TestCreateConversation(t *testing.T) {
 
 func TestListConversations(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create multiple conversations
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
@@ -68,7 +68,7 @@ func TestListConversations(t *testing.T) {
 
 func TestGetLatestConversation(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversations
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
@@ -86,7 +86,7 @@ func TestGetLatestConversation(t *testing.T) {
 
 func TestUpdateConversationTitle(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{ID: "conv-1", Title: "Original", Model: "claude-sonnet-4-5-20250929"}
 	require.NoError(t, storage.CreateConversation(db, conv))
@@ -103,7 +103,7 @@ func TestUpdateConversationTitle(t *testing.T) {
 
 func TestDeleteConversation(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{ID: "conv-1", Title: "To Delete", Model: "claude-sonnet-4-5-20250929"}
 	require.NoError(t, storage.CreateConversation(db, conv))
@@ -120,7 +120,7 @@ func TestDeleteConversation(t *testing.T) {
 
 func TestDeleteConversationCascade(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{ID: "conv-cascade", Title: "Cascade Test", Model: "claude-sonnet-4-5-20250929"}
@@ -149,7 +149,7 @@ func TestDeleteConversationCascade(t *testing.T) {
 
 func TestSetFavorite(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation
 	conv := &storage.Conversation{ID: "conv-fav", Title: "Favorite Test", Model: "claude-sonnet-4-5-20250929"}
@@ -181,7 +181,7 @@ func TestSetFavorite(t *testing.T) {
 
 func TestListFavorites(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create multiple conversations
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
@@ -211,7 +211,7 @@ func TestListFavorites(t *testing.T) {
 
 func TestListFavoritesEmpty(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversations but don't favorite any
 	conv1 := &storage.Conversation{ID: "conv-1", Title: "Chat 1", Model: "claude-sonnet-4-5-20250929"}
@@ -225,7 +225,7 @@ func TestListFavoritesEmpty(t *testing.T) {
 
 func TestFavoriteBackwardCompatibility(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation and verify is_favorite defaults to false
 	conv := &storage.Conversation{ID: "conv-compat", Title: "Backward Compat", Model: "claude-sonnet-4-5-20250929"}

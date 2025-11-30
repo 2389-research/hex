@@ -289,8 +289,8 @@ func TestTaskTool_Execute_SubprocessError(t *testing.T) {
 
 	// Set an invalid binary path to force subprocess error
 	originalPath := os.Getenv("PATH")
-	os.Setenv("PATH", "/nonexistent")
-	defer os.Setenv("PATH", originalPath)
+	_ = os.Setenv("PATH", "/nonexistent")
+	defer func() { _ = os.Setenv("PATH", originalPath) }()
 
 	result, err := tool.Execute(context.Background(), map[string]interface{}{
 		"prompt":        "This won't work",

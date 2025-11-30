@@ -96,8 +96,8 @@ func TestBashOutputTool_Execute_EmptyOutput(t *testing.T) {
 		ReadOffset: 0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -137,8 +137,8 @@ func TestBashOutputTool_Execute_BasicOutput(t *testing.T) {
 		ExitCode:   0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -181,8 +181,8 @@ func TestBashOutputTool_Execute_IncrementalRead(t *testing.T) {
 		ReadOffset: 0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -245,8 +245,8 @@ func TestBashOutputTool_Execute_WithStderr(t *testing.T) {
 		ReadOffset: 0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -290,8 +290,8 @@ func TestBashOutputTool_Execute_WithFilter(t *testing.T) {
 		ReadOffset: 0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -333,8 +333,8 @@ func TestBashOutputTool_Execute_InvalidRegexFilter(t *testing.T) {
 		ReadOffset: 0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()
@@ -376,8 +376,8 @@ func TestBashOutputTool_Execute_ProcessMetadata(t *testing.T) {
 		ExitCode:   0,
 	}
 
-	GetBackgroundRegistry().Register(bgProc)
-	defer GetBackgroundRegistry().Remove(bashID)
+	_ = GetBackgroundRegistry().Register(bgProc)
+	defer func() { _ = GetBackgroundRegistry().Remove(bashID) }()
 
 	tool := NewBashOutputTool()
 	ctx := context.Background()

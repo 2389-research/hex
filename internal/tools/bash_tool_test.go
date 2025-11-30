@@ -483,7 +483,7 @@ func TestBashTool_Execute_Background_LaunchProcess(t *testing.T) {
 
 	// Clean up
 	time.Sleep(2 * time.Second) // Let command finish
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_ProcessIDUnique(t *testing.T) {
@@ -511,8 +511,8 @@ func TestBashTool_Execute_Background_ProcessIDUnique(t *testing.T) {
 
 	// Clean up
 	time.Sleep(3 * time.Second)
-	tools.GetBackgroundRegistry().Remove(bashID1)
-	tools.GetBackgroundRegistry().Remove(bashID2)
+	_ = tools.GetBackgroundRegistry().Remove(bashID1)
+	_ = tools.GetBackgroundRegistry().Remove(bashID2)
 }
 
 func TestBashTool_Execute_Background_RetrieveOutputWithBashOutput(t *testing.T) {
@@ -556,7 +556,7 @@ func TestBashTool_Execute_Background_RetrieveOutputWithBashOutput(t *testing.T) 
 	assert.True(t, done)
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_ProcessCompletesSuccessfully(t *testing.T) {
@@ -590,7 +590,7 @@ func TestBashTool_Execute_Background_ProcessCompletesSuccessfully(t *testing.T) 
 	assert.Equal(t, 0, exitCode)
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_ProcessFailsWithNonZeroExit(t *testing.T) {
@@ -624,7 +624,7 @@ func TestBashTool_Execute_Background_ProcessFailsWithNonZeroExit(t *testing.T) {
 	assert.Equal(t, 42, exitCode)
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_IncrementalOutputRetrieval(t *testing.T) {
@@ -660,7 +660,7 @@ func TestBashTool_Execute_Background_IncrementalOutputRetrieval(t *testing.T) {
 	assert.NotContains(t, output2.Output, "first")
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
@@ -695,7 +695,7 @@ func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
 	assert.Contains(t, outputResult.Output, workingDir)
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }
 
 func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
@@ -725,5 +725,5 @@ func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
 	assert.Contains(t, outputResult.Output, "STDERR:")
 
 	// Clean up
-	tools.GetBackgroundRegistry().Remove(bashID)
+	_ = tools.GetBackgroundRegistry().Remove(bashID)
 }

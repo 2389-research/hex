@@ -78,7 +78,7 @@ func BenchmarkHTTPRoundTrip(b *testing.B) {
 	// Mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(core.MessageResponse{
+		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:   "msg_test",
 			Type: "message",
 			Role: "assistant",
@@ -113,7 +113,7 @@ func BenchmarkHTTPRoundTrip(b *testing.B) {
 func BenchmarkLargeMessagePayload(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(core.MessageResponse{
+		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:         "msg_test",
 			Type:       "message",
 			Role:       "assistant",
@@ -150,7 +150,7 @@ func BenchmarkLargeMessagePayload(b *testing.B) {
 func BenchmarkCreateMessageWithTools(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(core.MessageResponse{
+		_ = json.NewEncoder(w).Encode(core.MessageResponse{
 			ID:         "msg_test",
 			Type:       "message",
 			Role:       "assistant",

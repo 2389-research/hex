@@ -109,7 +109,7 @@ func BenchmarkEditTool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		// Reset file content
-		os.WriteFile(testFile, []byte(initialContent), 0644)
+		_ = os.WriteFile(testFile, []byte(initialContent), 0644)
 		b.StartTimer()
 
 		params := map[string]interface{}{
@@ -210,11 +210,11 @@ func BenchmarkToolRegistryLookup(b *testing.B) {
 	registry := NewRegistry()
 
 	// Register some tools
-	registry.Register(NewReadTool())
-	registry.Register(NewWriteTool())
-	registry.Register(NewEditTool())
-	registry.Register(NewGrepTool())
-	registry.Register(NewGlobTool())
+	_ = registry.Register(NewReadTool())
+	_ = registry.Register(NewWriteTool())
+	_ = registry.Register(NewEditTool())
+	_ = registry.Register(NewGrepTool())
+	_ = registry.Register(NewGlobTool())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -230,16 +230,16 @@ func BenchmarkToolRegistryListAll(b *testing.B) {
 	registry := NewRegistry()
 
 	// Register 10 tools
-	registry.Register(NewReadTool())
-	registry.Register(NewWriteTool())
-	registry.Register(NewEditTool())
-	registry.Register(NewGrepTool())
-	registry.Register(NewGlobTool())
-	registry.Register(NewBashTool())
-	registry.Register(NewWebFetchTool())
-	registry.Register(NewWebSearchTool())
-	registry.Register(NewAskUserQuestionTool())
-	registry.Register(NewTaskTool())
+	_ = registry.Register(NewReadTool())
+	_ = registry.Register(NewWriteTool())
+	_ = registry.Register(NewEditTool())
+	_ = registry.Register(NewGrepTool())
+	_ = registry.Register(NewGlobTool())
+	_ = registry.Register(NewBashTool())
+	_ = registry.Register(NewWebFetchTool())
+	_ = registry.Register(NewWebSearchTool())
+	_ = registry.Register(NewAskUserQuestionTool())
+	_ = registry.Register(NewTaskTool())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -256,7 +256,7 @@ func BenchmarkExecutorApprovalOverhead(b *testing.B) {
 	}
 
 	registry := NewRegistry()
-	registry.Register(NewReadTool())
+	_ = registry.Register(NewReadTool())
 
 	// Auto-approve callback
 	approver := func(name string, params map[string]interface{}) bool {

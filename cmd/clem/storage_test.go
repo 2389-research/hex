@@ -21,7 +21,7 @@ func TestOpenDatabase(t *testing.T) {
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
 	require.NotNil(t, db)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Verify database file was created
 	_, err = os.Stat(dbPath)
@@ -43,7 +43,7 @@ func TestOpenDatabaseCreatesDirectory(t *testing.T) {
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
 	require.NotNil(t, db)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Verify nested directories were created
 	_, err = os.Stat(filepath.Dir(dbPath))
@@ -67,7 +67,7 @@ func TestLoadConversationHistory(t *testing.T) {
 	dbPath := filepath.Join(tmpDir, "test.db")
 	db, err := openDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create test conversation
 	testConv := &storage.Conversation{

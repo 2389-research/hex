@@ -33,12 +33,12 @@ func TestConversationPersistence(t *testing.T) {
 	msg2ID := CreateTestMessage(t, db, convID, "assistant", "Hello! How can I help you today?")
 
 	// Close database
-	db.Close()
+	_ = db.Close()
 
 	// Phase 2: Reopen database (simulating restart)
 	db, err = storage.OpenDatabase(dbPath)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Retrieve conversation
 	conv, err := storage.GetConversation(db, convID)

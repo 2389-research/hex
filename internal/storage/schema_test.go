@@ -15,7 +15,7 @@ func TestInitializeSchema(t *testing.T) {
 	// Use in-memory SQLite for tests
 	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Initialize schema
 	err = storage.InitializeSchema(db)
@@ -36,7 +36,7 @@ func TestInitializeSchema(t *testing.T) {
 func TestSchemaIndexes(t *testing.T) {
 	db, err := sql.Open("sqlite", ":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	err = storage.InitializeSchema(db)
 	require.NoError(t, err)

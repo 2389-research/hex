@@ -37,7 +37,7 @@ func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (
 	// Create and start server
 	server := NewMockMCPServer(serverName, serverVersion, tools)
 	server.SetIOStreams(clientToServer_r, serverToClient_w, mockStderr)
-	go server.Run()
+	go func() { _ = server.Run() }()
 
 	// Create client
 	client := &Client{

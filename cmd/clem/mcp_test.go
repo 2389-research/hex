@@ -121,9 +121,9 @@ func TestMCPListCommand(t *testing.T) {
 	}
 
 	for _, s := range servers {
-		registry.AddServer(s)
+		_ = registry.AddServer(s)
 	}
-	registry.Save()
+	_ = registry.Save()
 
 	// Test list command
 	cmd := newMCPCommand(tempDir)
@@ -179,12 +179,12 @@ func TestMCPRemoveCommand(t *testing.T) {
 
 	// Add a server first
 	registry := mcp.NewRegistry(tempDir)
-	registry.AddServer(mcp.ServerConfig{
+	_ = registry.AddServer(mcp.ServerConfig{
 		Name:      "test-server",
 		Transport: "stdio",
 		Command:   "node",
 	})
-	registry.Save()
+	_ = registry.Save()
 
 	// Remove it
 	cmd := newMCPCommand(tempDir)
@@ -200,7 +200,7 @@ func TestMCPRemoveCommand(t *testing.T) {
 
 	// Verify it's gone
 	registry = mcp.NewRegistry(tempDir)
-	registry.Load()
+	_ = registry.Load()
 
 	if registry.ServerExists("test-server") {
 		t.Error("Server should have been removed")
@@ -307,19 +307,19 @@ func TestMCPListCommand_Format(t *testing.T) {
 
 	// Add servers with different configurations
 	registry := mcp.NewRegistry(tempDir)
-	registry.AddServer(mcp.ServerConfig{
+	_ = registry.AddServer(mcp.ServerConfig{
 		Name:      "simple-server",
 		Transport: "stdio",
 		Command:   "node",
 		Args:      []string{"server.js"},
 	})
-	registry.AddServer(mcp.ServerConfig{
+	_ = registry.AddServer(mcp.ServerConfig{
 		Name:      "complex-server",
 		Transport: "stdio",
 		Command:   "python",
 		Args:      []string{"-m", "server", "--verbose", "--port", "8080"},
 	})
-	registry.Save()
+	_ = registry.Save()
 
 	cmd := newMCPCommand(tempDir)
 	cmd.SetArgs([]string{"list"})

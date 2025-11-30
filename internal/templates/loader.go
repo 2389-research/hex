@@ -82,7 +82,7 @@ func LoadTemplates(dir string) (map[string]*Template, error) {
 		template, err := LoadTemplate(path)
 		if err != nil {
 			// Log error but continue loading other templates
-			fmt.Fprintf(os.Stderr, "Warning: Failed to load template %s: %v\n", name, err)
+			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to load template %s: %v\n", name, err)
 			continue
 		}
 

@@ -28,8 +28,8 @@ func setupFavoritesTestDB(t *testing.T) (*sql.DB, string) {
 
 func TestFavoriteCommand(t *testing.T) {
 	db, tmpDir := setupFavoritesTestDB(t)
-	defer db.Close()
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create a conversation
 	conv := &storage.Conversation{
@@ -63,8 +63,8 @@ func TestFavoriteCommand(t *testing.T) {
 
 func TestFavoritesListCommand(t *testing.T) {
 	db, tmpDir := setupFavoritesTestDB(t)
-	defer db.Close()
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create multiple conversations
 	convs := []*storage.Conversation{
@@ -95,8 +95,8 @@ func TestFavoritesListCommand(t *testing.T) {
 
 func TestFavoritesListEmpty(t *testing.T) {
 	db, tmpDir := setupFavoritesTestDB(t)
-	defer db.Close()
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = db.Close() }()
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create conversation but don't favorite it
 	conv := &storage.Conversation{

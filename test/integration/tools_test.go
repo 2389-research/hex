@@ -151,7 +151,7 @@ func TestBashToolTimeout(t *testing.T) {
 // TestToolExecutorWithApproval tests executor with approval flow
 func TestToolExecutorWithApproval(t *testing.T) {
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	// Create executor with auto-approve
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
@@ -178,7 +178,7 @@ func TestToolExecutorWithApproval(t *testing.T) {
 // TestToolExecutorWithDenial tests executor denial flow
 func TestToolExecutorWithDenial(t *testing.T) {
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewWriteTool())
+	_ = registry.Register(tools.NewWriteTool())
 
 	// Create executor with denial callback
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
@@ -252,7 +252,7 @@ func TestConcurrentToolExecution(t *testing.T) {
 	}
 
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
 		return true

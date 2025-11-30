@@ -199,7 +199,7 @@ func TestFileProvider_GetCompletions(t *testing.T) {
 	for _, file := range testFiles {
 		f, err := os.Create(filepath.Join(tmpDir, file))
 		require.NoError(t, err)
-		f.Close()
+		_ = f.Close()
 	}
 
 	// Create a subdirectory

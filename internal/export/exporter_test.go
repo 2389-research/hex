@@ -328,13 +328,13 @@ func TestHTMLExporterToFile(t *testing.T) {
 
 	file, err := os.Create(outputPath)
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	err = exporter.Export(conv, messages, file)
 	require.NoError(t, err)
 
 	// Close and read back
-	file.Close()
+	_ = file.Close()
 
 	content, err := os.ReadFile(outputPath)
 	require.NoError(t, err)
@@ -349,7 +349,7 @@ func TestExportFunction(t *testing.T) {
 	// Setup test database
 	db, err := storage.OpenDatabase(":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Create conversation and messages
 	conv, messages := setupTestData()
@@ -377,7 +377,7 @@ func TestExportFunction(t *testing.T) {
 func TestExportUnknownFormat(t *testing.T) {
 	db, err := storage.OpenDatabase(":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv, messages := setupTestData()
 	err = storage.CreateConversation(db, conv)
@@ -398,7 +398,7 @@ func TestExportUnknownFormat(t *testing.T) {
 func TestExportNonexistentConversation(t *testing.T) {
 	db, err := storage.OpenDatabase(":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var buf bytes.Buffer
 	err = Export(db, "nonexistent-id", FormatMarkdown, &buf)
@@ -409,7 +409,7 @@ func TestExportNonexistentConversation(t *testing.T) {
 func TestEmptyConversation(t *testing.T) {
 	db, err := storage.OpenDatabase(":memory:")
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	conv := &storage.Conversation{
 		ID:        "empty-conv",

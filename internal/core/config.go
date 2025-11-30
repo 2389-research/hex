@@ -40,10 +40,10 @@ func LoadConfig() (*Config, error) {
 	v.SetEnvPrefix("CLEM")
 	v.AutomaticEnv()
 	// Bind specific keys to handle underscore conversion
-	v.BindEnv("api_key")
-	v.BindEnv("model")
-	v.BindEnv("permission_mode")
-	v.BindEnv("default_tools")
+	_ = v.BindEnv("api_key")
+	_ = v.BindEnv("model")
+	_ = v.BindEnv("permission_mode")
+	_ = v.BindEnv("default_tools")
 
 	// Config file
 	v.SetConfigName("config")

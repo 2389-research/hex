@@ -18,12 +18,12 @@ func TestReadTool_Integration_WithRegistry(t *testing.T) {
 	// Create test file
 	tmpFile, err := os.CreateTemp("", "integration-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Integration test content"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create registry and register Read tool
 	registry := tools.NewRegistry()
@@ -53,16 +53,16 @@ func TestReadTool_Integration_WithExecutor(t *testing.T) {
 	// Create test file
 	tmpFile, err := os.CreateTemp("", "integration-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "Executor integration test"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create registry and executor
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	approvalCalled := false
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
@@ -84,7 +84,7 @@ func TestReadTool_Integration_WithExecutor(t *testing.T) {
 // TestReadTool_Integration_WithExecutor_Approval tests approval flow
 func TestReadTool_Integration_WithExecutor_Approval(t *testing.T) {
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	approvalParams := make(map[string]interface{})
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
@@ -107,7 +107,7 @@ func TestReadTool_Integration_WithExecutor_Approval(t *testing.T) {
 // TestReadTool_Integration_WithExecutor_ApprovalDenied tests denial flow
 func TestReadTool_Integration_WithExecutor_ApprovalDenied(t *testing.T) {
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 
 	executor := tools.NewExecutor(registry, func(toolName string, params map[string]interface{}) bool {
 		return false // Deny
@@ -130,15 +130,15 @@ func TestReadTool_Integration_MultipleOperations(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		tmpFile, err := os.CreateTemp("", "multi-*.txt")
 		require.NoError(t, err)
-		defer os.Remove(tmpFile.Name())
-		tmpFile.WriteString(string(rune('A' + i)))
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_, _ = tmpFile.WriteString(string(rune('A' + i)))
+		_ = tmpFile.Close()
 		files[i] = tmpFile.Name()
 	}
 
 	// Create registry and executor
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 	executor := tools.NewExecutor(registry, nil)
 
 	// Read all files
@@ -158,16 +158,16 @@ func TestReadTool_Integration_WithOffsetLimit(t *testing.T) {
 	// Create test file
 	tmpFile, err := os.CreateTemp("", "offset-*.txt")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	content := "0123456789ABCDEF"
 	_, err = tmpFile.WriteString(content)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Create registry and executor
 	registry := tools.NewRegistry()
-	registry.Register(tools.NewReadTool())
+	_ = registry.Register(tools.NewReadTool())
 	executor := tools.NewExecutor(registry, nil)
 
 	// Read with offset and limit

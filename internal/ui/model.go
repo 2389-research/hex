@@ -442,7 +442,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 		return nil
 	}
 
-	fmt.Fprintf(os.Stderr, "[TOOL_APPROVAL] approving %d tool(s)\n", len(m.pendingToolUses))
+	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_APPROVAL] approving %d tool(s)\n", len(m.pendingToolUses))
 
 	// Validate that all tool_use blocks exist in message history
 	for _, toolUse := range m.pendingToolUses {
@@ -486,7 +486,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 		return nil
 	}
 
-	fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying %d tool(s)\n", len(m.pendingToolUses))
+	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying %d tool(s)\n", len(m.pendingToolUses))
 
 	// Create error results for all denied tools
 	for _, toolUse := range m.pendingToolUses {
@@ -540,7 +540,7 @@ func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
 			result, err := m.toolExecutor.Execute(ctx, toolUse.Name, toolUse.Input)
 
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "[BATCH_EXEC_ERROR] tool %s failed: %v\n", toolUse.Name, err)
+				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_ERROR] tool %s failed: %v\n", toolUse.Name, err)
 				results = append(results, ToolResult{
 					ToolUseID: toolUse.ID,
 					Result: &tools.Result{
@@ -550,7 +550,7 @@ func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
 					},
 				})
 			} else {
-				fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
+				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
 				results = append(results, ToolResult{
 					ToolUseID: toolUse.ID,
 					Result:    result,
@@ -558,7 +558,7 @@ func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
 			}
 		}
 
-		fmt.Fprintf(os.Stderr, "[BATCH_EXEC_DONE] executed %d tools\n", len(results))
+		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_DONE] executed %d tools\n", len(results))
 		return toolBatchExecutionMsg{results: results}
 	}
 }
@@ -693,43 +693,43 @@ func (m *Model) ExecuteQuickAction() error {
 
 // dumpMessages logs all messages with their content blocks for debugging
 func (m *Model) dumpMessages(label string) {
-	fmt.Fprintf(os.Stderr, "\n========== MESSAGE DUMP: %s ==========\n", label)
+	_, _ = fmt.Fprintf(os.Stderr, "\n========== MESSAGE DUMP: %s ==========\n", label)
 	for i, msg := range m.Messages {
-		fmt.Fprintf(os.Stderr, "[%d] Role: %s\n", i, msg.Role)
+		_, _ = fmt.Fprintf(os.Stderr, "[%d] Role: %s\n", i, msg.Role)
 		if msg.Content != "" {
-			fmt.Fprintf(os.Stderr, "    Content (string): %q\n", msg.Content)
+			_, _ = fmt.Fprintf(os.Stderr, "    Content (string): %q\n", msg.Content)
 		}
 		if len(msg.ContentBlock) > 0 {
-			fmt.Fprintf(os.Stderr, "    ContentBlocks (%d):\n", len(msg.ContentBlock))
+			_, _ = fmt.Fprintf(os.Stderr, "    ContentBlocks (%d):\n", len(msg.ContentBlock))
 			for j, block := range msg.ContentBlock {
-				fmt.Fprintf(os.Stderr, "      [%d] Type: %s\n", j, block.Type)
+				_, _ = fmt.Fprintf(os.Stderr, "      [%d] Type: %s\n", j, block.Type)
 				if block.Text != "" {
-					fmt.Fprintf(os.Stderr, "          Text: %q\n", block.Text)
+					_, _ = fmt.Fprintf(os.Stderr, "          Text: %q\n", block.Text)
 				}
 				if block.ID != "" {
-					fmt.Fprintf(os.Stderr, "          ID: %s\n", block.ID)
+					_, _ = fmt.Fprintf(os.Stderr, "          ID: %s\n", block.ID)
 				}
 				if block.Name != "" {
-					fmt.Fprintf(os.Stderr, "          Name: %s\n", block.Name)
+					_, _ = fmt.Fprintf(os.Stderr, "          Name: %s\n", block.Name)
 				}
 				if block.Input != nil {
-					fmt.Fprintf(os.Stderr, "          Input: %+v\n", block.Input)
+					_, _ = fmt.Fprintf(os.Stderr, "          Input: %+v\n", block.Input)
 				}
 				if block.ToolUseID != "" {
-					fmt.Fprintf(os.Stderr, "          ToolUseID: %s\n", block.ToolUseID)
+					_, _ = fmt.Fprintf(os.Stderr, "          ToolUseID: %s\n", block.ToolUseID)
 				}
 				if block.Content != "" {
-					fmt.Fprintf(os.Stderr, "          Content: %q\n", block.Content)
+					_, _ = fmt.Fprintf(os.Stderr, "          Content: %q\n", block.Content)
 				}
 			}
 		}
 	}
-	fmt.Fprintf(os.Stderr, "========================================\n\n")
+	_, _ = fmt.Fprintf(os.Stderr, "========================================\n\n")
 }
 
 // validateToolUseExists checks if a tool_use block with the given ID exists in message history
 func (m *Model) validateToolUseExists(toolUseID string) bool {
-	fmt.Fprintf(os.Stderr, "[VALIDATION] Looking for tool_use with ID: %s\n", toolUseID)
+	_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] Looking for tool_use with ID: %s\n", toolUseID)
 
 	for i, msg := range m.Messages {
 		if msg.Role != "assistant" {
@@ -737,24 +737,24 @@ func (m *Model) validateToolUseExists(toolUseID string) bool {
 		}
 		for j, block := range msg.ContentBlock {
 			if block.Type == "tool_use" && block.ID == toolUseID {
-				fmt.Fprintf(os.Stderr, "[VALIDATION] ✓ Found tool_use at message[%d].ContentBlock[%d]\n", i, j)
+				_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] ✓ Found tool_use at message[%d].ContentBlock[%d]\n", i, j)
 				return true
 			}
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "[VALIDATION] ✗ WARNING: tool_use with ID %s NOT FOUND in message history!\n", toolUseID)
+	_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] ✗ WARNING: tool_use with ID %s NOT FOUND in message history!\n", toolUseID)
 	return false
 }
 
 // sendToolResults sends tool results back to the API and continues the conversation
 func (m *Model) sendToolResults() tea.Cmd {
 	if len(m.toolResults) == 0 || m.apiClient == nil {
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no results (%d) or no client (%v)\n", len(m.toolResults), m.apiClient != nil)
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no results (%d) or no client (%v)\n", len(m.toolResults), m.apiClient != nil)
 		return nil
 	}
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: preparing to send %d tool result(s)\n", len(m.toolResults))
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: preparing to send %d tool result(s)\n", len(m.toolResults))
 
 	// Dump messages BEFORE adding tool results
 	m.dumpMessages("BEFORE adding tool results")
@@ -770,7 +770,7 @@ func (m *Model) sendToolResults() tea.Cmd {
 	for _, result := range results {
 		content := formatToolResult(result.Result)
 		toolResultBlocks = append(toolResultBlocks, core.NewToolResultBlock(result.ToolUseID, content))
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created tool_result block for tool_use_id=%s\n", result.ToolUseID)
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created tool_result block for tool_use_id=%s\n", result.ToolUseID)
 	}
 
 	// Add a user message with tool_result content blocks
@@ -780,17 +780,17 @@ func (m *Model) sendToolResults() tea.Cmd {
 		ContentBlock: toolResultBlocks,
 	}
 	m.Messages = append(m.Messages, userMsg)
-	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: added user message with %d tool_result blocks, total messages now: %d\n", len(toolResultBlocks), len(m.Messages))
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: added user message with %d tool_result blocks, total messages now: %d\n", len(toolResultBlocks), len(m.Messages))
 
 	// Dump messages AFTER adding tool results
 	m.dumpMessages("AFTER adding tool results")
 
 	// Cancel any existing stream context before creating a new one
 	if m.streamCancel != nil {
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
 		m.streamCancel()
 	} else {
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no old context to cancel\n")
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no old context to cancel\n")
 	}
 
 	// Create cancellable context for this stream BEFORE the async command
@@ -798,7 +798,7 @@ func (m *Model) sendToolResults() tea.Cmd {
 	// Store these in the model NOW (synchronously)
 	m.streamCtx = ctx
 	m.streamCancel = cancel
-	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created new context\n")
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created new context\n")
 
 	// Capture necessary state for the command
 	apiClient := m.apiClient
@@ -807,17 +807,17 @@ func (m *Model) sendToolResults() tea.Cmd {
 	messages := make([]Message, len(m.Messages))
 	copy(messages, m.Messages)
 	systemPrompt := m.systemPrompt
-	fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d messages for API request\n", len(messages))
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d messages for API request\n", len(messages))
 
 	return func() tea.Msg {
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing\n")
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing\n")
 		// Build messages from captured state, filtering out "tool" role messages
 		// (Anthropic API only accepts user/assistant/system roles)
 		apiMessages := make([]core.Message, 0, len(messages))
 		for _, msg := range messages {
 			// Skip messages with "tool" role - they're for UI display only
 			if msg.Role == "tool" {
-				fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: skipping tool role message\n")
+				_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: skipping tool role message\n")
 				continue
 			}
 			apiMessages = append(apiMessages, core.Message{
@@ -826,7 +826,7 @@ func (m *Model) sendToolResults() tea.Cmd {
 				ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
 			})
 		}
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: filtered to %d API messages (from %d total)\n", len(apiMessages), len(messages))
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: filtered to %d API messages (from %d total)\n", len(apiMessages), len(messages))
 
 		// Get tool definitions from registry
 		var tools []core.ToolDefinition
@@ -845,14 +845,14 @@ func (m *Model) sendToolResults() tea.Cmd {
 		}
 
 		// Start stream with the context we created
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: calling CreateMessageStream with %d messages\n", len(apiMessages))
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: calling CreateMessageStream with %d messages\n", len(apiMessages))
 		streamChan, err := apiClient.CreateMessageStream(ctx, req)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: ERROR creating stream: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: ERROR creating stream: %v\n", err)
 			return &StreamChunkMsg{Error: err}
 		}
 
-		fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: stream created successfully, returning streamStartMsg\n")
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: stream created successfully, returning streamStartMsg\n")
 		return &streamStartMsg{channel: streamChan}
 	}
 }

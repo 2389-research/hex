@@ -75,7 +75,7 @@ func TestRegistry_RemoveServer(t *testing.T) {
 		Args:      []string{"server.js"},
 	}
 
-	registry.AddServer(server)
+	_ = registry.AddServer(server)
 
 	// Remove server
 	err := registry.RemoveServer("test-server")
@@ -144,7 +144,7 @@ func TestRegistry_GetServer(t *testing.T) {
 		Args:      []string{"server.js", "--port", "8080"},
 	}
 
-	registry.AddServer(server)
+	_ = registry.AddServer(server)
 
 	// Get existing server
 	retrieved, err := registry.GetServer("test-server")
@@ -183,7 +183,7 @@ func TestRegistry_Persist(t *testing.T) {
 	}
 
 	for _, s := range servers {
-		registry.AddServer(s)
+		_ = registry.AddServer(s)
 	}
 
 	// Persist to disk
@@ -296,8 +296,8 @@ func TestRegistry_AutoSave(t *testing.T) {
 	}
 
 	// Add server (should auto-save if enabled)
-	registry.AddServer(server)
-	registry.Save()
+	_ = registry.AddServer(server)
+	_ = registry.Save()
 
 	// Create new registry and load
 	registry2 := NewRegistry(tempDir)
@@ -378,7 +378,7 @@ func TestRegistry_UpdateServer(t *testing.T) {
 		Args:      []string{"old.js"},
 	}
 
-	registry.AddServer(original)
+	_ = registry.AddServer(original)
 
 	updated := ServerConfig{
 		Name:      "test-server",
