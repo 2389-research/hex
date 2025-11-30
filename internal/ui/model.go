@@ -18,6 +18,8 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // ViewMode represents different view modes in the UI
@@ -100,7 +102,6 @@ type Model struct {
 	// Task 6: Streaming Integration
 	apiClient    *core.Client
 	streamChan   <-chan *core.StreamChunk
-	streamError  error
 	streamCtx    context.Context
 	streamCancel context.CancelFunc
 
@@ -615,8 +616,9 @@ func (m *Model) ExportConversation() string {
 	b.WriteString(fmt.Sprintf("Conversation ID: %s\n\n", m.ConversationID))
 	b.WriteString("---\n\n")
 
+	caser := cases.Title(language.English)
 	for _, msg := range m.Messages {
-		b.WriteString(fmt.Sprintf("## %s\n\n", strings.Title(msg.Role)))
+		b.WriteString(fmt.Sprintf("## %s\n\n", caser.String(msg.Role)))
 		b.WriteString(msg.Content)
 		b.WriteString("\n\n")
 	}
@@ -736,7 +738,7 @@ func (m *Model) dumpMessages(label string) {
 }
 
 // validateToolUseExists checks if a tool_use block with the given ID exists in message history
-func (m *Model) validateToolUseExists(toolUseID string) bool {
+func (m *Model) validateToolUseExists(toolUseID string) {
 	_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] Looking for tool_use with ID: %s\n", toolUseID)
 
 	for i, msg := range m.Messages {
@@ -746,13 +748,12 @@ func (m *Model) validateToolUseExists(toolUseID string) bool {
 		for j, block := range msg.ContentBlock {
 			if block.Type == "tool_use" && block.ID == toolUseID {
 				_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] ✓ Found tool_use at message[%d].ContentBlock[%d]\n", i, j)
-				return true
+				return
 			}
 		}
 	}
 
 	_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] ✗ WARNING: tool_use with ID %s NOT FOUND in message history!\n", toolUseID)
-	return false
 }
 
 // sendToolResults sends tool results back to the API and continues the conversation

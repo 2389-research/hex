@@ -177,7 +177,6 @@ func runInteractive(prompt string) error {
 		conv, err := storage.GetLatestConversation(db)
 		if err == sql.ErrNoRows {
 			// No conversations found, start new one (this is OK)
-			conversationID = ""
 			_, _ = fmt.Fprintf(os.Stderr, "No previous conversations found, starting new session\n")
 		} else if err != nil {
 			// Real database error (corrupt DB, connection issue, etc.)

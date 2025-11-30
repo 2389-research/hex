@@ -20,7 +20,6 @@ type MockMCPServer struct {
 	stdin        io.Reader
 	stdout       io.Writer
 	stderr       io.Writer
-	nextID       int
 	mu           sync.Mutex
 	initialized  bool
 	toolHandlers map[string]func(map[string]interface{}) (interface{}, error)

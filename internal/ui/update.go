@@ -360,12 +360,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case 'j':
 				// Scroll down
-				m.Viewport.LineDown(1)
+				m.Viewport.ScrollDown(1)
 				return m, nil
 
 			case 'k':
 				// Scroll up
-				m.Viewport.LineUp(1)
+				m.Viewport.ScrollUp(1)
 				return m, nil
 
 			case 'g':

@@ -75,7 +75,7 @@ func TestCreateMessageStream(t *testing.T) {
 	stream, err := client.CreateMessageStream(ctx, req)
 	require.NoError(t, err)
 
-	var chunks []*core.StreamChunk
+	chunks := make([]*core.StreamChunk, 0, 5) // Preallocate for typical stream size
 	for chunk := range stream {
 		chunks = append(chunks, chunk)
 		if chunk.Type == "message_stop" {

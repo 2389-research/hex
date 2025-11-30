@@ -14,13 +14,7 @@ import (
 	"time"
 )
 
-// nopCloser wraps an io.Reader/Writer and adds a no-op Close method
-type nopWriteCloser struct {
-	io.Writer
-}
-
-func (nopWriteCloser) Close() error { return nil }
-
+// nopCloser wraps an io.Reader and adds a no-op Close method
 type nopReadCloser struct {
 	io.Reader
 }
@@ -28,7 +22,8 @@ type nopReadCloser struct {
 func (nopReadCloser) Close() error { return nil }
 
 // createTestClientAndServer creates a connected client-server pair for testing
-func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (*Client, *MockMCPServer, *bytes.Buffer) {
+func createTestClientAndServer(serverVersion string, tools []Tool) (*Client, *MockMCPServer) {
+	serverName := "test-server"
 	// Create bidirectional pipes for client-server communication
 	clientToServerR, clientToServerW := io.Pipe()
 	serverToClientR, serverToClientW := io.Pipe()
@@ -53,7 +48,7 @@ func createTestClientAndServer(serverName, serverVersion string, tools []Tool) (
 	go client.readLoop()
 	go client.stderrLoop()
 
-	return client, server, mockStderr
+	return client, server
 }
 
 func TestClient_Initialize(t *testing.T) {
@@ -76,7 +71,7 @@ func TestClient_Initialize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, _, _ := createTestClientAndServer("test-server", tt.version, []Tool{})
+			client, _ := createTestClientAndServer(tt.version, []Tool{})
 
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
@@ -98,7 +93,7 @@ func TestClient_Initialize(t *testing.T) {
 }
 
 func TestClient_Initialize_ProtocolVersionMismatch(t *testing.T) {
-	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
+	client, _ := createTestClientAndServer("2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -140,7 +135,7 @@ func TestClient_ListTools(t *testing.T) {
 		},
 	}
 
-	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, _ := createTestClientAndServer("2024-11-05", testTools)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -201,7 +196,7 @@ func TestClient_CallTool(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	// Register custom handler for echo tool
 	server.RegisterToolHandler("echo", func(args map[string]interface{}) (interface{}, error) {
@@ -254,7 +249,7 @@ func TestClient_CallTool(t *testing.T) {
 }
 
 func TestClient_CallTool_NonexistentTool(t *testing.T) {
-	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
+	client, _ := createTestClientAndServer("2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -327,7 +322,7 @@ func TestClient_JSONRPCMessageFormat(t *testing.T) {
 }
 
 func TestClient_Shutdown(t *testing.T) {
-	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", []Tool{})
+	client, _ := createTestClientAndServer("2024-11-05", []Tool{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -360,7 +355,7 @@ func TestClient_ConcurrentToolCalls(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	counter := 0
 	server.RegisterToolHandler("test_tool", func(_ map[string]interface{}) (interface{}, error) {

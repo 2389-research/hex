@@ -93,7 +93,7 @@ func TestMCPTool_Execute_Success(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	// Custom handler
 	server.RegisterToolHandler("echo", func(args map[string]interface{}) (interface{}, error) {
@@ -150,7 +150,7 @@ func TestMCPTool_Execute_Error(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	// Register handler that returns an error
 	server.RegisterToolHandler("error_tool", func(_ map[string]interface{}) (interface{}, error) {
@@ -192,7 +192,7 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	server.RegisterToolHandler("get_data", func(_ map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
@@ -243,7 +243,7 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	server.RegisterToolHandler("empty_tool", func(_ map[string]interface{}) (interface{}, error) {
 		return map[string]interface{}{
@@ -285,7 +285,7 @@ func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
 		},
 	}
 
-	client, _, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, _ := createTestClientAndServer("2024-11-05", testTools)
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -413,7 +413,7 @@ func TestMCPTool_Integration(t *testing.T) {
 		},
 	}
 
-	client, server, _ := createTestClientAndServer("test-server", "2024-11-05", testTools)
+	client, server := createTestClientAndServer("2024-11-05", testTools)
 
 	server.RegisterToolHandler("weather", func(args map[string]interface{}) (interface{}, error) {
 		city := args["city"].(string)

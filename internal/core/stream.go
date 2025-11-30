@@ -87,7 +87,7 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 	httpReq.Header.Set("anthropic-version", apiVersion)
 
 	// Execute request
-	httpResp, err := c.httpClient.Do(httpReq)
+	httpResp, err := c.httpClient.Do(httpReq) //nolint:bodyclose // Body is closed in goroutine below
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}

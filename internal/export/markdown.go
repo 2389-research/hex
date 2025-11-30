@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/harper/clem/internal/storage"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // MarkdownExporter exports conversations as Markdown with YAML frontmatter
@@ -65,7 +67,8 @@ func (e *MarkdownExporter) Export(conv *storage.Conversation, messages []*storag
 
 		// Write message header with role and timestamp
 		roleEmoji := roleToEmoji(msg.Role)
-		if _, err := fmt.Fprintf(w, "## %s %s\n\n", roleEmoji, strings.Title(msg.Role)); err != nil {
+		caser := cases.Title(language.English)
+		if _, err := fmt.Fprintf(w, "## %s %s\n\n", roleEmoji, caser.String(msg.Role)); err != nil {
 			return err
 		}
 		if _, err := fmt.Fprintf(w, "*%s*\n\n", msg.CreatedAt.Format("2006-01-02 15:04:05")); err != nil {

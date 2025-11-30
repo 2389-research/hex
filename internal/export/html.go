@@ -16,6 +16,8 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/harper/clem/internal/storage"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // HTMLExporter exports conversations as HTML with syntax highlighting
@@ -106,6 +108,7 @@ func (e *HTMLExporter) writeMessages(w io.Writer, messages []*storage.Message) e
 func (e *HTMLExporter) writeMessage(w io.Writer, msg *storage.Message) error {
 	roleClass := fmt.Sprintf("message message-%s", msg.Role)
 	roleIcon := roleToEmoji(msg.Role)
+	caser := cases.Title(language.English)
 
 	msgHTML := fmt.Sprintf(`        <div class="%s">
             <div class="message-header">
@@ -117,7 +120,7 @@ func (e *HTMLExporter) writeMessage(w io.Writer, msg *storage.Message) error {
 `,
 		roleClass,
 		roleIcon,
-		html.EscapeString(strings.Title(msg.Role)),
+		html.EscapeString(caser.String(msg.Role)),
 		html.EscapeString(msg.CreatedAt.Format("2006-01-02 15:04:05")))
 
 	if _, err := w.Write([]byte(msgHTML)); err != nil {
@@ -125,10 +128,7 @@ func (e *HTMLExporter) writeMessage(w io.Writer, msg *storage.Message) error {
 	}
 
 	// Process content with code block highlighting
-	processedContent, err := e.processContent(msg.Content)
-	if err != nil {
-		return err
-	}
+	processedContent := e.processContent(msg.Content)
 
 	if _, err := w.Write([]byte(processedContent)); err != nil {
 		return err
@@ -167,7 +167,7 @@ func (e *HTMLExporter) writeMessage(w io.Writer, msg *storage.Message) error {
 }
 
 // processContent processes message content, highlighting code blocks
-func (e *HTMLExporter) processContent(content string) (string, error) {
+func (e *HTMLExporter) processContent(content string) string {
 	// Find code blocks with language specifiers
 	codeBlockRegex := regexp.MustCompile("(?s)```(\\w+)?\\n(.*?)```")
 
@@ -209,7 +209,7 @@ func (e *HTMLExporter) processContent(content string) (string, error) {
 		result.WriteString(html.EscapeString(content[lastEnd:]))
 	}
 
-	return result.String(), nil
+	return result.String()
 }
 
 // highlightCode highlights code using Chroma

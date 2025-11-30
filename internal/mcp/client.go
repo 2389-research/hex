@@ -177,7 +177,7 @@ func (c *Client) ListTools(ctx context.Context) ([]Tool, error) {
 		return nil, fmt.Errorf("invalid tools/list response: missing tools array")
 	}
 
-	var tools []Tool
+	tools := make([]Tool, 0, len(toolsData))
 	for _, toolData := range toolsData {
 		toolMap, ok := toolData.(map[string]interface{})
 		if !ok {

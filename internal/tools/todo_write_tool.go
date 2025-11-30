@@ -108,7 +108,7 @@ func (t *TodoWriteTool) Execute(_ context.Context, params map[string]interface{}
 	}
 
 	// Parse and validate each todo
-	var todos []storage.Todo
+	todos := make([]storage.Todo, 0, len(todosArray))
 	for i, todoParam := range todosArray {
 		// Validate todo is a map
 		todoMap, ok := todoParam.(map[string]interface{})

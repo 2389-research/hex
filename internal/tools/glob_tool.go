@@ -224,25 +224,6 @@ func matchPattern(pattern, path string) (bool, error) {
 	return matched, err
 }
 
-// matchSegments recursively matches path segments against pattern segments
-func matchSegments(pattern, path []string) bool {
-	if len(pattern) == 0 {
-		return len(path) == 0
-	}
-	if len(path) == 0 {
-		return false
-	}
-
-	// Match current segment
-	matched, err := filepath.Match(pattern[0], path[0])
-	if err != nil || !matched {
-		return false
-	}
-
-	// Match remaining segments
-	return matchSegments(pattern[1:], path[1:])
-}
-
 // expandBraces expands {a,b,c} patterns into multiple patterns
 func expandBraces(pattern string) []string {
 	// Simple brace expansion for patterns like *.{ts,tsx}
@@ -261,7 +242,7 @@ func expandBraces(pattern string) []string {
 	suffix := pattern[end+1:]
 	options := strings.Split(pattern[start+1:end], ",")
 
-	var results []string
+	results := make([]string, 0, len(options))
 	for _, opt := range options {
 		results = append(results, prefix+opt+suffix)
 	}

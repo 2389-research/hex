@@ -423,7 +423,7 @@ func TestTaskTool_ExecuteStreaming_BasicFunctionality(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resultChan)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	for result := range resultChan {
 		results = append(results, result)
 	}
@@ -458,7 +458,7 @@ func TestTaskTool_ExecuteStreaming_IncrementalOutput(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	var totalBytesRead int64
 
 	for result := range resultChan {
@@ -499,7 +499,7 @@ func TestTaskTool_ExecuteStreaming_WithTimeout(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	for result := range resultChan {
 		results = append(results, result)
 	}
@@ -533,7 +533,7 @@ func TestTaskTool_ExecuteStreaming_FastProcess(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	for result := range resultChan {
 		results = append(results, result)
 	}
@@ -562,7 +562,7 @@ func TestTaskTool_ExecuteStreaming_ProgressMetadata(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	for result := range resultChan {
 		results = append(results, result)
 
@@ -603,7 +603,7 @@ func TestTaskTool_ExecuteStreaming_StdoutAndStderr(t *testing.T) {
 
 	require.NoError(t, err)
 
-	var results []*tools.Result
+	results := make([]*tools.Result, 0, 10) // Preallocate for typical result count
 	for result := range resultChan {
 		results = append(results, result)
 	}

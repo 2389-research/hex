@@ -273,7 +273,7 @@ func (fp *FileProvider) GetCompletions(input string) []Completion {
 	}
 
 	// Build list of files
-	var files []string
+	files := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		name := entry.Name()
 		// Skip hidden files unless explicitly requested
