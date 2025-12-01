@@ -12,14 +12,7 @@ permissions:
 jobs:
   release:
     name: Release
-    strategy:
-      matrix:
-        include:
-          - os: macos-13
-            goarch: amd64
-          - os: macos-14
-            goarch: arm64
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -44,4 +37,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOARCH: ${{ matrix.goarch }}

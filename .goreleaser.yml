@@ -1,6 +1,6 @@
 # GoReleaser configuration for clem
-# Builds for macOS (Intel + Apple Silicon) using native GitHub Actions runners
-# CGO is required for SQLite support via modernc.org/sqlite
+# Builds for macOS (Intel + Apple Silicon) using pure Go cross-compilation
+# modernc.org/sqlite is pure Go and does not require CGO
 version: 2
 
 before:
@@ -13,7 +13,7 @@ builds:
     binary: clem
     main: ./cmd/clem
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - darwin
     goarch:
