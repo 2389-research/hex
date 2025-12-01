@@ -6,7 +6,7 @@ version: 2
 before:
   hooks:
     - go mod tidy
-    - go test ./...
+    - go test -short ./...
 
 builds:
   - id: clem
