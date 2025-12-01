@@ -22,6 +22,8 @@ import (
 var (
 	// Version information
 	version = "1.0.0"
+	commit  = "dev"     //nolint:unused // Populated by goreleaser ldflags
+	date    = "unknown" //nolint:unused // Populated by goreleaser ldflags
 
 	// Global flags
 	printMode    bool
