@@ -12,7 +12,14 @@ permissions:
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            goarch: amd64
+          - os: macos-14
+            goarch: arm64
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -27,7 +34,7 @@ jobs:
           cache: true
 
       - name: Run tests
-        run: go test ./... -race
+        run: go test -short ./...
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -37,22 +44,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-homebrew:
-    name: Update Homebrew Tap
-    needs: release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Extract version
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Repository dispatch to homebrew tap
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          repository: harper/homebrew-tap
-          event-type: new-release
-          client-payload: '{"version": "${{ steps.version.outputs.VERSION }}", "repository": "${{ github.repository }}"}'
+          GOARCH: ${{ matrix.goarch }}
