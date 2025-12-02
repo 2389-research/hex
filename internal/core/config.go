@@ -77,6 +77,59 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	// Manually parse hooks to normalize case
+	// Viper lowercases all map keys, but our HookEvent constants use PascalCase
+	// We need to normalize the keys to match our constants
+	if v.IsSet("hooks") {
+		hooksRaw := v.Get("hooks")
+		if hooksMap, ok := hooksRaw.(map[string]interface{}); ok {
+			cfg.Hooks = make(hooks.HooksConfig)
+
+			// Map of lowercase to proper case event names
+			eventMap := map[string]hooks.HookEvent{
+				"sessionstart":      hooks.SessionStart,
+				"sessionend":        hooks.SessionEnd,
+				"userpromptsubmit":  hooks.UserPromptSubmit,
+				"modelresponsedone": hooks.ModelResponseDone,
+				"pretooluse":        hooks.PreToolUse,
+				"posttooluse":       hooks.PostToolUse,
+				"precommit":         hooks.PreCommit,
+				"postcommit":        hooks.PostCommit,
+				"onerror":           hooks.OnError,
+				"planmodeenter":     hooks.PlanModeEnter,
+			}
+
+			for eventName, hooksData := range hooksMap {
+				var hookConfigs []hooks.HookConfig
+				if hooksList, ok := hooksData.([]interface{}); ok {
+					for _, hookItem := range hooksList {
+						if hookMap, ok := hookItem.(map[string]interface{}); ok {
+							hc := hooks.HookConfig{}
+							if cmd, ok := hookMap["command"].(string); ok {
+								hc.Command = cmd
+							}
+							if timeout, ok := hookMap["timeout"].(int); ok {
+								hc.Timeout = timeout
+							}
+							if matcher, ok := hookMap["matcher"].(map[string]string); ok {
+								hc.Matcher = matcher
+							}
+							hookConfigs = append(hookConfigs, hc)
+						}
+					}
+				}
+
+				// Normalize the event name
+				if normalizedEvent, ok := eventMap[eventName]; ok {
+					cfg.Hooks[normalizedEvent] = hookConfigs
+				} else {
+					// Unknown event, store as-is
+					cfg.Hooks[hooks.HookEvent(eventName)] = hookConfigs
+				}
+			}
+		}
+	}
+
 	return &cfg, nil
 }
 

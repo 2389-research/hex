@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
+	"github.com/harper/clem/internal/hooks"
 	"github.com/harper/clem/internal/logging"
 	"github.com/harper/clem/internal/mcp"
 	"github.com/harper/clem/internal/providers"
@@ -259,6 +260,23 @@ func runInteractive(prompt string) error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
+
+	// Initialize hook manager
+	hookManager := hooks.NewManager(cfg.Hooks)
+
+	// Trigger SessionStart
+	hookManager.TriggerAsync(hooks.SessionStart, hooks.EventData{
+		"timestamp": time.Now().Format(time.RFC3339),
+		"model":     modelName,
+	})
+
+	// Ensure SessionEnd runs on exit
+	defer func() {
+		hookManager.TriggerAsync(hooks.SessionEnd, hooks.EventData{
+			"timestamp": time.Now().Format(time.RFC3339),
+		})
+		time.Sleep(100 * time.Millisecond) // Give hooks time to complete
+	}()
 
 	// Prioritize environment variable, fall back to config file
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
