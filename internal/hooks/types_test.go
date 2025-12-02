@@ -22,6 +22,14 @@ func TestHookConfig_Validate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "negative timeout",
+			config: HookConfig{
+				Command: "echo 'test'",
+				Timeout: -5,
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
