@@ -503,6 +503,9 @@ func (m *Model) updateViewport() {
 
 // formatAssistantMessage adds a bullet to the first line and properly indents subsequent lines
 func formatAssistantMessage(text string) string {
+	// Strip trailing newlines first to avoid indenting empty lines
+	text = strings.TrimRight(text, "\n")
+
 	lines := strings.Split(text, "\n")
 	if len(lines) == 0 {
 		return "● " + text
@@ -521,7 +524,8 @@ func formatAssistantMessage(text string) string {
 			result.WriteString("\n")
 		}
 	}
-	return result.String()
+	// Add back the trailing newlines for consistent spacing
+	return result.String() + "\n\n"
 }
 
 // Task 6: Streaming Integration Functions
