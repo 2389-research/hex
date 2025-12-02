@@ -16,6 +16,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/net v0.47.0
+	golang.org/x/oauth2 v0.33.0
 	golang.org/x/text v0.31.0
 	gopkg.in/dnaeon/go-vcr.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -23,6 +24,7 @@ require (
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
