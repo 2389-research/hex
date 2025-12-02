@@ -10,8 +10,6 @@ import (
 )
 
 // CreateEventTool creates calendar events
-//
-//nolint:revive // Tool methods follow standard Tool interface pattern
 type CreateEventTool struct {
 	registry *providers.Registry
 }
@@ -21,19 +19,23 @@ func NewCreateEventTool(registry *providers.Registry) Tool {
 	return &CreateEventTool{registry: registry}
 }
 
+// Name returns the tool's identifier
 func (t *CreateEventTool) Name() string {
 	return "create_event"
 }
 
+// Description returns what this tool does
 func (t *CreateEventTool) Description() string {
 	return "Create a new calendar event with title, start/end time, attendees, and location"
 }
 
+// RequiresApproval returns whether this tool needs user confirmation
 func (t *CreateEventTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Creating events requires approval
 	return true
 }
 
+// Execute runs the create event operation
 func (t *CreateEventTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	result, err := t.registry.ExecuteTool("create_event", params)
 	if err != nil {
@@ -51,8 +53,6 @@ func (t *CreateEventTool) Execute(_ context.Context, params map[string]interface
 }
 
 // ListEventsTool lists calendar events
-//
-//nolint:revive // Tool methods follow standard Tool interface pattern
 type ListEventsTool struct {
 	registry *providers.Registry
 }
@@ -62,18 +62,22 @@ func NewListEventsTool(registry *providers.Registry) Tool {
 	return &ListEventsTool{registry: registry}
 }
 
+// Name returns the tool's identifier
 func (t *ListEventsTool) Name() string {
 	return "list_events"
 }
 
+// Description returns what this tool does
 func (t *ListEventsTool) Description() string {
 	return "List calendar events within a date range"
 }
 
+// RequiresApproval returns whether this tool needs user confirmation
 func (t *ListEventsTool) RequiresApproval(_ map[string]interface{}) bool {
 	return true
 }
 
+// Execute runs the list events operation
 func (t *ListEventsTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	result, err := t.registry.ExecuteTool("list_events", params)
 	if err != nil {

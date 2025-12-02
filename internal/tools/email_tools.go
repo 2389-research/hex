@@ -11,8 +11,6 @@ import (
 )
 
 // SendEmailTool sends email messages
-//
-//nolint:revive // Tool methods follow standard Tool interface pattern
 type SendEmailTool struct {
 	registry *providers.Registry
 }
@@ -22,19 +20,23 @@ func NewSendEmailTool(registry *providers.Registry) Tool {
 	return &SendEmailTool{registry: registry}
 }
 
+// Name returns the tool's identifier
 func (t *SendEmailTool) Name() string {
 	return "send_email"
 }
 
+// Description returns what this tool does
 func (t *SendEmailTool) Description() string {
 	return "Send an email message with optional attachments"
 }
 
+// RequiresApproval returns whether this tool needs user confirmation
 func (t *SendEmailTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Sending email requires approval
 	return true
 }
 
+// Execute runs the send email operation
 func (t *SendEmailTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	result, err := t.registry.ExecuteTool("send_email", params)
 	if err != nil {
@@ -52,8 +54,6 @@ func (t *SendEmailTool) Execute(_ context.Context, params map[string]interface{}
 }
 
 // SearchEmailsTool searches for emails
-//
-//nolint:revive // Tool methods follow standard Tool interface pattern
 type SearchEmailsTool struct {
 	registry *providers.Registry
 }
@@ -63,19 +63,23 @@ func NewSearchEmailsTool(registry *providers.Registry) Tool {
 	return &SearchEmailsTool{registry: registry}
 }
 
+// Name returns the tool's identifier
 func (t *SearchEmailsTool) Name() string {
 	return "search_emails"
 }
 
+// Description returns what this tool does
 func (t *SearchEmailsTool) Description() string {
 	return "Search emails with filters (query, from, to, date range, read status)"
 }
 
+// RequiresApproval returns whether this tool needs user confirmation
 func (t *SearchEmailsTool) RequiresApproval(_ map[string]interface{}) bool {
 	// Reading emails requires approval
 	return true
 }
 
+// Execute runs the search emails operation
 func (t *SearchEmailsTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	result, err := t.registry.ExecuteTool("search_emails", params)
 	if err != nil {
@@ -93,8 +97,6 @@ func (t *SearchEmailsTool) Execute(_ context.Context, params map[string]interfac
 }
 
 // ReadEmailTool reads a specific email
-//
-//nolint:revive // Tool methods follow standard Tool interface pattern
 type ReadEmailTool struct {
 	registry *providers.Registry
 }
@@ -104,18 +106,22 @@ func NewReadEmailTool(registry *providers.Registry) Tool {
 	return &ReadEmailTool{registry: registry}
 }
 
+// Name returns the tool's identifier
 func (t *ReadEmailTool) Name() string {
 	return "read_email"
 }
 
+// Description returns what this tool does
 func (t *ReadEmailTool) Description() string {
 	return "Read the full content of a specific email by message ID"
 }
 
+// RequiresApproval returns whether this tool needs user confirmation
 func (t *ReadEmailTool) RequiresApproval(_ map[string]interface{}) bool {
 	return true
 }
 
+// Execute runs the read email operation
 func (t *ReadEmailTool) Execute(_ context.Context, params map[string]interface{}) (*Result, error) {
 	result, err := t.registry.ExecuteTool("read_email", params)
 	if err != nil {

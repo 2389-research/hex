@@ -54,17 +54,6 @@ issues:
         - gosec
         - unparam
 
-    # Exclude productivity tool files from revive (Tool interface methods don't need individual comments)
-    - path: internal/tools/email_tools\.go
-      linters:
-        - revive
-    - path: internal/tools/calendar_tools\.go
-      linters:
-        - revive
-    - path: internal/tools/task_tools\.go
-      linters:
-        - revive
-
     # Exclude generated files
     - path: (^|\/)vendor\/
       linters:
