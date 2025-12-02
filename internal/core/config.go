@@ -108,8 +108,8 @@ func LoadConfig() (*Config, error) {
 							if cmd, ok := hookMap["command"].(string); ok {
 								hc.Command = cmd
 							}
-							if timeout, ok := hookMap["timeout"].(int); ok {
-								hc.Timeout = timeout
+							if timeoutFloat, ok := hookMap["timeout"].(float64); ok {
+								hc.Timeout = int(timeoutFloat)
 							}
 							if matcher, ok := hookMap["matcher"].(map[string]string); ok {
 								hc.Matcher = matcher
