@@ -116,6 +116,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg)
 
 	case tea.KeyMsg:
+		// Intro screen: Any key dismisses it
+		if m.CurrentView == ViewModeIntro {
+			m.CurrentView = ViewModeChat
+			return m, nil
+		}
+
 		// Task 12: Tool approval is now handled by huh forms
 		// No need to handle keys in approval mode - huh handles its own input
 		if m.toolApprovalMode {

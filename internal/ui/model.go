@@ -29,8 +29,10 @@ import (
 type ViewMode int
 
 const (
+	// ViewModeIntro is the startup welcome screen
+	ViewModeIntro ViewMode = iota
 	// ViewModeChat is the main chat interface view
-	ViewModeChat ViewMode = iota
+	ViewModeChat
 	// ViewModeHistory displays conversation history
 	ViewModeHistory
 	// ViewModeTools shows available tools and their status
@@ -221,7 +223,7 @@ func NewModel(conversationID, model string) *Model {
 		Viewport:             vp,
 		Width:                80,
 		Height:               24,
-		CurrentView:          ViewModeChat,
+		CurrentView:          ViewModeIntro,
 		Status:               StatusIdle,
 		renderer:             renderer,
 		spinner:              spinner,
@@ -261,12 +263,14 @@ func (m *Model) AddMessage(role, content string) {
 // NextView cycles to the next view mode
 func (m *Model) NextView() {
 	switch m.CurrentView {
+	case ViewModeIntro:
+		m.CurrentView = ViewModeChat
 	case ViewModeChat:
 		m.CurrentView = ViewModeHistory
 	case ViewModeHistory:
 		m.CurrentView = ViewModeTools
 	case ViewModeTools:
-		m.CurrentView = ViewModeChat
+		m.CurrentView = ViewModeIntro
 	}
 }
 

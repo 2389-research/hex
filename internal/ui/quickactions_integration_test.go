@@ -51,6 +51,7 @@ func TestModelQuickActionsKeyHandler(t *testing.T) {
 
 func TestModelQuickActionsColonKey(t *testing.T) {
 	model := NewModel("test-conv", "test-model")
+	model.CurrentView = ViewModeChat // Skip intro for this test
 
 	// Simulate pressing ':' when textarea is not focused
 	model.Input.Blur()

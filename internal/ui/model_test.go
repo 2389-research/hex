@@ -36,12 +36,16 @@ func TestModelAddMessage(t *testing.T) {
 func TestViewModeInitialization(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 
-	// Should start in chat view mode
-	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
+	// Should start in intro view mode
+	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
 }
 
 func TestViewModeSwitching(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+
+	// Switch from Intro to Chat
+	model.NextView()
+	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 
 	// Switch from Chat to History
 	model.NextView()
@@ -51,9 +55,9 @@ func TestViewModeSwitching(t *testing.T) {
 	model.NextView()
 	assert.Equal(t, ui.ViewModeTools, model.CurrentView)
 
-	// Switch from Tools back to Chat (cycle)
+	// Switch from Tools back to Intro (cycle)
 	model.NextView()
-	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
+	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
 }
 
 func TestTokenCounterTracking(t *testing.T) {

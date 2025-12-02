@@ -14,12 +14,17 @@ import (
 
 func TestUpdateTabKeySwitchesViews(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
-	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
+	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
 
-	// Press Tab to switch to History
+	// Press Tab to switch to Chat
 	msg := tea.KeyMsg{Type: tea.KeyTab}
 	updatedModel, _ := model.Update(msg)
 	m := updatedModel.(*ui.Model)
+	assert.Equal(t, ui.ViewModeChat, m.CurrentView)
+
+	// Press Tab again to switch to History
+	updatedModel, _ = m.Update(msg)
+	m = updatedModel.(*ui.Model)
 	assert.Equal(t, ui.ViewModeHistory, m.CurrentView)
 
 	// Press Tab again to switch to Tools
@@ -27,10 +32,10 @@ func TestUpdateTabKeySwitchesViews(t *testing.T) {
 	m = updatedModel.(*ui.Model)
 	assert.Equal(t, ui.ViewModeTools, m.CurrentView)
 
-	// Press Tab again to cycle back to Chat
+	// Press Tab again to cycle back to Intro
 	updatedModel, _ = m.Update(msg)
 	m = updatedModel.(*ui.Model)
-	assert.Equal(t, ui.ViewModeChat, m.CurrentView)
+	assert.Equal(t, ui.ViewModeIntro, m.CurrentView)
 }
 
 func TestUpdateVimNavigation(t *testing.T) {
@@ -57,6 +62,7 @@ func TestUpdateVimNavigation(t *testing.T) {
 
 func TestUpdateSlashEntersSearchMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.CurrentView = ui.ViewModeChat // Skip intro for this test
 	assert.False(t, model.SearchMode)
 
 	// Blur the textarea first (slash only works when textarea not focused)
@@ -71,6 +77,7 @@ func TestUpdateSlashEntersSearchMode(t *testing.T) {
 
 func TestUpdateEscExitsSearchMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.CurrentView = ui.ViewModeChat // Skip intro for this test
 	model.EnterSearchMode()
 	assert.True(t, model.SearchMode)
 
@@ -119,6 +126,7 @@ func TestUpdateShiftGGoesToBottom(t *testing.T) {
 
 func TestSearchModeBackspace(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.CurrentView = ui.ViewModeChat // Skip intro for this test
 	model.EnterSearchMode()
 	model.UpdateSearchQuery("test")
 
@@ -288,6 +296,7 @@ func TestEnterKeyTriggersStreaming(t *testing.T) {
 	// This test will need a mock API client
 	// For now, we'll just verify that the model state changes appropriately
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.CurrentView = ui.ViewModeChat // Skip intro for this test
 	model.Ready = true
 
 	// Set some input text

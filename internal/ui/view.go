@@ -73,6 +73,8 @@ func (m *Model) View() string {
 
 	// Render different views based on CurrentView
 	switch m.CurrentView {
+	case ViewModeIntro:
+		b.WriteString(m.renderIntroView())
 	case ViewModeChat:
 		b.WriteString(m.renderChatView())
 	case ViewModeHistory:
@@ -136,6 +138,62 @@ func (m *Model) renderStatusIndicator() string {
 	default:
 		return m.theme.Success.Render("●")
 	}
+}
+
+// renderIntroView renders the startup welcome screen
+func (m *Model) renderIntroView() string {
+	var b strings.Builder
+
+	// Center the content
+	padding := strings.Repeat(" ", 10)
+
+	// ASCII art logo with Dracula colors
+	logo := m.theme.Title.Render(`
+    ██████╗██╗     ███████╗███╗   ███╗
+   ██╔════╝██║     ██╔════╝████╗ ████║
+   ██║     ██║     █████╗  ██╔████╔██║
+   ██║     ██║     ██╔══╝  ██║╚██╔╝██║
+   ╚██████╗███████╗███████╗██║ ╚═╝ ██║
+    ╚═════╝╚══════╝╚══════╝╚═╝     ╚═╝
+`)
+
+	b.WriteString(padding + logo + "\n\n")
+
+	// Welcome message
+	welcome := m.theme.Emphasized.Render("Welcome to Clem!")
+	tagline := m.theme.Muted.Render("Your intelligent command-line assistant powered by Claude")
+	b.WriteString(padding + welcome + "\n")
+	b.WriteString(padding + tagline + "\n\n\n")
+
+	// Quick start guide
+	quickStart := m.theme.Subtitle.Render("Quick Start:")
+	b.WriteString(padding + quickStart + "\n\n")
+
+	features := []struct {
+		icon string
+		desc string
+	}{
+		{"💬", "Chat naturally with Claude AI"},
+		{"🔧", "Execute tools with approval workflow"},
+		{"📝", "Manage conversation history"},
+		{"⌨️ ", "Vi-style navigation (j/k, gg/G)"},
+		{":", "Quick actions menu"},
+		{"?", "Show help anytime"},
+	}
+
+	for _, f := range features {
+		icon := m.theme.Success.Render(f.icon)
+		desc := m.theme.Body.Render(f.desc)
+		b.WriteString(padding + "  " + icon + "  " + desc + "\n")
+	}
+
+	b.WriteString("\n\n")
+
+	// Press any key to continue
+	prompt := m.theme.Warning.Render("Press any key to start chatting...")
+	b.WriteString(padding + prompt + "\n")
+
+	return b.String()
 }
 
 // renderChatView renders the chat conversation view
