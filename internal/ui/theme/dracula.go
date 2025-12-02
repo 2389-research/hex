@@ -107,6 +107,9 @@ type Theme struct {
 	// Link and reference styles
 	Link      lipgloss.Style
 	LinkHover lipgloss.Style
+
+	// Message styles
+	UserMessage lipgloss.Style
 }
 
 // NewDraculaTheme creates and returns a new Dracula theme with all styles initialized
@@ -313,6 +316,10 @@ func NewDraculaTheme() *Theme {
 		Foreground(t.Colors.Pink).
 		Underline(true).
 		Bold(true)
+
+	// Message styles
+	t.UserMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Cyan)
 
 	return t
 }
