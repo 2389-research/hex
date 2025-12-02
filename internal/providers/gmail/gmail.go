@@ -19,8 +19,10 @@ import (
 	"github.com/harper/clem/internal/providers/oauth"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
+	"google.golang.org/api/tasks/v1"
 )
 
 // GmailProvider implements the Provider interface for Google services
@@ -353,6 +355,26 @@ func (g *GmailProvider) getGmailService() (*gmail.Service, error) {
 	return service, nil
 }
 
+// getCalendarService returns an authenticated Calendar API service
+func (g *GmailProvider) getCalendarService() (*calendar.Service, error) {
+	client := g.config.Client(g.ctx, g.token)
+	service, err := calendar.NewService(g.ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Calendar service: %w", err)
+	}
+	return service, nil
+}
+
+// getTasksService returns an authenticated Tasks API service
+func (g *GmailProvider) getTasksService() (*tasks.Service, error) {
+	client := g.config.Client(g.ctx, g.token)
+	service, err := tasks.NewService(g.ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Tasks service: %w", err)
+	}
+	return service, nil
+}
+
 // createMessage creates a Gmail message from email parameters
 func (g *GmailProvider) createMessage(to, subject, body, cc, bcc string) string {
 	var message strings.Builder
@@ -587,8 +609,74 @@ func (g *GmailProvider) deleteEmail(_ map[string]interface{}) (providers.ToolRes
 	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
 }
 
-func (g *GmailProvider) createEvent(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) createEvent(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	title, _ := params["title"].(string)
+	startTime, _ := params["start_time"].(string)
+	endTime, _ := params["end_time"].(string)
+	description, _ := params["description"].(string)
+	location, _ := params["location"].(string)
+	attendeesRaw, _ := params["attendees"].([]interface{})
+
+	if title == "" || startTime == "" || endTime == "" {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "missing required parameters: title, start_time, end_time",
+		}, fmt.Errorf("missing required parameters")
+	}
+
+	// Get Calendar service
+	service, err := g.getCalendarService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Convert attendees
+	var attendees []*calendar.EventAttendee
+	for _, a := range attendeesRaw {
+		if email, ok := a.(string); ok {
+			attendees = append(attendees, &calendar.EventAttendee{
+				Email: email,
+			})
+		}
+	}
+
+	// Create event
+	event := &calendar.Event{
+		Summary:     title,
+		Description: description,
+		Location:    location,
+		Start: &calendar.EventDateTime{
+			DateTime: startTime,
+		},
+		End: &calendar.EventDateTime{
+			DateTime: endTime,
+		},
+		Attendees: attendees,
+	}
+
+	// Insert event into primary calendar
+	created, err := service.Events.Insert("primary", event).Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to create event: %v", err),
+		}, err
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"event_id":   created.Id,
+			"title":      created.Summary,
+			"start_time": created.Start.DateTime,
+			"end_time":   created.End.DateTime,
+			"html_link":  created.HtmlLink,
+		},
+	}, nil
 }
 
 func (g *GmailProvider) updateEvent(_ map[string]interface{}) (providers.ToolResult, error) {
@@ -599,8 +687,85 @@ func (g *GmailProvider) deleteEvent(_ map[string]interface{}) (providers.ToolRes
 	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
 }
 
-func (g *GmailProvider) listEvents(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) listEvents(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	startTime, _ := params["start_time"].(string)
+	endTime, _ := params["end_time"].(string)
+	maxResultsFloat, _ := params["max_results"].(float64)
+	maxResults := int64(maxResultsFloat)
+	if maxResults == 0 {
+		maxResults = 10 // Default to 10 results
+	}
+
+	// Get Calendar service
+	service, err := g.getCalendarService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// List events
+	listCall := service.Events.List("primary").
+		MaxResults(maxResults).
+		SingleEvents(true).
+		OrderBy("startTime")
+
+	if startTime != "" {
+		listCall = listCall.TimeMin(startTime)
+	}
+	if endTime != "" {
+		listCall = listCall.TimeMax(endTime)
+	}
+
+	events, err := listCall.Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to list events: %v", err),
+		}, err
+	}
+
+	// Convert events to result format
+	eventList := make([]map[string]interface{}, 0, len(events.Items))
+	for _, item := range events.Items {
+		// Get start/end times
+		startDateTime := item.Start.DateTime
+		if startDateTime == "" {
+			startDateTime = item.Start.Date
+		}
+		endDateTime := item.End.DateTime
+		if endDateTime == "" {
+			endDateTime = item.End.Date
+		}
+
+		// Extract attendee emails
+		var attendees []string
+		for _, a := range item.Attendees {
+			attendees = append(attendees, a.Email)
+		}
+
+		eventList = append(eventList, map[string]interface{}{
+			"event_id":    item.Id,
+			"title":       item.Summary,
+			"description": item.Description,
+			"location":    item.Location,
+			"start_time":  startDateTime,
+			"end_time":    endDateTime,
+			"attendees":   attendees,
+			"html_link":   item.HtmlLink,
+			"status":      item.Status,
+		})
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"events": eventList,
+			"count":  len(eventList),
+		},
+	}, nil
 }
 
 func (g *GmailProvider) searchEvents(_ map[string]interface{}) (providers.ToolResult, error) {
@@ -611,20 +776,171 @@ func (g *GmailProvider) findFreeTime(_ map[string]interface{}) (providers.ToolRe
 	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
 }
 
-func (g *GmailProvider) createTask(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) createTask(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	title, _ := params["title"].(string)
+	notes, _ := params["notes"].(string)
+	dueDate, _ := params["due_date"].(string)
+
+	if title == "" {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "missing required parameter: title",
+		}, fmt.Errorf("missing required parameter: title")
+	}
+
+	// Get Tasks service
+	service, err := g.getTasksService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Get the default task list (@default)
+	task := &tasks.Task{
+		Title: title,
+		Notes: notes,
+	}
+	if dueDate != "" {
+		task.Due = dueDate
+	}
+
+	// Insert task into default list
+	created, err := service.Tasks.Insert("@default", task).Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to create task: %v", err),
+		}, err
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"task_id":  created.Id,
+			"title":    created.Title,
+			"notes":    created.Notes,
+			"due_date": created.Due,
+			"status":   created.Status,
+		},
+	}, nil
 }
 
 func (g *GmailProvider) updateTask(_ map[string]interface{}) (providers.ToolResult, error) {
 	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
 }
 
-func (g *GmailProvider) completeTask(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) completeTask(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	taskID, _ := params["task_id"].(string)
+	if taskID == "" {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "missing required parameter: task_id",
+		}, fmt.Errorf("missing required parameter: task_id")
+	}
+
+	// Get Tasks service
+	service, err := g.getTasksService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Get the task to update
+	task, err := service.Tasks.Get("@default", taskID).Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to get task: %v", err),
+		}, err
+	}
+
+	// Mark as completed
+	task.Status = "completed"
+	updated, err := service.Tasks.Update("@default", taskID, task).Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to complete task: %v", err),
+		}, err
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"task_id":   updated.Id,
+			"title":     updated.Title,
+			"status":    updated.Status,
+			"completed": updated.Completed,
+		},
+	}, nil
 }
 
-func (g *GmailProvider) listTasks(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) listTasks(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	showCompleted := true
+	if showCompletedRaw, ok := params["show_completed"].(bool); ok {
+		showCompleted = showCompletedRaw
+	}
+	maxResultsFloat, _ := params["max_results"].(float64)
+	maxResults := int64(maxResultsFloat)
+	if maxResults == 0 {
+		maxResults = 100 // Default to 100 results
+	}
+
+	// Get Tasks service
+	service, err := g.getTasksService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// List tasks from default list
+	listCall := service.Tasks.List("@default").
+		MaxResults(maxResults)
+
+	if showCompleted {
+		listCall = listCall.ShowCompleted(true)
+	} else {
+		listCall = listCall.ShowCompleted(false)
+	}
+
+	taskList, err := listCall.Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to list tasks: %v", err),
+		}, err
+	}
+
+	// Convert tasks to result format
+	tasks := make([]map[string]interface{}, 0, len(taskList.Items))
+	for _, item := range taskList.Items {
+		tasks = append(tasks, map[string]interface{}{
+			"task_id":   item.Id,
+			"title":     item.Title,
+			"notes":     item.Notes,
+			"due_date":  item.Due,
+			"status":    item.Status,
+			"completed": item.Completed,
+			"updated":   item.Updated,
+		})
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"tasks": tasks,
+			"count": len(tasks),
+		},
+	}, nil
 }
 
 func (g *GmailProvider) deleteTask(_ map[string]interface{}) (providers.ToolResult, error) {
