@@ -404,9 +404,22 @@ func runInteractive(prompt string) error {
 		// TODO: Send to API and stream response
 	}
 
+	// Suppress debug logs to stderr during TUI operation to avoid display corruption
+	// Save original stderr and redirect to /dev/null
+	origStderr := os.Stderr
+	devNull, err := os.Open(os.DevNull)
+	if err == nil {
+		os.Stderr = devNull
+		defer func() {
+			os.Stderr = origStderr
+			_ = devNull.Close() // Best effort close
+		}()
+	}
+
 	// Start Bubbletea program
 	p := tea.NewProgram(uiModel, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
+		os.Stderr = origStderr // Restore stderr for error reporting
 		logging.ErrorWithErr("Failed to run UI", err)
 		return fmt.Errorf("run UI: %w", err)
 	}
