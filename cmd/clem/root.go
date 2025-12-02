@@ -12,6 +12,7 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/logging"
 	"github.com/harper/clem/internal/mcp"
+	"github.com/harper/clem/internal/permissions"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/templates"
 	"github.com/harper/clem/internal/tools"
@@ -56,6 +57,11 @@ var (
 	dangerouslySkipPermissions bool
 	enabledTools               []string
 	systemPrompt               string
+
+	// Phase 3: Permission system flags
+	permissionMode  string
+	allowedTools    []string
+	disallowedTools []string
 )
 
 var rootCmd = &cobra.Command{
@@ -101,6 +107,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&dangerouslySkipPermissions, "dangerously-skip-permissions", false, "Auto-approve all tool executions (use with caution)")
 	rootCmd.PersistentFlags().StringSliceVar(&enabledTools, "tools", []string{}, "Tools to enable in print mode (comma-separated, e.g. 'write_file,read_file')")
 	rootCmd.PersistentFlags().StringVar(&systemPrompt, "system-prompt", "", "System prompt to use for the session")
+
+	// Phase 3: Permission system flags
+	rootCmd.PersistentFlags().StringVar(&permissionMode, "permission-mode", "ask", "Permission mode: auto (approve all), ask (prompt for each), deny (block all)")
+	rootCmd.PersistentFlags().StringSliceVar(&allowedTools, "allowed-tools", []string{}, "Whitelist of allowed tools (comma-separated). If set, only these tools are allowed.")
+	rootCmd.PersistentFlags().StringSliceVar(&disallowedTools, "disallowed-tools", []string{}, "Blacklist of disallowed tools (comma-separated). These tools are blocked.")
 }
 
 func runRoot(_ *cobra.Command, args []string) error {
@@ -321,6 +332,20 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("register kill_shell tool: %w", err)
 	}
 
+	// Phase 2: Register Skills system
+	skillRegistry, skillTool := initializeSkills()
+	if err := registry.Register(skillTool); err != nil {
+		return fmt.Errorf("register skill tool: %w", err)
+	}
+	logging.InfoWith("Loaded skills", "count", skillRegistry.Count())
+
+	// Phase 4: Register Slash Commands system
+	commandRegistry, slashCommandTool := initializeCommands()
+	if err := registry.Register(slashCommandTool); err != nil {
+		return fmt.Errorf("register slash command tool: %w", err)
+	}
+	logging.InfoWith("Loaded slash commands", "count", commandRegistry.Count())
+
 	// Phase 5B: Load MCP tools from .mcp.json if present
 	logging.Debug("Loading MCP tools")
 	if err := mcp.LoadMCPTools(".", registry); err != nil {
@@ -330,12 +355,24 @@ func runInteractive(prompt string) error {
 		logging.Info("MCP tools loaded successfully")
 	}
 
+	// Phase 3: Create permission checker from flags
+	permChecker, err := createPermissionChecker()
+	if err != nil {
+		return fmt.Errorf("create permission checker: %w", err)
+	}
+
 	// Create executor with approval function
 	// The actual approval is handled by the UI, so we return true here
 	approvalFunc := func(_ string, _ map[string]interface{}) bool {
 		return true
 	}
 	executor := tools.NewExecutor(registry, approvalFunc)
+
+	// Phase 3: Attach permission checker to executor
+	if permChecker != nil {
+		executor.SetPermissionChecker(permChecker)
+		logging.InfoWith("Permission system enabled", "mode", permChecker.GetMode())
+	}
 
 	// Set tool system in model
 	uiModel.SetToolSystem(registry, executor)
@@ -410,4 +447,36 @@ func closeLogger() {
 			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to close logger: %v\n", err)
 		}
 	}
+}
+
+// createPermissionChecker creates a permission checker from CLI flags
+func createPermissionChecker() (*permissions.Checker, error) {
+	// Handle legacy --dangerously-skip-permissions flag for backward compatibility
+	mode := permissionMode
+	if dangerouslySkipPermissions {
+		mode = "auto"
+		logging.Warn("Using --dangerously-skip-permissions (deprecated). Consider using --permission-mode=auto instead")
+	}
+
+	// Parse permission mode
+	parsedMode, err := permissions.ParseMode(mode)
+	if err != nil {
+		return nil, fmt.Errorf("invalid permission mode: %w", err)
+	}
+
+	// Create permission config
+	config := &permissions.Config{
+		Mode:            parsedMode,
+		AllowedTools:    allowedTools,
+		DisallowedTools: disallowedTools,
+	}
+
+	// Validate and convert to checker
+	checker, err := config.ToChecker()
+	if err != nil {
+		return nil, fmt.Errorf("create permission checker: %w", err)
+	}
+
+	logging.DebugWith("Permission checker created", "config", config.String())
+	return checker, nil
 }

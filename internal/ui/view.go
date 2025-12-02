@@ -213,6 +213,27 @@ func (m *Model) renderStatusBar() string {
 		tokenInfo = fmt.Sprintf("Tokens: %d in / %d out", m.TokensInput, m.TokensOutput)
 	}
 
+	// Permission mode indicator (Phase 3)
+	permInfo := ""
+	if m.toolExecutor != nil && m.toolExecutor.GetPermissionChecker() != nil {
+		checker := m.toolExecutor.GetPermissionChecker()
+		mode := checker.GetMode()
+
+		var modeStyle lipgloss.Style
+		switch mode.String() {
+		case "auto":
+			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("35")) // Green
+		case "deny":
+			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // Red
+		case "ask":
+			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("226")) // Yellow
+		default:
+			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("243")) // Gray
+		}
+
+		permInfo = " Perms:" + modeStyle.Render(mode.String())
+	}
+
 	// View mode indicator
 	viewMode := ""
 	switch m.CurrentView {
@@ -228,7 +249,7 @@ func (m *Model) renderStatusBar() string {
 	help := "ctrl+c: quit • enter: send • tab: switch view • /: search • j/k: scroll • gg/G: top/bottom"
 
 	// Compose status bar
-	leftPart := tokenCounterStyle.Render(tokenInfo)
+	leftPart := tokenCounterStyle.Render(tokenInfo + permInfo)
 	middlePart := viewModeStyle.Render(fmt.Sprintf("[%s]", viewMode))
 	rightPart := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
 

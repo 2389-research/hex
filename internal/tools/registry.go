@@ -145,6 +145,17 @@ func getToolSchema(toolName string) map[string]interface{} {
 			},
 			"required": []string{"command"},
 		}
+	case "Skill":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"command": map[string]interface{}{
+					"type":        "string",
+					"description": "Name of the skill to invoke (e.g., 'test-driven-development', 'systematic-debugging')",
+				},
+			},
+			"required": []string{"command"},
+		}
 	default:
 		// For other tools, return minimal schema
 		return map[string]interface{}{
