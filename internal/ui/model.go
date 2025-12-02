@@ -286,14 +286,119 @@ func (m *Model) SetStatus(status Status) {
 
 // RenderMessage renders a message using glamour for assistant messages
 func (m *Model) RenderMessage(msg Message) (string, error) {
+	content := msg.Content
+
+	// Constrain long code blocks to prevent flooding
+	content = m.constrainLongCodeBlocks(content)
+
 	if msg.Role == "assistant" && m.renderer != nil {
-		rendered, err := m.renderer.Render(msg.Content)
+		rendered, err := m.renderer.Render(content)
 		if err != nil {
-			return msg.Content, err
+			return content, err
 		}
 		return rendered, nil
 	}
-	return msg.Content, nil
+	return content, nil
+}
+
+// constrainLongCodeBlocks truncates code blocks that exceed a reasonable length
+func (m *Model) constrainLongCodeBlocks(content string) string {
+	const maxCodeBlockLines = 30 // Show first 30 lines of code blocks
+	const contextLines = 5       // Show first and last N lines
+
+	// Simple regex-like approach: find code blocks between ``` markers
+	lines := strings.Split(content, "\n")
+	var result strings.Builder
+	inCodeBlock := false
+	codeBlockLines := []string{}
+	codeBlockLang := ""
+
+	for i, line := range lines {
+		// Check if this line starts/ends a code block
+		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			if !inCodeBlock {
+				// Starting a code block
+				inCodeBlock = true
+				codeBlockLang = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "```"))
+				codeBlockLines = []string{}
+				continue
+			}
+			// Ending a code block
+			inCodeBlock = false
+
+			// Check if code block is too long
+			if len(codeBlockLines) > maxCodeBlockLines {
+				// Write truncated version
+				result.WriteString("```" + codeBlockLang + "\n")
+
+				// Show first contextLines
+				for j := 0; j < contextLines && j < len(codeBlockLines); j++ {
+					result.WriteString(codeBlockLines[j] + "\n")
+				}
+
+				// Show truncation indicator
+				omittedLines := len(codeBlockLines) - (contextLines * 2)
+				result.WriteString(m.theme.Warning.Render(fmt.Sprintf("\n... (%d lines omitted) ...\n\n", omittedLines)))
+
+				// Show last contextLines
+				start := len(codeBlockLines) - contextLines
+				if start < contextLines {
+					start = contextLines
+				}
+				for j := start; j < len(codeBlockLines); j++ {
+					result.WriteString(codeBlockLines[j] + "\n")
+				}
+
+				result.WriteString("```\n")
+			} else {
+				// Write full code block
+				result.WriteString("```" + codeBlockLang + "\n")
+				for _, codeLine := range codeBlockLines {
+					result.WriteString(codeLine + "\n")
+				}
+				result.WriteString("```\n")
+			}
+
+			codeBlockLines = []string{}
+			codeBlockLang = ""
+			continue
+		}
+
+		if inCodeBlock {
+			codeBlockLines = append(codeBlockLines, line)
+		} else {
+			result.WriteString(line)
+			if i < len(lines)-1 {
+				result.WriteString("\n")
+			}
+		}
+	}
+
+	// Handle unclosed code block
+	if inCodeBlock && len(codeBlockLines) > 0 {
+		result.WriteString("```" + codeBlockLang + "\n")
+		if len(codeBlockLines) > maxCodeBlockLines {
+			for j := 0; j < contextLines && j < len(codeBlockLines); j++ {
+				result.WriteString(codeBlockLines[j] + "\n")
+			}
+			omittedLines := len(codeBlockLines) - (contextLines * 2)
+			result.WriteString(m.theme.Warning.Render(fmt.Sprintf("\n... (%d lines omitted) ...\n\n", omittedLines)))
+			start := len(codeBlockLines) - contextLines
+			if start < contextLines {
+				start = contextLines
+			}
+			for j := start; j < len(codeBlockLines); j++ {
+				result.WriteString(codeBlockLines[j] + "\n")
+			}
+		} else {
+			for _, codeLine := range codeBlockLines {
+				result.WriteString(codeLine + "\n")
+			}
+		}
+		result.WriteString("```\n")
+	}
+
+	return result.String()
 }
 
 // EnterSearchMode activates search mode
