@@ -53,9 +53,9 @@ func TestOpenDatabaseCreatesDirectory(t *testing.T) {
 func TestDefaultDBPath(t *testing.T) {
 	path := defaultDBPath()
 
-	// Should end with .clem/clem.db
-	assert.Contains(t, path, ".clem")
-	assert.Contains(t, path, "clem.db")
+	// Should end with .pagen/pagent.db
+	assert.Contains(t, path, ".pagen")
+	assert.Contains(t, path, "pagent.db")
 
 	// Should be absolute path
 	assert.True(t, filepath.IsAbs(path))

@@ -11,14 +11,14 @@ import (
 	"github.com/harper/pagent/internal/storage"
 )
 
-// defaultDBPath returns the default database path (~/.clem/clem.db)
+// defaultDBPath returns the default database path (~/.pagen/pagent.db)
 func defaultDBPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		// Fallback to current directory if home not found
-		return filepath.Join(".", ".clem", "clem.db")
+		return filepath.Join(".", ".pagen", "pagent.db")
 	}
-	return filepath.Join(home, ".clem", "clem.db")
+	return filepath.Join(home, ".pagen", "pagent.db")
 }
 
 // openDatabase opens the database at the given path, creating directories and schema as needed
