@@ -12,12 +12,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/harper/clem/internal/providers"
 	"github.com/harper/clem/internal/providers/oauth"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/gmail/v1"
+	"google.golang.org/api/option"
 )
 
 // GmailProvider implements the Provider interface for Google services
@@ -338,26 +341,234 @@ func (g *GmailProvider) saveToken(token *oauth2.Token) error {
 	return os.WriteFile(g.tokenPath, data, 0600)
 }
 
-// Tool implementations (stubs for now)
+// Helper methods
 
-func (g *GmailProvider) sendEmail(_ map[string]interface{}) (providers.ToolResult, error) {
-	// TODO: Implement with Gmail API
+// getGmailService returns an authenticated Gmail API service
+func (g *GmailProvider) getGmailService() (*gmail.Service, error) {
+	client := g.config.Client(g.ctx, g.token)
+	service, err := gmail.NewService(g.ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Gmail service: %w", err)
+	}
+	return service, nil
+}
+
+// createMessage creates a Gmail message from email parameters
+func (g *GmailProvider) createMessage(to, subject, body, cc, bcc string) string {
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("To: %s\r\n", to))
+	if cc != "" {
+		message.WriteString(fmt.Sprintf("Cc: %s\r\n", cc))
+	}
+	if bcc != "" {
+		message.WriteString(fmt.Sprintf("Bcc: %s\r\n", bcc))
+	}
+	message.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
+	message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+	message.WriteString("\r\n")
+	message.WriteString(body)
+	return message.String()
+}
+
+// Tool implementations
+
+func (g *GmailProvider) sendEmail(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	to, _ := params["to"].(string)
+	subject, _ := params["subject"].(string)
+	body, _ := params["body"].(string)
+	cc, _ := params["cc"].(string)
+	bcc, _ := params["bcc"].(string)
+
+	if to == "" || subject == "" || body == "" {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "missing required parameters: to, subject, body",
+		}, fmt.Errorf("missing required parameters")
+	}
+
+	// Get Gmail service
+	service, err := g.getGmailService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Create message
+	messageStr := g.createMessage(to, subject, body, cc, bcc)
+	message := &gmail.Message{
+		Raw: base64.URLEncoding.EncodeToString([]byte(messageStr)),
+	}
+
+	// Send message
+	sent, err := service.Users.Messages.Send("me", message).Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to send email: %v", err),
+		}, err
+	}
+
 	return providers.ToolResult{
-		Success: false,
-		Error:   "not yet implemented",
-	}, fmt.Errorf("not yet implemented")
+		Success: true,
+		Data: map[string]interface{}{
+			"message_id": sent.Id,
+			"thread_id":  sent.ThreadId,
+			"to":         to,
+			"subject":    subject,
+		},
+	}, nil
 }
 
 func (g *GmailProvider) replyEmail(_ map[string]interface{}) (providers.ToolResult, error) {
 	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
 }
 
-func (g *GmailProvider) searchEmails(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) searchEmails(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	query, _ := params["query"].(string)
+	maxResultsFloat, _ := params["max_results"].(float64) // JSON numbers come as float64
+	maxResults := int64(maxResultsFloat)
+	if maxResults == 0 {
+		maxResults = 10 // Default to 10 results
+	}
+
+	// Get Gmail service
+	service, err := g.getGmailService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Search messages
+	listCall := service.Users.Messages.List("me")
+	if query != "" {
+		listCall = listCall.Q(query)
+	}
+	listCall = listCall.MaxResults(maxResults)
+
+	response, err := listCall.Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to search emails: %v", err),
+		}, err
+	}
+
+	// Get full message details for each result
+	emails := make([]map[string]interface{}, 0, len(response.Messages))
+	for _, msg := range response.Messages {
+		fullMsg, err := service.Users.Messages.Get("me", msg.Id).Format("metadata").Do()
+		if err != nil {
+			// Skip messages that fail to load
+			continue
+		}
+
+		// Extract headers
+		headers := make(map[string]string)
+		for _, header := range fullMsg.Payload.Headers {
+			headers[header.Name] = header.Value
+		}
+
+		emails = append(emails, map[string]interface{}{
+			"id":        fullMsg.Id,
+			"thread_id": fullMsg.ThreadId,
+			"from":      headers["From"],
+			"to":        headers["To"],
+			"subject":   headers["Subject"],
+			"date":      headers["Date"],
+			"snippet":   fullMsg.Snippet,
+		})
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"emails":        emails,
+			"count":         len(emails),
+			"result_size":   response.ResultSizeEstimate,
+			"next_page_tok": response.NextPageToken,
+		},
+	}, nil
 }
 
-func (g *GmailProvider) readEmail(_ map[string]interface{}) (providers.ToolResult, error) {
-	return providers.ToolResult{Success: false, Error: "not yet implemented"}, fmt.Errorf("not yet implemented")
+func (g *GmailProvider) readEmail(params map[string]interface{}) (providers.ToolResult, error) {
+	// Extract parameters
+	messageID, _ := params["message_id"].(string)
+	if messageID == "" {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "missing required parameter: message_id",
+		}, fmt.Errorf("missing required parameter: message_id")
+	}
+
+	// Get Gmail service
+	service, err := g.getGmailService()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   err.Error(),
+		}, err
+	}
+
+	// Get full message
+	msg, err := service.Users.Messages.Get("me", messageID).Format("full").Do()
+	if err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("failed to read email: %v", err),
+		}, err
+	}
+
+	// Extract headers
+	headers := make(map[string]string)
+	for _, header := range msg.Payload.Headers {
+		headers[header.Name] = header.Value
+	}
+
+	// Extract body
+	var body string
+	if msg.Payload.Body.Data != "" {
+		// Body is directly in the message
+		bodyBytes, err := base64.URLEncoding.DecodeString(msg.Payload.Body.Data)
+		if err == nil {
+			body = string(bodyBytes)
+		}
+	} else if len(msg.Payload.Parts) > 0 {
+		// Body is in parts (multipart message)
+		for _, part := range msg.Payload.Parts {
+			if part.MimeType == "text/plain" || part.MimeType == "text/html" {
+				if part.Body.Data != "" {
+					bodyBytes, err := base64.URLEncoding.DecodeString(part.Body.Data)
+					if err == nil {
+						body = string(bodyBytes)
+						break // Use first text part found
+					}
+				}
+			}
+		}
+	}
+
+	return providers.ToolResult{
+		Success: true,
+		Data: map[string]interface{}{
+			"id":        msg.Id,
+			"thread_id": msg.ThreadId,
+			"from":      headers["From"],
+			"to":        headers["To"],
+			"cc":        headers["Cc"],
+			"bcc":       headers["Bcc"],
+			"subject":   headers["Subject"],
+			"date":      headers["Date"],
+			"body":      body,
+			"snippet":   msg.Snippet,
+			"labels":    msg.LabelIds,
+		},
+	}, nil
 }
 
 func (g *GmailProvider) archiveEmail(_ map[string]interface{}) (providers.ToolResult, error) {
