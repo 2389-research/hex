@@ -422,6 +422,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.approvalPrompt != nil {
 			m.approvalPrompt.SetWidth(msg.Width)
 		}
+		// Forward to embedded approval form if in approval mode
+		if m.toolApprovalMode && m.toolApprovalForm != nil {
+			var formCmd tea.Cmd
+			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
+			if formCmd != nil {
+				cmds = append(cmds, formCmd)
+			}
+		}
 	}
 
 	// Phase 6C: Update spinner
