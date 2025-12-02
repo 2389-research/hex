@@ -148,16 +148,24 @@ func (m *Model) renderIntroView() string {
 	padding := strings.Repeat(" ", 10)
 
 	// ASCII art logo with Dracula colors
-	logo := m.theme.Title.Render(`
+	logoText := `
     ██████╗██╗     ███████╗███╗   ███╗
    ██╔════╝██║     ██╔════╝████╗ ████║
    ██║     ██║     █████╗  ██╔████╔██║
    ██║     ██║     ██╔══╝  ██║╚██╔╝██║
    ╚██████╗███████╗███████╗██║ ╚═╝ ██║
     ╚═════╝╚══════╝╚══════╝╚═╝     ╚═╝
-`)
+`
+	logo := m.theme.Title.Render(logoText)
 
-	b.WriteString(padding + logo + "\n\n")
+	// Pad each line of the logo
+	logoLines := strings.Split(logo, "\n")
+	for _, line := range logoLines {
+		if strings.TrimSpace(line) != "" {
+			b.WriteString(padding + line + "\n")
+		}
+	}
+	b.WriteString("\n")
 
 	// Welcome message
 	welcome := m.theme.Emphasized.Render("Welcome to Clem!")
@@ -176,7 +184,7 @@ func (m *Model) renderIntroView() string {
 		{"💬", "Chat naturally with Claude AI"},
 		{"🔧", "Execute tools with approval workflow"},
 		{"📝", "Manage conversation history"},
-		{"⌨️ ", "Vi-style navigation (j/k, gg/G)"},
+		{"⌨️", "Vi-style navigation (j/k, gg/G)"},
 		{":", "Quick actions menu"},
 		{"?", "Show help anytime"},
 	}

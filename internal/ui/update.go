@@ -464,8 +464,8 @@ func (m *Model) updateViewport() {
 
 	// Append streaming text if present
 	if m.StreamingText != "" {
-		content.WriteString("\n")
 		// Render streaming text with glamour if available
+		// Note: glamour.Render() already adds "\n\n" at the end, so no extra spacing needed
 		rendered, err := m.RenderMessage(Message{
 			Role:    "assistant",
 			Content: m.StreamingText,
@@ -473,7 +473,7 @@ func (m *Model) updateViewport() {
 		if err == nil {
 			content.WriteString(rendered)
 		} else {
-			content.WriteString(m.StreamingText)
+			content.WriteString(m.StreamingText + "\n\n")
 		}
 	}
 
