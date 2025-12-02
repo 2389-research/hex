@@ -300,9 +300,22 @@ func (m *Model) RenderMessage(msg Message) (string, error) {
 		if err != nil {
 			return content, err
 		}
-		return rendered, nil
+		// Remove glamour's paragraph indentation (leading 2 spaces on each line)
+		return removeGlamourIndent(rendered), nil
 	}
 	return content, nil
+}
+
+// removeGlamourIndent strips the 2-space paragraph indentation that glamour adds
+func removeGlamourIndent(text string) string {
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		// Remove up to 2 leading spaces (glamour's paragraph indent)
+		if strings.HasPrefix(line, "  ") {
+			lines[i] = line[2:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // constrainLongCodeBlocks truncates code blocks that exceed a reasonable length
