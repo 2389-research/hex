@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/ui/theme"
@@ -50,6 +51,7 @@ type ToolApprovalForm struct {
 	riskLevel RiskLevel
 	decision  ApprovalDecision
 	theme     *theme.Theme
+	form      *huh.Form // The actual huh form instance
 }
 
 // NewToolApprovalForm creates a new tool approval form
@@ -61,8 +63,9 @@ func NewToolApprovalForm(toolUse *core.ToolUse) *ToolApprovalForm {
 	}
 }
 
-// Run displays the form and returns the user's decision
-func (f *ToolApprovalForm) Run() (ApprovalFormResult, error) {
+// BuildForm creates and returns the huh form as a tea.Model for embedding
+// Use this instead of Run() to avoid terminal control conflicts with bubbletea
+func (f *ToolApprovalForm) BuildForm() *huh.Form {
 	// Build the approval options
 	options := []huh.Option[ApprovalDecision]{
 		huh.NewOption("✓ Approve (run this time)", DecisionApprove),
@@ -84,7 +87,8 @@ func (f *ToolApprovalForm) Run() (ApprovalFormResult, error) {
 	)
 
 	// Create the form with Dracula theme colors
-	form := huh.NewForm(
+	// Don't call Run() - return the form as a tea.Model for embedding
+	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[ApprovalDecision]().
 				Title("🛠  Tool Approval Required").
@@ -94,6 +98,51 @@ func (f *ToolApprovalForm) Run() (ApprovalFormResult, error) {
 				Height(12),
 		),
 	).WithTheme(f.getDraculaTheme())
+}
+
+// GetDecision returns the user's decision after form completion
+func (f *ToolApprovalForm) GetDecision() ApprovalFormResult {
+	return ApprovalFormResult{
+		Decision: f.decision,
+		ToolUse:  f.toolUse,
+	}
+}
+
+// Init implements tea.Model
+func (f *ToolApprovalForm) Init() tea.Cmd {
+	// Build form if not already built
+	if f.form == nil {
+		f.form = f.BuildForm()
+	}
+	return f.form.Init()
+}
+
+// Update implements tea.Model
+func (f *ToolApprovalForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Forward messages to the huh form
+	var cmd tea.Cmd
+	updatedModel, cmd := f.form.Update(msg)
+	f.form = updatedModel.(*huh.Form)
+	return f, cmd
+}
+
+// View implements tea.Model
+func (f *ToolApprovalForm) View() string {
+	if f.form == nil {
+		return "Loading form..."
+	}
+	return f.form.View()
+}
+
+// IsComplete checks if the form has been completed
+func (f *ToolApprovalForm) IsComplete() bool {
+	return f.form != nil && f.form.State == huh.StateCompleted
+}
+
+// Run displays the form and returns the user's decision
+// Deprecated: Use BuildForm() instead to avoid terminal conflicts
+func (f *ToolApprovalForm) Run() (ApprovalFormResult, error) {
+	form := f.BuildForm()
 
 	// Run the form
 	err := form.Run()
@@ -101,10 +150,7 @@ func (f *ToolApprovalForm) Run() (ApprovalFormResult, error) {
 		return ApprovalFormResult{}, err
 	}
 
-	return ApprovalFormResult{
-		Decision: f.decision,
-		ToolUse:  f.toolUse,
-	}, nil
+	return f.GetDecision(), nil
 }
 
 // formatToolInfo formats basic tool information

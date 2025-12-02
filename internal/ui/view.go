@@ -386,6 +386,11 @@ func (m *Model) renderToolApprovalPromptEnhanced() string {
 		return m.renderToolApprovalPrompt() // Fallback to basic version
 	}
 
+	// Use embedded huh form if available (preferred method)
+	if m.toolApprovalForm != nil {
+		return m.toolApprovalForm.View()
+	}
+
 	// Use the new ApprovalPrompt component if available
 	// For now, only use enhanced prompt for single tools
 	if len(m.pendingToolUses) == 1 {

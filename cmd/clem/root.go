@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -446,8 +447,9 @@ func initializeLogging() error {
 			return fmt.Errorf("failed to create logger with file %s: %w. Try:\n  - Check parent directory exists\n  - Check write permissions\n  - Use absolute path", logFile, err)
 		}
 	} else {
-		// Log to stderr only
-		config.Writer = os.Stderr
+		// Discard logs when no log file specified to avoid disrupting TUI
+		// Users running the TUI don't see stderr logs anyway due to alt screen
+		config.Writer = io.Discard
 		logger = logging.NewLogger(config)
 	}
 

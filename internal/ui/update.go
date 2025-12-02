@@ -116,6 +116,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg)
 
 	case tea.KeyMsg:
+		// Forward messages to embedded approval form if in approval mode
+		if m.toolApprovalMode && m.toolApprovalForm != nil {
+			var formCmd tea.Cmd
+			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
+
+			// Check if form is complete
+			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
+				// Extract decision and convert to ApprovalResultMsg
+				result := approvalForm.GetDecision()
+				return m.handleApprovalResult(&forms.ApprovalResultMsg{
+					Result: result,
+					Error:  nil,
+				})
+			}
+
+			return m, formCmd
+		}
+
 		// Intro screen: Any key dismisses it
 		if m.CurrentView == ViewModeIntro {
 			m.CurrentView = ViewModeChat
@@ -644,17 +662,19 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			// Dump messages after adding assistant message with tool_use blocks
 			m.dumpMessages("AFTER stream completion with tool_use blocks")
 
-			// Show tool approval dialog using huh form
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching huh approval form\n")
+			// Show tool approval dialog using embedded huh form
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
 			m.toolApprovalMode = true
 			m.updateViewport()
 
-			// Launch huh form for the pending tools
-			if len(m.pendingToolUses) == 1 {
-				return m, forms.RunToolApprovalForm(m.pendingToolUses[0])
+			// Create embedded form for the first pending tool
+			// Note: For now, only handle single tool approval. Batch approval needs refactoring.
+			if len(m.pendingToolUses) > 0 {
+				approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
+				m.toolApprovalForm = approvalForm
+				return m, approvalForm.Init()
 			}
-			// For multiple tools, run them in batch
-			return m, forms.RunToolApprovalFormBatch(m.pendingToolUses)
+			return m, nil
 		}
 		// No tool, just commit regular text
 		m.CommitStreamingText()
