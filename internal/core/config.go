@@ -19,6 +19,7 @@ type Config struct {
 	Model          string            `mapstructure:"model"`
 	DefaultTools   []string          `mapstructure:"default_tools"`
 	PermissionMode string            `mapstructure:"permission_mode"`
+	Theme          string            `mapstructure:"theme"`
 	Hooks          hooks.HooksConfig `mapstructure:"hooks"`
 }
 
@@ -38,6 +39,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("model", DefaultModel)
 	v.SetDefault("permission_mode", "ask")
 	v.SetDefault("default_tools", []string{"Bash", "Read", "Write", "Edit", "Grep"})
+	v.SetDefault("theme", "dracula")
 
 	// Environment variables
 	v.SetEnvPrefix("PAGEN")
@@ -47,6 +49,7 @@ func LoadConfig() (*Config, error) {
 	_ = v.BindEnv("model")
 	_ = v.BindEnv("permission_mode")
 	_ = v.BindEnv("default_tools")
+	_ = v.BindEnv("theme")
 
 	// Config file
 	v.SetConfigName("config")

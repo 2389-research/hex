@@ -73,6 +73,7 @@ func TestConfigDefaults(t *testing.T) {
 	_ = os.Unsetenv("PAGEN_MODEL")
 	_ = os.Unsetenv("PAGEN_PERMISSION_MODE")
 	_ = os.Unsetenv("PAGEN_DEFAULT_TOOLS")
+	_ = os.Unsetenv("PAGEN_THEME")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -80,6 +81,7 @@ func TestConfigDefaults(t *testing.T) {
 	// Should have defaults
 	assert.Equal(t, "claude-sonnet-4-5-20250929", cfg.Model)
 	assert.Equal(t, "ask", cfg.PermissionMode)
+	assert.Equal(t, "dracula", cfg.Theme)
 	assert.NotEmpty(t, cfg.DefaultTools)
 }
 
@@ -130,4 +132,51 @@ PAGEN_MODEL=claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 	assert.Equal(t, "dotenv-key-789", cfg.APIKey)
 	assert.Equal(t, "claude-sonnet-4-5-20250929", cfg.Model)
+}
+
+func TestConfigTheme(t *testing.T) {
+	t.Run("defaults to dracula", func(t *testing.T) {
+		_ = os.Unsetenv("PAGEN_CONFIG_PATH")
+		_ = os.Unsetenv("PAGEN_THEME")
+
+		cfg, err := core.LoadConfig()
+		require.NoError(t, err)
+		assert.Equal(t, "dracula", cfg.Theme)
+	})
+
+	t.Run("loads from config file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		configYAML := `theme: nord`
+		err := os.WriteFile(configPath, []byte(configYAML), 0600)
+		require.NoError(t, err)
+
+		_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
+		defer func() { _ = os.Unsetenv("PAGEN_CONFIG_PATH") }()
+
+		cfg, err := core.LoadConfig()
+		require.NoError(t, err)
+		assert.Equal(t, "nord", cfg.Theme)
+	})
+
+	t.Run("env var overrides config file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.yaml")
+
+		configYAML := `theme: nord`
+		err := os.WriteFile(configPath, []byte(configYAML), 0600)
+		require.NoError(t, err)
+
+		_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
+		_ = os.Setenv("PAGEN_THEME", "gruvbox")
+		defer func() {
+			_ = os.Unsetenv("PAGEN_CONFIG_PATH")
+			_ = os.Unsetenv("PAGEN_THEME")
+		}()
+
+		cfg, err := core.LoadConfig()
+		require.NoError(t, err)
+		assert.Equal(t, "gruvbox", cfg.Theme)
+	})
 }
