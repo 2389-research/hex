@@ -456,7 +456,7 @@ func (m *Model) updateViewport() {
 			// We strip the leading "\n" to maintain consistent "\n\n" spacing between messages
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString("• " + strings.TrimPrefix(rendered, "\n"))
+				content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
 			} else {
 				content.WriteString("• " + msg.Content + "\n\n")
 			}
@@ -473,7 +473,7 @@ func (m *Model) updateViewport() {
 			Content: m.StreamingText,
 		})
 		if err == nil {
-			content.WriteString("• " + strings.TrimPrefix(rendered, "\n"))
+			content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
 		} else {
 			content.WriteString("• " + m.StreamingText + "\n\n")
 		}
@@ -481,6 +481,29 @@ func (m *Model) updateViewport() {
 
 	m.Viewport.SetContent(content.String())
 	m.Viewport.GotoBottom()
+}
+
+// formatAssistantMessage adds a bullet to the first line and properly indents subsequent lines
+func formatAssistantMessage(text string) string {
+	lines := strings.Split(text, "\n")
+	if len(lines) == 0 {
+		return "• " + text
+	}
+
+	var result strings.Builder
+	for i, line := range lines {
+		if i == 0 {
+			// First line gets the bullet
+			result.WriteString("• " + line)
+		} else {
+			// Subsequent lines get 2-space indent to align with first line text
+			result.WriteString("  " + line)
+		}
+		if i < len(lines)-1 {
+			result.WriteString("\n")
+		}
+	}
+	return result.String()
 }
 
 // Task 6: Streaming Integration Functions
