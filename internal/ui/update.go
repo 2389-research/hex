@@ -452,10 +452,11 @@ func (m *Model) updateViewport() {
 			content.WriteString(styledContent + "\n\n")
 		} else {
 			// Use glamour for assistant messages (no label, just content)
-			// Note: glamour.Render() already adds "\n\n" at the end
+			// Note: glamour.Render() adds "\n" at start and "\n\n" at end
+			// We strip the leading "\n" to maintain consistent "\n\n" spacing between messages
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString(rendered)
+				content.WriteString(strings.TrimPrefix(rendered, "\n"))
 			} else {
 				content.WriteString(msg.Content + "\n\n")
 			}
@@ -465,13 +466,14 @@ func (m *Model) updateViewport() {
 	// Append streaming text if present
 	if m.StreamingText != "" {
 		// Render streaming text with glamour if available
-		// Note: glamour.Render() already adds "\n\n" at the end, so no extra spacing needed
+		// Note: glamour.Render() adds "\n" at start and "\n\n" at end
+		// We strip the leading "\n" to maintain consistent "\n\n" spacing
 		rendered, err := m.RenderMessage(Message{
 			Role:    "assistant",
 			Content: m.StreamingText,
 		})
 		if err == nil {
-			content.WriteString(rendered)
+			content.WriteString(strings.TrimPrefix(rendered, "\n"))
 		} else {
 			content.WriteString(m.StreamingText + "\n\n")
 		}
