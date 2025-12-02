@@ -28,8 +28,18 @@ func RunToolApprovalForm(toolUse *core.ToolUse) tea.Cmd {
 	}
 }
 
-// RunToolApprovalFormBatch runs approval forms for multiple tools sequentially
-// Each tool gets its own form, one at a time
+// RunToolApprovalFormBatch runs approval forms for multiple tools sequentially.
+// Each tool gets its own form, one at a time.
+//
+// IMPORTANT: Currently, this uses the FIRST tool's decision for ALL tools in the batch.
+// This means if the user approves tool 1, ALL tools are approved.
+// If the user denies tool 1, ALL tools are denied.
+// Individual per-tool decisions from subsequent forms are collected but not yet used.
+//
+// This is a known limitation - see the handler in model.go which calls ApproveToolUse()
+// or DenyToolUse() which operate on ALL pending tools at once.
+//
+// Future enhancement: Support per-tool decisions with a more sophisticated result type.
 func RunToolApprovalFormBatch(toolUses []*core.ToolUse) tea.Cmd {
 	if len(toolUses) == 0 {
 		return nil
@@ -51,10 +61,14 @@ func RunToolApprovalFormBatch(toolUses []*core.ToolUse) tea.Cmd {
 			}
 
 			results = append(results, result)
+
+			// LIMITATION: If user denies this tool, we should probably stop showing
+			// subsequent forms since the entire batch will be denied anyway.
+			// For now, we show all forms to collect feedback, but only use the first decision.
 		}
 
-		// For now, return just the first result
-		// Future enhancement: return all results
+		// Return the first result which will be used for ALL tools in the batch
+		// See handleApprovalResult() in model.go for how this is processed
 		if len(results) > 0 {
 			return ApprovalResultMsg{
 				Result: results[0],
