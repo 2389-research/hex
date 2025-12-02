@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/logging"
+	"github.com/harper/pagent/internal/tools"
 )
 
 func runPrintMode(prompt string) error {

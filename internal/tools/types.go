@@ -3,7 +3,7 @@
 
 package tools
 
-import "github.com/harper/clem/internal/core"
+import "github.com/harper/pagent/internal/core"
 
 // ToolUse is an alias for core.ToolUse for convenience
 // Use core.ToolUse directly in new code

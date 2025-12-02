@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/providers"
+	"github.com/harper/pagent/internal/providers"
 	"golang.org/x/oauth2"
 )
 

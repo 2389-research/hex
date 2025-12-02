@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/pagent/internal/core"
 	"github.com/spf13/cobra"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check installation health",
-	Long:  "Verify that Clem is correctly installed and configured",
+	Long:  "Verify that Pagen is correctly installed and configured",
 	RunE:  runDoctor,
 }
 
@@ -21,7 +21,7 @@ func init() {
 }
 
 func runDoctor(_ *cobra.Command, _ []string) error {
-	fmt.Println("Clem Health Check")
+	fmt.Println("Pagen Health Check")
 	fmt.Println("=================")
 	fmt.Println()
 

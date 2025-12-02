@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/clem/internal/templates"
+	"github.com/harper/pagent/internal/templates"
 	"github.com/spf13/cobra"
 )
 

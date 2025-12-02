@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/storage"
+	"github.com/harper/pagent/internal/tools"
 )
 
 // Update handles Bubbletea messages

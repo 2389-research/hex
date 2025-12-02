@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/pagent/internal/tools"
 )
 
 // ExampleReadTool demonstrates basic file reading

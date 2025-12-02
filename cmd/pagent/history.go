@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/pagent/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var (
 var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "View command history",
-	Long: `View your command history with Clem.
+	Long: `View your command history with Pagen.
 
 Shows recent conversations with timestamps, message previews, and conversation IDs.
 Use the search subcommand to find specific topics.`,
@@ -72,7 +72,7 @@ func runHistory(cmd *cobra.Command) error {
 	if len(entries) == 0 {
 		cmd.Println("No history found.")
 		cmd.Println()
-		cmd.Println("Start a conversation with Clem to build your history!")
+		cmd.Println("Start a conversation with Pagen to build your history!")
 		return nil
 	}
 

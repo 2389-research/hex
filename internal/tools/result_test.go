@@ -6,7 +6,7 @@ package tools_test
 import (
 	"testing"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/pagent/internal/tools"
 	"github.com/stretchr/testify/assert"
 )
 

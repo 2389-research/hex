@@ -6,7 +6,7 @@ package tools
 import (
 	"context"
 
-	"github.com/harper/clem/internal/providers"
+	"github.com/harper/pagent/internal/providers"
 )
 
 // CreateTaskTool creates tasks

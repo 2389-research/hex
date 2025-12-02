@@ -1,4 +1,4 @@
-# GoReleaser configuration for clem
+# GoReleaser configuration for pagent
 # Builds for macOS (Intel + Apple Silicon) using pure Go cross-compilation
 # modernc.org/sqlite is pure Go and does not require CGO
 version: 2
@@ -9,9 +9,9 @@ before:
     - go test -short ./...
 
 builds:
-  - id: clem
-    binary: clem
-    main: ./cmd/clem
+  - id: pagent
+    binary: pagent
+    main: ./cmd/pagent
     env:
       - CGO_ENABLED=0
     goos:
@@ -28,10 +28,10 @@ builds:
       - sqlite_omit_load_extension
 
 archives:
-  - id: clem
+  - id: pagent
     formats: [tar.gz]
     name_template: >-
-      clem_
+      pagent_
       {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64

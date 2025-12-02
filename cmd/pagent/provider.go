@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/harper/clem/internal/providers"
-	"github.com/harper/clem/internal/providers/gmail"
+	"github.com/harper/pagent/internal/providers"
+	"github.com/harper/pagent/internal/providers/gmail"
 	"github.com/spf13/cobra"
 )
 

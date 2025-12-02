@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/clem/internal/hooks"
+	"github.com/harper/pagent/internal/hooks"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/pagent/internal/storage"
 )
 
 // defaultDBPath returns the default database path (~/.clem/clem.db)

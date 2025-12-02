@@ -8,16 +8,16 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	ctxmgr "github.com/harper/clem/internal/context"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/hooks"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/mcp"
-	"github.com/harper/clem/internal/providers"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/templates"
-	"github.com/harper/clem/internal/tools"
-	"github.com/harper/clem/internal/ui"
+	ctxmgr "github.com/harper/pagent/internal/context"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/hooks"
+	"github.com/harper/pagent/internal/logging"
+	"github.com/harper/pagent/internal/mcp"
+	"github.com/harper/pagent/internal/providers"
+	"github.com/harper/pagent/internal/storage"
+	"github.com/harper/pagent/internal/templates"
+	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/pagent/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -61,9 +61,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "clem [prompt]",
-	Short: "Clem - AI assistant CLI",
-	Long: `Clem is an AI assistant for your terminal.
+	Use:   "pagent [prompt]",
+	Short: "Pagen - Productivity AI Agent",
+	Long: `Pagen is a productivity AI agent for your terminal.
 
 Start an interactive session or use --print for one-off queries.`,
 	Version: version,
@@ -97,7 +97,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&contextStrategy, "context-strategy", "prune", "Context management strategy: keep-all, prune, summarize")
 
 	// Phase 6C: Template system flags
-	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'clem templates list')")
+	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'pagent templates list')")
 
 	// Print mode tool support flags (like Claude Code)
 	rootCmd.PersistentFlags().BoolVar(&dangerouslySkipPermissions, "dangerously-skip-permissions", false, "Auto-approve all tool executions (use with caution)")
@@ -112,7 +112,7 @@ func runRoot(_ *cobra.Command, args []string) error {
 	}
 	defer closeLogger()
 
-	logging.InfoWith("Clem starting", "version", version)
+	logging.InfoWith("Pagen starting", "version", version)
 
 	prompt := ""
 	if len(args) > 0 {
@@ -288,7 +288,7 @@ func runInteractive(prompt string) error {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
 	} else {
-		return fmt.Errorf("API key not configured. Run 'clem setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+		return fmt.Errorf("API key not configured. Run 'pagent setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Task 12: Create tool registry and executor
@@ -412,7 +412,7 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("run UI: %w", err)
 	}
 
-	logging.Info("Clem shutting down")
+	logging.Info("Pagen shutting down")
 	return nil
 }
 

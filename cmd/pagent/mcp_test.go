@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/harper/clem/internal/mcp"
+	"github.com/harper/pagent/internal/mcp"
 	"github.com/spf13/cobra"
 )
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/hooks"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/hooks"
 )
 
 func TestHooksIntegration_ConfigLoading(t *testing.T) {

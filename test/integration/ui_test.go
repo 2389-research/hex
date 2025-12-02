@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 

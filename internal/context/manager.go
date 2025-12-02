@@ -5,7 +5,7 @@
 package context
 
 import (
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/pagent/internal/core"
 )
 
 const (

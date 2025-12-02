@@ -1,4 +1,4 @@
-module github.com/harper/clem
+module github.com/harper/pagent
 
 go 1.24.1
 

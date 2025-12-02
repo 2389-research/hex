@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/pagent/internal/core"
+	"github.com/harper/pagent/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
