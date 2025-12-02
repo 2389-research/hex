@@ -684,7 +684,16 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			if len(m.pendingToolUses) > 0 {
 				approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
 				m.toolApprovalForm = approvalForm
-				return m, approvalForm.Init()
+
+				// Initialize the form and immediately send it a WindowSizeMsg
+				// so it knows its dimensions (required for proper rendering in tmux)
+				initCmd := approvalForm.Init()
+				_, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
+					Width:  m.Width,
+					Height: m.Height,
+				})
+
+				return m, tea.Batch(initCmd, sizeCmd)
 			}
 			return m, nil
 		}
