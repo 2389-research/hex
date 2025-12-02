@@ -8,16 +8,18 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/harper/clem/internal/hooks"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 // Config holds application configuration
 type Config struct {
-	APIKey         string   `mapstructure:"api_key"`
-	Model          string   `mapstructure:"model"`
-	DefaultTools   []string `mapstructure:"default_tools"`
-	PermissionMode string   `mapstructure:"permission_mode"`
+	APIKey         string            `mapstructure:"api_key"`
+	Model          string            `mapstructure:"model"`
+	DefaultTools   []string          `mapstructure:"default_tools"`
+	PermissionMode string            `mapstructure:"permission_mode"`
+	Hooks          hooks.HooksConfig `mapstructure:"hooks"`
 }
 
 // LoadConfig loads configuration from multiple sources
