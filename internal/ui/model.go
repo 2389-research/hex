@@ -1128,12 +1128,14 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	if msg.Error != nil {
 		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
 		m.toolApprovalMode = false
+		m.toolApprovalForm = nil // Clear the embedded form
 		return m, m.DenyToolUse()
 	}
 
 	// Exit approval mode
 	m.toolApprovalMode = false
 	m.approvalPrompt = nil
+	m.toolApprovalForm = nil // Clear the embedded form
 
 	// Process the decision
 	switch msg.Result.Decision {
