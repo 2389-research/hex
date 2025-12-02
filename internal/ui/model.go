@@ -18,6 +18,7 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
+	"github.com/harper/clem/internal/ui/forms"
 	"github.com/harper/clem/internal/ui/theme"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -986,4 +987,44 @@ func (m *Model) RejectTopSuggestion() {
 // GetPendingToolUses returns the current pending tool uses for testing
 func (m *Model) GetPendingToolUses() []*core.ToolUse {
 	return m.pendingToolUses
+}
+
+// handleApprovalResult processes the result from the huh approval form
+func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, tea.Cmd) {
+	// Check for errors
+	if msg.Error != nil {
+		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
+		m.toolApprovalMode = false
+		return m, m.DenyToolUse()
+	}
+
+	// Exit approval mode
+	m.toolApprovalMode = false
+	m.approvalPrompt = nil
+
+	// Process the decision
+	switch msg.Result.Decision {
+	case forms.DecisionApprove:
+		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User approved tool: %s\n", msg.Result.ToolUse.Name)
+		return m, m.ApproveToolUse()
+
+	case forms.DecisionDeny:
+		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User denied tool: %s\n", msg.Result.ToolUse.Name)
+		return m, m.DenyToolUse()
+
+	case forms.DecisionAlwaysAllow:
+		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User always allowed tool: %s\n", msg.Result.ToolUse.Name)
+		// TODO: Store in persistent approval list
+		return m, m.ApproveToolUse()
+
+	case forms.DecisionNeverAllow:
+		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User never allowed tool: %s\n", msg.Result.ToolUse.Name)
+		// TODO: Store in persistent deny list
+		return m, m.DenyToolUse()
+
+	default:
+		// Unknown decision, deny by default
+		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] Unknown decision, denying tool\n")
+		return m, m.DenyToolUse()
+	}
 }

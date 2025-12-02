@@ -14,6 +14,7 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
+	"github.com/harper/clem/internal/ui/forms"
 )
 
 // Update handles Bubbletea messages
@@ -106,36 +107,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
+	// Handle approval form results from huh
+	case *forms.ApprovalResultMsg:
+		return m.handleApprovalResult(msg)
+
 	case tea.KeyMsg:
 		// Phase 6C Task 6: Handle quick actions mode first
 		if m.quickActionsMode {
 			return m.handleQuickActionsKey(msg)
 		}
 
-		// Task 12: Handle tool approval keys
+		// Task 12: Tool approval is now handled by huh forms
+		// No need to handle keys in approval mode - huh handles its own input
 		if m.toolApprovalMode {
-			switch msg.Type {
-			case tea.KeyRunes:
-				if len(msg.Runes) > 0 {
-					r := msg.Runes[0]
-					switch r {
-					case 'y', 'Y', 'a', 'A':
-						return m, m.ApproveToolUse()
-					case 'n', 'N', 'd', 'D':
-						return m, m.DenyToolUse()
-					case 'v', 'V':
-						// Phase 6C: Toggle approval details
-						if m.approvalPrompt != nil {
-							m.approvalPrompt.ToggleDetails()
-						}
-						return m, nil
-					}
-				}
-			case tea.KeyEsc:
-				// Esc also denies the tool
-				return m, m.DenyToolUse()
-			}
-			// In approval mode, block other key handling
+			// In approval mode, block other key handling (form is running)
 			return m, nil
 		}
 
@@ -618,13 +603,20 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			// Dump messages after adding assistant message with tool_use blocks
 			m.dumpMessages("AFTER stream completion with tool_use blocks")
 
-			// Show tool approval dialog
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
+			// Show tool approval dialog using huh form
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching huh approval form\n")
 			m.toolApprovalMode = true
-		} else {
-			// No tool, just commit regular text
-			m.CommitStreamingText()
+			m.updateViewport()
+
+			// Launch huh form for the pending tools
+			if len(m.pendingToolUses) == 1 {
+				return m, forms.RunToolApprovalForm(m.pendingToolUses[0])
+			}
+			// For multiple tools, run them in batch
+			return m, forms.RunToolApprovalFormBatch(m.pendingToolUses)
 		}
+		// No tool, just commit regular text
+		m.CommitStreamingText()
 
 		m.SetStatus(StatusIdle)
 		m.streamChan = nil
