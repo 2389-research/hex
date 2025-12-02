@@ -451,21 +451,21 @@ func (m *Model) updateViewport() {
 			styledContent := m.theme.UserMessage.Render("> " + msg.Content)
 			content.WriteString(styledContent + "\n\n")
 		} else {
-			// Use glamour for assistant messages (no label, just content) with • prefix
+			// Use glamour for assistant messages (no label, just content) with ● prefix
 			// Note: glamour.Render() adds "\n" at start and "\n\n" at end
 			// We strip the leading "\n" to maintain consistent "\n\n" spacing between messages
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
 				content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
 			} else {
-				content.WriteString("• " + msg.Content + "\n\n")
+				content.WriteString("● " + msg.Content + "\n\n")
 			}
 		}
 	}
 
 	// Append streaming text if present
 	if m.StreamingText != "" {
-		// Render streaming text with glamour if available with • prefix
+		// Render streaming text with glamour if available with ● prefix
 		// Note: glamour.Render() adds "\n" at start and "\n\n" at end
 		// We strip the leading "\n" to maintain consistent "\n\n" spacing
 		rendered, err := m.RenderMessage(Message{
@@ -475,7 +475,7 @@ func (m *Model) updateViewport() {
 		if err == nil {
 			content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
 		} else {
-			content.WriteString("• " + m.StreamingText + "\n\n")
+			content.WriteString("● " + m.StreamingText + "\n\n")
 		}
 	}
 
@@ -487,14 +487,14 @@ func (m *Model) updateViewport() {
 func formatAssistantMessage(text string) string {
 	lines := strings.Split(text, "\n")
 	if len(lines) == 0 {
-		return "• " + text
+		return "● " + text
 	}
 
 	var result strings.Builder
 	for i, line := range lines {
 		if i == 0 {
 			// First line gets the bullet
-			result.WriteString("• " + line)
+			result.WriteString("● " + line)
 		} else {
 			// Subsequent lines get 2-space indent to align with first line text
 			result.WriteString("  " + line)
