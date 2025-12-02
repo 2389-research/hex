@@ -546,6 +546,14 @@ func (g *GmailProvider) readEmail(params map[string]interface{}) (providers.Tool
 		}, err
 	}
 
+	// Check if payload exists
+	if msg.Payload == nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   "email message has no payload",
+		}, fmt.Errorf("message payload is nil")
+	}
+
 	// Extract headers
 	headers := make(map[string]string)
 	for _, header := range msg.Payload.Headers {
@@ -554,7 +562,7 @@ func (g *GmailProvider) readEmail(params map[string]interface{}) (providers.Tool
 
 	// Extract body
 	var body string
-	if msg.Payload.Body.Data != "" {
+	if msg.Payload.Body != nil && msg.Payload.Body.Data != "" {
 		// Body is directly in the message
 		bodyBytes, err := base64.URLEncoding.DecodeString(msg.Payload.Body.Data)
 		if err == nil {
@@ -623,6 +631,20 @@ func (g *GmailProvider) createEvent(params map[string]interface{}) (providers.To
 			Success: false,
 			Error:   "missing required parameters: title, start_time, end_time",
 		}, fmt.Errorf("missing required parameters")
+	}
+
+	// Validate RFC3339 time format
+	if _, err := time.Parse(time.RFC3339, startTime); err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("invalid start_time format: must be RFC3339 (e.g., 2006-01-02T15:04:05Z07:00), got %q", startTime),
+		}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	if _, err := time.Parse(time.RFC3339, endTime); err != nil {
+		return providers.ToolResult{
+			Success: false,
+			Error:   fmt.Sprintf("invalid end_time format: must be RFC3339 (e.g., 2006-01-02T15:04:05Z07:00), got %q", endTime),
+		}, fmt.Errorf("invalid end_time format: %w", err)
 	}
 
 	// Get Calendar service
@@ -904,13 +926,8 @@ func (g *GmailProvider) listTasks(params map[string]interface{}) (providers.Tool
 
 	// List tasks from default list
 	listCall := service.Tasks.List("@default").
-		MaxResults(maxResults)
-
-	if showCompleted {
-		listCall = listCall.ShowCompleted(true)
-	} else {
-		listCall = listCall.ShowCompleted(false)
-	}
+		MaxResults(maxResults).
+		ShowCompleted(showCompleted)
 
 	taskList, err := listCall.Do()
 	if err != nil {
