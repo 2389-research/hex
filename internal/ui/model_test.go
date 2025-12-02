@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewModel(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.Equal(t, "conv-123", model.ConversationID)
 	assert.Equal(t, "claude-sonnet-4-5-20250929", model.Model)
@@ -19,7 +19,7 @@ func TestNewModel(t *testing.T) {
 }
 
 func TestModelAddMessage(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	model.AddMessage("user", "Hello")
 	model.AddMessage("assistant", "Hi there")
@@ -34,14 +34,14 @@ func TestModelAddMessage(t *testing.T) {
 // Task 5: Advanced UI Features Tests
 
 func TestViewModeInitialization(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Should start in chat view mode
 	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 }
 
 func TestViewModeSwitching(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Switch from Chat to History
 	model.NextView()
@@ -57,7 +57,7 @@ func TestViewModeSwitching(t *testing.T) {
 }
 
 func TestTokenCounterTracking(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Initial state
 	assert.Equal(t, 0, model.TokensInput)
@@ -75,7 +75,7 @@ func TestTokenCounterTracking(t *testing.T) {
 }
 
 func TestStatusIndicators(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Initial status should be idle
 	assert.Equal(t, ui.StatusIdle, model.Status)
@@ -91,7 +91,7 @@ func TestStatusIndicators(t *testing.T) {
 }
 
 func TestMarkdownRendering(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Add message with markdown content
 	model.AddMessage("assistant", "# Header\n\n**bold** and *italic*")
@@ -105,7 +105,7 @@ func TestMarkdownRendering(t *testing.T) {
 }
 
 func TestSearchMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Initial state
 	assert.False(t, model.SearchMode)
@@ -126,7 +126,7 @@ func TestSearchMode(t *testing.T) {
 }
 
 func TestAppendStreamingText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	model.AppendStreamingText("Hello")
 	assert.Equal(t, "Hello", model.StreamingText)
@@ -136,7 +136,7 @@ func TestAppendStreamingText(t *testing.T) {
 }
 
 func TestCommitStreamingText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.StreamingText = "Streamed content"
 
 	model.CommitStreamingText()
@@ -148,11 +148,41 @@ func TestCommitStreamingText(t *testing.T) {
 }
 
 func TestClearStreamingText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.StreamingText = "Partial content"
 
 	model.ClearStreamingText()
 
 	assert.Equal(t, "", model.StreamingText)
 	assert.Equal(t, 0, len(model.Messages))
+}
+
+func TestThemeIntegration(t *testing.T) {
+	t.Run("initializes with dracula theme", func(t *testing.T) {
+		model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+
+		assert.NotNil(t, model.GetTheme())
+		assert.Equal(t, "Dracula", model.GetTheme().Name())
+	})
+
+	t.Run("initializes with gruvbox theme", func(t *testing.T) {
+		model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "gruvbox")
+
+		assert.NotNil(t, model.GetTheme())
+		assert.Equal(t, "Gruvbox Dark", model.GetTheme().Name())
+	})
+
+	t.Run("initializes with nord theme", func(t *testing.T) {
+		model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "nord")
+
+		assert.NotNil(t, model.GetTheme())
+		assert.Equal(t, "Nord", model.GetTheme().Name())
+	})
+
+	t.Run("defaults to dracula for unknown theme", func(t *testing.T) {
+		model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "unknown-theme")
+
+		assert.NotNil(t, model.GetTheme())
+		assert.Equal(t, "Dracula", model.GetTheme().Name())
+	})
 }

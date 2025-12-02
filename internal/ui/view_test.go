@@ -10,7 +10,7 @@ import (
 )
 
 func TestViewRendersChatMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeChat
 
@@ -20,7 +20,7 @@ func TestViewRendersChatMode(t *testing.T) {
 }
 
 func TestViewRendersHistoryMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeHistory
 
@@ -30,7 +30,7 @@ func TestViewRendersHistoryMode(t *testing.T) {
 }
 
 func TestViewRendersToolsMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeTools
 
@@ -40,7 +40,7 @@ func TestViewRendersToolsMode(t *testing.T) {
 }
 
 func TestViewShowsTokenCounter(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.UpdateTokens(100, 250)
 
@@ -51,7 +51,7 @@ func TestViewShowsTokenCounter(t *testing.T) {
 }
 
 func TestViewShowsSearchMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.EnterSearchMode()
 	model.UpdateSearchQuery("test")
@@ -62,7 +62,7 @@ func TestViewShowsSearchMode(t *testing.T) {
 }
 
 func TestViewShowsHelpText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	view := model.View()
@@ -72,7 +72,7 @@ func TestViewShowsHelpText(t *testing.T) {
 }
 
 func TestViewStatusIndicatorChanges(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Test idle status
@@ -91,7 +91,7 @@ func TestViewStatusIndicatorChanges(t *testing.T) {
 }
 
 func TestViewInitializingState(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = false
 
 	view := model.View()
@@ -99,7 +99,7 @@ func TestViewInitializingState(t *testing.T) {
 }
 
 func TestViewDoesNotShowInputInNonChatMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeHistory
 
@@ -109,7 +109,7 @@ func TestViewDoesNotShowInputInNonChatMode(t *testing.T) {
 }
 
 func TestViewShowsInputOnlyInChatMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeChat
 
@@ -120,7 +120,7 @@ func TestViewShowsInputOnlyInChatMode(t *testing.T) {
 }
 
 func TestViewMultipleMessages(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Add several messages
@@ -134,7 +134,7 @@ func TestViewMultipleMessages(t *testing.T) {
 }
 
 func TestViewMarkdownRendering(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.Width = 100 // Set a reasonable width
 

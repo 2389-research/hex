@@ -18,6 +18,7 @@ import (
 	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/storage"
 	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/pagent/internal/ui/themes"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -128,6 +129,9 @@ type Model struct {
 	helpVisible      bool
 	typewriterMode   bool
 
+	// TUI Theme
+	theme themes.Theme
+
 	// Phase 6B: Context Management
 	contextManager *ctxmgr.Manager
 	contextUsage   ctxmgr.ContextUsage
@@ -162,7 +166,7 @@ type ToolResult struct {
 }
 
 // NewModel creates a new UI model
-func NewModel(conversationID, model string) *Model {
+func NewModel(conversationID, model, themeName string) *Model {
 	ta := textarea.New()
 	ta.Placeholder = "Send a message..."
 	ta.Focus()
@@ -183,6 +187,9 @@ func NewModel(conversationID, model string) *Model {
 	if err != nil {
 		renderer = nil // Explicit - RenderMessage already checks for nil
 	}
+
+	// Load theme
+	theme := themes.GetTheme(themeName)
 
 	// Phase 6C: Initialize new UI components
 	spinner := NewToolSpinner()
@@ -206,6 +213,7 @@ func NewModel(conversationID, model string) *Model {
 		CurrentView:          ViewModeChat,
 		Status:               StatusIdle,
 		renderer:             renderer,
+		theme:                theme,
 		spinner:              spinner,
 		streamingDisplay:     streamingDisplay,
 		statusBar:            statusBar,
@@ -978,4 +986,9 @@ func (m *Model) RejectTopSuggestion() {
 // GetPendingToolUses returns the current pending tool uses for testing
 func (m *Model) GetPendingToolUses() []*core.ToolUse {
 	return m.pendingToolUses
+}
+
+// GetTheme returns the current theme
+func (m *Model) GetTheme() themes.Theme {
+	return m.theme
 }

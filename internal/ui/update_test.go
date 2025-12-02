@@ -13,7 +13,7 @@ import (
 )
 
 func TestUpdateTabKeySwitchesViews(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 
 	// Press Tab to switch to History
@@ -34,7 +34,7 @@ func TestUpdateTabKeySwitchesViews(t *testing.T) {
 }
 
 func TestUpdateVimNavigation(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Add some messages to scroll
@@ -56,7 +56,7 @@ func TestUpdateVimNavigation(t *testing.T) {
 }
 
 func TestUpdateSlashEntersSearchMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	assert.False(t, model.SearchMode)
 
 	// Blur the textarea first (slash only works when textarea not focused)
@@ -70,7 +70,7 @@ func TestUpdateSlashEntersSearchMode(t *testing.T) {
 }
 
 func TestUpdateEscExitsSearchMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.EnterSearchMode()
 	assert.True(t, model.SearchMode)
 
@@ -82,7 +82,7 @@ func TestUpdateEscExitsSearchMode(t *testing.T) {
 }
 
 func TestUpdateGGGoesToTop(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Add messages and scroll down
@@ -102,7 +102,7 @@ func TestUpdateGGGoesToTop(t *testing.T) {
 }
 
 func TestUpdateShiftGGoesToBottom(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Add messages
@@ -118,7 +118,7 @@ func TestUpdateShiftGGoesToBottom(t *testing.T) {
 }
 
 func TestSearchModeBackspace(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.EnterSearchMode()
 	model.UpdateSearchQuery("test")
 
@@ -137,7 +137,7 @@ func TestSearchModeBackspace(t *testing.T) {
 }
 
 func TestGGSequenceResetOnOtherKeys(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.AddMessage("user", "Test message")
 
@@ -162,7 +162,7 @@ func TestGGSequenceResetOnOtherKeys(t *testing.T) {
 // Task 6: Streaming Integration Tests
 
 func TestStreamChunkAppendsText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Simulate receiving a stream chunk message
@@ -184,7 +184,7 @@ func TestStreamChunkAppendsText(t *testing.T) {
 }
 
 func TestStreamChunkAccumulation(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Receive multiple chunks
@@ -217,7 +217,7 @@ func TestStreamChunkAccumulation(t *testing.T) {
 }
 
 func TestStreamMessageStopCommitsText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.StreamingText = "Completed response"
 
@@ -241,7 +241,7 @@ func TestStreamMessageStopCommitsText(t *testing.T) {
 }
 
 func TestStreamErrorClearsStreamingText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.StreamingText = "Partial response"
 
@@ -260,7 +260,7 @@ func TestStreamErrorClearsStreamingText(t *testing.T) {
 }
 
 func TestStreamUsageUpdatesTokens(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	initialInput := model.TokensInput
@@ -287,7 +287,7 @@ func TestStreamUsageUpdatesTokens(t *testing.T) {
 func TestEnterKeyTriggersStreaming(t *testing.T) {
 	// This test will need a mock API client
 	// For now, we'll just verify that the model state changes appropriately
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 
 	// Set some input text

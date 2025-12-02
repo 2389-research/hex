@@ -189,7 +189,7 @@ func runInteractive(prompt string) error {
 			// Success - load the conversation
 			conversationID = conv.ID
 			modelName = conv.Model
-			uiModel = ui.NewModel(conversationID, modelName)
+			uiModel = ui.NewModel(conversationID, modelName, "dracula")
 			uiModel.SetDB(db)
 
 			// Load messages into UI
@@ -209,7 +209,7 @@ func runInteractive(prompt string) error {
 		}
 		conversationID = conv.ID
 		modelName = conv.Model
-		uiModel = ui.NewModel(conversationID, modelName)
+		uiModel = ui.NewModel(conversationID, modelName, "dracula")
 		uiModel.SetDB(db)
 
 		// Load favorite status
@@ -224,7 +224,7 @@ func runInteractive(prompt string) error {
 	// Create new conversation if not resuming
 	if uiModel == nil {
 		conversationID = fmt.Sprintf("conv-%d", time.Now().Unix())
-		uiModel = ui.NewModel(conversationID, modelName)
+		uiModel = ui.NewModel(conversationID, modelName, "dracula")
 		uiModel.SetDB(db)
 
 		// Phase 6C: Set system prompt from template if available

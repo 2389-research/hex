@@ -11,7 +11,7 @@ import (
 )
 
 func TestModelQuickActionsMode(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 
 	// Initially not in quick actions mode
 	assert.False(t, model.quickActionsMode)
@@ -30,7 +30,7 @@ func TestModelQuickActionsMode(t *testing.T) {
 }
 
 func TestModelQuickActionsSearch(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 	model.EnterQuickActionsMode()
 
 	// Update input to search for "read"
@@ -43,7 +43,7 @@ func TestModelQuickActionsSearch(t *testing.T) {
 }
 
 func TestModelQuickActionsKeyHandler(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 	model.EnterQuickActionsMode()
 
 	// Test typing a character
@@ -66,7 +66,7 @@ func TestModelQuickActionsKeyHandler(t *testing.T) {
 }
 
 func TestModelQuickActionsColonKey(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 
 	// Simulate pressing ':' when textarea is not focused
 	model.Input.Blur()
@@ -80,7 +80,7 @@ func TestModelQuickActionsColonKey(t *testing.T) {
 }
 
 func TestModelRenderQuickActionsModal(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 	model.EnterQuickActionsMode()
 
 	// Render the modal
@@ -94,7 +94,7 @@ func TestModelRenderQuickActionsModal(t *testing.T) {
 }
 
 func TestModelQuickActionsExecute(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 	model.EnterQuickActionsMode()
 
 	// Type "save"
@@ -110,7 +110,7 @@ func TestModelQuickActionsExecute(t *testing.T) {
 }
 
 func TestModelQuickActionsWithArguments(t *testing.T) {
-	model := NewModel("test-conv", "test-model")
+	model := NewModel("test-conv", "test-model", "dracula")
 	model.EnterQuickActionsMode()
 
 	// Type "read /path/to/file"
