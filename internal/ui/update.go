@@ -447,25 +447,25 @@ func (m *Model) updateViewport() {
 	var content strings.Builder
 	for _, msg := range m.Messages {
 		if msg.Role == "user" {
-			// Style user messages with cyan (Dracula theme)
-			styledContent := m.theme.UserMessage.Render(msg.Content)
+			// Style user messages with cyan (Dracula theme) and > prefix
+			styledContent := m.theme.UserMessage.Render("> " + msg.Content)
 			content.WriteString(styledContent + "\n\n")
 		} else {
-			// Use glamour for assistant messages (no label, just content)
+			// Use glamour for assistant messages (no label, just content) with • prefix
 			// Note: glamour.Render() adds "\n" at start and "\n\n" at end
 			// We strip the leading "\n" to maintain consistent "\n\n" spacing between messages
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString(strings.TrimPrefix(rendered, "\n"))
+				content.WriteString("• " + strings.TrimPrefix(rendered, "\n"))
 			} else {
-				content.WriteString(msg.Content + "\n\n")
+				content.WriteString("• " + msg.Content + "\n\n")
 			}
 		}
 	}
 
 	// Append streaming text if present
 	if m.StreamingText != "" {
-		// Render streaming text with glamour if available
+		// Render streaming text with glamour if available with • prefix
 		// Note: glamour.Render() adds "\n" at start and "\n\n" at end
 		// We strip the leading "\n" to maintain consistent "\n\n" spacing
 		rendered, err := m.RenderMessage(Message{
@@ -473,9 +473,9 @@ func (m *Model) updateViewport() {
 			Content: m.StreamingText,
 		})
 		if err == nil {
-			content.WriteString(strings.TrimPrefix(rendered, "\n"))
+			content.WriteString("• " + strings.TrimPrefix(rendered, "\n"))
 		} else {
-			content.WriteString(m.StreamingText + "\n\n")
+			content.WriteString("• " + m.StreamingText + "\n\n")
 		}
 	}
 
