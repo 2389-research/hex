@@ -6,6 +6,8 @@ package commands
 import (
 	"strings"
 	"testing"
+
+	"github.com/harper/clem/internal/frontmatter"
 )
 
 func TestParse(t *testing.T) {
@@ -337,7 +339,7 @@ line 3`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			frontmatter, content, err := splitFrontmatter([]byte(tt.input))
+			fm, content, err := frontmatter.Split([]byte(tt.input))
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -348,7 +350,7 @@ line 3`,
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			gotFrontmatter := strings.TrimSpace(string(frontmatter))
+			gotFrontmatter := strings.TrimSpace(string(fm))
 			gotContent := strings.TrimSpace(string(content))
 			wantFrontmatter := strings.TrimSpace(tt.wantFrontmatter)
 			wantContent := strings.TrimSpace(tt.wantContent)

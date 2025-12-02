@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/harper/clem/internal/project"
 )
 
 // Loader discovers and loads commands from multiple directories
@@ -24,38 +26,13 @@ func NewLoader() *Loader {
 	userDir := filepath.Join(homeDir, ".clem", "commands")
 
 	// Find project directory by looking for .claude directory
-	projectDir := findProjectCommandsDir()
+	projectDir := project.FindDir("commands")
 
 	return &Loader{
 		UserDir:    userDir,
 		ProjectDir: projectDir,
 		BuiltinDir: "", // Will be set by caller if builtin commands exist
 	}
-}
-
-// findProjectCommandsDir searches for .claude/commands/ directory
-func findProjectCommandsDir() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-
-	// Search upwards for .claude directory
-	searchDir := cwd
-	for i := 0; i < 10; i++ {
-		claudeDir := filepath.Join(searchDir, ".claude", "commands")
-		if info, err := os.Stat(claudeDir); err == nil && info.IsDir() {
-			return claudeDir
-		}
-
-		parent := filepath.Dir(searchDir)
-		if parent == searchDir {
-			break // Reached filesystem root
-		}
-		searchDir = parent
-	}
-
-	return ""
 }
 
 // LoadAll discovers and loads all commands from all directories

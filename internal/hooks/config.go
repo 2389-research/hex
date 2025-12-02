@@ -12,23 +12,40 @@ import (
 	"regexp"
 )
 
+const (
+	// DefaultHookTimeoutMS is the default timeout for hook execution in milliseconds
+	DefaultHookTimeoutMS = 5000
+)
+
 // HookConfig represents a single hook configuration
 type HookConfig struct {
-	Command       string            `json:"command"`
-	Description   string            `json:"description,omitempty"`
-	Timeout       int               `json:"timeout,omitempty"` // milliseconds, default 5000
-	Env           map[string]string `json:"env,omitempty"`
-	Match         *MatchConfig      `json:"match,omitempty"`
-	IgnoreFailure bool              `json:"ignoreFailure,omitempty"`
-	Async         bool              `json:"async,omitempty"`
+	// Command is the shell command to execute
+	Command string `json:"command"`
+	// Description explains what the hook does
+	Description string `json:"description,omitempty"`
+	// Timeout in milliseconds, defaults to DefaultHookTimeoutMS
+	Timeout int `json:"timeout,omitempty"`
+	// Env provides environment variables for the hook command
+	Env map[string]string `json:"env,omitempty"`
+	// Match defines conditions for when the hook should execute
+	Match *MatchConfig `json:"match,omitempty"`
+	// IgnoreFailure continues execution even if hook fails
+	IgnoreFailure bool `json:"ignoreFailure,omitempty"`
+	// Async runs the hook in the background without blocking
+	Async bool `json:"async,omitempty"`
 }
 
 // MatchConfig defines conditions for when a hook should execute
 type MatchConfig struct {
-	ToolName    string `json:"toolName,omitempty"`
-	FilePattern string `json:"filePattern,omitempty"` // regex
-	IsSubagent  *bool  `json:"isSubagent,omitempty"`  // pointer to distinguish between false and unset
-	Level       string `json:"level,omitempty"`       // for notification events
+	// ToolName filters hooks to only run for specific tool names
+	ToolName string `json:"toolName,omitempty"`
+	// FilePattern is a regex to match against file paths in tool use events
+	FilePattern string `json:"filePattern,omitempty"`
+	// IsSubagent filters hooks based on whether execution is in a subagent context
+	// Uses pointer to distinguish between false and unset
+	IsSubagent *bool `json:"isSubagent,omitempty"`
+	// Level filters notification events by severity level
+	Level string `json:"level,omitempty"`
 }
 
 // Settings represents the .claude/settings.json structure
@@ -202,10 +219,10 @@ func (hc *HookConfig) ShouldExecute(event *Event) bool {
 	return true
 }
 
-// GetTimeout returns the timeout in milliseconds, defaulting to 5000 if not set
+// GetTimeout returns the timeout in milliseconds, defaulting to DefaultHookTimeoutMS if not set
 func (hc *HookConfig) GetTimeout() int {
 	if hc.Timeout <= 0 {
-		return 5000
+		return DefaultHookTimeoutMS
 	}
 	return hc.Timeout
 }

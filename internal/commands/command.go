@@ -11,22 +11,26 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/harper/clem/internal/frontmatter"
 	"gopkg.in/yaml.v3"
 )
 
 // Command represents a slash command with metadata and template content
 type Command struct {
-	// Frontmatter fields
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description"`
-	Args        map[string]string `yaml:"args"` // arg name -> description
+	// Name is the unique identifier for the command (used with /name)
+	Name string `yaml:"name"`
+	// Description explains what the command does
+	Description string `yaml:"description"`
+	// Args maps argument names to their descriptions for template expansion
+	Args map[string]string `yaml:"args"`
 
-	// Command content (markdown body after frontmatter)
+	// Content is the markdown template body after frontmatter
 	Content string `yaml:"-"`
 
-	// File location metadata
+	// FilePath is the absolute path to the command file
 	FilePath string `yaml:"-"`
-	Source   string `yaml:"-"` // "user", "project", or "builtin"
+	// Source indicates where the command was loaded from: "user", "project", or "builtin"
+	Source string `yaml:"-"`
 }
 
 // Parse reads and parses a command file from disk
@@ -42,15 +46,15 @@ func Parse(path string) (*Command, error) {
 // ParseBytes parses command data from bytes
 func ParseBytes(path string, data []byte) (*Command, error) {
 	// Split frontmatter and content
-	frontmatter, content, err := splitFrontmatter(data)
+	fm, content, err := frontmatter.Split(data)
 	if err != nil {
 		return nil, fmt.Errorf("split frontmatter: %w", err)
 	}
 
 	// Parse YAML frontmatter
 	var cmd Command
-	if len(frontmatter) > 0 {
-		if err := yaml.Unmarshal(frontmatter, &cmd); err != nil {
+	if len(fm) > 0 {
+		if err := yaml.Unmarshal(fm, &cmd); err != nil {
 			return nil, fmt.Errorf("parse YAML frontmatter: %w", err)
 		}
 	}
@@ -68,42 +72,6 @@ func ParseBytes(path string, data []byte) (*Command, error) {
 	cmd.FilePath = path
 
 	return &cmd, nil
-}
-
-// splitFrontmatter separates YAML frontmatter from markdown content
-func splitFrontmatter(data []byte) (frontmatter, content []byte, err error) {
-	// Check for frontmatter delimiter (---)
-	if !bytes.HasPrefix(data, []byte("---\n")) && !bytes.HasPrefix(data, []byte("---\r\n")) {
-		// No frontmatter, entire file is content
-		return nil, data, nil
-	}
-
-	// Find closing delimiter
-	lines := bytes.Split(data, []byte("\n"))
-	endIdx := -1
-	for i := 1; i < len(lines); i++ {
-		line := bytes.TrimSpace(lines[i])
-		if bytes.Equal(line, []byte("---")) {
-			endIdx = i
-			break
-		}
-	}
-
-	if endIdx == -1 {
-		return nil, nil, fmt.Errorf("unclosed frontmatter: missing closing '---'")
-	}
-
-	// Extract frontmatter (between delimiters)
-	frontmatterLines := lines[1:endIdx]
-	frontmatter = bytes.Join(frontmatterLines, []byte("\n"))
-
-	// Extract content (after closing delimiter)
-	if endIdx+1 < len(lines) {
-		contentLines := lines[endIdx+1:]
-		content = bytes.Join(contentLines, []byte("\n"))
-	}
-
-	return frontmatter, content, nil
 }
 
 // Expand expands the command template with provided arguments

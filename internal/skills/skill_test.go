@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/harper/clem/internal/frontmatter"
 )
 
 func TestParseBytes_ValidSkill(t *testing.T) {
@@ -245,12 +247,12 @@ func TestSkillString(t *testing.T) {
 func TestSplitFrontmatter_WindowsLineEndings(t *testing.T) {
 	data := []byte("---\r\nname: test\r\ndescription: Test\r\n---\r\n\r\nContent\r\n")
 
-	frontmatter, content, err := splitFrontmatter(data)
+	fm, content, err := frontmatter.Split(data)
 	if err != nil {
-		t.Fatalf("splitFrontmatter failed: %v", err)
+		t.Fatalf("frontmatter.Split failed: %v", err)
 	}
 
-	if len(frontmatter) == 0 {
+	if len(fm) == 0 {
 		t.Error("Frontmatter is empty")
 	}
 	if len(content) == 0 {

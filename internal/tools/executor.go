@@ -115,6 +115,9 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 			if err != nil {
 				return nil, fmt.Errorf("execute tool: %w", err)
 			}
+			if result == nil {
+				return nil, fmt.Errorf("tool returned nil result")
+			}
 			return result, nil
 		}
 
@@ -155,6 +158,9 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 
 	if err != nil {
 		return nil, fmt.Errorf("execute tool: %w", err)
+	}
+	if result == nil {
+		return nil, fmt.Errorf("tool returned nil result")
 	}
 
 	return result, nil

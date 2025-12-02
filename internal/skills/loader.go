@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/harper/clem/internal/project"
 )
 
 // Loader discovers and loads skills from multiple directories
@@ -25,38 +27,13 @@ func NewLoader() *Loader {
 	userDir := filepath.Join(homeDir, ".clem", "skills")
 
 	// Find project directory by looking for .claude directory
-	projectDir := findProjectSkillsDir()
+	projectDir := project.FindDir("skills")
 
 	return &Loader{
 		UserDir:    userDir,
 		ProjectDir: projectDir,
 		BuiltinDir: "", // Will be set by caller if builtin skills exist
 	}
-}
-
-// findProjectSkillsDir searches for .claude/skills/ directory
-func findProjectSkillsDir() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-
-	// Search upwards for .claude directory
-	searchDir := cwd
-	for i := 0; i < 10; i++ {
-		claudeDir := filepath.Join(searchDir, ".claude", "skills")
-		if info, err := os.Stat(claudeDir); err == nil && info.IsDir() {
-			return claudeDir
-		}
-
-		parent := filepath.Dir(searchDir)
-		if parent == searchDir {
-			break // Reached filesystem root
-		}
-		searchDir = parent
-	}
-
-	return ""
 }
 
 // LoadAll discovers and loads all skills from all directories
