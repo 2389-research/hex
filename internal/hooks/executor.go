@@ -88,43 +88,67 @@ func (e *Executor) Execute(hook *HookConfig, event *Event) *ExecutionResult {
 }
 
 // buildEnv builds the environment variable array for command execution
+// Builds env map first to prevent duplicates, then converts to slice
 func (e *Executor) buildEnv(hook *HookConfig, event *Event) []string {
-	// Start with current environment
-	env := os.Environ()
-
-	// Add base event variables
-	baseVars := map[string]string{
-		"CLAUDE_EVENT":        string(event.Type),
-		"CLAUDE_TIMESTAMP":    event.Timestamp.Format(time.RFC3339),
-		"CLAUDE_PROJECT_PATH": e.projectPath,
-		"CLAUDE_MODEL_ID":     e.modelID,
+	// Build env map from current environment to prevent duplicates
+	envMap := make(map[string]string)
+	for _, pair := range os.Environ() {
+		// Split on first '=' to handle values that contain '='
+		if idx := bytes.IndexByte([]byte(pair), '='); idx > 0 {
+			key := pair[:idx]
+			value := pair[idx+1:]
+			envMap[key] = value
+		}
 	}
 
-	for k, v := range baseVars {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
+	// Add/override base event variables
+	envMap["CLAUDE_EVENT"] = string(event.Type)
+	envMap["CLAUDE_TIMESTAMP"] = event.Timestamp.Format(time.RFC3339)
+	envMap["CLAUDE_PROJECT_PATH"] = e.projectPath
+	envMap["CLAUDE_MODEL_ID"] = e.modelID
 
-	// Add event-specific variables
+	// Add/override event-specific variables
 	if event.Data != nil {
 		for k, v := range event.Data.ToEnvVars() {
-			env = append(env, fmt.Sprintf("%s=%s", k, v))
+			envMap[k] = v
 		}
 	}
 
-	// Add hook-specific environment variables
+	// Add/override hook-specific environment variables
 	if hook.Env != nil {
 		for k, v := range hook.Env {
-			env = append(env, fmt.Sprintf("%s=%s", k, v))
+			envMap[k] = v
 		}
+	}
+
+	// Convert map back to slice format
+	env := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
 	return env
 }
 
 // ExecuteAsync runs a hook command asynchronously (fire and forget)
+// Includes panic recovery to prevent crashes from hook failures
 func (e *Executor) ExecuteAsync(hook *HookConfig, event *Event) {
 	go func() {
-		_ = e.Execute(hook, event)
-		// Result is discarded for async execution
+		defer func() {
+			if r := recover(); r != nil {
+				// Log panic but don't crash the program
+				// In production, this should use proper logging
+				fmt.Fprintf(os.Stderr, "WARNING: async hook panicked: %v\n", r)
+			}
+		}()
+
+		result := e.Execute(hook, event)
+		// Optionally log failures for async hooks (only if not ignoring failures)
+		if !result.Success && !hook.IgnoreFailure && result.Error != nil {
+			fmt.Fprintf(os.Stderr, "WARNING: async hook failed: %v\n", result.Error)
+			if result.Stderr != "" {
+				fmt.Fprintf(os.Stderr, "  stderr: %s\n", result.Stderr)
+			}
+		}
 	}()
 }

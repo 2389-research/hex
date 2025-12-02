@@ -4,6 +4,7 @@
 package hooks
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -53,6 +54,7 @@ func (e *Engine) Enable() {
 }
 
 // Fire executes all hooks for a given event
+// Collects and returns all errors from failed hooks as a multi-error
 func (e *Engine) Fire(eventType EventType, data EventData) error {
 	if !e.enabled {
 		return nil
@@ -69,7 +71,8 @@ func (e *Engine) Fire(eventType EventType, data EventData) error {
 		return nil
 	}
 
-	var lastErr error
+	// Collect all errors from failed hooks
+	var errs []error
 	for _, hook := range hooks {
 		// Check if hook should execute based on matchers
 		if !hook.ShouldExecute(event) {
@@ -82,12 +85,18 @@ func (e *Engine) Fire(eventType EventType, data EventData) error {
 		} else {
 			result := e.executor.Execute(&hook, event)
 			if !result.Success && !hook.IgnoreFailure {
-				lastErr = fmt.Errorf("hook failed: %w (stderr: %s)", result.Error, result.Stderr)
+				// Include hook command in error for debugging
+				err := fmt.Errorf("hook failed (command: %s): %w (stderr: %s)", hook.Command, result.Error, result.Stderr)
+				errs = append(errs, err)
 			}
 		}
 	}
 
-	return lastErr
+	// Return combined error if any hooks failed
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // FireSessionStart is a convenience method for SessionStart event

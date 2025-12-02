@@ -28,6 +28,10 @@ func (r *Registry) Register(skill *Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if skill == nil {
+		return fmt.Errorf("cannot register nil skill")
+	}
+
 	if skill.Name == "" {
 		return fmt.Errorf("skill has no name")
 	}

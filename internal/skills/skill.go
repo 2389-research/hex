@@ -31,6 +31,9 @@ type Skill struct {
 	// File location metadata
 	FilePath string `yaml:"-"`
 	Source   string `yaml:"-"` // "user", "project", or "builtin"
+
+	// Cached compiled regex patterns for activation matching
+	compiledPatterns []*regexp.Regexp `yaml:"-"`
 }
 
 // Parse reads and parses a skill file from disk
@@ -76,6 +79,16 @@ func ParseBytes(path string, data []byte) (*Skill, error) {
 	skill.Content = string(content)
 	skill.FilePath = path
 
+	// Pre-compile all activation pattern regexes for performance
+	// Compile failures are silently ignored (pattern will be skipped during matching)
+	skill.compiledPatterns = make([]*regexp.Regexp, 0, len(skill.ActivationPatterns))
+	for _, pattern := range skill.ActivationPatterns {
+		re, err := regexp.Compile("(?i)" + pattern)
+		if err == nil {
+			skill.compiledPatterns = append(skill.compiledPatterns, re)
+		}
+	}
+
 	return &skill, nil
 }
 
@@ -116,22 +129,32 @@ func splitFrontmatter(data []byte) (frontmatter, content []byte, err error) {
 }
 
 // MatchesPattern checks if a user message matches any activation pattern
+// Uses pre-compiled regex patterns for optimal performance
+// Falls back to on-demand compilation for backward compatibility with tests
 func (s *Skill) MatchesPattern(message string) bool {
+	// If patterns were pre-compiled during ParseBytes, use them
+	if len(s.compiledPatterns) > 0 {
+		lowerMsg := strings.ToLower(message)
+		for _, re := range s.compiledPatterns {
+			if re.MatchString(lowerMsg) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Fallback for skills created without ParseBytes (e.g., tests)
 	if len(s.ActivationPatterns) == 0 {
 		return false
 	}
 
-	// Case-insensitive matching
 	lowerMsg := strings.ToLower(message)
-
 	for _, pattern := range s.ActivationPatterns {
-		// Compile regex pattern (case-insensitive)
 		re, err := regexp.Compile("(?i)" + pattern)
 		if err != nil {
 			// Invalid regex pattern, skip
 			continue
 		}
-
 		if re.MatchString(lowerMsg) {
 			return true
 		}

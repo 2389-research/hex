@@ -92,8 +92,9 @@ func (t *SlashCommandTool) Execute(_ context.Context, params map[string]interfac
 	}
 
 	// Extract args parameter if present
+	// Ensure argsParam is not nil before type assertion to prevent panic
 	var args map[string]interface{}
-	if argsParam, ok := params["args"].(map[string]interface{}); ok {
+	if argsParam, ok := params["args"].(map[string]interface{}); ok && argsParam != nil {
 		args = argsParam
 	} else {
 		args = make(map[string]interface{})

@@ -160,10 +160,17 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 	return result, nil
 }
 
-// extractFilePath extracts file_path parameter if present
+// extractFilePath extracts file path from common parameter names
+// Checks multiple common names: file_path, path, filepath, notebook_path
 func extractFilePath(params map[string]interface{}) string {
-	if filePath, ok := params["file_path"].(string); ok {
-		return filePath
+	// Try common parameter names in order of priority
+	pathKeys := []string{"file_path", "notebook_path", "path", "filepath"}
+
+	for _, key := range pathKeys {
+		if filePath, ok := params[key].(string); ok && filePath != "" {
+			return filePath
+		}
 	}
+
 	return ""
 }
