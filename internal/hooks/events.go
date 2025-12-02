@@ -190,16 +190,22 @@ func (d StopData) ToEnvVars() map[string]string {
 // SubagentStopData contains data for SubagentStop event
 type SubagentStopData struct {
 	TaskDescription string
+	SubagentType    string
 	ResponseLength  int
 	TokensUsed      int
+	Success         bool
+	ExecutionTime   float64 // in seconds
 }
 
 // ToEnvVars converts SubagentStopData to environment variables
 func (d SubagentStopData) ToEnvVars() map[string]string {
 	return map[string]string{
 		"CLAUDE_TASK_DESCRIPTION": d.TaskDescription,
+		"CLAUDE_SUBAGENT_TYPE":    d.SubagentType,
 		"CLAUDE_RESPONSE_LENGTH":  intToString(d.ResponseLength),
 		"CLAUDE_TOKENS_USED":      intToString(d.TokensUsed),
+		"CLAUDE_SUBAGENT_SUCCESS": boolToString(d.Success),
+		"CLAUDE_EXECUTION_TIME":   fmt.Sprintf("%.2f", d.ExecutionTime),
 		"CLAUDE_IS_SUBAGENT":      "true",
 	}
 }

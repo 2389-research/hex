@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/harper/clem/internal/subagents"
 )
 
 const (
@@ -27,6 +29,8 @@ const (
 type TaskTool struct {
 	DefaultTimeout time.Duration // Default timeout for tasks
 	ClembinPath    string        // Path to clem binary (empty = search PATH)
+	Executor       *subagents.Executor
+	UseFramework   bool // If true, use new subagent framework instead of direct subprocess
 }
 
 // NewTaskTool creates a new task tool with default settings
@@ -34,6 +38,19 @@ func NewTaskTool() *TaskTool {
 	return &TaskTool{
 		DefaultTimeout: DefaultTaskTimeout,
 		ClembinPath:    "", // Will search PATH
+		Executor:       nil,
+		UseFramework:   false, // Backward compatible: use old implementation by default
+	}
+}
+
+// NewTaskToolWithFramework creates a task tool that uses the subagent framework
+func NewTaskToolWithFramework() *TaskTool {
+	executor := subagents.NewExecutor()
+	return &TaskTool{
+		DefaultTimeout: DefaultTaskTimeout,
+		ClembinPath:    "",
+		Executor:       executor,
+		UseFramework:   true,
 	}
 }
 
@@ -58,6 +75,92 @@ func (t *TaskTool) RequiresApproval(_ map[string]interface{}) bool {
 
 // Execute launches a sub-agent and returns its output
 func (t *TaskTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
+	// If using the new framework, delegate to it
+	if t.UseFramework && t.Executor != nil {
+		return t.executeWithFramework(ctx, params)
+	}
+
+	// Otherwise, use the legacy subprocess implementation
+	return t.executeLegacy(ctx, params)
+}
+
+// executeWithFramework uses the new subagent framework
+func (t *TaskTool) executeWithFramework(ctx context.Context, params map[string]interface{}) (*Result, error) {
+	// Validate and extract parameters
+	prompt, ok := params["prompt"].(string)
+	if !ok || prompt == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'prompt' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	description, ok := params["description"].(string)
+	if !ok || description == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'description' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	subagentTypeStr, ok := params["subagent_type"].(string)
+	if !ok || subagentTypeStr == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'subagent_type' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	// Validate subagent type
+	if !subagents.IsValid(subagentTypeStr) {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    fmt.Sprintf("invalid subagent_type '%s', must be one of: %v", subagentTypeStr, subagents.ValidSubagentTypes()),
+		}, nil
+	}
+
+	// Create execution request
+	req := &subagents.ExecutionRequest{
+		Type:        subagents.SubagentType(subagentTypeStr),
+		Prompt:      prompt,
+		Description: description,
+	}
+
+	// Add optional model parameter
+	if modelParam, exists := params["model"]; exists {
+		if modelName, ok := modelParam.(string); ok {
+			config := subagents.DefaultConfig(req.Type)
+			config.Model = modelName
+			req.Config = config
+		}
+	}
+
+	// Execute subagent
+	result, err := t.Executor.Execute(ctx, req)
+	if err != nil {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    err.Error(),
+		}, nil
+	}
+
+	// Convert subagent result to tool result
+	return &Result{
+		ToolName: "task",
+		Success:  result.Success,
+		Output:   result.Output,
+		Error:    result.Error,
+		Metadata: result.Metadata,
+	}, nil
+}
+
+// executeLegacy uses the original subprocess implementation
+func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interface{}) (*Result, error) {
 	// Validate required parameters
 	prompt, ok := params["prompt"].(string)
 	if !ok || prompt == "" {

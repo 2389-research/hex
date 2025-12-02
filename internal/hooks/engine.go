@@ -173,11 +173,14 @@ func (e *Engine) FireStop(responseLength, tokensUsed int, toolsUsed []string, is
 }
 
 // FireSubagentStop is a convenience method for SubagentStop event
-func (e *Engine) FireSubagentStop(taskDescription string, responseLength, tokensUsed int) error {
+func (e *Engine) FireSubagentStop(taskDescription, subagentType string, responseLength, tokensUsed int, success bool, executionTime float64) error {
 	return e.Fire(EventSubagentStop, SubagentStopData{
 		TaskDescription: taskDescription,
+		SubagentType:    subagentType,
 		ResponseLength:  responseLength,
 		TokensUsed:      tokensUsed,
+		Success:         success,
+		ExecutionTime:   executionTime,
 	})
 }
 

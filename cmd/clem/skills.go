@@ -10,7 +10,8 @@ import (
 )
 
 // initializeSkills loads skills from all sources and returns registry and tool
-func initializeSkills() (*skills.Registry, tools.Tool) {
+// Accepts optional plugin skill paths
+func initializeSkills(pluginSkillPaths []string) (*skills.Registry, tools.Tool) {
 	logging.Debug("Initializing skills system")
 
 	// Create skill loader
@@ -18,6 +19,9 @@ func initializeSkills() (*skills.Registry, tools.Tool) {
 
 	// Set builtin skills directory (relative to binary location)
 	loader.BuiltinDir = findBuiltinSkillsDir()
+
+	// Add plugin skill paths
+	loader.PluginPaths = pluginSkillPaths
 
 	// Load all skills
 	loadedSkills, err := loader.LoadAll()

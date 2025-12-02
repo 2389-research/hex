@@ -9,7 +9,8 @@ import (
 )
 
 // initializeCommands loads commands from all sources and returns registry and tool
-func initializeCommands() (*commands.Registry, tools.Tool) {
+// Accepts optional plugin command paths
+func initializeCommands(pluginCommandPaths []string) (*commands.Registry, tools.Tool) {
 	logging.Debug("Initializing slash commands system")
 
 	// Create command loader
@@ -17,6 +18,9 @@ func initializeCommands() (*commands.Registry, tools.Tool) {
 
 	// Set builtin commands directory (relative to binary location)
 	loader.BuiltinDir = findBuiltinCommandsDir()
+
+	// Add plugin command paths
+	loader.PluginPaths = pluginCommandPaths
 
 	// Load all commands
 	loadedCommands, err := loader.LoadAll()

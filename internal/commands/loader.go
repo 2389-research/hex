@@ -15,9 +15,10 @@ import (
 
 // Loader discovers and loads commands from multiple directories
 type Loader struct {
-	UserDir    string // User-global commands directory (~/.clem/commands/)
-	ProjectDir string // Project-local commands directory (.claude/commands/)
-	BuiltinDir string // Built-in commands directory (embedded or distributed)
+	UserDir     string   // User-global commands directory (~/.clem/commands/)
+	ProjectDir  string   // Project-local commands directory (.claude/commands/)
+	BuiltinDir  string   // Built-in commands directory (embedded or distributed)
+	PluginPaths []string // Additional command paths from plugins
 }
 
 // NewLoader creates a loader with default directories
@@ -41,7 +42,7 @@ func (l *Loader) LoadAll() ([]*Command, error) {
 	commandsByName := make(map[string]*Command)
 	var loadOrder []string
 
-	// Load in priority order: builtin -> user -> project
+	// Load in priority order: builtin -> user -> plugins -> project
 	// (project wins conflicts)
 	sources := []struct {
 		dir    string
@@ -49,8 +50,21 @@ func (l *Loader) LoadAll() ([]*Command, error) {
 	}{
 		{l.BuiltinDir, "builtin"},
 		{l.UserDir, "user"},
-		{l.ProjectDir, "project"},
 	}
+
+	// Add plugin paths
+	for _, pluginPath := range l.PluginPaths {
+		sources = append(sources, struct {
+			dir    string
+			source string
+		}{pluginPath, "plugin"})
+	}
+
+	// Project directory has highest priority
+	sources = append(sources, struct {
+		dir    string
+		source string
+	}{l.ProjectDir, "project"})
 
 	for _, src := range sources {
 		if src.dir == "" {

@@ -332,15 +332,30 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("register kill_shell tool: %w", err)
 	}
 
-	// Phase 2: Register Skills system
-	skillRegistry, skillTool := initializeSkills()
+	// Phase 6: Initialize plugin system
+	pluginRegistry, err := initializePlugins()
+	if err != nil {
+		// Log warning but continue - plugins are optional
+		logging.WarnWith("Failed to initialize plugins", "error", err.Error())
+	}
+
+	// Get plugin-provided skill and command paths
+	var pluginSkillPaths, pluginCommandPaths []string
+	if pluginRegistry != nil {
+		pluginSkillPaths = getPluginSkillPaths(pluginRegistry)
+		pluginCommandPaths = getPluginCommandPaths(pluginRegistry)
+		logging.DebugWith("Plugin paths", "skills", len(pluginSkillPaths), "commands", len(pluginCommandPaths))
+	}
+
+	// Phase 2: Register Skills system (with plugin skills)
+	skillRegistry, skillTool := initializeSkills(pluginSkillPaths)
 	if err := registry.Register(skillTool); err != nil {
 		return fmt.Errorf("register skill tool: %w", err)
 	}
 	logging.InfoWith("Loaded skills", "count", skillRegistry.Count())
 
-	// Phase 4: Register Slash Commands system
-	commandRegistry, slashCommandTool := initializeCommands()
+	// Phase 4: Register Slash Commands system (with plugin commands)
+	commandRegistry, slashCommandTool := initializeCommands(pluginCommandPaths)
 	if err := registry.Register(slashCommandTool); err != nil {
 		return fmt.Errorf("register slash command tool: %w", err)
 	}

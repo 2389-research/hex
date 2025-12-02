@@ -16,9 +16,10 @@ import (
 
 // Loader discovers and loads skills from multiple directories
 type Loader struct {
-	UserDir    string // User-global skills directory (~/.clem/skills/)
-	ProjectDir string // Project-local skills directory (.claude/skills/)
-	BuiltinDir string // Built-in skills directory (embedded or distributed)
+	UserDir     string   // User-global skills directory (~/.clem/skills/)
+	ProjectDir  string   // Project-local skills directory (.claude/skills/)
+	BuiltinDir  string   // Built-in skills directory (embedded or distributed)
+	PluginPaths []string // Additional skill paths from plugins
 }
 
 // NewLoader creates a loader with default directories
@@ -42,7 +43,7 @@ func (l *Loader) LoadAll() ([]*Skill, error) {
 	skillsByName := make(map[string]*Skill)
 	var loadOrder []string
 
-	// Load in priority order: builtin -> user -> project
+	// Load in priority order: builtin -> user -> plugins -> project
 	// (project wins conflicts)
 	sources := []struct {
 		dir    string
@@ -50,8 +51,21 @@ func (l *Loader) LoadAll() ([]*Skill, error) {
 	}{
 		{l.BuiltinDir, "builtin"},
 		{l.UserDir, "user"},
-		{l.ProjectDir, "project"},
 	}
+
+	// Add plugin paths
+	for _, pluginPath := range l.PluginPaths {
+		sources = append(sources, struct {
+			dir    string
+			source string
+		}{pluginPath, "plugin"})
+	}
+
+	// Project directory has highest priority
+	sources = append(sources, struct {
+		dir    string
+		source string
+	}{l.ProjectDir, "project"})
 
 	for _, src := range sources {
 		if src.dir == "" {
