@@ -140,13 +140,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Task 12: Tool approval is now handled by huh forms
-		// No need to handle keys in approval mode - huh handles its own input
-		if m.toolApprovalMode {
-			// In approval mode, block other key handling (form is running)
-			return m, nil
-		}
-
 		// TUI Polish Task 4: Quick actions mode is now handled by huh forms
 		// No need to handle keys in quick actions mode - huh handles its own input
 		if m.quickActionsMode {
@@ -688,10 +681,13 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 				// Initialize the form and immediately send it a WindowSizeMsg
 				// so it knows its dimensions (required for proper rendering in tmux)
 				initCmd := approvalForm.Init()
-				_, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
+
+				// CRITICAL: Must capture the updated model, not discard it
+				updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
 					Width:  m.Width,
 					Height: m.Height,
 				})
+				m.toolApprovalForm = updatedForm
 
 				return m, tea.Batch(initCmd, sizeCmd)
 			}
