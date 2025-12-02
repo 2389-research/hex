@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/clem/internal/ui/theme"
 )
 
 // ConnectionStatus represents API connection state
@@ -36,58 +37,8 @@ type StatusBar struct {
 	width         int
 	helpVisible   bool
 	customMessage string
+	theme         *theme.Theme
 }
-
-var (
-	statusBarBgStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("235")).
-				Foreground(lipgloss.Color("252")).
-				Padding(0, 1)
-
-	modelNameStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("141")).
-			Bold(true)
-
-	tokenUsageStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("243"))
-
-	tokenHighStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("226")).
-			Bold(true)
-
-	contextSizeStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("99"))
-
-	connectionConnectedStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("35")).
-					Bold(true)
-
-	connectionStreamingStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("86")).
-					Bold(true)
-
-	connectionErrorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")).
-				Bold(true)
-
-	connectionDisconnectedStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("243"))
-
-	modeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("212")).
-			Bold(true)
-
-	helpKeyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("170")).
-			Bold(true)
-
-	helpDescStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("243"))
-
-	customMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("214")).
-				Italic(true)
-)
 
 // NewStatusBar creates a new status bar
 func NewStatusBar(model string, width int) *StatusBar {
@@ -97,6 +48,7 @@ func NewStatusBar(model string, width int) *StatusBar {
 		connection:  ConnectionDisconnected,
 		currentMode: "chat",
 		contextSize: 200000, // Default context size
+		theme:       theme.DraculaTheme(),
 	}
 }
 
@@ -158,13 +110,13 @@ func (s *StatusBar) ClearCustomMessage() {
 func (s *StatusBar) View() string {
 	if s.width < 40 {
 		// Too narrow, show minimal info
-		return statusBarBgStyle.Render("Clem")
+		return s.theme.StatusBar.Render("Clem")
 	}
 
 	var parts []string
 
 	// Left section: Model name
-	parts = append(parts, modelNameStyle.Render(s.model))
+	parts = append(parts, s.theme.Subtitle.Render(s.model))
 
 	// Connection indicator
 	parts = append(parts, s.renderConnection())
@@ -180,11 +132,11 @@ func (s *StatusBar) View() string {
 	}
 
 	// Current mode
-	parts = append(parts, modeStyle.Render("["+s.currentMode+"]"))
+	parts = append(parts, s.theme.ViewMode.Render("["+s.currentMode+"]"))
 
 	// Custom message (if any)
 	if s.customMessage != "" {
-		parts = append(parts, customMessageStyle.Render(s.customMessage))
+		parts = append(parts, s.theme.Warning.Render(s.customMessage))
 	}
 
 	// Combine left parts
@@ -203,22 +155,22 @@ func (s *StatusBar) View() string {
 	// Combine sections
 	bar := leftSection + strings.Repeat(" ", spacing) + rightSection
 
-	return statusBarBgStyle.Width(s.width).Render(bar)
+	return s.theme.StatusBar.Width(s.width).Render(bar)
 }
 
 // renderConnection renders the connection status indicator
 func (s *StatusBar) renderConnection() string {
 	switch s.connection {
 	case ConnectionConnected:
-		return connectionConnectedStyle.Render("●")
+		return s.theme.Success.Render("●")
 	case ConnectionStreaming:
-		return connectionStreamingStyle.Render("◉")
+		return s.theme.Info.Render("◉")
 	case ConnectionError:
-		return connectionErrorStyle.Render("◉")
+		return s.theme.Error.Render("◉")
 	case ConnectionDisconnected:
-		return connectionDisconnectedStyle.Render("○")
+		return s.theme.Muted.Render("○")
 	default:
-		return connectionDisconnectedStyle.Render("○")
+		return s.theme.Muted.Render("○")
 	}
 }
 
@@ -230,9 +182,9 @@ func (s *StatusBar) renderTokenUsage() string {
 	tokensText := fmt.Sprintf("%dk↓ %dk↑", s.tokensInput/1000, s.tokensOutput/1000)
 
 	if usagePercent > 80 {
-		return tokenHighStyle.Render(tokensText)
+		return s.theme.Warning.Render(tokensText)
 	}
-	return tokenUsageStyle.Render(tokensText)
+	return s.theme.TokenCounter.Render(tokensText)
 }
 
 // renderContextIndicator renders context size indicator
@@ -247,9 +199,9 @@ func (s *StatusBar) renderContextIndicator() string {
 	for i := 0; i < 10; i++ {
 		if i < bars {
 			if usagePercent > 80 {
-				indicator += tokenHighStyle.Render("█")
+				indicator += s.theme.Warning.Render("█")
 			} else {
-				indicator += contextSizeStyle.Render("█")
+				indicator += s.theme.Info.Render("█")
 			}
 		} else {
 			indicator += "░"
@@ -271,8 +223,8 @@ func (s *StatusBar) renderHelp() string {
 // renderCompactHelp renders compact help text
 func (s *StatusBar) renderCompactHelp() string {
 	shortcuts := []string{
-		helpKeyStyle.Render("?") + helpDescStyle.Render(":help"),
-		helpKeyStyle.Render("^C") + helpDescStyle.Render(":quit"),
+		s.theme.HelpKey.Render("?") + s.theme.HelpDesc.Render(":help"),
+		s.theme.HelpKey.Render("^C") + s.theme.HelpDesc.Render(":quit"),
 	}
 	return strings.Join(shortcuts, " ")
 }
@@ -280,7 +232,7 @@ func (s *StatusBar) renderCompactHelp() string {
 // renderExpandedHelp renders expanded help text (when help is toggled)
 func (s *StatusBar) renderExpandedHelp() string {
 	// This would be shown in a separate help panel, not in status bar
-	return helpDescStyle.Render("Press ? to toggle help")
+	return s.theme.HelpDesc.Render("Press ? to toggle help")
 }
 
 // GetFullHelp returns full help text for display in a separate panel
@@ -309,10 +261,10 @@ func (s *StatusBar) GetFullHelp() string {
 		{"Esc", "Exit current mode/quit"},
 	}
 
-	for _, s := range shortcuts {
-		b.WriteString(helpKeyStyle.Render(fmt.Sprintf("%-12s", s.key)))
+	for _, shortcut := range shortcuts {
+		b.WriteString(s.theme.HelpKey.Render(fmt.Sprintf("%-12s", shortcut.key)))
 		b.WriteString("  ")
-		b.WriteString(helpDescStyle.Render(s.desc))
+		b.WriteString(s.theme.HelpDesc.Render(shortcut.desc))
 		b.WriteString("\n")
 	}
 

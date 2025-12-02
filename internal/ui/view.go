@@ -8,76 +8,32 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/clem/internal/ui/theme"
 )
 
-var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("39"))
+// Gradient helper function for title bars
+// Creates a horizontal gradient from Purple to Pink (Dracula colors)
+func makeGradient(text string, t *theme.Theme) string {
+	if len(text) == 0 {
+		return ""
+	}
 
-	inputStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62")).
-			Padding(0, 1)
+	// Simple gradient: alternate between purple and pink for visual interest
+	// This creates a subtle color variation across the title
+	runes := []rune(text)
+	var result strings.Builder
 
-	statusBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
-			Background(lipgloss.Color("235"))
+	for i, r := range runes {
+		// Alternate between purple (Title) and pink (Subtitle) styles
+		if i%2 == 0 {
+			result.WriteString(t.Title.Render(string(r)))
+		} else {
+			result.WriteString(t.Subtitle.Render(string(r)))
+		}
+	}
 
-	statusIdleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("35")).
-			Bold(true)
-
-	statusStreamingStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("226")).
-				Bold(true)
-
-	statusErrorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")).
-				Bold(true)
-
-	viewModeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("99")).
-			Bold(true)
-
-	tokenCounterStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("243"))
-
-	searchModeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("226")).
-			Background(lipgloss.Color("235")).
-			Padding(0, 1)
-
-	// Task 12: Tool UI styles
-	toolApprovalStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("208")).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("208")).
-				Padding(1, 2)
-
-	toolExecutingStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("214"))
-
-	// Phase 6C Task 8: Suggestion UI styles
-	suggestionBoxStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("111")).
-				Background(lipgloss.Color("235")).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("111")).
-				Padding(0, 1)
-
-	suggestionToolStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("45")).
-				Bold(true)
-
-	suggestionReasonStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("243")).
-				Italic(true)
-
-	suggestionHintStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("241"))
-)
+	return result.String()
+}
 
 // View renders the UI
 func (m *Model) View() string {
@@ -87,12 +43,12 @@ func (m *Model) View() string {
 
 	var b strings.Builder
 
-	// Title with status indicator and favorite star
+	// Title with status indicator and favorite star (with gradient)
 	titleText := fmt.Sprintf("Clem • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
-	title := titleStyle.Render(titleText)
+	title := makeGradient(titleText, m.theme)
 	statusIndicator := m.renderStatusIndicator()
 	b.WriteString(title + " " + statusIndicator)
 
@@ -143,12 +99,12 @@ func (m *Model) View() string {
 		b.WriteString(m.renderToolStatus() + "\n")
 	} else if m.SearchMode {
 		// Search mode indicator
-		searchPrompt := searchModeStyle.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
+		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
 		b.WriteString(searchPrompt + "\n")
 	} else {
 		// Input (only in chat view)
 		if m.CurrentView == ViewModeChat {
-			b.WriteString(inputStyle.Render(m.Input.View()) + "\n")
+			b.WriteString(m.theme.Input.Render(m.Input.View()) + "\n")
 
 			// Phase 6C Task 4: Render autocomplete dropdown
 			if m.autocomplete != nil && m.autocomplete.IsActive() {
@@ -172,13 +128,13 @@ func (m *Model) View() string {
 func (m *Model) renderStatusIndicator() string {
 	switch m.Status {
 	case StatusStreaming:
-		return statusStreamingStyle.Render("●")
+		return m.theme.Warning.Render("●")
 	case StatusTyping:
-		return statusIdleStyle.Render("●")
+		return m.theme.Success.Render("●")
 	case StatusError:
-		return statusErrorStyle.Render("●")
+		return m.theme.Error.Render("●")
 	default:
-		return statusIdleStyle.Render("●")
+		return m.theme.Success.Render("●")
 	}
 }
 
@@ -190,7 +146,7 @@ func (m *Model) renderChatView() string {
 // renderHistoryView renders the conversation history browser
 func (m *Model) renderHistoryView() string {
 	var b strings.Builder
-	b.WriteString(viewModeStyle.Render("📚 History Browser") + "\n\n")
+	b.WriteString(m.theme.ViewMode.Render("📚 History Browser") + "\n\n")
 	b.WriteString("(History browser not yet implemented)\n")
 	b.WriteString("\nPress Tab to return to chat")
 	return b.String()
@@ -199,7 +155,7 @@ func (m *Model) renderHistoryView() string {
 // renderToolsView renders the tool inspector
 func (m *Model) renderToolsView() string {
 	var b strings.Builder
-	b.WriteString(viewModeStyle.Render("🔧 Tool Inspector") + "\n\n")
+	b.WriteString(m.theme.ViewMode.Render("🔧 Tool Inspector") + "\n\n")
 	b.WriteString("(Tool inspector not yet implemented)\n")
 	b.WriteString("\nPress Tab to return to chat")
 	return b.String()
@@ -222,13 +178,13 @@ func (m *Model) renderStatusBar() string {
 		var modeStyle lipgloss.Style
 		switch mode.String() {
 		case "auto":
-			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("35")) // Green
+			modeStyle = m.theme.Success
 		case "deny":
-			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // Red
+			modeStyle = m.theme.Error
 		case "ask":
-			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("226")) // Yellow
+			modeStyle = m.theme.Warning
 		default:
-			modeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("243")) // Gray
+			modeStyle = m.theme.Muted
 		}
 
 		permInfo = " Perms:" + modeStyle.Render(mode.String())
@@ -249,9 +205,9 @@ func (m *Model) renderStatusBar() string {
 	help := "ctrl+c: quit • enter: send • tab: switch view • /: search • j/k: scroll • gg/G: top/bottom"
 
 	// Compose status bar
-	leftPart := tokenCounterStyle.Render(tokenInfo + permInfo)
-	middlePart := viewModeStyle.Render(fmt.Sprintf("[%s]", viewMode))
-	rightPart := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
+	leftPart := m.theme.TokenCounter.Render(tokenInfo + permInfo)
+	middlePart := m.theme.ViewMode.Render(fmt.Sprintf("[%s]", viewMode))
+	rightPart := m.theme.Muted.Render(help)
 
 	// Calculate spacing
 	width := m.Width
@@ -274,7 +230,7 @@ func (m *Model) renderStatusBar() string {
 		rightPart,
 	)
 
-	return statusBarStyle.Render(statusBar)
+	return m.theme.StatusBar.Render(statusBar)
 }
 
 // Task 12: Tool UI rendering functions
@@ -324,7 +280,7 @@ func (m *Model) renderToolApprovalPrompt() string {
 
 	prompt.WriteString("\nAllow these tool(s) to execute? (y/n): ")
 
-	return toolApprovalStyle.Render(prompt.String())
+	return m.theme.ToolApproval.Render(prompt.String())
 }
 
 // renderToolStatus renders the tool execution status indicator
@@ -342,7 +298,7 @@ func (m *Model) renderToolStatus() string {
 		}
 	}
 
-	return toolExecutingStyle.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
+	return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
 }
 
 // Phase 6C: Enhanced rendering methods
@@ -353,11 +309,7 @@ func (m *Model) renderHelpPanel() string {
 		return ""
 	}
 
-	helpStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("99")).
-		Padding(1, 2).
-		Width(m.Width - 4)
+	helpStyle := m.theme.HelpPanel.Width(m.Width - 4)
 
 	return helpStyle.Render(m.statusBar.GetFullHelp())
 }
@@ -420,30 +372,13 @@ func (m *Model) renderStatusBarEnhanced() string {
 
 // renderQuickActionsModal renders the quick actions menu overlay
 func (m *Model) renderQuickActionsModal() string {
-	// Styles for the modal
-	modalStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("99")).
-		Padding(1, 2).
-		Width(60)
-
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("99"))
-
-	inputStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("214"))
-
-	actionStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("243"))
-
-	selectedActionStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("39")).
-		Bold(true)
-
-	helpStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		Italic(true)
+	// Use theme styles
+	modalStyle := m.theme.Modal.Width(60)
+	titleStyle := m.theme.ModalTitle
+	inputStyle := m.theme.Warning
+	actionStyle := m.theme.Muted
+	selectedActionStyle := m.theme.Emphasized
+	helpStyle := m.theme.HelpDesc
 
 	// Build content
 	var content strings.Builder
@@ -512,24 +447,11 @@ func (m *Model) renderAutocompleteDropdown() string {
 		return ""
 	}
 
-	// Styles
-	dropdownStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("99")).
-		Padding(0, 1).
-		MaxWidth(60)
-
-	selectedStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("39")).
-		Bold(true).
-		Background(lipgloss.Color("237"))
-
-	normalStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("243"))
-
-	typeStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		Italic(true)
+	// Use theme styles
+	dropdownStyle := m.theme.Border.Padding(0, 1).MaxWidth(60)
+	selectedStyle := m.theme.ListItemSelected
+	normalStyle := m.theme.ListItem
+	typeStyle := m.theme.Muted
 
 	// Build dropdown content
 	var content strings.Builder
@@ -585,26 +507,26 @@ func (m *Model) renderSuggestions() string {
 	var content strings.Builder
 
 	// Title
-	content.WriteString(suggestionToolStyle.Render("💡 Suggestions") + "\n\n")
+	content.WriteString(m.theme.SuggestionTitle.Render("💡 Suggestions") + "\n\n")
 
 	// Show top suggestion prominently
 	topSuggestion := m.suggestions[0]
-	content.WriteString(suggestionToolStyle.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
-	content.WriteString("  " + suggestionReasonStyle.Render(topSuggestion.Reason) + "\n")
-	content.WriteString("  " + suggestionHintStyle.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
+	content.WriteString(m.theme.SuggestionTitle.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
+	content.WriteString("  " + m.theme.SuggestionReason.Render(topSuggestion.Reason) + "\n")
+	content.WriteString("  " + m.theme.SuggestionHint.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
 
 	// Show additional suggestions if any
 	if len(m.suggestions) > 1 {
-		content.WriteString("\n" + suggestionReasonStyle.Render("Other suggestions:") + "\n")
+		content.WriteString("\n" + m.theme.SuggestionReason.Render("Other suggestions:") + "\n")
 		for i := 1; i < len(m.suggestions) && i < 3; i++ {
 			s := m.suggestions[i]
 			content.WriteString(fmt.Sprintf("  • %s ", s.ToolName))
-			content.WriteString(suggestionReasonStyle.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
+			content.WriteString(m.theme.SuggestionReason.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
 		}
 	}
 
 	// Help text
-	content.WriteString("\n" + suggestionHintStyle.Render("Tab: accept • Esc: dismiss"))
+	content.WriteString("\n" + m.theme.SuggestionHint.Render("Tab: accept • Esc: dismiss"))
 
-	return suggestionBoxStyle.Render(content.String())
+	return m.theme.SuggestionBox.Render(content.String())
 }

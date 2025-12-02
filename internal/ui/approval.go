@@ -10,6 +10,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/harper/clem/internal/core"
+	"github.com/harper/clem/internal/ui/theme"
 )
 
 // RiskLevel represents the risk level of a tool operation
@@ -24,57 +25,13 @@ const (
 	RiskDanger
 )
 
-var (
-	approvalBoxStyle = lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("208")).
-				Padding(1, 2).
-				Width(70)
-
-	approvalTitleStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("208"))
-
-	approvalToolNameStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("214"))
-
-	approvalParamKeyStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("99"))
-
-	approvalParamValueStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("252"))
-
-	approvalHelpStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("243")).
-				Italic(true)
-
-	riskSafeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("35"))
-
-	riskCautionStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("226"))
-
-	riskDangerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("196"))
-
-	syntaxKeywordStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("170")).
-				Bold(true)
-
-	syntaxStringStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("114"))
-
-	syntaxNumberStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("141"))
-)
-
 // ApprovalPrompt manages the tool approval UI
 type ApprovalPrompt struct {
 	toolUse     *core.ToolUse
 	riskLevel   RiskLevel
 	showDetails bool
 	width       int
+	theme       *theme.Theme
 }
 
 // NewApprovalPrompt creates a new approval prompt for a tool use
@@ -84,6 +41,7 @@ func NewApprovalPrompt(toolUse *core.ToolUse) *ApprovalPrompt {
 		riskLevel:   assessRiskLevel(toolUse),
 		showDetails: false,
 		width:       70,
+		theme:       theme.DraculaTheme(),
 	}
 }
 
@@ -108,13 +66,13 @@ func (a *ApprovalPrompt) View() string {
 	var b strings.Builder
 
 	// Title
-	b.WriteString(approvalTitleStyle.Render("┌─ Tool Approval Required "))
+	b.WriteString(a.theme.ToolApproval.Render("┌─ Tool Approval Required "))
 	b.WriteString(strings.Repeat("─", a.width-28))
 	b.WriteString("┐\n")
 
 	// Tool name
 	b.WriteString("│ Tool: ")
-	b.WriteString(approvalToolNameStyle.Render(a.toolUse.Name))
+	b.WriteString(a.theme.Warning.Render(a.toolUse.Name))
 	b.WriteString(strings.Repeat(" ", a.width-10-len(a.toolUse.Name)))
 	b.WriteString("│\n")
 
@@ -143,7 +101,7 @@ func (a *ApprovalPrompt) View() string {
 
 			// First line with key
 			b.WriteString("│   ")
-			b.WriteString(approvalParamKeyStyle.Render(key + ":"))
+			b.WriteString(a.theme.Emphasized.Render(key + ":"))
 			b.WriteString(" ")
 			b.WriteString(lines[0])
 			padding := a.width - 6 - len(key) - lipgloss.Width(lines[0])
@@ -183,7 +141,7 @@ func (a *ApprovalPrompt) View() string {
 		helpText += "  [V]iew Details"
 	}
 	b.WriteString("│ ")
-	b.WriteString(approvalHelpStyle.Render(helpText))
+	b.WriteString(a.theme.HelpDesc.Render(helpText))
 	padding = a.width - 4 - len(helpText)
 	if padding > 0 {
 		b.WriteString(strings.Repeat(" ", padding))
@@ -195,20 +153,20 @@ func (a *ApprovalPrompt) View() string {
 	b.WriteString(strings.Repeat("─", a.width-2))
 	b.WriteString("┘")
 
-	return approvalBoxStyle.Render(b.String())
+	return a.theme.ToolApproval.Render(b.String())
 }
 
 // formatRiskLevel returns formatted risk level text and style
 func (a *ApprovalPrompt) formatRiskLevel() (string, lipgloss.Style) {
 	switch a.riskLevel {
 	case RiskSafe:
-		return "Safe ✓", riskSafeStyle
+		return "Safe ✓", a.theme.Success
 	case RiskCaution:
-		return "Caution ⚠", riskCautionStyle
+		return "Caution ⚠", a.theme.Warning
 	case RiskDanger:
-		return "Danger ⚠⚠", riskDangerStyle
+		return "Danger ⚠⚠", a.theme.Error
 	default:
-		return "Unknown", riskCautionStyle
+		return "Unknown", a.theme.Warning
 	}
 }
 
@@ -222,13 +180,13 @@ func (a *ApprovalPrompt) formatParameterValue(value interface{}) string {
 		}
 		// Truncate long strings
 		if len(v) > 200 {
-			return syntaxStringStyle.Render("\"" + v[:197] + "...\"")
+			return a.theme.String.Render("\"" + v[:197] + "...\"")
 		}
-		return syntaxStringStyle.Render("\"" + v + "\"")
+		return a.theme.String.Render("\"" + v + "\"")
 	case int, int64, float64:
-		return syntaxNumberStyle.Render(fmt.Sprintf("%v", v))
+		return a.theme.Number.Render(fmt.Sprintf("%v", v))
 	case bool:
-		return syntaxKeywordStyle.Render(fmt.Sprintf("%v", v))
+		return a.theme.Keyword.Render(fmt.Sprintf("%v", v))
 	case map[string]interface{}:
 		// Format as JSON
 		jsonBytes, err := json.MarshalIndent(v, "", "  ")
@@ -239,13 +197,13 @@ func (a *ApprovalPrompt) formatParameterValue(value interface{}) string {
 		if len(jsonStr) > 200 {
 			jsonStr = jsonStr[:197] + "..."
 		}
-		return approvalParamValueStyle.Render(jsonStr)
+		return a.theme.Body.Render(jsonStr)
 	default:
 		str := fmt.Sprintf("%v", v)
 		if len(str) > 200 {
 			str = str[:197] + "..."
 		}
-		return approvalParamValueStyle.Render(str)
+		return a.theme.Body.Render(str)
 	}
 }
 
@@ -268,7 +226,7 @@ func (a *ApprovalPrompt) highlightCode(code string) string {
 
 	for _, cmd := range dangerous {
 		if strings.Contains(strings.ToLower(result), cmd) {
-			result = strings.ReplaceAll(result, cmd, riskDangerStyle.Render(cmd))
+			result = strings.ReplaceAll(result, cmd, a.theme.Error.Render(cmd))
 		}
 	}
 

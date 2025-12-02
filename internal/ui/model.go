@@ -18,6 +18,7 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
+	"github.com/harper/clem/internal/ui/theme"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -153,6 +154,9 @@ type Model struct {
 
 	// Phase 6C Task 5: Conversation Favorites
 	IsFavorite bool // Track if current conversation is favorite
+
+	// TUI Polish: Theme
+	theme *theme.Theme
 }
 
 // ToolResult represents a tool execution result for the API
@@ -195,6 +199,9 @@ func NewModel(conversationID, model string) *Model {
 	suggestionDetector := NewSuggestionDetector()
 	suggestionLearner := NewSuggestionLearner()
 
+	// TUI Polish: Initialize Dracula theme
+	draculaTheme := theme.DraculaTheme()
+
 	return &Model{
 		ConversationID:       conversationID,
 		Model:                model,
@@ -221,6 +228,7 @@ func NewModel(conversationID, model string) *Model {
 		suggestions:          []*Suggestion{},
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
+		theme:                draculaTheme,
 	}
 }
 
