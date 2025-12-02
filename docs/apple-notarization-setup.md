@@ -153,8 +153,9 @@ spctl -a -vv -t install clem
 
 ### Notarization takes a long time
 - Notarization can take 5-15 minutes for Apple's servers
-- GoReleaser will wait and poll for completion
-- Check logs for status updates
+- GoReleaser is configured with `wait: true` and `timeout: 20m`
+- The build will wait for Apple to complete notarization before finishing
+- Check logs for status updates - look for "notarize completed" messages
 
 ## Security Best Practices
 
