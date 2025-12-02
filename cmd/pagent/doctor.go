@@ -57,14 +57,14 @@ func checkHomeDirectory() bool {
 		return false
 	}
 
-	clemDir := filepath.Join(home, ".clem")
-	if _, err := os.Stat(clemDir); os.IsNotExist(err) {
-		printCheck(".clem directory", false, "not found")
-		fmt.Printf("  Run: mkdir -p %s\n", clemDir)
+	pagentDir := filepath.Join(home, ".pagent")
+	if _, err := os.Stat(pagentDir); os.IsNotExist(err) {
+		printCheck(".pagent directory", false, "not found")
+		fmt.Printf("  Run: mkdir -p %s\n", pagentDir)
 		return false
 	}
 
-	printCheck(".clem directory", true, clemDir)
+	printCheck(".pagent directory", true, pagentDir)
 	return true
 }
 
@@ -75,10 +75,10 @@ func checkConfigFile() bool {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".clem", "config.yaml")
+	configPath := filepath.Join(home, ".pagent", "config.yaml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		printCheck("Config file", false, "not found")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
+		fmt.Println("  Run: pagent setup-token <your-api-key>")
 		return false
 	}
 
@@ -95,8 +95,8 @@ func checkAPIKey() bool {
 
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
-		fmt.Println("  Or set: export CLEM_API_KEY=<your-key>")
+		fmt.Println("  Run: pagent setup-token <your-api-key>")
+		fmt.Println("  Or set: export PAGEN_API_KEY=<your-key>")
 		return false
 	}
 

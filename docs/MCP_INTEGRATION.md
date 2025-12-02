@@ -1041,7 +1041,7 @@ MCP prompts are pre-defined conversation templates:
 
 **Enable verbose logging**:
 ```bash
-CLEM_DEBUG=1 clem
+PAGEN_DEBUG=1 clem
 ```
 
 **Check server stderr**:

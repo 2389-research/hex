@@ -21,7 +21,7 @@ func TestCreateMessage(t *testing.T) {
 
 	// Create VCR recorder
 	// First run with real API key will record, subsequent runs replay from cassette
-	// To record: export CLEM_API_KEY=your-key && go test -run TestCreateMessage
+	// To record: export PAGEN_API_KEY=your-key && go test -run TestCreateMessage
 	// To replay: go test -run TestCreateMessage
 	r, err := recorder.New("testdata/fixtures/create_message")
 	require.NoError(t, err)

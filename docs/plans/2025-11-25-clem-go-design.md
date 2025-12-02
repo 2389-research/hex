@@ -224,7 +224,7 @@ type ClementPlugin interface {
 ```go
 var Handshake = plugin.HandshakeConfig{
     ProtocolVersion:  1,
-    MagicCookieKey:   "CLEM_PLUGIN",
+    MagicCookieKey:   "PAGEN_PLUGIN",
     MagicCookieValue: "clem",
 }
 
@@ -535,7 +535,7 @@ type PluginConfig struct {
 
 **Configuration Precedence (highest to lowest):**
 1. Command-line flags
-2. Environment variables (CLEM_*)
+2. Environment variables (PAGEN_*)
 3. `.env` file (current directory)
 4. `~/.clem/config.yaml`
 5. Defaults

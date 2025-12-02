@@ -77,7 +77,7 @@ model: claude-sonnet-4-5-20250929
 Create `.env` in your project directory:
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
-CLEM_MODEL=claude-sonnet-4-5-20250929
+PAGEN_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ### Configuration Priority
@@ -565,7 +565,7 @@ Enable verbose logging:
 
 ```bash
 # Set environment variable
-export CLEM_DEBUG=1
+export PAGEN_DEBUG=1
 clem
 
 # Check logs
@@ -663,7 +663,7 @@ clem
 # Work project
 cd ~/work
 echo "ANTHROPIC_API_KEY=sk-work-..." > .env
-echo "CLEM_MODEL=claude-opus-4-5-20250929" >> .env
+echo "PAGEN_MODEL=claude-opus-4-5-20250929" >> .env
 clem
 ```
 

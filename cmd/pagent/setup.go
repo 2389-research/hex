@@ -16,7 +16,7 @@ var setupCmd = &cobra.Command{
 
 Get your API key from: https://console.anthropic.com/
 
-This command will save your API key to ~/.clem/config.yaml`,
+This command will save your API key to ~/.pagent/config.yaml`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runSetup,
 }
@@ -31,7 +31,7 @@ func runSetup(_ *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		apiKey = args[0]
 	} else {
-		fmt.Println("Usage: clem setup-token <your-api-key>")
+		fmt.Println("Usage: pagent setup-token <your-api-key>")
 		fmt.Println("\nGet your API key from: https://console.anthropic.com/")
 		return nil
 	}
@@ -42,14 +42,14 @@ func runSetup(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("get home dir: %w", err)
 	}
 
-	// Create .clem directory
-	clemDir := filepath.Join(home, ".clem")
-	if err := os.MkdirAll(clemDir, 0750); err != nil {
-		return fmt.Errorf("create .clem dir: %w", err)
+	// Create .pagent directory
+	pagentDir := filepath.Join(home, ".pagent")
+	if err := os.MkdirAll(pagentDir, 0750); err != nil {
+		return fmt.Errorf("create .pagent dir: %w", err)
 	}
 
 	// Write config
-	configPath := filepath.Join(clemDir, "config.yaml")
+	configPath := filepath.Join(pagentDir, "config.yaml")
 	config := map[string]string{
 		"api_key": apiKey,
 	}

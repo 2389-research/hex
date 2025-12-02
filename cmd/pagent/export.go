@@ -40,13 +40,13 @@ Formats:
 
 Examples:
   # Export as Markdown to stdout
-  clem export abc123
+  pagent export abc123
 
   # Export as JSON to file
-  clem export abc123 --format json --output conversation.json
+  pagent export abc123 --format json --output conversation.json
 
   # Export as HTML
-  clem export abc123 --format html --output conversation.html`,
+  pagent export abc123 --format html --output conversation.html`,
 	Args: cobra.ExactArgs(1),
 	RunE: runExport,
 }
