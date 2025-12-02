@@ -111,16 +111,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case *forms.ApprovalResultMsg:
 		return m.handleApprovalResult(msg)
 
-	case tea.KeyMsg:
-		// Phase 6C Task 6: Handle quick actions mode first
-		if m.quickActionsMode {
-			return m.handleQuickActionsKey(msg)
-		}
+	// Handle quick actions form results from huh
+	case *forms.QuickActionsResultMsg:
+		return m.handleQuickActionsResult(msg)
 
+	case tea.KeyMsg:
 		// Task 12: Tool approval is now handled by huh forms
 		// No need to handle keys in approval mode - huh handles its own input
 		if m.toolApprovalMode {
 			// In approval mode, block other key handling (form is running)
+			return m, nil
+		}
+
+		// TUI Polish Task 4: Quick actions mode is now handled by huh forms
+		// No need to handle keys in quick actions mode - huh handles its own input
+		if m.quickActionsMode {
+			// In quick actions mode, block other key handling (form is running)
 			return m, nil
 		}
 
@@ -331,10 +337,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			// Phase 6C Task 6: Handle ':' for quick actions
+			// TUI Polish Task 4: Handle ':' for quick actions (now using huh forms)
 			if r == ':' {
-				m.EnterQuickActionsMode()
-				return m, nil
+				return m, m.LaunchQuickActionsForm()
 			}
 
 			// Vim-like navigation
@@ -788,42 +793,9 @@ func formatToolResult(result *tools.Result) string {
 
 // Phase 6C Task 6: Quick Actions Key Handler
 
-// handleQuickActionsKey handles keyboard input when quick actions mode is active
-func (m *Model) handleQuickActionsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.Type {
-	case tea.KeyEsc:
-		// Exit quick actions mode
-		m.ExitQuickActionsMode()
-		return m, nil
-
-	case tea.KeyEnter:
-		// Execute the selected action
-		err := m.ExecuteQuickAction()
-		if err != nil {
-			// Show error in status bar
-			m.ErrorMessage = err.Error()
-			if m.statusBar != nil {
-				m.statusBar.SetCustomMessage("Error: " + err.Error())
-			}
-		}
-		return m, nil
-
-	case tea.KeyBackspace:
-		// Remove last character
-		if len(m.quickActionsInput) > 0 {
-			m.quickActionsInput = m.quickActionsInput[:len(m.quickActionsInput)-1]
-			m.UpdateQuickActionsInput(m.quickActionsInput)
-		}
-		return m, nil
-
-	case tea.KeyRunes:
-		// Add typed character to input
-		if len(msg.Runes) > 0 {
-			m.quickActionsInput += string(msg.Runes[0])
-			m.UpdateQuickActionsInput(m.quickActionsInput)
-		}
-		return m, nil
-	}
-
-	return m, nil
-}
+// handleQuickActionsKey is deprecated - quick actions are now handled by huh forms
+// This function is kept for backward compatibility but should not be called
+// func (m *Model) handleQuickActionsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+// 	// Quick actions are now handled by huh forms in LaunchQuickActionsForm()
+// 	return m, nil
+// }

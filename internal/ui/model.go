@@ -1028,3 +1028,78 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		return m, m.DenyToolUse()
 	}
 }
+
+// LaunchQuickActionsForm launches the quick actions form using huh
+func (m *Model) LaunchQuickActionsForm() tea.Cmd {
+	// Convert registry actions to form actions
+	registryActions := m.quickActionsRegistry.ListActions()
+	formActions := make([]*forms.QuickAction, 0, len(registryActions))
+
+	for _, action := range registryActions {
+		// Determine category based on action name
+		category := string(forms.CategoryTools)
+		switch action.Name {
+		case "help", "back", "forward", "quit":
+			category = string(forms.CategoryNavigation)
+		case "save", "export", "clear", "reset":
+			category = string(forms.CategorySettings)
+		}
+
+		formActions = append(formActions, &forms.QuickAction{
+			Name:        action.Name,
+			Description: action.Description,
+			Category:    category,
+			KeyBinding:  "", // Old actions don't have explicit key bindings
+			Handler:     action.Handler,
+		})
+	}
+
+	// Set quick actions mode flag
+	m.quickActionsMode = true
+
+	// Run the form asynchronously
+	return forms.RunQuickActionsFormAsync(formActions)
+}
+
+// handleQuickActionsResult processes the result from the huh quick actions form
+func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.Model, tea.Cmd) {
+	// Exit quick actions mode
+	m.quickActionsMode = false
+
+	// Check for errors
+	if msg.Error != nil {
+		m.ErrorMessage = "Quick actions error: " + msg.Error.Error()
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
+		}
+		return m, nil
+	}
+
+	// Execute the selected action
+	_, _ = fmt.Fprintf(os.Stderr, "[QUICK_ACTIONS] User selected action: %s\n", msg.ActionName)
+
+	action, err := m.quickActionsRegistry.GetAction(msg.ActionName)
+	if err != nil {
+		m.ErrorMessage = "Action not found: " + msg.ActionName
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Error: action not found")
+		}
+		return m, nil
+	}
+
+	// Execute the action handler
+	err = action.Handler("")
+	if err != nil {
+		m.ErrorMessage = "Action failed: " + err.Error()
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Error: " + err.Error())
+		}
+		return m, nil
+	}
+
+	if m.statusBar != nil {
+		m.statusBar.SetCustomMessage("Executed: " + action.Name)
+	}
+
+	return m, nil
+}
