@@ -452,9 +452,10 @@ func (m *Model) updateViewport() {
 			content.WriteString(styledContent + "\n\n")
 		} else {
 			// Use glamour for assistant messages (no label, just content)
+			// Note: glamour.Render() already adds "\n\n" at the end
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString(rendered + "\n\n")
+				content.WriteString(rendered)
 			} else {
 				content.WriteString(msg.Content + "\n\n")
 			}
