@@ -275,7 +275,7 @@ func runInteractive(prompt string) error {
 		hookManager.TriggerAsync(hooks.SessionEnd, hooks.EventData{
 			"timestamp": time.Now().Format(time.RFC3339),
 		})
-		time.Sleep(100 * time.Millisecond) // Give hooks time to complete
+		hookManager.Wait() // Wait for all async hooks to complete
 	}()
 
 	// Prioritize environment variable, fall back to config file

@@ -111,8 +111,14 @@ func LoadConfig() (*Config, error) {
 							if timeoutFloat, ok := hookMap["timeout"].(float64); ok {
 								hc.Timeout = int(timeoutFloat)
 							}
-							if matcher, ok := hookMap["matcher"].(map[string]string); ok {
-								hc.Matcher = matcher
+							// Handle matcher map - YAML unmarshals as map[string]interface{}
+							if matcherRaw, ok := hookMap["matcher"].(map[string]interface{}); ok {
+								hc.Matcher = make(map[string]string)
+								for k, v := range matcherRaw {
+									if strVal, ok := v.(string); ok {
+										hc.Matcher[k] = strVal
+									}
+								}
 							}
 							hookConfigs = append(hookConfigs, hc)
 						}

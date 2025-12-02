@@ -5,12 +5,14 @@ package hooks
 
 import (
 	"context"
+	"sync"
 )
 
 // Manager manages hook execution for lifecycle events
 type Manager struct {
 	config   HooksConfig
 	executor *Executor
+	wg       sync.WaitGroup
 }
 
 // NewManager creates a new hook manager
@@ -46,7 +48,14 @@ func (m *Manager) Trigger(ctx context.Context, event HookEvent, data EventData) 
 
 // TriggerAsync executes hooks without blocking
 func (m *Manager) TriggerAsync(event HookEvent, data EventData) {
+	m.wg.Add(1)
 	go func() {
+		defer m.wg.Done()
 		_, _ = m.Trigger(context.Background(), event, data)
 	}()
+}
+
+// Wait waits for all async hooks to complete
+func (m *Manager) Wait() {
+	m.wg.Wait()
 }
