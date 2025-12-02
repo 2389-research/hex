@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -47,7 +48,7 @@ func (e *Executor) Run(ctx context.Context, event HookEvent, config HookConfig, 
 
 	// #nosec G204 -- Hook executor intentionally runs user-configured commands
 	cmd := exec.CommandContext(ctx, "sh", "-c", config.Command)
-	cmd.Env = append(cmd.Env,
+	cmd.Env = append(os.Environ(),
 		fmt.Sprintf("CLAUDE_HOOK_EVENT=%s", event),
 		fmt.Sprintf("CLAUDE_HOOK_DATA=%s", jsonData),
 	)
