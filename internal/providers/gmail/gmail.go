@@ -490,6 +490,11 @@ func (g *GmailProvider) searchEmails(params map[string]interface{}) (providers.T
 			continue
 		}
 
+		// Skip messages with no payload
+		if fullMsg.Payload == nil {
+			continue
+		}
+
 		// Extract headers
 		headers := make(map[string]string)
 		for _, header := range fullMsg.Payload.Headers {
@@ -572,7 +577,7 @@ func (g *GmailProvider) readEmail(params map[string]interface{}) (providers.Tool
 		// Body is in parts (multipart message)
 		for _, part := range msg.Payload.Parts {
 			if part.MimeType == "text/plain" || part.MimeType == "text/html" {
-				if part.Body.Data != "" {
+				if part.Body != nil && part.Body.Data != "" {
 					bodyBytes, err := base64.URLEncoding.DecodeString(part.Body.Data)
 					if err == nil {
 						body = string(bodyBytes)
@@ -719,6 +724,24 @@ func (g *GmailProvider) listEvents(params map[string]interface{}) (providers.Too
 		maxResults = 10 // Default to 10 results
 	}
 
+	// Validate time formats if provided
+	if startTime != "" {
+		if _, err := time.Parse(time.RFC3339, startTime); err != nil {
+			return providers.ToolResult{
+				Success: false,
+				Error:   fmt.Sprintf("invalid start_time format: must be RFC3339 (e.g., 2006-01-02T15:04:05Z07:00), got %q", startTime),
+			}, fmt.Errorf("invalid start_time format: %w", err)
+		}
+	}
+	if endTime != "" {
+		if _, err := time.Parse(time.RFC3339, endTime); err != nil {
+			return providers.ToolResult{
+				Success: false,
+				Error:   fmt.Sprintf("invalid end_time format: must be RFC3339 (e.g., 2006-01-02T15:04:05Z07:00), got %q", endTime),
+			}, fmt.Errorf("invalid end_time format: %w", err)
+		}
+	}
+
 	// Get Calendar service
 	service, err := g.getCalendarService()
 	if err != nil {
@@ -809,6 +832,16 @@ func (g *GmailProvider) createTask(params map[string]interface{}) (providers.Too
 			Success: false,
 			Error:   "missing required parameter: title",
 		}, fmt.Errorf("missing required parameter: title")
+	}
+
+	// Validate due date format if provided
+	if dueDate != "" {
+		if _, err := time.Parse(time.RFC3339, dueDate); err != nil {
+			return providers.ToolResult{
+				Success: false,
+				Error:   fmt.Sprintf("invalid due_date format: must be RFC3339 (e.g., 2006-01-02T15:04:05Z07:00), got %q", dueDate),
+			}, fmt.Errorf("invalid due_date format: %w", err)
+		}
 	}
 
 	// Get Tasks service
