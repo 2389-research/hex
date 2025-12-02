@@ -37,6 +37,9 @@ linters-settings:
       - name: unexported-return
         severity: warning
         disabled: false
+      - name: exported
+        severity: warning
+        disabled: true  # Disabled - interface methods don't need individual comments
 
   gosec:
     excludes:
@@ -50,6 +53,17 @@ issues:
         - errcheck
         - gosec
         - unparam
+
+    # Exclude productivity tool files from revive (Tool interface methods don't need individual comments)
+    - path: internal/tools/email_tools\.go
+      linters:
+        - revive
+    - path: internal/tools/calendar_tools\.go
+      linters:
+        - revive
+    - path: internal/tools/task_tools\.go
+      linters:
+        - revive
 
     # Exclude generated files
     - path: (^|\/)vendor\/

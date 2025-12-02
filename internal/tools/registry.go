@@ -145,6 +145,178 @@ func getToolSchema(toolName string) map[string]interface{} {
 			},
 			"required": []string{"command"},
 		}
+
+	// Email tools
+	case "send_email":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"to": map[string]interface{}{
+					"type":        "string",
+					"description": "Recipient email address(es), comma-separated",
+				},
+				"subject": map[string]interface{}{
+					"type":        "string",
+					"description": "Email subject line",
+				},
+				"body": map[string]interface{}{
+					"type":        "string",
+					"description": "Email body content",
+				},
+				"cc": map[string]interface{}{
+					"type":        "string",
+					"description": "CC recipients, comma-separated (optional)",
+				},
+				"bcc": map[string]interface{}{
+					"type":        "string",
+					"description": "BCC recipients, comma-separated (optional)",
+				},
+			},
+			"required": []string{"to", "subject", "body"},
+		}
+	case "search_emails":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"query": map[string]interface{}{
+					"type":        "string",
+					"description": "Search query string",
+				},
+				"from": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter by sender email (optional)",
+				},
+				"to": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter by recipient email (optional)",
+				},
+				"after": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter emails after this date (YYYY-MM-DD format, optional)",
+				},
+				"before": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter emails before this date (YYYY-MM-DD format, optional)",
+				},
+				"is_unread": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Filter by unread status (optional)",
+				},
+			},
+			"required": []string{},
+		}
+	case "read_email":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"message_id": map[string]interface{}{
+					"type":        "string",
+					"description": "Unique identifier of the email message",
+				},
+			},
+			"required": []string{"message_id"},
+		}
+
+	// Calendar tools
+	case "create_event":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"title": map[string]interface{}{
+					"type":        "string",
+					"description": "Event title",
+				},
+				"start": map[string]interface{}{
+					"type":        "string",
+					"description": "Start time in ISO 8601 format (e.g., 2025-12-01T14:00:00Z)",
+				},
+				"end": map[string]interface{}{
+					"type":        "string",
+					"description": "End time in ISO 8601 format (e.g., 2025-12-01T15:00:00Z)",
+				},
+				"attendees": map[string]interface{}{
+					"type":        "string",
+					"description": "Comma-separated list of attendee emails (optional)",
+				},
+				"location": map[string]interface{}{
+					"type":        "string",
+					"description": "Event location (optional)",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "Event description (optional)",
+				},
+			},
+			"required": []string{"title", "start", "end"},
+		}
+	case "list_events":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"start_date": map[string]interface{}{
+					"type":        "string",
+					"description": "Start of date range (YYYY-MM-DD)",
+				},
+				"end_date": map[string]interface{}{
+					"type":        "string",
+					"description": "End of date range (YYYY-MM-DD)",
+				},
+			},
+			"required": []string{"start_date", "end_date"},
+		}
+
+	// Task tools
+	case "create_task":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"title": map[string]interface{}{
+					"type":        "string",
+					"description": "Task title",
+				},
+				"due_date": map[string]interface{}{
+					"type":        "string",
+					"description": "Due date in YYYY-MM-DD format (optional)",
+				},
+				"notes": map[string]interface{}{
+					"type":        "string",
+					"description": "Additional task notes (optional)",
+				},
+				"priority": map[string]interface{}{
+					"type":        "string",
+					"description": "Priority level: low, medium, or high (optional)",
+					"enum":        []string{"low", "medium", "high"},
+				},
+			},
+			"required": []string{"title"},
+		}
+	case "list_tasks":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"filter": map[string]interface{}{
+					"type":        "string",
+					"description": "Filter tasks by status (optional)",
+				},
+				"due_before": map[string]interface{}{
+					"type":        "string",
+					"description": "Show tasks due before this date (YYYY-MM-DD, optional)",
+				},
+			},
+			"required": []string{},
+		}
+	case "complete_task":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"task_id": map[string]interface{}{
+					"type":        "string",
+					"description": "Unique identifier of the task",
+				},
+			},
+			"required": []string{"task_id"},
+		}
+
 	default:
 		// For other tools, return minimal schema
 		return map[string]interface{}{

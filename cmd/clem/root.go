@@ -12,6 +12,7 @@ import (
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/logging"
 	"github.com/harper/clem/internal/mcp"
+	"github.com/harper/clem/internal/providers"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/templates"
 	"github.com/harper/clem/internal/tools"
@@ -319,6 +320,41 @@ func runInteractive(prompt string) error {
 	}
 	if err := registry.Register(tools.NewKillShellTool()); err != nil {
 		return fmt.Errorf("register kill_shell tool: %w", err)
+	}
+
+	// Pagen: Register productivity tools (email, calendar, tasks)
+	// TODO: Initialize provider registry and load configured providers
+	providerRegistry := providers.NewRegistry()
+	// For now, tools will fail with "no active provider" until providers are configured
+
+	// Email tools
+	if err := registry.Register(tools.NewSendEmailTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register send_email tool: %w", err)
+	}
+	if err := registry.Register(tools.NewSearchEmailsTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register search_emails tool: %w", err)
+	}
+	if err := registry.Register(tools.NewReadEmailTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register read_email tool: %w", err)
+	}
+
+	// Calendar tools
+	if err := registry.Register(tools.NewCreateEventTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register create_event tool: %w", err)
+	}
+	if err := registry.Register(tools.NewListEventsTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register list_events tool: %w", err)
+	}
+
+	// Task tools
+	if err := registry.Register(tools.NewCreateTaskTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register create_task tool: %w", err)
+	}
+	if err := registry.Register(tools.NewListTasksTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register list_tasks tool: %w", err)
+	}
+	if err := registry.Register(tools.NewCompleteTaskTool(providerRegistry)); err != nil {
+		return fmt.Errorf("register complete_task tool: %w", err)
 	}
 
 	// Phase 5B: Load MCP tools from .mcp.json if present
