@@ -17,7 +17,7 @@ import (
 // Loader discovers and loads skills from multiple directories
 type Loader struct {
 	UserDir     string   // User-global skills directory (~/.clem/skills/)
-	ProjectDir  string   // Project-local skills directory (.claude/skills/)
+	ProjectDir  string   // Project-local skills directory (.clem/skills/)
 	BuiltinDir  string   // Built-in skills directory (embedded or distributed)
 	PluginPaths []string // Additional skill paths from plugins
 }
@@ -27,7 +27,7 @@ func NewLoader() *Loader {
 	homeDir, _ := os.UserHomeDir()
 	userDir := filepath.Join(homeDir, ".clem", "skills")
 
-	// Find project directory by looking for .claude directory
+	// Find project directory by looking for .clem directory
 	projectDir := project.FindDir("skills")
 
 	return &Loader{

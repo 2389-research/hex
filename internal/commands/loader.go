@@ -16,7 +16,7 @@ import (
 // Loader discovers and loads commands from multiple directories
 type Loader struct {
 	UserDir     string   // User-global commands directory (~/.clem/commands/)
-	ProjectDir  string   // Project-local commands directory (.claude/commands/)
+	ProjectDir  string   // Project-local commands directory (.clem/commands/)
 	BuiltinDir  string   // Built-in commands directory (embedded or distributed)
 	PluginPaths []string // Additional command paths from plugins
 }
@@ -26,7 +26,7 @@ func NewLoader() *Loader {
 	homeDir, _ := os.UserHomeDir()
 	userDir := filepath.Join(homeDir, ".clem", "commands")
 
-	// Find project directory by looking for .claude directory
+	// Find project directory by looking for .clem directory
 	projectDir := project.FindDir("commands")
 
 	return &Loader{

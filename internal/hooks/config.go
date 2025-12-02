@@ -1,4 +1,4 @@
-// ABOUTME: Configuration loading for .claude/settings.json
+// ABOUTME: Configuration loading for .clem/settings.json
 // ABOUTME: Loads hook definitions from user and project locations with proper merging
 
 // Package hooks provides lifecycle hooks for Claude Code events.
@@ -48,7 +48,7 @@ type MatchConfig struct {
 	Level string `json:"level,omitempty"`
 }
 
-// Settings represents the .claude/settings.json structure
+// Settings represents the .clem/settings.json structure
 type Settings struct {
 	Hooks map[EventType]interface{} `json:"hooks,omitempty"`
 }
@@ -82,8 +82,8 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	// Load project config from .claude/settings.json
-	projectConfigPath := ".claude/settings.json"
+	// Load project config from .clem/settings.json
+	projectConfigPath := ".clem/settings.json"
 	if err := config.loadFromFile(projectConfigPath); err != nil {
 		// Ignore file not found, but report other errors
 		if !os.IsNotExist(err) {
