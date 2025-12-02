@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
@@ -176,6 +177,15 @@ func NewModel(conversationID, model string) *Model {
 	ta.SetWidth(80)
 	ta.SetHeight(3)
 	ta.ShowLineNumbers = false
+
+	// Apply Dracula theme colors for better contrast
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.CurrentLine))
+	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Purple))
+	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
+	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
+	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
+	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
+	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
 
 	vp := viewport.New(80, 20)
 	vp.SetContent("Welcome to Clem! Type your message below.")

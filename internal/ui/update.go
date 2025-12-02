@@ -284,6 +284,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExitSearchMode()
 				return m, nil
 			}
+			// Only send message on plain Enter
+			// Alt+Enter is passed to textarea for multi-line input
 			if !msg.Alt {
 				// Send message
 				input := strings.TrimSpace(m.Input.Value())
