@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 First Production Release
 
-Clem v1.0.0 is the first production-ready release, consolidating all features from v0.1.0 through v0.6.0 into a stable, enterprise-grade AI CLI tool.
+Pagen v1.0.0 is the first production-ready release, consolidating all features from v0.1.0 through v0.6.0 into a stable, enterprise-grade AI CLI tool.
 
 ### Added
 
@@ -98,7 +98,7 @@ Database schema migrations run automatically. No manual intervention required.
 
 ### Known Issues
 
-None critical. See [GitHub Issues](https://github.com/harper/clem/issues) for minor enhancements.
+None critical. See [GitHub Issues](https://github.com/harper/pagent/issues) for minor enhancements.
 
 ### Thanks
 
@@ -112,7 +112,7 @@ Thank you to all testers and early adopters who helped make v1.0.0 possible!
 
 #### Phase 6: Production Ready
 
-Three parallel development efforts transforming Clem from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool:
+Three parallel development efforts transforming Pagen from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool:
 
 **Phase 6A: Production Hardening**
 
@@ -133,11 +133,11 @@ Three parallel development efforts transforming Clem from a feature-complete pro
 - Cross-platform binaries (linux/darwin × amd64/arm64)
 - 6 installation methods:
   - Install script: `curl -sSL https://... | bash`
-  - Homebrew: `brew install harper/tap/clem`
-  - Go install: `go install github.com/harper/clem/cmd/clem@latest`
+  - Homebrew: `brew install harper/tap/pagent`
+  - Go install: `go install github.com/harper/pagent/cmd/pagent@latest`
   - Pre-built binaries from GitHub Releases
   - Build from source: `make install`
-  - Docker: `docker pull ghcr.io/harper/clem:latest`
+  - Docker: `docker pull ghcr.io/harper/pagent:latest`
 - Makefile with 15 targets
 - Docker support with multi-stage builds
 - Issue/PR templates and contributing guide
@@ -229,7 +229,7 @@ Three parallel development efforts transforming Clem from a feature-complete pro
 
 #### Phase 5: Enhanced Tools + MCP Foundation
 
-Four major enhancements expanding Clem's capabilities for background execution, streaming, persistence, and external tool integration:
+Four major enhancements expanding Pagen's capabilities for background execution, streaming, persistence, and external tool integration:
 
 **Phase 5A: Enhanced Tools**
 
@@ -261,11 +261,11 @@ Four major enhancements expanding Clem's capabilities for background execution, 
 **MCP (Model Context Protocol) Integration**
 - JSON-RPC 2.0 client implementation with stdio transport
 - Server registry with .mcp.json persistence (project-level config)
-- Tool adapter bridging MCP tools to Clem Tool interface
+- Tool adapter bridging MCP tools to Pagen Tool interface
 - CLI commands:
-  - `clem mcp add <name> <command> [args...]` - Register MCP server
-  - `clem mcp list` - Show configured servers
-  - `clem mcp remove <name>` - Unregister server
+  - `pagent mcp add <name> <command> [args...]` - Register MCP server
+  - `pagent mcp list` - Show configured servers
+  - `pagent mcp remove <name>` - Unregister server
 - 38 MCP tests (client, registry, adapter, CLI), all passing
 
 **Phase 5C: MCP Tool Loading & Integration**
@@ -278,7 +278,7 @@ Four major enhancements expanding Clem's capabilities for background execution, 
 - Built-in tools always available regardless of MCP status
 
 **Integration**
-- Modified `cmd/clem/root.go` to load MCP tools after built-in tools
+- Modified `cmd/pagent/root.go` to load MCP tools after built-in tools
 - MCP tools seamlessly integrated into tool registry
 - Works in both interactive and print modes
 - 10+ integration tests verifying tool discovery and registration
@@ -293,11 +293,11 @@ Four major enhancements expanding Clem's capabilities for background execution, 
 **New Files**:
 - internal/mcp/client.go - JSON-RPC 2.0 client
 - internal/mcp/registry.go - Server configuration CRUD
-- internal/mcp/tool_adapter.go - MCP→Clem bridge
+- internal/mcp/tool_adapter.go - MCP→Pagen bridge
 - internal/mcp/loader.go - Automatic tool loading
 - internal/mcp/mock_server_test.go - Test infrastructure
-- cmd/clem/mcp.go - CLI commands
-- cmd/clem/mcp_integration_test.go - Integration tests
+- cmd/pagent/mcp.go - CLI commands
+- cmd/pagent/mcp_integration_test.go - Integration tests
 - docs/MCP_INTEGRATION.md - Architecture documentation
 - examples/mcp/README.md - Practical examples
 - examples/mcp/.mcp.json.example - Example configuration
@@ -341,7 +341,7 @@ Four major enhancements expanding Clem's capabilities for background execution, 
 
 #### Phase 4: Extended Capabilities
 
-Seven new tools expanding Clem's capabilities for interactive decision-making, research, and advanced execution:
+Seven new tools expanding Pagen's capabilities for interactive decision-making, research, and advanced execution:
 
 **Phase 4A: Interactive Tools**
 
@@ -365,7 +365,7 @@ Seven new tools expanding Clem's capabilities for interactive decision-making, r
 - HTTP GET requests with HTML-to-markdown conversion
 - 30-second timeout with context cancellation support
 - Auto-detects content type (HTML, JSON, text, XML)
-- User-Agent header set to "Clem/1.0"
+- User-Agent header set to "Pagen/1.0"
 - Always requires approval (network access)
 - 12 comprehensive unit tests
 - New dependency: `github.com/JohannesKaufmann/html-to-markdown v1.6.0`
@@ -383,10 +383,10 @@ Seven new tools expanding Clem's capabilities for interactive decision-making, r
 
 **Task Tool** (`task`)
 - Sub-agent spawning for complex multi-step tasks
-- Spawns `clem --print` as subprocess
+- Spawns `pagent --print` as subprocess
 - Environment inheritance (API keys, working directory, config)
 - Configurable timeout (5min default, 30min max)
-- Auto-builds clem binary if not in PATH
+- Auto-builds pagent binary if not in PATH
 - Always requires approval (spawns processes, uses API)
 - 21 comprehensive unit tests (15 validation, 6 integration)
 
@@ -441,7 +441,7 @@ Seven new tools expanding Clem's capabilities for interactive decision-making, r
 
 #### Extended Tool Support (Phase 3)
 
-Three new tools complete Clem's core tool suite:
+Three new tools complete Pagen's core tool suite:
 
 **Edit Tool** (`edit`)
 - Exact string replacement in files
@@ -503,7 +503,7 @@ Three new tools complete Clem's core tool suite:
 - Token usage tracking with real-time counters
 
 #### Storage System
-- SQLite-based conversation persistence at `~/.clem/clem.db`
+- SQLite-based conversation persistence at `~/.pagent/pagent.db`
 - Hybrid schema design: normalized tables + JSON for complex data
 - Automatic schema migrations with embedded SQL files
 - WAL mode enabled for better concurrency
@@ -582,8 +582,8 @@ Three new tools complete Clem's core tool suite:
 - Configuration system with Viper and .env support
 - Anthropic API client with Messages API integration
 - Print mode (`--print`) for non-interactive usage
-- Setup command (`clem setup-token`) for API key configuration
-- Doctor command (`clem doctor`) for health checks
+- Setup command (`pagent setup-token`) for API key configuration
+- Doctor command (`pagent doctor`) for health checks
 - JSON output format support
 - Model selection via flags and config
 - Unit and integration test suites
@@ -596,5 +596,5 @@ Three new tools complete Clem's core tool suite:
 - Real components over mocks in tests
 - Integration tests with real filesystem interactions
 
-[0.2.0]: https://github.com/harper/clem/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/harper/clem/releases/tag/v0.1.0
+[0.2.0]: https://github.com/harper/pagent/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/harper/pagent/releases/tag/v0.1.0

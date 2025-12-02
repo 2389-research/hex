@@ -1,15 +1,15 @@
 .PHONY: build test test-short test-coverage clean install run lint fmt vet release snapshot help
 
 # Build configuration
-BINARY_NAME=clem
+BINARY_NAME=pagent
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS=-ldflags "-s -w -X github.com/harper/clem/internal/core.Version=$(VERSION) -X github.com/harper/clem/internal/core.Commit=$(COMMIT) -X github.com/harper/clem/internal/core.Date=$(DATE)"
+LDFLAGS=-ldflags "-s -w -X github.com/harper/pagent/internal/core.Version=$(VERSION) -X github.com/harper/pagent/internal/core.Commit=$(COMMIT) -X github.com/harper/pagent/internal/core.Date=$(DATE)"
 
 ## build: Build binary for current platform
 build:
-	go build $(LDFLAGS) -o $(BINARY_NAME) ./cmd/clem
+	go build $(LDFLAGS) -o $(BINARY_NAME) ./cmd/pagent
 
 ## test: Run all tests with race detection
 test:
@@ -34,11 +34,11 @@ clean:
 
 ## install: Build and install to GOPATH/bin
 install:
-	go install $(LDFLAGS) ./cmd/clem
+	go install $(LDFLAGS) ./cmd/pagent
 
 ## run: Run without building (pass args with make run ARGS="...")
 run:
-	go run ./cmd/clem $(ARGS)
+	go run ./cmd/pagent $(ARGS)
 
 ## lint: Run golangci-lint
 lint:
@@ -95,7 +95,7 @@ verify: fmt vet lint test
 
 ## help: Show this help message
 help:
-	@echo "Clem CLI Makefile"
+	@echo "Pagen CLI Makefile"
 	@echo ""
 	@echo "Usage: make [target]"
 	@echo ""
