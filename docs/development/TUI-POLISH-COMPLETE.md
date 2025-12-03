@@ -167,15 +167,15 @@ Successfully completed the final phase of the TUI polish plan (Tasks 11-16), imp
 **Integration Test Results:**
 All UI packages tested together:
 ```
-ok  	github.com/harper/clem/internal/ui	0.716s
-ok  	github.com/harper/clem/internal/ui/animations	1.600s
-ok  	github.com/harper/clem/internal/ui/browser	0.332s
-ok  	github.com/harper/clem/internal/ui/components	1.482s
-ok  	github.com/harper/clem/internal/ui/dashboard	0.991s
-ok  	github.com/harper/clem/internal/ui/forms	0.848s
-ok  	github.com/harper/clem/internal/ui/layout	1.632s
-ok  	github.com/harper/clem/internal/ui/theme	1.320s
-ok  	github.com/harper/clem/internal/ui/visualization	0.422s
+ok  	github.com/harper/hex/internal/ui	0.716s
+ok  	github.com/harper/hex/internal/ui/animations	1.600s
+ok  	github.com/harper/hex/internal/ui/browser	0.332s
+ok  	github.com/harper/hex/internal/ui/components	1.482s
+ok  	github.com/harper/hex/internal/ui/dashboard	0.991s
+ok  	github.com/harper/hex/internal/ui/forms	0.848s
+ok  	github.com/harper/hex/internal/ui/layout	1.632s
+ok  	github.com/harper/hex/internal/ui/theme	1.320s
+ok  	github.com/harper/hex/internal/ui/visualization	0.422s
 ```
 
 **Total Test Coverage:**

@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

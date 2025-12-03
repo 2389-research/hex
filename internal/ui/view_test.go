@@ -5,7 +5,7 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/hex/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestViewRendersChatMode(t *testing.T) {
 	model.CurrentView = ui.ViewModeChat
 
 	view := model.View()
-	assert.Contains(t, view, "Clem")
+	assert.Contains(t, view, "Hex")
 	assert.Contains(t, view, "[chat]") // Phase 6C: lowercase in status bar
 }
 
@@ -145,5 +145,5 @@ func TestViewMarkdownRendering(t *testing.T) {
 	view := model.View()
 	assert.True(t, len(view) > 0)
 	// View should contain the model name at minimum
-	assert.Contains(t, view, "Clem")
+	assert.Contains(t, view, "Hex")
 }

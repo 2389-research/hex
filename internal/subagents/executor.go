@@ -15,8 +15,8 @@ import (
 
 // Executor manages the execution of isolated subagent instances
 type Executor struct {
-	// ClembinPath is the path to the clem binary (empty = search PATH)
-	ClembinPath string
+	// HexBinPath is the path to the hex binary (empty = search PATH)
+	HexBinPath string
 
 	// ContextManager manages isolated contexts
 	ContextManager *ContextManager
@@ -31,7 +31,7 @@ type Executor struct {
 // NewExecutor creates a new subagent executor
 func NewExecutor() *Executor {
 	return &Executor{
-		ClembinPath:    "",
+		HexBinPath:     "",
 		ContextManager: NewContextManager(),
 		DefaultTimeout: 5 * time.Minute,
 		MaxTimeout:     30 * time.Minute,
@@ -90,7 +90,7 @@ func (e *Executor) Execute(ctx context.Context, req *ExecutionRequest) (*Result,
 	return result, nil
 }
 
-// executeSubprocess spawns a clem subprocess for the subagent
+// executeSubprocess spawns a hex subprocess for the subagent
 func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest, config *Config, isolatedCtx *IsolatedContext) (string, error) {
 	// Get timeout
 	timeout := config.Timeout
@@ -105,16 +105,16 @@ func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest,
 	cmdCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Find clem binary
-	clembinPath := e.ClembinPath
-	if clembinPath == "" {
+	// Find hex binary
+	hexbinPath := e.HexBinPath
+	if hexbinPath == "" {
 		var err error
-		clembinPath, err = exec.LookPath("clem")
+		hexbinPath, err = exec.LookPath("hex")
 		if err != nil {
 			// Try building from current project
-			clembinPath, err = e.buildClem(cmdCtx)
+			hexbinPath, err = e.buildHex(cmdCtx)
 			if err != nil {
-				return "", fmt.Errorf("clem binary not found: %w", err)
+				return "", fmt.Errorf("hex binary not found: %w", err)
 			}
 		}
 	}
@@ -133,15 +133,15 @@ func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest,
 	}
 
 	// Create command
-	cmd := exec.CommandContext(cmdCtx, clembinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters
+	cmd := exec.CommandContext(cmdCtx, hexbinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters
 
 	// Inherit environment variables
 	cmd.Env = os.Environ()
 
 	// Add subagent-specific environment variables
 	cmd.Env = append(cmd.Env,
-		fmt.Sprintf("CLEM_SUBAGENT_TYPE=%s", req.Type),
-		fmt.Sprintf("CLEM_SUBAGENT_CONTEXT_ID=%s", isolatedCtx.ID),
+		fmt.Sprintf("HEX_SUBAGENT_TYPE=%s", req.Type),
+		fmt.Sprintf("HEX_SUBAGENT_CONTEXT_ID=%s", isolatedCtx.ID),
 	)
 
 	// Set working directory
@@ -180,8 +180,8 @@ func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest,
 	return output.String(), nil
 }
 
-// buildClem attempts to build clem in a temporary location
-func (e *Executor) buildClem(ctx context.Context) (string, error) {
+// buildHex attempts to build hex in a temporary location
+func (e *Executor) buildHex(ctx context.Context) (string, error) {
 	// Find go.mod to locate project root
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -209,9 +209,9 @@ func (e *Executor) buildClem(ctx context.Context) (string, error) {
 	}
 
 	// Build to temporary location
-	tempBin := filepath.Join(os.TempDir(), fmt.Sprintf("clem-subagent-%d", time.Now().Unix()))
+	tempBin := filepath.Join(os.TempDir(), fmt.Sprintf("hex-subagent-%d", time.Now().Unix()))
 
-	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/clem") //nolint:gosec // G204: Static args for build command
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/hex") //nolint:gosec // G204: Static args for build command
 	buildCmd.Dir = projectRoot
 
 	var buildOutput bytes.Buffer
@@ -219,7 +219,7 @@ func (e *Executor) buildClem(ctx context.Context) (string, error) {
 	buildCmd.Stderr = &buildOutput
 
 	if err := buildCmd.Run(); err != nil {
-		return "", fmt.Errorf("build clem: %w (output: %s)", err, buildOutput.String())
+		return "", fmt.Errorf("build hex: %w (output: %s)", err, buildOutput.String())
 	}
 
 	return tempBin, nil

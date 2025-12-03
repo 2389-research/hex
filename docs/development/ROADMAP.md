@@ -1,4 +1,4 @@
-# Clem - Product Roadmap
+# Hex - Product Roadmap
 
 **Vision:** Production-ready Claude Code alternative in Go with full feature parity
 
@@ -17,18 +17,18 @@
 - Comprehensive test suite
 
 **Deliverables:**
-- ✅ Working binary (`./clem`)
+- ✅ Working binary (`./hex`)
 - ✅ 15+ passing tests
 - ✅ Integration tests
 - ✅ Documentation (README, PHASE1.md)
 
 **What Works:**
 ```bash
-./clem --version                      # Version info
-./clem --print "test"                 # Non-interactive query
-./clem --print --output-format json   # JSON output
-./clem setup-token <key>              # Configure auth
-./clem doctor                         # Health check
+./hex --version                      # Version info
+./hex --print "test"                 # Non-interactive query
+./hex --print --output-format json   # JSON output
+./hex setup-token <key>              # Configure auth
+./hex doctor                         # Health check
 ```
 
 ---
@@ -55,10 +55,10 @@
 
 **What Will Work:**
 ```bash
-./clem                                # Interactive TUI
-./clem --continue                     # Resume last conversation
-./clem --resume                       # Pick conversation to resume
-./clem --resume abc-123               # Resume specific conversation
+./hex                                # Interactive TUI
+./hex --continue                     # Resume last conversation
+./hex --resume                       # Pick conversation to resume
+./hex --resume abc-123               # Resume specific conversation
 ```
 
 **Tech Stack:**
@@ -138,17 +138,17 @@
 **What Will Work:**
 ```bash
 # MCP server management
-./clem mcp add myserver https://example.com
-./clem mcp list
-./clem mcp get myserver
-./clem mcp remove myserver
+./hex mcp add myserver https://example.com
+./hex mcp list
+./hex mcp get myserver
+./hex mcp remove myserver
 
 # MCP CLI mode
-./clem --mcp-cli servers
-./clem --mcp-cli tools
-./clem --mcp-cli call myserver/tool '{"arg":"value"}'
-./clem --mcp-cli resources
-./clem --mcp-cli read myserver/resource
+./hex --mcp-cli servers
+./hex --mcp-cli tools
+./hex --mcp-cli call myserver/tool '{"arg":"value"}'
+./hex --mcp-cli resources
+./hex --mcp-cli read myserver/resource
 ```
 
 ---
@@ -186,11 +186,11 @@
 **What Will Work:**
 ```bash
 # Plugin management
-./clem plugin install superpowers
-./clem plugin list
-./clem plugin enable superpowers
-./clem plugin disable superpowers
-./clem plugin uninstall superpowers
+./hex plugin install superpowers
+./hex plugin list
+./hex plugin enable superpowers
+./hex plugin disable superpowers
+./hex plugin uninstall superpowers
 
 # In session: slash commands from plugins
 /brainstorm
@@ -308,7 +308,7 @@
 
 ## Complete Feature Comparison
 
-### Claude Code (Original) vs Clem (Clean Implementation)
+### Claude Code (Original) vs Hex (Clean Implementation)
 
 | Feature | Original | Phase | Status |
 |---------|----------|-------|--------|
@@ -398,13 +398,13 @@
 
 **To implement Phase 2:**
 1. Read `NEXT_STEPS.md` for task breakdown
-2. Follow detailed plan in `docs/plans/2025-11-26-clem-phase2-interactive.md`
+2. Follow detailed plan in `docs/plans/2025-11-26-hex-phase2-interactive.md`
 3. Use TDD approach (test first, implement to pass)
 4. Submit each task for review before proceeding
 
 **Preferred approach:**
 ```bash
-claude /superpowers:execute-plan docs/plans/2025-11-26-clem-phase2-interactive.md
+claude /superpowers:execute-plan docs/plans/2025-11-26-hex-phase2-interactive.md
 ```
 
 ### For Future Phases

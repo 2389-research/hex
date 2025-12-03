@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 // Example_completeWorkflow demonstrates a complete tool system workflow

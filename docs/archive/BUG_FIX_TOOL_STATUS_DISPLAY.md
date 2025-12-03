@@ -122,12 +122,12 @@ if len(m.executingToolUses) > 0 {  // Correct!
 
 Build verified:
 ```bash
-$ go build ./cmd/clem
+$ go build ./cmd/hex
 # Success!
 ```
 
 Manual testing needed:
-- Run clem
+- Run hex
 - Request multiple tools
 - Verify status message shows correct tool name(s) during execution
 

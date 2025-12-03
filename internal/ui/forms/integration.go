@@ -1,11 +1,11 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Integration helpers for using huh forms within bubbletea Model
 // ABOUTME: Bridges huh's blocking Run() with bubbletea's message-based architecture
 package forms
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/core"
 )
 
 // ApprovalResultMsg is sent when the approval form completes

@@ -320,9 +320,9 @@ go test ./internal/suggestions/... -cover
 
 ### Manual Testing
 ```bash
-# Build and run Clem
-go build -o clem ./cmd/clem
-./clem
+# Build and run Hex
+go build -o hex ./cmd/hex
+./hex
 
 # Try typing:
 # - "/etc/hosts" → should suggest read_file

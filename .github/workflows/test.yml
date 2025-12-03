@@ -90,9 +90,9 @@ jobs:
           cache: true
 
       - name: Build
-        run: go build -v ./cmd/clem
+        run: go build -v ./cmd/hex
 
       - name: Test installation
         run: |
-          go install ./cmd/clem
-          clem --version
+          go install ./cmd/hex
+          hex --version

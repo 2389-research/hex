@@ -1,6 +1,6 @@
 # MCP Integration Documentation - Summary
 
-Documentation created for Phase 5B MCP integration feature in Clem CLI.
+Documentation created for Phase 5B MCP integration feature in Hex CLI.
 
 ## Files Created
 
@@ -140,9 +140,9 @@ Documentation created for Phase 5B MCP integration feature in Clem CLI.
 - Focuses on official servers for simplicity
 
 **CLI Commands** (docs/TOOLS.md):
-- `clem mcp add` with multiple examples
-- `clem mcp list` with sample output
-- `clem mcp remove` with usage
+- `hex mcp add` with multiple examples
+- `hex mcp list` with sample output
+- `hex mcp remove` with usage
 - Configuration file format explained
 
 **Example Workflows** (examples/mcp/README.md):
@@ -203,7 +203,7 @@ Documentation created for Phase 5B MCP integration feature in Clem CLI.
 - Consistent formatting across all documents
 - Unified terminology (e.g., "server", not "MCP server" or "tool server")
 - Cross-references between documents work correctly
-- Code style matches existing Clem documentation
+- Code style matches existing Hex documentation
 
 ### Accuracy
 - Based on actual implementation in codebase
@@ -290,7 +290,7 @@ examples/mcp/README.md
 - Best practices section
 - Manual testing commands
 
-### Clem Contributors
+### Hex Contributors
 **Primary Docs**: docs/MCP_INTEGRATION.md, docs/ARCHITECTURE.md
 
 **What They Need**:
@@ -341,7 +341,7 @@ examples/mcp/README.md
 3. **Build Custom Server** (optional):
    - Use weather server as template
    - Implement custom business logic
-   - Test with manual commands before adding to Clem
+   - Test with manual commands before adding to Hex
 
 4. **Provide Feedback**:
    - Report issues or unclear documentation

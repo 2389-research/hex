@@ -1,7 +1,7 @@
 # BashOutput Tool Implementation
 
 ## Overview
-The BashOutput tool has been successfully implemented for Clem (Claude Code clone in Go) as part of Phase 4C tools.
+The BashOutput tool has been successfully implemented for Hex (Claude Code clone in Go) as part of Phase 4C tools.
 
 ## Implementation Summary
 

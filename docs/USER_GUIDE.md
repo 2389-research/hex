@@ -1,6 +1,6 @@
-# Clem User Guide
+# Hex User Guide
 
-Complete guide to using Clem, the Go-based Claude CLI with interactive mode and tool execution.
+Complete guide to using Hex, the Go-based Claude CLI with interactive mode and tool execution.
 
 ## Table of Contents
 
@@ -21,25 +21,25 @@ Complete guide to using Clem, the Go-based Claude CLI with interactive mode and 
 - Go 1.24 or later
 - Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com))
 
-### Install Clem
+### Install Hex
 
 ```bash
 # Install latest version
-go install github.com/harper/clem/cmd/clem@latest
+go install github.com/harper/hex/cmd/hex@latest
 
 # Or install specific version
-go install github.com/harper/clem/cmd/clem@v0.2.0
+go install github.com/harper/hex/cmd/hex@v0.2.0
 
 # Verify installation
-clem --version
+hex --version
 ```
 
 ### Build from Source
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/clem.git
-cd clem
+git clone https://github.com/harper/hex.git
+cd hex
 
 # Build
 make build
@@ -56,7 +56,7 @@ Three ways to configure your API key:
 
 **Option 1: Command (Recommended)**
 ```bash
-clem setup-token sk-ant-api03-...
+hex setup-token sk-ant-api03-...
 ```
 
 **Option 2: Environment Variable**
@@ -66,7 +66,7 @@ export ANTHROPIC_API_KEY=sk-ant-api03-...
 
 **Option 3: Config File**
 
-Create `~/.clem/config.yaml`:
+Create `~/.hex/config.yaml`:
 ```yaml
 api_key: sk-ant-api03-...
 model: claude-sonnet-4-5-20250929
@@ -77,14 +77,14 @@ model: claude-sonnet-4-5-20250929
 Create `.env` in your project directory:
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
-CLEM_MODEL=claude-sonnet-4-5-20250929
+HEX_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ### Configuration Priority
 
 Configuration is loaded in this order (later overrides earlier):
 
-1. Config file (`~/.clem/config.yaml`)
+1. Config file (`~/.hex/config.yaml`)
 2. Environment variables
 3. .env file in current directory
 4. Command-line flags
@@ -92,14 +92,14 @@ Configuration is loaded in this order (later overrides earlier):
 ### Available Settings
 
 ```yaml
-# ~/.clem/config.yaml
+# ~/.hex/config.yaml
 
 # Required
 api_key: sk-ant-api03-...
 
 # Optional (with defaults)
 model: claude-sonnet-4-5-20250929
-database_path: ~/.clem/clem.db
+database_path: ~/.hex/hex.db
 tool_timeout: 30  # seconds
 max_tokens: 4096
 temperature: 1.0
@@ -110,7 +110,7 @@ temperature: 1.0
 Verify your configuration:
 
 ```bash
-clem doctor
+hex doctor
 ```
 
 This checks:
@@ -127,13 +127,13 @@ Simple one-off questions without entering interactive mode:
 
 ```bash
 # Basic usage
-clem --print "What is the capital of France?"
+hex --print "What is the capital of France?"
 
 # With different model
-clem --print --model claude-opus-4-5-20250929 "Explain quantum computing"
+hex --print --model claude-opus-4-5-20250929 "Explain quantum computing"
 
 # JSON output
-clem --print --output-format json "List 3 programming languages"
+hex --print --output-format json "List 3 programming languages"
 ```
 
 ### Interactive Mode
@@ -142,16 +142,16 @@ Launch the terminal UI:
 
 ```bash
 # Start new conversation
-clem
+hex
 
 # Start with initial prompt
-clem "Help me debug this code"
+hex "Help me debug this code"
 
 # Resume last conversation
-clem --continue
+hex --continue
 
 # Resume specific conversation
-clem --resume conv-1234567890
+hex --resume conv-1234567890
 ```
 
 ## Interactive Mode
@@ -170,7 +170,7 @@ Interactive mode provides a full-featured terminal UI with:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ Clem • claude-sonnet-4-5-20250929              │  ← Title bar
+│ Hex • claude-sonnet-4-5-20250929              │  ← Title bar
 │                                                 │
 │ ┌─────────────────────────────────────────────┐ │
 │ │                                             │ │
@@ -197,7 +197,7 @@ Interactive mode provides a full-featured terminal UI with:
 
 ### Markdown Rendering
 
-Clem renders markdown with full formatting:
+Hex renders markdown with full formatting:
 
 **Code blocks** with syntax highlighting:
 ````
@@ -226,7 +226,7 @@ Responses stream in real-time:
 
 ### Creating Conversations
 
-Every time you run `clem` without `--continue` or `--resume`, a new conversation starts.
+Every time you run `hex` without `--continue` or `--resume`, a new conversation starts.
 
 Conversations are automatically titled based on your first message.
 
@@ -234,18 +234,18 @@ Conversations are automatically titled based on your first message.
 
 **Resume last conversation:**
 ```bash
-clem --continue
+hex --continue
 ```
 
 **Resume specific conversation:**
 ```bash
 # List conversations first (in interactive mode, switch to History view)
-clem --resume conv-1234567890
+hex --resume conv-1234567890
 ```
 
 ### Conversation Storage
 
-All conversations stored in SQLite at `~/.clem/clem.db`:
+All conversations stored in SQLite at `~/.hex/hex.db`:
 - Automatically created on first use
 - Indexed for fast retrieval
 - WAL mode for better concurrency
@@ -363,7 +363,7 @@ Approve execution? [y/N]
 
 **Tool execution flow:**
 1. Claude requests tool
-2. Clem displays approval prompt with details
+2. Hex displays approval prompt with details
 3. You approve or deny
 4. Tool executes (if approved)
 5. Results shown in conversation
@@ -375,7 +375,7 @@ Approve execution? [y/N]
 
 | Key | Action |
 |-----|--------|
-| `Ctrl+C` | Quit Clem |
+| `Ctrl+C` | Quit Hex |
 | `Esc` | Cancel current operation |
 | `?` | Show help (context-aware) |
 
@@ -428,10 +428,10 @@ Use different Claude models:
 
 ```bash
 # Via flag
-clem --model claude-opus-4-5-20250929
+hex --model claude-opus-4-5-20250929
 
 # Via config
-echo "model: claude-opus-4-5-20250929" >> ~/.clem/config.yaml
+echo "model: claude-opus-4-5-20250929" >> ~/.hex/config.yaml
 ```
 
 Available models:
@@ -445,10 +445,10 @@ Control maximum response length:
 
 ```bash
 # Via flag
-clem --max-tokens 8192
+hex --max-tokens 8192
 
 # Via config
-echo "max_tokens: 8192" >> ~/.clem/config.yaml
+echo "max_tokens: 8192" >> ~/.hex/config.yaml
 ```
 
 Defaults:
@@ -462,10 +462,10 @@ Adjust response randomness (0.0 to 1.0):
 
 ```bash
 # Via flag
-clem --temperature 0.5
+hex --temperature 0.5
 
 # Via config
-echo "temperature: 0.5" >> ~/.clem/config.yaml
+echo "temperature: 0.5" >> ~/.hex/config.yaml
 ```
 
 - `0.0`: Deterministic, focused
@@ -473,22 +473,22 @@ echo "temperature: 0.5" >> ~/.clem/config.yaml
 
 ### Database Management
 
-**Location**: `~/.clem/clem.db`
+**Location**: `~/.hex/hex.db`
 
 **Backup:**
 ```bash
-cp ~/.clem/clem.db ~/.clem/clem.db.backup
+cp ~/.hex/hex.db ~/.hex/hex.db.backup
 ```
 
 **Reset:**
 ```bash
-rm ~/.clem/clem.db
+rm ~/.hex/hex.db
 # Database recreated on next run
 ```
 
 **Inspect:**
 ```bash
-sqlite3 ~/.clem/clem.db
+sqlite3 ~/.hex/hex.db
 > .schema
 > SELECT * FROM conversations;
 ```
@@ -519,8 +519,8 @@ Error: API key not configured
 
 **Solution:**
 ```bash
-clem setup-token sk-ant-api03-...
-# Or verify: clem doctor
+hex setup-token sk-ant-api03-...
+# Or verify: hex doctor
 ```
 
 **Database Locked**
@@ -531,9 +531,9 @@ Error: database is locked
 
 **Solution:**
 ```bash
-# Close other Clem instances
+# Close other Hex instances
 # Or check for stale connections:
-lsof ~/.clem/clem.db
+lsof ~/.hex/hex.db
 ```
 
 **Tool Timeout**
@@ -545,7 +545,7 @@ Tool execution timeout after 30s
 **Solution:**
 ```bash
 # Increase timeout in config:
-echo "tool_timeout: 120" >> ~/.clem/config.yaml
+echo "tool_timeout: 120" >> ~/.hex/config.yaml
 ```
 
 **Large File Read Failure**
@@ -565,11 +565,11 @@ Enable verbose logging:
 
 ```bash
 # Set environment variable
-export CLEM_DEBUG=1
-clem
+export HEX_DEBUG=1
+hex
 
 # Check logs
-tail -f ~/.clem/debug.log
+tail -f ~/.hex/debug.log
 ```
 
 ### Network Issues
@@ -596,8 +596,8 @@ curl -I https://api.anthropic.com
 ### Getting Help
 
 1. **Check documentation**: `docs/` directory
-2. **Run doctor**: `clem doctor`
-3. **Check logs**: Debug mode logs to `~/.clem/debug.log`
+2. **Run doctor**: `hex doctor`
+3. **Check logs**: Debug mode logs to `~/.hex/debug.log`
 4. **Report issues**: GitHub issues with reproduction steps
 
 ## Tips and Tricks
@@ -658,13 +658,13 @@ Different configs for different projects:
 # Personal project
 cd ~/personal
 echo "ANTHROPIC_API_KEY=sk-..." > .env
-clem
+hex
 
 # Work project
 cd ~/work
 echo "ANTHROPIC_API_KEY=sk-work-..." > .env
-echo "CLEM_MODEL=claude-opus-4-5-20250929" >> .env
-clem
+echo "HEX_MODEL=claude-opus-4-5-20250929" >> .env
+hex
 ```
 
 ---

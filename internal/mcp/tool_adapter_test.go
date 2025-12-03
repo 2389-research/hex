@@ -1,5 +1,5 @@
-// ABOUTME: Tests for MCP tool adapter wrapping MCP tools as Clem Tool interface
-// ABOUTME: Verifies conversion between MCP and Clem tool execution models
+// ABOUTME: Tests for MCP tool adapter wrapping MCP tools as Hex Tool interface
+// ABOUTME: Verifies conversion between MCP and Hex tool execution models
 
 package mcp
 
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 func TestMCPTool_Name(t *testing.T) {
@@ -384,7 +384,7 @@ func TestMCPTool_ConvertParams(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// The adapter should pass params through unchanged
-			// (no conversion needed between Clem and MCP format)
+			// (no conversion needed between Hex and MCP format)
 			_ = NewMCPToolAdapter(nil, Tool{Name: "test"})
 
 			// In practice, Execute would use these params directly
@@ -397,7 +397,7 @@ func TestMCPTool_ConvertParams(t *testing.T) {
 }
 
 func TestMCPTool_Integration(t *testing.T) {
-	// Integration test: create tool, register with Clem's registry, execute
+	// Integration test: create tool, register with Hex's registry, execute
 	testTools := []Tool{
 		{
 			Name:        "weather",
@@ -437,7 +437,7 @@ func TestMCPTool_Integration(t *testing.T) {
 	// Create MCP tool adapter
 	mcpTool := NewMCPToolAdapter(client, testTools[0])
 
-	// Use with Clem's tool registry
+	// Use with Hex's tool registry
 	registry := tools.NewRegistry()
 	_ = registry.Register(mcpTool)
 

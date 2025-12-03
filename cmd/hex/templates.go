@@ -1,5 +1,5 @@
 // ABOUTME: Commands for managing and using session templates
-// ABOUTME: Provides 'clem templates list' and --template flag integration
+// ABOUTME: Provides 'hex templates list' and --template flag integration
 
 package main
 
@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/clem/internal/templates"
+	"github.com/harper/hex/internal/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var templatesCmd = &cobra.Command{
 	Short: "Manage session templates",
 	Long: `Manage YAML-based session templates.
 
-Templates are loaded from ~/.clem/templates/ and can define:
+Templates are loaded from ~/.hex/templates/ and can define:
 - System prompts
 - Initial messages
 - Enabled tools
@@ -32,7 +32,7 @@ Use --template flag with root command to start a session with a template.`,
 var templatesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available templates",
-	Long:  `List all available session templates from ~/.clem/templates/.`,
+	Long:  `List all available session templates from ~/.hex/templates/.`,
 	RunE:  runTemplatesList,
 }
 
@@ -115,7 +115,7 @@ func runTemplatesList(_ *cobra.Command, _ []string) error {
 		fmt.Println()
 	}
 
-	fmt.Printf("Use with: clem --template <name>\n")
+	fmt.Printf("Use with: hex --template <name>\n")
 
 	return nil
 }

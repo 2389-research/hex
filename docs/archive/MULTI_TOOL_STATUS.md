@@ -17,7 +17,7 @@ From `debug.log` analysis, we found Claude sends **multiple tool_use blocks in a
 [STREAM_TOOL_START] tool_use detected: id=toolu_01YKpQSUDgpCoYDNB4FfwJqs, name=write_file (index.js)
 [STREAM_TOOL_COMPLETE] tool_use complete, storing as pending  ← OVERWRITES SECOND!
 [STREAM_TOOL_START] tool_use detected: id=toolu_01VZomqbXzbbySDjCKQ7xBaY, name=write_file (App.js)
-time=2025-11-29T11:55:51.028-06:00 level=INFO msg="Clem shutting down"  ← APP DIES!
+time=2025-11-29T11:55:51.028-06:00 level=INFO msg="Hex shutting down"  ← APP DIES!
 ```
 
 ## Root Cause
@@ -239,8 +239,8 @@ Update all references to `m.pendingToolUse` to use `m.pendingToolUses[0]` or han
 
 ## Testing Plan
 
-1. Build: `go build ./cmd/clem`
-2. Run with debug: `./clem 2>debug.log`
+1. Build: `go build ./cmd/hex`
+2. Run with debug: `./hex 2>debug.log`
 3. Test multi-tool request: "create 3 files: test1.txt with content 'one', test2.txt with 'two', test3.txt with 'three'"
 4. Expected output:
    - All 3 tool_use blocks collected
@@ -278,7 +278,7 @@ All 8 steps have been completed:
 
 ## Next Steps
 
-1. **Test with multi-tool request** - Run clem and ask it to create 3-4 files
+1. **Test with multi-tool request** - Run hex and ask it to create 3-4 files
 2. **Verify debug.log shows all tools collected** - Check for "total pending: N" messages
 3. **Confirm all tools execute** - All files should be created
 4. **Verify results sent back together** - Check for "BATCH_RESULTS_SENDING" message

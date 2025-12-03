@@ -154,7 +154,7 @@ brew install clem
 
 ### Linux
 ```bash
-curl -fsSL https://get.clem.dev | sh
+curl -fsSL https://get.hex.dev | sh
 ```
 
 ## Quick Start
@@ -166,24 +166,24 @@ export ANTHROPIC_API_KEY=your-key-here
 
 2. Start a conversation:
 ```bash
-clem "Help me write a function to parse CSV files"
+hex "Help me write a function to parse CSV files"
 ```
 
 3. Resume a previous session:
 ```bash
-clem --resume abc123
+hex --resume abc123
 ```
 
 ## Common Tasks
 
 ### Running Tests
 ```bash
-clem "Run the test suite and fix any failures"
+hex "Run the test suite and fix any failures"
 ```
 
 ### Code Review
 ```bash
-clem "Review the changes in git and provide feedback"
+hex "Review the changes in git and provide feedback"
 ```
 ```
 
@@ -193,7 +193,7 @@ clem "Review the changes in git and provide feedback"
 # System Architecture
 
 ## Overview
-Clem is a Claude-powered CLI tool with three main components:
+Hex is a Claude-powered CLI tool with three main components:
 - CLI Interface (Cobra + BubbleTea)
 - Core Engine (API client + tool system)
 - Persistence Layer (SQLite)

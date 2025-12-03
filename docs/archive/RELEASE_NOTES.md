@@ -1,19 +1,19 @@
-# Clem v0.2.0 Release Notes
+# Hex v0.2.0 Release Notes
 
 **Release Date:** November 27, 2025
 
 ## Overview
 
-Clem v0.2.0 is a major feature release that introduces **interactive mode** with full terminal UI, **conversation persistence**, and **tool execution capabilities**. This release transforms Clem from a simple print-mode CLI into a full-featured AI assistant with Claude's tool-using capabilities.
+Hex v0.2.0 is a major feature release that introduces **interactive mode** with full terminal UI, **conversation persistence**, and **tool execution capabilities**. This release transforms Hex from a simple print-mode CLI into a full-featured AI assistant with Claude's tool-using capabilities.
 
 ## Highlights
 
 ### Interactive Terminal UI
 
-Launch Clem without flags to enter a beautiful, full-featured terminal interface:
+Launch Hex without flags to enter a beautiful, full-featured terminal interface:
 
 ```bash
-clem
+hex
 ```
 
 Features include:
@@ -30,12 +30,12 @@ Never lose your work again. All conversations are automatically saved to SQLite:
 
 ```bash
 # Resume your last conversation
-clem --continue
+hex --continue
 
 # Resume a specific conversation by ID
-clem --resume conv-1234567890
+hex --resume conv-1234567890
 
-# Database location: ~/.clem/clem.db
+# Database location: ~/.hex/hex.db
 ```
 
 Features:
@@ -76,7 +76,7 @@ All tools require user approval for dangerous operations and include:
 
 ### For Users
 
-- **Interactive Mode**: Launch with just `clem` for rich terminal UI
+- **Interactive Mode**: Launch with just `hex` for rich terminal UI
 - **Conversation History**: Resume past conversations seamlessly
 - **Tool Approval System**: Explicit control over file/command operations
 - **Better Visualization**: Markdown rendering, syntax highlighting, and formatted output
@@ -97,10 +97,10 @@ All tools require user approval for dangerous operations and include:
 
 ```bash
 # Install or upgrade to v0.2.0
-go install github.com/harper/clem/cmd/clem@v0.2.0
+go install github.com/harper/hex/cmd/hex@v0.2.0
 
 # Verify installation
-clem doctor
+hex doctor
 ```
 
 ### Migration
@@ -112,7 +112,7 @@ No migration needed! v0.2.0 is fully backward compatible with v0.1.0:
 - All v0.1.0 commands work identically
 
 New features are opt-in:
-- Interactive mode: just run `clem` without flags
+- Interactive mode: just run `hex` without flags
 - Conversation persistence: automatic on first use
 - Tools: activated when Claude requests them
 
@@ -121,12 +121,12 @@ New features are opt-in:
 Your existing configuration works as-is. New optional settings:
 
 ```yaml
-# ~/.clem/config.yaml
+# ~/.hex/config.yaml
 api_key: sk-ant-api03-...
 model: claude-sonnet-4-5-20250929
 
 # New optional settings (not required)
-database_path: ~/.clem/clem.db  # default location
+database_path: ~/.hex/hex.db  # default location
 tool_timeout: 30                 # seconds, default 30
 ```
 
@@ -197,8 +197,8 @@ Found a bug? Have a feature request?
 
 ---
 
-Thank you for using Clem! This release represents a major milestone in bringing Claude's capabilities to the terminal.
+Thank you for using Hex! This release represents a major milestone in bringing Claude's capabilities to the terminal.
 
-**Download:** `go install github.com/harper/clem/cmd/clem@v0.2.0`
+**Download:** `go install github.com/harper/hex/cmd/hex@v0.2.0`
 
 **Full Changelog:** [CHANGELOG.md](CHANGELOG.md)

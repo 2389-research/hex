@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/skills"
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/skills"
+	"github.com/harper/hex/internal/tools"
 )
 
 // initializeSkills loads skills from all sources and returns registry and tool
@@ -49,11 +49,11 @@ func initializeSkills(pluginSkillPaths []string) (*skills.Registry, tools.Tool) 
 func findBuiltinSkillsDir() string {
 	// Try several possible locations
 	possibleDirs := []string{
-		"./skills",                     // Development: same directory as binary
-		"../skills",                    // Development: parent directory
-		"/usr/local/share/clem/skills", // Linux install
-		"/opt/clem/skills",             // Alternative Linux
-		filepath.Join(getUserHome(), ".clem", "builtin-skills"), // Fallback
+		"./skills",                    // Development: same directory as binary
+		"../skills",                   // Development: parent directory
+		"/usr/local/share/hex/skills", // Linux install
+		"/opt/hex/skills",             // Alternative Linux
+		filepath.Join(getUserHome(), ".hex", "builtin-skills"), // Fallback
 	}
 
 	for _, dir := range possibleDirs {

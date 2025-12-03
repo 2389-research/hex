@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 func TestNewSpacing(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/harper/clem/internal/hooks"
-	"github.com/harper/clem/internal/permissions"
+	"github.com/harper/hex/internal/hooks"
+	"github.com/harper/hex/internal/permissions"
 )
 
 // ApprovalFunc is called when a tool needs user approval

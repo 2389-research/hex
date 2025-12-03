@@ -6,7 +6,7 @@
 
 ## Overview
 
-Phase 3 implemented the three remaining core tools to complete Clem's tool suite, bringing the total from 3 tools to 6 tools. These tools enable Claude to perform comprehensive code editing, searching, and file discovery operations.
+Phase 3 implemented the three remaining core tools to complete Hex's tool suite, bringing the total from 3 tools to 6 tools. These tools enable Claude to perform comprehensive code editing, searching, and file discovery operations.
 
 ## Objectives Met
 
@@ -43,7 +43,7 @@ Phase 3 implemented the three remaining core tools to complete Clem's tool suite
 
 ### ✅ Integration & Testing
 - **4 new integration tests** covering all three tools
-- **All tools registered** in cmd/clem/root.go
+- **All tools registered** in cmd/hex/root.go
 - **Total test count**: ~238 tests, all passing
 - **Coverage**: 85%+ maintained
 
@@ -89,7 +89,7 @@ All three tools followed strict RED-GREEN-REFACTOR cycle:
 - `internal/tools/glob_tool_test.go` (370 lines)
 
 **Files Modified:**
-- `cmd/clem/root.go` - Registered 3 new tools
+- `cmd/hex/root.go` - Registered 3 new tools
 - `internal/ui/update.go` - Fixed search mode focus bug
 - `internal/ui/update_test.go` - Updated test
 - `test/integration/tools_test.go` - Added 4 integration tests
@@ -119,7 +119,7 @@ Total:                    4/4 passing ✅
 
 ### Full Suite
 ```
-cmd/clem:            All tests passing ✅
+cmd/hex:            All tests passing ✅
 internal/core:       All tests passing ✅
 internal/storage:    All tests passing ✅
 internal/tools:      All tests passing ✅
@@ -245,7 +245,7 @@ Phase 3 successfully completed all objectives:
 ✅ Integration testing
 ✅ No performance regressions
 
-**Clem now has a complete, production-ready tool suite enabling Claude to read, write, edit, execute, search, and discover files with full user control and safety.**
+**Hex now has a complete, production-ready tool suite enabling Claude to read, write, edit, execute, search, and discover files with full user control and safety.**
 
 ---
 

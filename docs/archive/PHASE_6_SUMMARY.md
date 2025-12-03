@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 6 transforms Clem from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool through three parallel development efforts: Production Hardening, Advanced Features, and UX Polish.
+Phase 6 transforms Hex from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool through three parallel development efforts: Production Hardening, Advanced Features, and UX Polish.
 
 **Development Approach**: 6 subagents working in parallel
 **Development Time**: ~2 hours (vs ~12 hours sequential) - 6x speedup
@@ -35,7 +35,7 @@ Phase 6 transforms Clem from a feature-complete prototype into a production-read
 **Files Created:**
 - `internal/logging/logger.go` (335 lines)
 - `internal/logging/logger_test.go` (357 lines, 17 tests)
-- `cmd/clem/logging_integration_test.go` (134 lines, 5 tests)
+- `cmd/hex/logging_integration_test.go` (134 lines, 5 tests)
 - `docs/LOGGING.md` (250+ lines)
 
 **Test Results**: 22/22 tests passing
@@ -54,11 +54,11 @@ Phase 6 transforms Clem from a feature-complete prototype into a production-read
 
 **Installation Methods:**
 1. Install script: `curl -sSL https://... | bash`
-2. Homebrew: `brew install harper/tap/clem`
-3. Go install: `go install github.com/harper/clem/cmd/clem@latest`
+2. Homebrew: `brew install harper/tap/hex`
+3. Go install: `go install github.com/harper/hex/cmd/hex@latest`
 4. Pre-built binaries from GitHub Releases
 5. Build from source: `make install`
-6. Docker: `docker pull ghcr.io/harper/clem:latest`
+6. Docker: `docker pull ghcr.io/harper/hex:latest`
 
 **Files Created:**
 - `.github/workflows/test.yml` - CI testing
@@ -94,13 +94,13 @@ Phase 6 transforms Clem from a feature-complete prototype into a production-read
 **Usage:**
 ```bash
 # Single image
-clem --image screenshot.png "What's in this image?"
+hex --image screenshot.png "What's in this image?"
 
 # Multiple images
-clem --image img1.png --image img2.png "Compare these"
+hex --image img1.png --image img2.png "Compare these"
 
 # Mixed with text
-clem --image error.png "Debug this error and suggest fixes"
+hex --image error.png "Debug this error and suggest fixes"
 ```
 
 **Files Created:**
@@ -112,8 +112,8 @@ clem --image error.png "Debug this error and suggest fixes"
 - `internal/core/types.go` - Added ContentBlock, ImageSource
 - `internal/core/types_test.go` - Multimodal tests
 - `internal/core/client_test.go` - Vision API tests
-- `cmd/clem/root.go` - Added --image flag
-- `cmd/clem/print.go` - Image handling
+- `cmd/hex/root.go` - Added --image flag
+- `cmd/hex/print.go` - Image handling
 
 **Test Results**: 30+ tests passing
 **Cost Impact**: ~$0.01-0.05 per image request
@@ -158,7 +158,7 @@ claude-sonnet-4-5 ● 15k↓ 8k↑ [███████░░░] [chat]
 
 **Files Modified:**
 - `internal/ui/model.go` - Context manager integration
-- `cmd/clem/root.go` - Added flags and initialization
+- `cmd/hex/root.go` - Added flags and initialization
 
 **Test Results**: 22/22 tests passing, 80.6% coverage
 **Token Savings**: Up to 99.1% in long conversations ($11+ per 100 requests)
@@ -242,7 +242,7 @@ claude-sonnet-4-5 ● 15k↓ 8k↑ [███████░░░] [chat]
 **Test Results**: 8/8 tests passing
 
 **Remaining Work** (documented in PHASE_6C_PLAN.md):
-- History CLI command (`clem history search "docker"`)
+- History CLI command (`hex history search "docker"`)
 - Session templates (YAML-based workflows)
 - Tab auto-completion
 - Conversation favorites/bookmarks
@@ -327,6 +327,6 @@ claude-sonnet-4-5 ● 15k↓ 8k↑ [███████░░░] [chat]
 
 ## Conclusion
 
-Phase 6 successfully transforms Clem from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool. The parallel development approach delivered massive value in minimal time, and the comprehensive documentation ensures long-term maintainability.
+Phase 6 successfully transforms Hex from a feature-complete prototype into a production-ready, enterprise-grade AI CLI tool. The parallel development approach delivered massive value in minimal time, and the comprehensive documentation ensures long-term maintainability.
 
-**Clem v0.6.0 is ready for production use and public distribution.**
+**Hex v0.6.0 is ready for production use and public distribution.**

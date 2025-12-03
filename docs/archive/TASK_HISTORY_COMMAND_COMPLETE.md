@@ -1,21 +1,21 @@
 # Task 2: History Command Implementation - COMPLETE
 
 ## Overview
-Implemented `clem history` command with FTS5 search capabilities according to PHASE_6C_PLAN.md Task 2.
+Implemented `hex history` command with FTS5 search capabilities according to PHASE_6C_PLAN.md Task 2.
 
 ## Files Created
 
 ### Command Implementation
-- **cmd/clem/history.go** - Main history command implementation
-  - `clem history` - Shows recent history (default 20 entries)
-  - `clem history search "query"` - FTS5 full-text search
+- **cmd/hex/history.go** - Main history command implementation
+  - `hex history` - Shows recent history (default 20 entries)
+  - `hex history search "query"` - FTS5 full-text search
   - `--limit N` flag - Customize number of results
   - Relative time formatting ("2 hours ago", "yesterday", etc.)
   - Message preview truncation (60 chars with smart word boundaries)
   - Conversation ID display for context
 
 ### Tests
-- **cmd/clem/history_test.go** - Comprehensive test suite
+- **cmd/hex/history_test.go** - Comprehensive test suite
   - TestHistoryCommand_NoHistory - Empty database handling
   - TestHistoryCommand_WithHistory - Basic history display
   - TestHistoryCommand_CustomLimit - Limit flag functionality
@@ -27,7 +27,7 @@ Implemented `clem history` command with FTS5 search capabilities according to PH
 ## Files Modified
 
 ### Command Registration
-- **cmd/clem/root.go** - Commented out incomplete template system code
+- **cmd/hex/root.go** - Commented out incomplete template system code
   - Prevented build errors from unimplemented SetSystemPrompt method
   - Added TODO for templates task completion
 
@@ -43,13 +43,13 @@ Implemented `clem history` command with FTS5 search capabilities according to PH
   - Added TODO for proper migration tracking system
 
 ### Code Cleanup
-- **cmd/clem/favorites.go** - Removed unused strings import
+- **cmd/hex/favorites.go** - Removed unused strings import
 
 ## Key Features
 
 ### 1. Recent History Display
 ```bash
-$ clem history
+$ hex history
 Recent history (showing 20):
 
   2 hours ago - How do I use docker?
@@ -59,13 +59,13 @@ Recent history (showing 20):
     Conversation: conv-124
 
 Total: 20 entries
-Use 'clem history --limit N' to show more results
-Use 'clem history search "query"' to search
+Use 'hex history --limit N' to show more results
+Use 'hex history search "query"' to search
 ```
 
 ### 2. Full-Text Search
 ```bash
-$ clem history search "docker"
+$ hex history search "docker"
 Search results for "docker" (showing 3):
 
   2 hours ago - How do I use docker?
@@ -114,22 +114,22 @@ All tests passing:
 === RUN   TestDisplayHistoryEntry
 --- PASS: TestDisplayHistoryEntry (0.00s)
 PASS
-ok      github.com/harper/clem/cmd/clem 0.312s
+ok      github.com/harper/hex/cmd/hex 0.312s
 ```
 
 ## Manual Testing
 
 ### Help Output
 ```bash
-$ go run ./cmd/clem history --help
-View your command history with Clem.
+$ go run ./cmd/hex history --help
+View your command history with Hex.
 
 Shows recent conversations with timestamps, message previews, and conversation IDs.
 Use the search subcommand to find specific topics.
 
 Usage:
-  clem history [flags]
-  clem history [command]
+  hex history [flags]
+  hex history [command]
 
 Available Commands:
   search      Search command history
@@ -141,10 +141,10 @@ Flags:
 
 ### Empty Database
 ```bash
-$ go run ./cmd/clem history --db-path /tmp/test.db
+$ go run ./cmd/hex history --db-path /tmp/test.db
 No history found.
 
-Start a conversation with Clem to build your history!
+Start a conversation with Hex to build your history!
 ```
 
 ## Code Quality

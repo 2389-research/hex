@@ -295,10 +295,10 @@ The logging will help diagnose:
 
 ### Running with Logging
 
-1. Build and run clem:
+1. Build and run hex:
    ```bash
-   go build ./cmd/clem
-   ./clem 2>debug.log
+   go build ./cmd/hex
+   ./hex 2>debug.log
    ```
 
 2. The main UI will display on stdout, debug logs will go to stderr (debug.log)

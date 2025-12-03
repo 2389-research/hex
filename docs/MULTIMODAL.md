@@ -1,6 +1,6 @@
-# Multimodal (Vision) Support in Clem
+# Multimodal (Vision) Support in Hex
 
-Clem supports Claude's vision capabilities, allowing you to analyze images alongside text prompts. This feature enables screenshot analysis, diagram explanation, OCR, and more.
+Hex supports Claude's vision capabilities, allowing you to analyze images alongside text prompts. This feature enables screenshot analysis, diagram explanation, OCR, and more.
 
 ## Supported Formats
 
@@ -21,7 +21,7 @@ Clem supports Claude's vision capabilities, allowing you to analyze images along
 Analyze a single image:
 
 ```bash
-clem --print --image screenshot.png "What's in this image?"
+hex --print --image screenshot.png "What's in this image?"
 ```
 
 ### Multiple Images
@@ -29,7 +29,7 @@ clem --print --image screenshot.png "What's in this image?"
 Compare multiple images in one request:
 
 ```bash
-clem --print --image diagram1.png --image diagram2.png "Compare these two diagrams"
+hex --print --image diagram1.png --image diagram2.png "Compare these two diagrams"
 ```
 
 ### Image-Only Requests
@@ -37,7 +37,7 @@ clem --print --image diagram1.png --image diagram2.png "Compare these two diagra
 You can send images without a text prompt:
 
 ```bash
-clem --print --image photo.jpg
+hex --print --image photo.jpg
 ```
 
 Claude will provide a general description of the image.
@@ -47,31 +47,31 @@ Claude will provide a general description of the image.
 ### Screenshot Analysis
 
 ```bash
-clem --print --image error-screen.png "What's the error and how do I fix it?"
+hex --print --image error-screen.png "What's the error and how do I fix it?"
 ```
 
 ### Diagram Explanation
 
 ```bash
-clem --print --image architecture.png "Explain this system architecture"
+hex --print --image architecture.png "Explain this system architecture"
 ```
 
 ### OCR (Text Extraction)
 
 ```bash
-clem --print --image document.jpg "Extract all text from this image"
+hex --print --image document.jpg "Extract all text from this image"
 ```
 
 ### Code from Screenshot
 
 ```bash
-clem --print --image code-screenshot.png "Convert this code to markdown"
+hex --print --image code-screenshot.png "Convert this code to markdown"
 ```
 
 ### Data from Charts
 
 ```bash
-clem --print --image chart.png "What are the key insights from this chart?"
+hex --print --image chart.png "What are the key insights from this chart?"
 ```
 
 ## Interactive Mode (Future)
@@ -106,7 +106,7 @@ https://www.anthropic.com/pricing
 
 When you use the `--image` flag:
 
-1. Clem loads the image file and validates format/size
+1. Hex loads the image file and validates format/size
 2. The image is base64-encoded
 3. A multimodal message is constructed with both image and text content blocks
 4. The request is sent to Claude's Messages API with vision support
@@ -169,7 +169,7 @@ Solution: Resize or compress the image to under 5MB.
 ### Example 1: Screenshot Analysis
 
 ```bash
-$ clem --print --image error-screenshot.png "What's the error?"
+$ hex --print --image error-screenshot.png "What's the error?"
 
 The screenshot shows a Python traceback with a KeyError on line 42 of main.py.
 The error occurs because the code is trying to access a dictionary key 'config'
@@ -186,7 +186,7 @@ that doesn't exist. To fix this, you should either:
 ### Example 2: Diagram Explanation
 
 ```bash
-$ clem --print --image architecture.png "Explain this architecture"
+$ hex --print --image architecture.png "Explain this architecture"
 
 This diagram shows a microservices architecture with:
 - A load balancer distributing traffic to multiple API servers

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 // SlashCommandTool allows Claude to execute slash commands

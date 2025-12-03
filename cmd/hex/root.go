@@ -9,16 +9,16 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/agentsmd"
-	ctxmgr "github.com/harper/clem/internal/context"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/mcp"
-	"github.com/harper/clem/internal/permissions"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/templates"
-	"github.com/harper/clem/internal/tools"
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/hex/internal/agentsmd"
+	ctxmgr "github.com/harper/hex/internal/context"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/mcp"
+	"github.com/harper/hex/internal/permissions"
+	"github.com/harper/hex/internal/storage"
+	"github.com/harper/hex/internal/templates"
+	"github.com/harper/hex/internal/tools"
+	"github.com/harper/hex/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -67,9 +67,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "clem [prompt]",
-	Short: "Clem - AI assistant CLI",
-	Long: `Clem is an AI assistant for your terminal.
+	Use:   "hex [prompt]",
+	Short: "Hex - AI assistant CLI",
+	Long: `Hex is an AI assistant for your terminal.
 
 Start an interactive session or use --print for one-off queries.`,
 	Version: version,
@@ -103,7 +103,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&contextStrategy, "context-strategy", "prune", "Context management strategy: keep-all, prune, summarize")
 
 	// Phase 6C: Template system flags
-	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'clem templates list')")
+	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'hex templates list')")
 
 	// Print mode tool support flags (like Claude Code)
 	rootCmd.PersistentFlags().BoolVar(&dangerouslySkipPermissions, "dangerously-skip-permissions", false, "Auto-approve all tool executions (use with caution)")
@@ -123,7 +123,7 @@ func runRoot(_ *cobra.Command, args []string) error {
 	}
 	defer closeLogger()
 
-	logging.InfoWith("Clem starting", "version", version)
+	logging.InfoWith("Hex starting", "version", version)
 
 	prompt := ""
 	if len(args) > 0 {
@@ -296,7 +296,7 @@ func runInteractive(prompt string) error {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
 	} else {
-		return fmt.Errorf("API key not configured. Run 'clem setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Task 12: Create tool registry and executor
@@ -439,7 +439,7 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("run UI: %w", err)
 	}
 
-	logging.Info("Clem shutting down")
+	logging.Info("Hex shutting down")
 	return nil
 }
 

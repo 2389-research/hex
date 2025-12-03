@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Huh-based onboarding flow for first-run experience
 // ABOUTME: Guides new users through setup with welcome, API key, model selection, and tutorial
 package forms
@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // OnboardingFormResult contains the result of the onboarding flow
@@ -69,11 +69,11 @@ func (f *OnboardingForm) Run() (*OnboardingFormResult, error) {
 		// Step 1: Welcome Screen
 		huh.NewGroup(
 			huh.NewNote().
-				Title("👋 Welcome to Clem!").
+				Title("👋 Welcome to Hex!").
 				Description(f.buildWelcomeText()),
 			huh.NewConfirm().
 				Title("Ready to get started?").
-				Description("Let's set up your Clem configuration").
+				Description("Let's set up your Hex configuration").
 				Affirmative("Yes, let's go!").
 				Negative("Skip for now").
 				Value(&f.wantsToSetup),
@@ -124,7 +124,7 @@ func (f *OnboardingForm) Run() (*OnboardingFormResult, error) {
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("💬 Try a Sample Conversation?").
-				Description("Start with a pre-made example to see Clem in action").
+				Description("Start with a pre-made example to see Hex in action").
 				Affirmative("Yes, let's try it").
 				Negative("No, I'll start fresh").
 				Value(&f.result.StartSample),
@@ -146,7 +146,7 @@ func (f *OnboardingForm) Run() (*OnboardingFormResult, error) {
 
 // buildWelcomeText creates the welcome message
 func (f *OnboardingForm) buildWelcomeText() string {
-	return `Clem is your intelligent command-line assistant powered by Claude.
+	return `Hex is your intelligent command-line assistant powered by Claude.
 
 Features:
   • Interactive chat with Claude AI
@@ -244,7 +244,7 @@ func (f *OnboardingForm) getDraculaTheme() *huh.Theme {
 
 // GetTutorialText returns the tutorial content to display
 func (f *OnboardingForm) GetTutorialText() string {
-	return `# Clem Quick Tutorial
+	return `# Hex Quick Tutorial
 
 ## Navigation
 - j/k - Scroll down/up (Vim-style)

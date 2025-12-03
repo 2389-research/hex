@@ -314,7 +314,7 @@ args = ["server.js"]
 
 ## Differences from clem
 
-| Feature | Codex | clem |
+| Feature | Codex | hex |
 |---------|-------|------|
 | **Language** | Rust | Go |
 | **TUI** | Ratatui | Bubbletea |
@@ -385,7 +385,7 @@ cargo test -p codex-tui  # Run TUI tests
 6. **Image input**: Valuable for debugging screenshots
 7. **Session resuming**: Better UX than current approach
 
-### Where clem Differs (Good!)
+### Where hex Differs (Good!)
 1. **SQLite**: Better for complex queries than NDJSON
 2. **Go simplicity**: Easier to build/deploy than Rust
 3. **Simpler approval**: JSON rules vs. execpolicy DSL

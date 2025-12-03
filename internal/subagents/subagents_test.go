@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/subagents"
+	"github.com/harper/hex/internal/subagents"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -408,7 +408,7 @@ func TestExecutor_ExecuteWithHooks(t *testing.T) {
 
 	// Execute with nil hook engine
 	result, err := executor.ExecuteWithHooks(context.Background(), req, nil)
-	// Will fail due to missing clem binary, but that's ok
+	// Will fail due to missing hex binary, but that's ok
 	assert.NotNil(t, result)
 	_ = err
 
@@ -626,7 +626,7 @@ func TestExecutor_ContextIsolation(t *testing.T) {
 		Description: "Test description",
 	}
 
-	// Execute (will fail since clem binary likely not available, but that's ok)
+	// Execute (will fail since hex binary likely not available, but that's ok)
 	_, _ = executor.Execute(context.Background(), req)
 
 	// Context should be cleaned up after execution

@@ -6,7 +6,7 @@
 
 ## Overview
 
-Phase 4 implemented 7 new tools across three categories, expanding Clem from 6 tools to 13 tools. These tools enable Claude to perform interactive decision-making, web research, and advanced sub-agent execution.
+Phase 4 implemented 7 new tools across three categories, expanding Hex from 6 tools to 13 tools. These tools enable Claude to perform interactive decision-making, web research, and advanced sub-agent execution.
 
 ## Objectives Met
 
@@ -59,7 +59,7 @@ Phase 4 implemented 7 new tools across three categories, expanding Clem from 6 t
 - **Status**: Complete with 21 passing tests
 - **Purpose**: Sub-agent spawning for complex tasks
 - **Key Features**:
-  - Spawns `clem --print` as subprocess
+  - Spawns `hex --print` as subprocess
   - Environment inheritance (API keys, config)
   - Configurable timeout (5min default, 30min max)
   - Auto-builds binary if not in PATH
@@ -86,7 +86,7 @@ Phase 4 implemented 7 new tools across three categories, expanding Clem from 6 t
 
 ### ✅ Integration & Testing
 - **103 new tests** covering all 7 tools
-- **All tools registered** in cmd/clem/root.go
+- **All tools registered** in cmd/hex/root.go
 - **Total test count**: ~341 tests, all passing
 - **Coverage**: 85%+ maintained
 
@@ -143,7 +143,7 @@ All 7 tools followed strict RED-GREEN-REFACTOR cycle using parallel subagents:
 - Plus various documentation and summary files
 
 **Files Modified**:
-- `cmd/clem/root.go` - Registered 7 new tools
+- `cmd/hex/root.go` - Registered 7 new tools
 - `test/integration/tools_test.go` - Updated integration test
 - `docs/TOOLS.md` - Added 1,546 lines of documentation
 - `CHANGELOG.md` - Added v0.4.0 section
@@ -173,7 +173,7 @@ All Phase 4 tools:       Integrated successfully ✅
 
 ### Full Suite
 ```
-cmd/clem:            All tests passing ✅
+cmd/hex:            All tests passing ✅
 internal/core:       All tests passing ✅ (1 timeout, expected)
 internal/storage:    All tests passing ✅
 internal/tools:      All tests passing ✅
@@ -206,7 +206,7 @@ Total: ~341 tests, ALL PASSING ✅
 **Tradeoff**: HTML parsing is more fragile than API, but works well
 
 ### Challenge 5: Task Tool Auto-Build
-**Problem**: clem binary might not be in PATH
+**Problem**: hex binary might not be in PATH
 **Solution**: Auto-detects go.mod and builds from source if needed
 **Benefit**: Works in development environments without manual setup
 
@@ -261,7 +261,7 @@ Total: ~341 tests, ALL PASSING ✅
 ```bash
 # Launch sub-agent for complex task
 "Spawn agent to review this codebase for security issues"
-→ Launches clem subprocess with full context
+→ Launches hex subprocess with full context
 
 # Monitor background process
 "Check build status"
@@ -344,7 +344,7 @@ Phase 4 successfully completed all objectives:
 ✅ No performance regressions
 ✅ Expanded from 6 to 13 tools
 
-**Clem now has a comprehensive, production-ready tool suite enabling Claude to:**
+**Hex now has a comprehensive, production-ready tool suite enabling Claude to:**
 - Make interactive decisions with users
 - Research information on the web
 - Spawn sub-agents for complex tasks

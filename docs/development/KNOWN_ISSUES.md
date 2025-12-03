@@ -1,4 +1,4 @@
-# Known Issues - Clem v1.0
+# Known Issues - Hex v1.0
 
 **Date:** 2025-11-28
 **Status:** Non-blocking for v1.0 release
@@ -35,11 +35,11 @@ Fix in v1.0.1 or v1.1 by:
 ### Issue #2: Version Test Mismatch
 
 **Test Affected:**
-- `cmd/clem/root_test.go:TestVersionFlag`
+- `cmd/hex/root_test.go:TestVersionFlag`
 
 **Error:**
 ```
-Error: "clem version 1.0.0\n" does not contain "0.1.0"
+Error: "hex version 1.0.0\n" does not contain "0.1.0"
 ```
 
 **Root Cause:**
@@ -51,7 +51,7 @@ Trivial test fix, does not affect functionality.
 **Fix:**
 Update test expectation:
 ```go
-// cmd/clem/root_test.go:31
+// cmd/hex/root_test.go:31
 assert.Contains(t, output, "1.0.0") // was "0.1.0"
 ```
 

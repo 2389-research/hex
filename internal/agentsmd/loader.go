@@ -13,7 +13,7 @@ import (
 
 // LoadContext loads AGENTS.md files from the directory hierarchy
 // Strategy:
-//  1. Load global ~/.clem/AGENTS.md (if exists)
+//  1. Load global ~/.hex/AGENTS.md (if exists)
 //  2. Find git repository root
 //  3. Traverse from repo root → current working directory
 //  4. At each level, check for:
@@ -25,11 +25,11 @@ func LoadContext() (string, error) {
 	var globalContext string
 	var repoContext strings.Builder
 
-	// 1. Load global AGENTS.md from ~/.clem/
+	// 1. Load global AGENTS.md from ~/.hex/
 	// Global context is NEVER overridden by repository files
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
-		globalPath := filepath.Join(homeDir, ".clem", "AGENTS.md")
+		globalPath := filepath.Join(homeDir, ".hex", "AGENTS.md")
 		//nolint:gosec // Intentional file read from user's home directory
 		if content, err := os.ReadFile(globalPath); err == nil {
 			globalContext = fmt.Sprintf("# Global Context\n\n%s\n\n", string(content))

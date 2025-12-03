@@ -1,4 +1,4 @@
-# TUI Polish Implementation Plan - "The Incredible Clem"
+# TUI Polish Implementation Plan - "The Incredible Hex"
 
 **Goal**: Comprehensive TUI polish using Charm ecosystem with Dracula theme
 
@@ -185,7 +185,7 @@
 **Files to modify**:
 - `internal/ui/model.go`
 - `internal/ui/update.go`
-- `cmd/clem/root.go` (add settings command)
+- `cmd/hex/root.go` (add settings command)
 
 **Success criteria**:
 - Full settings wizard working
@@ -222,7 +222,7 @@
 - `internal/ui/forms/onboarding_test.go`
 
 **Files to modify**:
-- `cmd/clem/interactive.go`
+- `cmd/hex/interactive.go`
 - `internal/ui/model.go`
 
 **Success criteria**:

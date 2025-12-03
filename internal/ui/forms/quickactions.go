@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Huh-based quick actions menu for keyboard-driven command palette
 // ABOUTME: Provides beautiful select-based action UI with fuzzy search
 package forms
@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // QuickAction represents a single quick action

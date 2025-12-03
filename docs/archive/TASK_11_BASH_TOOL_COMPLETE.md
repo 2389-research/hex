@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully implemented the Bash tool for Clem Phase 2, following TDD (Test-Driven Development) methodology. The Bash tool executes shell commands with comprehensive safety features, timeout management, and output capture.
+Successfully implemented the Bash tool for Hex Phase 2, following TDD (Test-Driven Development) methodology. The Bash tool executes shell commands with comprehensive safety features, timeout management, and output capture.
 
 ## What Was Implemented
 
@@ -176,6 +176,6 @@ The Bash tool integrates seamlessly with:
 
 ## Task Status: ✅ COMPLETE
 
-All requirements from Task 11 have been successfully implemented and tested. The Bash tool is production-ready and fully integrated with the Clem Phase 2 tool system.
+All requirements from Task 11 have been successfully implemented and tested. The Bash tool is production-ready and fully integrated with the Hex Phase 2 tool system.
 
 **Next Steps**: Ready for Task 12 (Tool Execution UI integration)

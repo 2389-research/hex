@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Successfully implemented **Phases 1-4** of the Claude Code alignment roadmap in a single sprint using parallel subagent execution. Clem has jumped from **65% to 85% feature parity** with Claude Code.
+Successfully implemented **Phases 1-4** of the Claude Code alignment roadmap in a single sprint using parallel subagent execution. Hex has jumped from **65% to 85% feature parity** with Claude Code.
 
 ### What Was Implemented
 
@@ -148,10 +148,10 @@ internal/permissions/
 ### Example Usage
 ```bash
 # Audit mode - deny destructive operations
-clem "analyze codebase" --disallowed-tools Edit,Write,Bash
+hex "analyze codebase" --disallowed-tools Edit,Write,Bash
 
 # CI mode - auto-approve safe operations
-clem "run tests" --permission-mode auto --allowed-tools Bash,Read
+hex "run tests" --permission-mode auto --allowed-tools Bash,Read
 ```
 
 ### Test Results
@@ -228,7 +228,7 @@ SlashCommand({
 ### New Packages
 
 ```
-clem/
+hex/
 ├── internal/
 │   ├── hooks/          # Phase 1: Lifecycle automation
 │   ├── skills/         # Phase 2: Domain knowledge
@@ -272,7 +272,7 @@ Session End ────────────► SessionEnd Hook
 ```
 1. Builtin defaults (lowest priority)
    ↓
-2. User config (~/.clem/)
+2. User config (~/.hex/)
    ↓
 3. Project config (.claude/)
    ↓
@@ -285,11 +285,11 @@ Session End ────────────► SessionEnd Hook
 
 ### Build Status
 ```bash
-go build ./cmd/clem
+go build ./cmd/hex
 # ✅ Successful
 
-./clem --version
-# clem version 1.0.0
+./hex --version
+# hex version 1.0.0
 ```
 
 ### Test Coverage
@@ -298,16 +298,16 @@ go test ./... -short
 # ✅ All packages passing
 
 go test ./internal/hooks/... -cover
-# ok  	github.com/harper/clem/internal/hooks	0.650s	coverage: 100%
+# ok  	github.com/harper/hex/internal/hooks	0.650s	coverage: 100%
 
 go test ./internal/skills/... -cover
-# ok  	github.com/harper/clem/internal/skills	1.132s	coverage: 90.4%
+# ok  	github.com/harper/hex/internal/skills	1.132s	coverage: 90.4%
 
 go test ./internal/permissions/... -cover
-# ok  	github.com/harper/clem/internal/permissions	0.226s	coverage: 88+ tests
+# ok  	github.com/harper/hex/internal/permissions	0.226s	coverage: 88+ tests
 
 go test ./internal/commands/... -cover
-# ok  	github.com/harper/clem/internal/commands	(cached)	coverage: 93.0%
+# ok  	github.com/harper/hex/internal/commands	(cached)	coverage: 93.0%
 ```
 
 ### Integration Test
@@ -463,7 +463,7 @@ go test ./internal/commands/... -cover
 
 ## Conclusion
 
-Phases 1-4 of the alignment roadmap have been successfully completed, bringing Clem from 65% to 85% feature parity with Claude Code. The implementation focused on **extensibility systems** that enable users to customize and automate workflows.
+Phases 1-4 of the alignment roadmap have been successfully completed, bringing Hex from 65% to 85% feature parity with Claude Code. The implementation focused on **extensibility systems** that enable users to customize and automate workflows.
 
 Key achievements:
 - ✅ 4 major systems implemented in parallel

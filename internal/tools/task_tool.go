@@ -1,5 +1,5 @@
 // ABOUTME: Task tool implementation for spawning sub-agent processes
-// ABOUTME: Launches Clem subprocesses to handle complex multi-step tasks autonomously
+// ABOUTME: Launches Hex subprocesses to handle complex multi-step tasks autonomously
 
 package tools
 
@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/harper/clem/internal/subagents"
+	"github.com/harper/hex/internal/subagents"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 // TaskTool implements sub-agent task delegation functionality
 type TaskTool struct {
 	DefaultTimeout time.Duration // Default timeout for tasks
-	ClembinPath    string        // Path to clem binary (empty = search PATH)
+	HexBinPath     string        // Path to hex binary (empty = search PATH)
 	Executor       *subagents.Executor
 	UseFramework   bool // If true, use new subagent framework instead of direct subprocess
 }
@@ -37,7 +37,7 @@ type TaskTool struct {
 func NewTaskTool() *TaskTool {
 	return &TaskTool{
 		DefaultTimeout: DefaultTaskTimeout,
-		ClembinPath:    "", // Will search PATH
+		HexBinPath:     "", // Will search PATH
 		Executor:       nil,
 		UseFramework:   false, // Backward compatible: use old implementation by default
 	}
@@ -48,7 +48,7 @@ func NewTaskToolWithFramework() *TaskTool {
 	executor := subagents.NewExecutor()
 	return &TaskTool{
 		DefaultTimeout: DefaultTaskTimeout,
-		ClembinPath:    "",
+		HexBinPath:     "",
 		Executor:       executor,
 		UseFramework:   true,
 	}
@@ -242,25 +242,25 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 	cmdCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Find clem binary
-	clembinPath := t.ClembinPath
-	if clembinPath == "" {
+	// Find hex binary
+	hexbinPath := t.HexBinPath
+	if hexbinPath == "" {
 		var err error
-		clembinPath, err = exec.LookPath("clem")
+		hexbinPath, err = exec.LookPath("hex")
 		if err != nil {
 			// Try building from current project
-			clembinPath, err = t.buildClem(cmdCtx)
+			hexbinPath, err = t.buildHex(cmdCtx)
 			if err != nil {
 				return &Result{
 					ToolName: "task",
 					Success:  false,
-					Error:    fmt.Sprintf("clem binary not found: %v", err),
+					Error:    fmt.Sprintf("hex binary not found: %v", err),
 				}, nil
 			}
 		}
 	}
 
-	// Build command: clem --print "<prompt>"
+	// Build command: hex --print "<prompt>"
 	args := []string{"--print", prompt}
 
 	// Add model flag if specified
@@ -273,7 +273,7 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 		args = append([]string{"--resume", resumeID}, args...)
 	}
 
-	cmd := exec.CommandContext(cmdCtx, clembinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
+	cmd := exec.CommandContext(cmdCtx, hexbinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()
@@ -388,8 +388,8 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 	}, nil
 }
 
-// buildClem attempts to build clem in a temporary location
-func (t *TaskTool) buildClem(ctx context.Context) (string, error) {
+// buildHex attempts to build hex in a temporary location
+func (t *TaskTool) buildHex(ctx context.Context) (string, error) {
 	// Find go.mod to locate project root
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -417,9 +417,9 @@ func (t *TaskTool) buildClem(ctx context.Context) (string, error) {
 	}
 
 	// Build to temporary location
-	tempBin := filepath.Join(os.TempDir(), "clem-"+fmt.Sprintf("%d", time.Now().Unix()))
+	tempBin := filepath.Join(os.TempDir(), "hex-"+fmt.Sprintf("%d", time.Now().Unix()))
 
-	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/clem") //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", tempBin, "./cmd/hex") //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 	buildCmd.Dir = projectRoot
 
 	var buildOutput bytes.Buffer
@@ -427,7 +427,7 @@ func (t *TaskTool) buildClem(ctx context.Context) (string, error) {
 	buildCmd.Stderr = &buildOutput
 
 	if err := buildCmd.Run(); err != nil {
-		return "", fmt.Errorf("build clem: %w (output: %s)", err, buildOutput.String())
+		return "", fmt.Errorf("build hex: %w (output: %s)", err, buildOutput.String())
 	}
 
 	return tempBin, nil
@@ -521,21 +521,21 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 	// Create command with timeout context
 	cmdCtx, cancel := context.WithTimeout(ctx, timeout)
 
-	// Find clem binary
-	clembinPath := t.ClembinPath
-	if clembinPath == "" {
+	// Find hex binary
+	hexbinPath := t.HexBinPath
+	if hexbinPath == "" {
 		var err error
-		clembinPath, err = exec.LookPath("clem")
+		hexbinPath, err = exec.LookPath("hex")
 		if err != nil {
 			// Try building from current project
-			clembinPath, err = t.buildClem(cmdCtx)
+			hexbinPath, err = t.buildHex(cmdCtx)
 			if err != nil {
 				cancel()
 				resultChan := make(chan *Result, 1)
 				resultChan <- &Result{
 					ToolName: "task",
 					Success:  false,
-					Error:    fmt.Sprintf("clem binary not found: %v", err),
+					Error:    fmt.Sprintf("hex binary not found: %v", err),
 				}
 				close(resultChan)
 				return resultChan, nil
@@ -543,7 +543,7 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 		}
 	}
 
-	// Build command: clem --print "<prompt>"
+	// Build command: hex --print "<prompt>"
 	args := []string{"--print", prompt}
 
 	// Add model flag if specified
@@ -556,7 +556,7 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 		args = append([]string{"--resume", resumeID}, args...)
 	}
 
-	cmd := exec.CommandContext(cmdCtx, clembinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
+	cmd := exec.CommandContext(cmdCtx, hexbinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()

@@ -19,7 +19,7 @@ After fixing the API key loading bug, Claude was responding in interactive mode 
 
 ### Issue Location: `internal/tools/registry.go` and `internal/ui/update.go`
 
-The tool registry existed and had 11+ tools registered in `cmd/clem/root.go:264-311`, but:
+The tool registry existed and had 11+ tools registered in `cmd/hex/root.go:264-311`, but:
 
 1. **No method to export tool definitions**: The `Registry` struct had no way to convert registered tools into the Claude API format (`[]core.ToolDefinition`)
 
@@ -152,7 +152,7 @@ Alternative approaches considered but rejected:
 ### Build Test
 
 ```bash
-mise exec -- go build ./cmd/clem 2>&1
+mise exec -- go build ./cmd/hex 2>&1
 # Expected: No compilation errors ✓
 ```
 
@@ -160,7 +160,7 @@ mise exec -- go build ./cmd/clem 2>&1
 
 ```bash
 # Run interactive mode
-clem
+hex
 
 # Type a message that requires a tool, e.g.:
 # "read the file README.md"
@@ -194,7 +194,7 @@ clem
 ### Files Involved (Not Changed)
 - `internal/core/types.go:74-81` - ToolDefinition struct definition
 - `internal/core/types.go:34-40` - MessageRequest struct with Tools field
-- `cmd/clem/root.go:264-311` - Tool registration (ReadTool, WriteTool, BashTool, etc.)
+- `cmd/hex/root.go:264-311` - Tool registration (ReadTool, WriteTool, BashTool, etc.)
 - Individual tool files:
   - `internal/tools/read_tool.go` - Read tool implementation
   - `internal/tools/write_tool.go` - Write tool implementation

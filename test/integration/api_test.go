@@ -1,7 +1,7 @@
 // ABOUTME: API integration tests for Anthropic client interaction
 // ABOUTME: Tests message creation, streaming, tool use flows (with VCR or mocks)
 
-// Package integration provides end-to-end integration tests for Clem.
+// Package integration provides end-to-end integration tests for Hex.
 package integration
 
 import (
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

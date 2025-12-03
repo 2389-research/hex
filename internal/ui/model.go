@@ -15,13 +15,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/clem/internal/approval"
-	ctxmgr "github.com/harper/clem/internal/context"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/tools"
-	"github.com/harper/clem/internal/ui/forms"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/approval"
+	ctxmgr "github.com/harper/hex/internal/context"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/storage"
+	"github.com/harper/hex/internal/tools"
+	"github.com/harper/hex/internal/ui/forms"
+	"github.com/harper/hex/internal/ui/theme"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -193,7 +193,7 @@ func NewModel(conversationID, model string) *Model {
 	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
 
 	vp := viewport.New(80, 20)
-	vp.SetContent("Welcome to Clem! Type your message below.")
+	vp.SetContent("Welcome to Hex! Type your message below.")
 
 	// Initialize glamour renderer for markdown
 	renderer, err := glamour.NewTermRenderer(
@@ -768,7 +768,7 @@ func (m *Model) ClearConversation() {
 // ExportConversation exports the conversation to a string
 func (m *Model) ExportConversation() string {
 	var b strings.Builder
-	b.WriteString("# Clem Conversation Export\n\n")
+	b.WriteString("# Hex Conversation Export\n\n")
 	b.WriteString(fmt.Sprintf("Model: %s\n", m.Model))
 	b.WriteString(fmt.Sprintf("Conversation ID: %s\n\n", m.ConversationID))
 	b.WriteString("---\n\n")

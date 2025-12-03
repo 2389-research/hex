@@ -1,12 +1,12 @@
-# Clem → Claude Code Alignment Roadmap
+# Hex → Claude Code Alignment Roadmap
 
 **Created:** 2025-12-01
-**Purpose:** Phased plan to align Clem with Claude Code's feature set
+**Purpose:** Phased plan to align Hex with Claude Code's feature set
 **Source:** [CLAUDE-CODE-AUDIT.md](./CLAUDE-CODE-AUDIT.md)
 
 ## Executive Summary
 
-Clem has a solid foundation with excellent core functionality. To reach feature parity with Claude Code, we need to focus on **extensibility systems** that enable users to customize and automate workflows.
+Hex has a solid foundation with excellent core functionality. To reach feature parity with Claude Code, we need to focus on **extensibility systems** that enable users to customize and automate workflows.
 
 **Current State:** ~65% feature parity
 **Target State:** 95%+ feature parity
@@ -79,7 +79,7 @@ internal/hooks/
       "Edit": ["biome format ${file}"],
       "Write": ["git add ${file}"]
     },
-    "SessionStart": ["echo 'Welcome to Clem!' >&2"]
+    "SessionStart": ["echo 'Welcome to Hex!' >&2"]
   }
 }
 ```
@@ -173,10 +173,10 @@ internal/permissions/
 **Example:**
 ```bash
 # Audit mode - deny destructive operations
-clem "analyze codebase" --disallowed-tools Edit,Write,Bash
+hex "analyze codebase" --disallowed-tools Edit,Write,Bash
 
 # CI mode - auto-approve safe operations
-clem "run tests" --permission-mode auto --allowed-tools Bash,Read
+hex "run tests" --permission-mode auto --allowed-tools Bash,Read
 ```
 
 ---
@@ -278,9 +278,9 @@ Task(
 
 **Deliverables:**
 - Plugin manifest format (plugin.json)
-- Plugin discovery (`~/.clem/plugins/`)
+- Plugin discovery (`~/.hex/plugins/`)
 - Plugin lifecycle (install, enable, disable, uninstall)
-- `clem plugin` subcommands
+- `hex plugin` subcommands
 - Plugin marketplace integration (optional)
 
 **Implementation:**
@@ -292,12 +292,12 @@ internal/plugins/
 ├── registry.go     # Plugin registry
 └── cmd.go          # Plugin commands
 
-cmd/clem/plugin.go  # Subcommand
+cmd/hex/plugin.go  # Subcommand
 ```
 
 **Success Criteria:**
-- [ ] `clem plugin install <url>` works
-- [ ] `clem plugin list` shows installed plugins
+- [ ] `hex plugin install <url>` works
+- [ ] `hex plugin list` shows installed plugins
 - [ ] Plugins can bundle skills + hooks + MCP servers
 - [ ] Plugin enable/disable toggles functionality
 - [ ] Plugin updates supported
@@ -337,8 +337,8 @@ cmd/clem/plugin.go  # Subcommand
 
 ### MCP Enhancements
 - MCP resource tools (ListMcpResourcesTool, ReadMcpResourceTool)
-- `clem mcp serve` - Run as MCP server
-- `clem mcp tools` / `mcp resources` - Diagnostics
+- `hex mcp serve` - Run as MCP server
+- `hex mcp tools` / `mcp resources` - Diagnostics
 - Plugin-bundled MCP servers
 
 ### Missing Tools
@@ -472,10 +472,10 @@ cmd/clem/plugin.go  # Subcommand
 
 - [CLAUDE-CODE-AUDIT.md](./CLAUDE-CODE-AUDIT.md) - Feature comparison
 - [../claude-docs/](../claude-docs/) - Claude Code documentation
-- [ARCHITECTURE.md](../ARCHITECTURE.md) - Clem architecture
+- [ARCHITECTURE.md](../ARCHITECTURE.md) - Hex architecture
 
 ---
 
 **Last Updated:** 2025-12-01
 **Status:** Proposed
-**Owner:** Clem Team
+**Owner:** Hex Team

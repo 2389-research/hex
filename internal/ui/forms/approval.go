@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Huh-based tool approval form for interactive tool permission requests
 // ABOUTME: Provides beautiful select-based approval UI with multiple options
 package forms
@@ -9,8 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // ApprovalDecision represents the user's decision on tool approval

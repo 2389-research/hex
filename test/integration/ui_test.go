@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -124,7 +124,7 @@ func TestUIViewRendering(t *testing.T) {
 
 	view = m.View()
 	assert.NotContains(t, view, "Initializing", "should not show initializing after ready")
-	assert.Contains(t, view, "Clem", "should show title")
+	assert.Contains(t, view, "Hex", "should show title")
 }
 
 // TestUIStateTransitions tests various state transitions

@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupFavoritesTestDB(t *testing.T) (*sql.DB, string) {
 	// Create temp directory for test database
-	tmpDir, err := os.MkdirTemp("", "clem-favorites-test-*")
+	tmpDir, err := os.MkdirTemp("", "hex-favorites-test-*")
 	require.NoError(t, err)
 
 	dbPath := filepath.Join(tmpDir, "test.db")

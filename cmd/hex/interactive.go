@@ -8,13 +8,13 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/agentsmd"
-	ctxmgr "github.com/harper/clem/internal/context"
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/mcp"
-	"github.com/harper/clem/internal/tools"
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/hex/internal/agentsmd"
+	ctxmgr "github.com/harper/hex/internal/context"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/mcp"
+	"github.com/harper/hex/internal/tools"
+	"github.com/harper/hex/internal/ui"
 )
 
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model
@@ -48,7 +48,7 @@ func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt st
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
 	} else {
-		return fmt.Errorf("API key not configured. Run 'clem setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Create tool registry and executor
@@ -182,6 +182,6 @@ func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt st
 		return fmt.Errorf("run UI: %w", err)
 	}
 
-	logging.Info("Clem shutting down")
+	logging.Info("Hex shutting down")
 	return nil
 }

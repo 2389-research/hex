@@ -234,7 +234,7 @@ func (m *Model) sendToolResults() tea.Cmd {
 ### Build Test
 
 ```bash
-mise exec -- go build ./cmd/clem 2>&1
+mise exec -- go build ./cmd/hex 2>&1
 # Expected: No compilation errors ✓
 ```
 
@@ -242,7 +242,7 @@ mise exec -- go build ./cmd/clem 2>&1
 
 ```bash
 # Run interactive mode
-clem
+hex
 
 # Test 1: Single tool call
 # Type: "create a file called test.txt with content 'hello'"

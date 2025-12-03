@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +67,7 @@ var favoritesCmd = &cobra.Command{
 		// Print results
 		if len(favorites) == 0 {
 			fmt.Println("No favorite conversations yet.")
-			fmt.Println("Use 'clem favorite <conv-id>' to mark a conversation as favorite.")
+			fmt.Println("Use 'hex favorite <conv-id>' to mark a conversation as favorite.")
 			return nil
 		}
 

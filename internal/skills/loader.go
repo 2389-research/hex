@@ -11,13 +11,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/clem/internal/project"
+	"github.com/harper/hex/internal/project"
 )
 
 // Loader discovers and loads skills from multiple directories
 type Loader struct {
-	UserDir     string   // User-global skills directory (~/.clem/skills/)
-	ProjectDir  string   // Project-local skills directory (.clem/skills/)
+	UserDir     string   // User-global skills directory (~/.hex/skills/)
+	ProjectDir  string   // Project-local skills directory (.hex/skills/)
 	BuiltinDir  string   // Built-in skills directory (embedded or distributed)
 	PluginPaths []string // Additional skill paths from plugins
 }
@@ -25,9 +25,9 @@ type Loader struct {
 // NewLoader creates a loader with default directories
 func NewLoader() *Loader {
 	homeDir, _ := os.UserHomeDir()
-	userDir := filepath.Join(homeDir, ".clem", "skills")
+	userDir := filepath.Join(homeDir, ".hex", "skills")
 
-	// Find project directory by looking for .clem directory
+	// Find project directory by looking for .hex directory
 	projectDir := project.FindDir("skills")
 
 	return &Loader{

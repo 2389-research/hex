@@ -1,5 +1,5 @@
-// Package theme provides Dracula color palette and lipgloss styles for the clem TUI.
-// ABOUTME: Dracula theme color palette and lipgloss styles for the clem TUI
+// Package theme provides Dracula color palette and lipgloss styles for the hex TUI.
+// ABOUTME: Dracula theme color palette and lipgloss styles for the hex TUI
 // ABOUTME: Provides consistent color scheme throughout the application
 package theme
 

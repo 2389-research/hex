@@ -45,7 +45,7 @@ func TestBuildWelcomeText(t *testing.T) {
 
 	// Should contain key information
 	expectedPhrases := []string{
-		"Clem",
+		"Hex",
 		"Features",
 		"Interactive chat",
 		"Tool execution",

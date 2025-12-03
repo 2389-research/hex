@@ -277,8 +277,8 @@ prompt.WriteString("\nApprove? (y/n): ")
 
 After changes:
 
-1. Build: `go build ./cmd/clem`
-2. Run with debug: `./clem 2>debug.log`
+1. Build: `go build ./cmd/hex`
+2. Run with debug: `./hex 2>debug.log`
 3. Test multi-tool request: "create 3 files: test1.txt, test2.txt, test3.txt"
 4. Expected in debug.log:
    ```

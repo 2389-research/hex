@@ -12,7 +12,7 @@ brew install goreleaser
 goreleaser build --snapshot --clean --single-target
 
 # Verify binary works
-dist/clem_darwin_*/clem --version
+dist/hex_darwin_*/hex --version
 
 # Clean up
 rm -rf dist/
@@ -35,13 +35,13 @@ rm -rf dist/
    - Upload both macOS binaries
 
 4. Monitor the workflow:
-   - https://github.com/harperreed/clem/actions
+   - https://github.com/harperreed/hex/actions
 
 ## Release Artifacts
 
 Each release includes:
-- `clem_vX.Y.Z_Darwin_x86_64.tar.gz` - Intel binary
-- `clem_vX.Y.Z_Darwin_arm64.tar.gz` - Apple Silicon binary
+- `hex_vX.Y.Z_Darwin_x86_64.tar.gz` - Intel binary
+- `hex_vX.Y.Z_Darwin_arm64.tar.gz` - Apple Silicon binary
 - `checksums.txt` - SHA256 checksums
 - Auto-generated changelog from commits
 
@@ -63,15 +63,15 @@ Each release includes:
 
 ```bash
 # Download the appropriate binary
-curl -L -O https://github.com/harperreed/clem/releases/download/v1.0.1/clem_v1.0.1_Darwin_arm64.tar.gz
+curl -L -O https://github.com/harperreed/hex/releases/download/v1.0.1/hex_v1.0.1_Darwin_arm64.tar.gz
 
 # Verify checksum
-curl -L -O https://github.com/harperreed/clem/releases/download/v1.0.1/checksums.txt
+curl -L -O https://github.com/harperreed/hex/releases/download/v1.0.1/checksums.txt
 shasum -a 256 -c checksums.txt --ignore-missing
 
 # Extract and test
-tar xzf clem_v1.0.1_Darwin_arm64.tar.gz
-./clem --version
+tar xzf hex_v1.0.1_Darwin_arm64.tar.gz
+./hex --version
 ```
 
 ## Troubleshooting
@@ -87,9 +87,9 @@ tar xzf clem_v1.0.1_Darwin_arm64.tar.gz
 - Verify database migrations are compatible
 
 **Binary won't run on macOS:**
-- Check macOS Gatekeeper: `xattr -d com.apple.quarantine clem`
-- Verify architecture: `file clem` (should show Mach-O 64-bit executable)
-- Check it's statically linked: `otool -L clem` (minimal dependencies)
+- Check macOS Gatekeeper: `xattr -d com.apple.quarantine hex`
+- Verify architecture: `file hex` (should show Mach-O 64-bit executable)
+- Check it's statically linked: `otool -L hex` (minimal dependencies)
 
 **Cross-compilation issues:**
 - Verify `CGO_ENABLED=0` in `.goreleaser.yml`

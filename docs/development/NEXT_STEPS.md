@@ -1,4 +1,4 @@
-# Clem - Next Steps for Phase 2
+# Hex - Next Steps for Phase 2
 
 ## Current Status
 
@@ -14,7 +14,7 @@
 
 **Goal:** Full-featured TUI with streaming, storage, and history
 
-**Reference:** See `docs/plans/2025-11-26-clem-phase2-interactive.md` for detailed implementation plan
+**Reference:** See `docs/plans/2025-11-26-hex-phase2-interactive.md` for detailed implementation plan
 
 ### Tasks Overview
 
@@ -74,7 +74,7 @@ What to build:
 Files to create:
 - `internal/storage/history.go`
 - `internal/storage/history_test.go`
-- Update `cmd/clem/root.go` for --continue and --resume
+- Update `cmd/hex/root.go` for --continue and --resume
 
 What to build:
 - Save conversations to SQLite
@@ -102,7 +102,7 @@ What to build:
 
 ```bash
 # From project root
-claude /superpowers:execute-plan docs/plans/2025-11-26-clem-phase2-interactive.md
+claude /superpowers:execute-plan docs/plans/2025-11-26-hex-phase2-interactive.md
 ```
 
 This will:
@@ -142,11 +142,11 @@ Follow TDD for each task:
 ### Success Criteria
 
 Phase 2 is complete when:
-- [ ] `clem` (no flags) launches interactive TUI
+- [ ] `hex` (no flags) launches interactive TUI
 - [ ] Can send messages and see streaming responses
 - [ ] Conversations save to SQLite automatically
-- [ ] `clem --continue` resumes last conversation
-- [ ] `clem --resume` shows conversation picker
+- [ ] `hex --continue` resumes last conversation
+- [ ] `hex --resume` shows conversation picker
 - [ ] Status bar shows model, tokens, task status
 - [ ] All tests pass (unit + integration)
 - [ ] Documentation updated
@@ -207,7 +207,7 @@ Phase 2 is complete when:
 - Glamour demo: https://github.com/charmbracelet/glamour
 
 **Design Docs:**
-- Full Phase 2 plan: `docs/plans/2025-11-26-clem-phase2-interactive.md`
+- Full Phase 2 plan: `docs/plans/2025-11-26-hex-phase2-interactive.md`
 - Architecture overview: `README.md`
 - Phase 1 report: `docs/PHASE1.md`
 
@@ -243,7 +243,7 @@ go get modernc.org/sqlite
 
 # Verify Phase 1 still works
 make test
-./clem --version
+./hex --version
 
 # Start Phase 2 Task 1 (SQLite Schema)
 # Create test first:

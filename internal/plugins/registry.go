@@ -1,5 +1,5 @@
 // ABOUTME: Plugin registry for managing loaded plugins and their contributions
-// ABOUTME: Coordinates plugin loading and integration with Clem's subsystems
+// ABOUTME: Coordinates plugin loading and integration with Hex's subsystems
 
 package plugins
 
@@ -45,8 +45,8 @@ func DefaultRegistry() (*Registry, error) {
 		return nil, fmt.Errorf("get home directory: %w", err)
 	}
 
-	pluginsDir := filepath.Join(home, ".clem", "plugins")
-	stateFile := filepath.Join(home, ".clem", "plugins", "state.json")
+	pluginsDir := filepath.Join(home, ".hex", "plugins")
+	stateFile := filepath.Join(home, ".hex", "plugins", "state.json")
 
 	return NewRegistry(pluginsDir, stateFile)
 }

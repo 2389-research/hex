@@ -2,7 +2,7 @@
 
 ## Overview
 
-Comprehensive integration test suite for Clem Phase 2, testing all major components and their interactions.
+Comprehensive integration test suite for Hex Phase 2, testing all major components and their interactions.
 
 ## Test Statistics
 

@@ -1,4 +1,4 @@
-// ABOUTME: Plugin discovery and loading system for Clem
+// ABOUTME: Plugin discovery and loading system for Hex
 // ABOUTME: Scans directories for plugins and loads their manifests and components
 
 package plugins

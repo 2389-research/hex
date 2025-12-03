@@ -240,7 +240,7 @@ func TestCalculateOrderTotal_WithTax(t *testing.T) { /* ... */ }
               Next Feature
 ```
 
-## Integration with Clem Workflow
+## Integration with Hex Workflow
 
 When implementing features in Clem:
 

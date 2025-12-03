@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var (
 var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "View command history",
-	Long: `View your command history with Clem.
+	Long: `View your command history with Hex.
 
 Shows recent conversations with timestamps, message previews, and conversation IDs.
 Use the search subcommand to find specific topics.`,
@@ -37,9 +37,9 @@ Searches both user messages and assistant responses for the given query.
 Results are ranked by relevance and sorted by recency.
 
 Examples:
-  clem history search "docker"
-  clem history search "bug fix"
-  clem history search "python script"`,
+  hex history search "docker"
+  hex history search "bug fix"
+  hex history search "python script"`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runHistorySearch(cmd, args[0])
@@ -72,7 +72,7 @@ func runHistory(cmd *cobra.Command) error {
 	if len(entries) == 0 {
 		cmd.Println("No history found.")
 		cmd.Println()
-		cmd.Println("Start a conversation with Clem to build your history!")
+		cmd.Println("Start a conversation with Hex to build your history!")
 		return nil
 	}
 
@@ -90,8 +90,8 @@ func runHistory(cmd *cobra.Command) error {
 	} else {
 		cmd.Println("ies")
 	}
-	cmd.Printf("Use 'clem history --limit N' to show more results\n")
-	cmd.Printf("Use 'clem history search \"query\"' to search\n")
+	cmd.Printf("Use 'hex history --limit N' to show more results\n")
+	cmd.Printf("Use 'hex history search \"query\"' to search\n")
 
 	return nil
 }
@@ -131,7 +131,7 @@ func runHistorySearch(cmd *cobra.Command, query string) error {
 	} else {
 		cmd.Println("s")
 	}
-	cmd.Printf("Use 'clem history search \"query\" --limit N' to show more results\n")
+	cmd.Printf("Use 'hex history search \"query\" --limit N' to show more results\n")
 
 	return nil
 }

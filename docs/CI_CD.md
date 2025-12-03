@@ -1,10 +1,10 @@
 # CI/CD Infrastructure
 
-This document describes the continuous integration and deployment infrastructure for Clem.
+This document describes the continuous integration and deployment infrastructure for Hex.
 
 ## Overview
 
-Clem uses GitHub Actions for CI/CD with the following workflows:
+Hex uses GitHub Actions for CI/CD with the following workflows:
 
 1. **Test Workflow** - Runs on every push and PR
 2. **Release Workflow** - Runs on version tags
@@ -81,7 +81,7 @@ Creates multi-platform release:
 - Archives: tar.gz (Unix), zip (Windows)
 - Checksums file (SHA256)
 - Debian/RPM/APK packages
-- Docker images (ghcr.io/harper/clem)
+- Docker images (ghcr.io/harper/hex)
 - GitHub release with notes
 
 ### 2. Publish Homebrew Job
@@ -103,23 +103,23 @@ Updates Homebrew tap:
 
 ```yaml
 builds:
-  - id: clem
-    main: ./cmd/clem
-    binary: clem
+  - id: hex
+    main: ./cmd/hex
+    binary: hex
     env:
       - CGO_ENABLED=0  # Static binaries
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
     ldflags:
       - -s -w  # Strip debug info
-      - -X github.com/harper/clem/internal/core.Version={{.Version}}
-      - -X github.com/harper/clem/internal/core.Commit={{.ShortCommit}}
-      - -X github.com/harper/clem/internal/core.Date={{.Date}}
+      - -X github.com/harper/hex/internal/core.Version={{.Version}}
+      - -X github.com/harper/hex/internal/core.Commit={{.ShortCommit}}
+      - -X github.com/harper/hex/internal/core.Date={{.Date}}
 ```
 
 ### Archives
 
-- **Naming**: `clem_v1.2.3_Darwin_x86_64.tar.gz`
+- **Naming**: `hex_v1.2.3_Darwin_x86_64.tar.gz`
 - **Includes**: Binary, LICENSE, README.md, CHANGELOG.md, docs/
 - **Format**: tar.gz (Unix), zip (Windows)
 
@@ -135,10 +135,10 @@ Excludes: docs, test, ci, chore commits
 ### Docker Images
 
 Published to GitHub Container Registry (ghcr.io):
-- `ghcr.io/harper/clem:latest`
-- `ghcr.io/harper/clem:v1`
-- `ghcr.io/harper/clem:v1.2`
-- `ghcr.io/harper/clem:v1.2.3`
+- `ghcr.io/harper/hex:latest`
+- `ghcr.io/harper/hex:v1`
+- `ghcr.io/harper/hex:v1.2`
+- `ghcr.io/harper/hex:v1.2.3`
 
 ### Package Formats
 
@@ -146,7 +146,7 @@ Published to GitHub Container Registry (ghcr.io):
 - **RPM** (.rpm)
 - **Alpine** (.apk)
 
-Installed to: `/usr/bin/clem`
+Installed to: `/usr/bin/hex`
 
 ## Local Development
 
@@ -205,7 +205,7 @@ The CI/CD infrastructure supports multiple installation methods:
 
 ### 1. Install Script
 
-**URL**: `https://raw.githubusercontent.com/harper/clem/main/install.sh`
+**URL**: `https://raw.githubusercontent.com/harper/hex/main/install.sh`
 
 **Features**:
 - Auto-detects OS and architecture
@@ -216,7 +216,7 @@ The CI/CD infrastructure supports multiple installation methods:
 
 **Usage**:
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 ```
 
 ### 2. Homebrew
@@ -227,14 +227,14 @@ curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
 
 **Usage**:
 ```bash
-brew install harper/tap/clem
+brew install harper/tap/hex
 ```
 
 ### 3. Go Install
 
 **Usage**:
 ```bash
-go install github.com/harper/clem/cmd/clem@latest
+go install github.com/harper/hex/cmd/hex@latest
 ```
 
 ### 4. Pre-built Binaries
@@ -245,7 +245,7 @@ go install github.com/harper/clem/cmd/clem@latest
 1. Download archive for your platform
 2. Extract binary
 3. Move to PATH directory
-4. Verify: `clem --version`
+4. Verify: `hex --version`
 
 ### 5. Docker
 
@@ -254,30 +254,30 @@ go install github.com/harper/clem/cmd/clem@latest
 **Usage**:
 ```bash
 # Pull latest
-docker pull ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:latest
 
 # Run
-docker run -it --rm ghcr.io/harper/clem:latest --help
+docker run -it --rm ghcr.io/harper/hex:latest --help
 ```
 
 ### 6. Package Managers
 
 **Debian/Ubuntu**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.2.3/clem_1.2.3_Linux_x86_64.deb
-sudo dpkg -i clem_1.2.3_Linux_x86_64.deb
+wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.deb
+sudo dpkg -i hex_1.2.3_Linux_x86_64.deb
 ```
 
 **Fedora/RHEL**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.2.3/clem_1.2.3_Linux_x86_64.rpm
-sudo rpm -i clem_1.2.3_Linux_x86_64.rpm
+wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.rpm
+sudo rpm -i hex_1.2.3_Linux_x86_64.rpm
 ```
 
 **Alpine**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.2.3/clem_1.2.3_Linux_x86_64.apk
-apk add --allow-untrusted clem_1.2.3_Linux_x86_64.apk
+wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.apk
+apk add --allow-untrusted hex_1.2.3_Linux_x86_64.apk
 ```
 
 ## Release Process
@@ -356,15 +356,15 @@ View workflow runs:
 Add to README.md:
 
 ```markdown
-[![Test](https://github.com/harper/clem/workflows/Test/badge.svg)](https://github.com/harper/clem/actions/workflows/test.yml)
-[![Release](https://github.com/harper/clem/workflows/Release/badge.svg)](https://github.com/harper/clem/actions/workflows/release.yml)
+[![Test](https://github.com/harper/hex/workflows/Test/badge.svg)](https://github.com/harper/hex/actions/workflows/test.yml)
+[![Release](https://github.com/harper/hex/workflows/Release/badge.svg)](https://github.com/harper/hex/actions/workflows/release.yml)
 ```
 
 ### Coverage Reports
 
 Coverage uploaded to Codecov.io:
-- View at: https://codecov.io/gh/harper/clem
-- Badge: `[![codecov](https://codecov.io/gh/harper/clem/branch/main/graph/badge.svg)](https://codecov.io/gh/harper/clem)`
+- View at: https://codecov.io/gh/harper/hex
+- Badge: `[![codecov](https://codecov.io/gh/harper/hex/branch/main/graph/badge.svg)](https://codecov.io/gh/harper/hex)`
 
 ## Troubleshooting
 

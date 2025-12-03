@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // BorderSet represents a complete set of border characters

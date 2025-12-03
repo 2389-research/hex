@@ -31,7 +31,7 @@ func TestTemplatesListCommand_Registered(t *testing.T) {
 func TestLoadTemplateByName_Success(t *testing.T) {
 	// Create temp templates directory
 	tmpDir := t.TempDir()
-	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
+	templatesDir := filepath.Join(tmpDir, ".hex", "templates")
 	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
@@ -61,7 +61,7 @@ system_prompt: You are helpful
 func TestLoadTemplateByName_NotFound(t *testing.T) {
 	// Create temp templates directory
 	tmpDir := t.TempDir()
-	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
+	templatesDir := filepath.Join(tmpDir, ".hex", "templates")
 	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
@@ -88,7 +88,7 @@ description: Different template
 func TestLoadTemplateByName_EmptyDirectory(t *testing.T) {
 	// Create empty templates directory
 	tmpDir := t.TempDir()
-	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
+	templatesDir := filepath.Join(tmpDir, ".hex", "templates")
 	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 
@@ -107,7 +107,7 @@ func TestLoadTemplateByName_EmptyDirectory(t *testing.T) {
 func TestCreateExampleTemplates(t *testing.T) {
 	// Create temp directory
 	tmpDir := t.TempDir()
-	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
+	templatesDir := filepath.Join(tmpDir, ".hex", "templates")
 
 	// Override home directory for test
 	originalHome := os.Getenv("HOME")
@@ -143,7 +143,7 @@ func TestCreateExampleTemplates(t *testing.T) {
 func TestCreateExampleTemplates_DoesNotOverwrite(t *testing.T) {
 	// Create temp directory
 	tmpDir := t.TempDir()
-	templatesDir := filepath.Join(tmpDir, ".clem", "templates")
+	templatesDir := filepath.Join(tmpDir, ".hex", "templates")
 	err := os.MkdirAll(templatesDir, 0750)
 	require.NoError(t, err)
 

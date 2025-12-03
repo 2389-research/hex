@@ -97,7 +97,7 @@ func (t *WebFetchTool) Execute(ctx context.Context, params map[string]interface{
 	}
 
 	// Set user agent
-	req.Header.Set("User-Agent", "Clem/1.0")
+	req.Header.Set("User-Agent", "Hex/1.0")
 
 	// Execute request
 	resp, err := t.client.Do(req)

@@ -1,6 +1,6 @@
-# Clem Tool System Reference
+# Hex Tool System Reference
 
-Complete reference for Clem's tool execution system and available tools.
+Complete reference for Hex's tool execution system and available tools.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ Complete reference for Clem's tool execution system and available tools.
 
 ## Overview
 
-Clem implements Claude's tool use capability, allowing Claude to:
+Hex implements Claude's tool use capability, allowing Claude to:
 - Read files from your filesystem
 - Write or modify files
 - Execute shell commands
@@ -37,7 +37,7 @@ All tool operations require explicit user approval for safety.
 ### How Tools Work
 
 1. **Claude requests a tool** based on your conversation
-2. **Clem intercepts the request** and shows you the details
+2. **Hex intercepts the request** and shows you the details
 3. **You approve or deny** the execution
 4. **Tool executes** (if approved) and returns results
 5. **Claude sees the results** and continues the conversation
@@ -51,7 +51,7 @@ You: "Read config.yaml and explain it"
 Claude: [Requests read_file tool]
     │
     ▼
-Clem: ┌──────────────────────────────┐
+Hex: ┌──────────────────────────────┐
       │ Tool Approval Required:       │
       │                              │
       │ Tool: read_file              │
@@ -122,7 +122,7 @@ Different tools have different approval rules:
 
 ### Approval Security
 
-**Clem never**:
+**Hex never**:
 - Executes tools without showing you details first
 - Remembers approval decisions across sessions
 - Runs dangerous operations silently
@@ -136,7 +136,7 @@ Different tools have different approval rules:
 
 ### Summary
 
-Clem provides 13 core tools for file operations, code editing, search, and advanced capabilities:
+Hex provides 13 core tools for file operations, code editing, search, and advanced capabilities:
 
 | Tool | Purpose | Approval Rules | Timeout |
 |------|---------|----------------|---------|
@@ -229,7 +229,7 @@ Requires approval for:
 
 **Claude**: [Requests read_file with path: package.json]
 
-**Clem**: Shows approval prompt
+**Hex**: Shows approval prompt
 
 **User**: Approves
 
@@ -349,7 +349,7 @@ Requires approval for:
 
 **Claude**: [Requests write_file with README.md content]
 
-**Clem**: Auto-approved (create mode, new file)
+**Hex**: Auto-approved (create mode, new file)
 
 **Tool**: Creates README.md
 
@@ -454,7 +454,7 @@ Requires approval for:
 
 **Claude**: [Requests bash with command: find . -name "*.go"]
 
-**Clem**: Auto-approved (safe command)
+**Hex**: Auto-approved (safe command)
 
 **Tool**: Executes and returns file list
 
@@ -936,7 +936,7 @@ Use **Grep** when you need to:
 
 ## Phase 4: Extended Capabilities
 
-Phase 4 adds 7 new tools that extend Clem's capabilities into interactive workflows, task management, web research, and advanced process control.
+Phase 4 adds 7 new tools that extend Hex's capabilities into interactive workflows, task management, web research, and advanced process control.
 
 ### Tool Categories
 
@@ -1636,7 +1636,7 @@ The tool automatically detects content type and processes accordingly:
 - Always prompts user before making request
 - Respects context cancellation
 - 30-second timeout prevents hanging
-- User-Agent is set to "Clem/1.0"
+- User-Agent is set to "Hex/1.0"
 - No cookies or authentication headers sent
 - Redirects are followed automatically
 - HTTPS is supported (certificates validated)
@@ -1838,7 +1838,7 @@ Includes arxiv.org and papers.nips.cc, but blocked domains take precedence.
 
 ### Safety Notes
 
-- User-Agent set to "Mozilla/5.0 (compatible; Clem/1.0)"
+- User-Agent set to "Mozilla/5.0 (compatible; Hex/1.0)"
 - Uses DuckDuckGo's HTML interface (no JavaScript required)
 - No cookies or tracking
 - Results are parsed from HTML (may break if DuckDuckGo changes format)
@@ -1852,7 +1852,7 @@ Includes arxiv.org and papers.nips.cc, but blocked domains take precedence.
 
 **Tool Name**: `task`
 
-**Purpose**: Launch a sub-agent (Clem subprocess) to handle complex, multi-step tasks autonomously. Sub-agents inherit environment variables (API keys) and run in the same working directory. Useful for delegating independent work that requires multiple tool calls or complex reasoning.
+**Purpose**: Launch a sub-agent (Hex subprocess) to handle complex, multi-step tasks autonomously. Sub-agents inherit environment variables (API keys) and run in the same working directory. Useful for delegating independent work that requires multiple tool calls or complex reasoning.
 
 ### Parameters
 
@@ -1933,12 +1933,12 @@ Includes arxiv.org and papers.nips.cc, but blocked domains take precedence.
 | Invalid prompt | Prompt is not a string | Use string for prompt |
 | Invalid model | Model is not a string | Use string for model name |
 | Invalid resume | Resume ID is not a string | Use string for resume ID |
-| Clem binary not found | Clem not in PATH and can't build | Install clem or ensure go.mod exists |
-| Build failed | Failed to build clem from source | Check Go toolchain and go.mod |
+| Hex binary not found | Hex not in PATH and can't build | Install hex or ensure go.mod exists |
+| Build failed | Failed to build hex from source | Check Go toolchain and go.mod |
 | Task timeout | Exceeded timeout limit | Increase timeout or simplify task |
 | Task cancelled | Context cancelled by user/system | Normal cancellation |
 | Exit code != 0 | Sub-agent encountered error | Check output for error details |
-| Execution failed | Command not found or other exec error | Verify clem is executable |
+| Execution failed | Command not found or other exec error | Verify hex is executable |
 
 ### Return Value
 
@@ -1998,8 +1998,8 @@ Timeout is enforced at the OS process level - sub-agent will be killed if it exc
 ### Sub-Agent Execution
 
 The tool:
-1. Finds clem binary (in PATH or builds from source)
-2. Executes: `clem [--model MODEL] [--resume ID] --print "PROMPT"`
+1. Finds hex binary (in PATH or builds from source)
+2. Executes: `hex [--model MODEL] [--resume ID] --print "PROMPT"`
 3. Inherits environment (ANTHROPIC_API_KEY, etc.)
 4. Runs in current working directory
 5. Captures stdout and stderr
@@ -2438,7 +2438,7 @@ The tool performs a two-stage kill:
 - Force kill used if needed (SIGKILL)
 - Registry is always cleaned up
 - Safe to call on already-dead processes
-- Cannot kill processes not started by Clem
+- Cannot kill processes not started by Hex
 - Works only on processes in background registry
 - No output capture after kill signal
 
@@ -2468,7 +2468,7 @@ The tool performs a two-stage kill:
 
 ## MCP (Model Context Protocol) Tools
 
-**Overview**: MCP integration allows Clem to use external tools from MCP servers, dramatically extending capabilities beyond built-in tools.
+**Overview**: MCP integration allows Hex to use external tools from MCP servers, dramatically extending capabilities beyond built-in tools.
 
 ### What is MCP?
 
@@ -2483,7 +2483,7 @@ MCP (Model Context Protocol) is an open standard that enables AI assistants to s
 
 ### Why Use MCP?
 
-**Extensibility**: Add new capabilities without modifying Clem's source code
+**Extensibility**: Add new capabilities without modifying Hex's source code
 
 **Ecosystem**: Use community-built servers from the MCP marketplace
 
@@ -2517,18 +2517,18 @@ MCP servers are configured in `.mcp.json` in your project root:
 
 ### CLI Commands
 
-#### clem mcp add
+#### hex mcp add
 
 Add a new MCP server configuration:
 
 ```bash
 # Basic syntax
-clem mcp add <name> <command> [args...]
+hex mcp add <name> <command> [args...]
 
 # Examples
-clem mcp add weather node weather-server.js
-clem mcp add database python -m database_server --port 8080
-clem mcp add files npx -y @modelcontextprotocol/server-filesystem /data
+hex mcp add weather node weather-server.js
+hex mcp add database python -m database_server --port 8080
+hex mcp add files npx -y @modelcontextprotocol/server-filesystem /data
 ```
 
 **Parameters**:
@@ -2538,12 +2538,12 @@ clem mcp add files npx -y @modelcontextprotocol/server-filesystem /data
 
 The server configuration is saved to `.mcp.json` in the current directory.
 
-#### clem mcp list
+#### hex mcp list
 
 List all configured MCP servers:
 
 ```bash
-clem mcp list
+hex mcp list
 ```
 
 **Output**:
@@ -2562,15 +2562,15 @@ Total: 2 server(s)
 Config: /path/to/project/.mcp.json
 ```
 
-#### clem mcp remove
+#### hex mcp remove
 
 Remove an MCP server configuration:
 
 ```bash
-clem mcp remove <name>
+hex mcp remove <name>
 
 # Example
-clem mcp remove weather
+hex mcp remove weather
 ```
 
 This removes the server from `.mcp.json` but doesn't affect the server binary or scripts.
@@ -2583,12 +2583,12 @@ Once configured, MCP tools are automatically available in conversations:
 
 1. **Configure server**:
    ```bash
-   clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
+   hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
    ```
 
-2. **Start Clem**:
+2. **Start Hex**:
    ```bash
-   clem
+   hex
    ```
 
 3. **MCP tools load automatically** at startup
@@ -2625,7 +2625,7 @@ This ensures clarity about which tools come from which sources.
 npm install -g @modelcontextprotocol/server-filesystem
 
 # Configure it
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /path/to/dir
 ```
 
 **Available tools**:
@@ -2652,7 +2652,7 @@ Claude: [Uses filesystem_read_file tool]
 
 **Setup**:
 ```bash
-clem mcp add fetch npx -y @modelcontextprotocol/server-fetch
+hex mcp add fetch npx -y @modelcontextprotocol/server-fetch
 ```
 
 **Available tools**:
@@ -2676,20 +2676,20 @@ Claude: [Uses fetch_fetch tool]
 **Symptom**: Tools not appearing, connection errors
 
 **Solutions**:
-- Verify command is correct: `clem mcp list`
+- Verify command is correct: `hex mcp list`
 - Test command manually: `npx -y @modelcontextprotocol/server-filesystem /path`
 - Check server is installed: `npm list -g @modelcontextprotocol/server-filesystem`
 - Review server logs (stderr output)
 
 #### Tools Not Appearing
 
-**Symptom**: Clem starts but MCP tools aren't available
+**Symptom**: Hex starts but MCP tools aren't available
 
 **Solutions**:
 - Verify `.mcp.json` exists in project directory
 - Check JSON syntax: `cat .mcp.json | jq`
 - Ensure server supports `tools/list` method
-- Check Clem output for initialization errors
+- Check Hex output for initialization errors
 
 #### Permission Errors
 
@@ -2761,9 +2761,9 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-**Add to Clem**:
+**Add to Hex**:
 ```bash
-clem mcp add custom node my-server.js
+hex mcp add custom node my-server.js
 ```
 
 **See [MCP_INTEGRATION.md](MCP_INTEGRATION.md) for detailed server development guide.**
@@ -2779,7 +2779,7 @@ clem mcp add custom node my-server.js
 1. **Review server code** before trusting it
 2. **Use allowlists** for filesystem and network access
 3. **Limit server scope** to specific directories/APIs
-4. **Monitor tool usage** in Clem conversations
+4. **Monitor tool usage** in Hex conversations
 5. **Remove unused servers** to reduce attack surface
 
 ### Official MCP Servers
@@ -2952,7 +2952,7 @@ Find more at: https://github.com/modelcontextprotocol
 
 **Cause**: Tool not registered
 
-**Solution**: Check tool name spelling, verify Clem version supports tool
+**Solution**: Check tool name spelling, verify Hex version supports tool
 
 ### Permission Denied
 

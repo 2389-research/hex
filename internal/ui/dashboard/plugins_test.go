@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 func TestNewPluginDashboard(t *testing.T) {

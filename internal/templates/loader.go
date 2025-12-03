@@ -1,5 +1,5 @@
 // ABOUTME: Template loader for reading and parsing YAML session templates
-// ABOUTME: Handles loading from ~/.clem/templates/ directory with validation
+// ABOUTME: Handles loading from ~/.hex/templates/ directory with validation
 
 // Package templates provides template loading and rendering for conversations.
 package templates
@@ -105,7 +105,7 @@ func GetTemplatesDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get user home directory: %w", err)
 	}
-	return filepath.Join(home, ".clem", "templates"), nil
+	return filepath.Join(home, ".hex", "templates"), nil
 }
 
 // EnsureTemplatesDir creates the templates directory if it doesn't exist

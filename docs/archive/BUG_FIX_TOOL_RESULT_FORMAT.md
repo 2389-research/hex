@@ -214,7 +214,7 @@ According to the Anthropic Messages API documentation, tool results must be sent
 ### Build Test
 
 ```bash
-go build ./cmd/clem 2>&1
+go build ./cmd/hex 2>&1
 # Expected: No compilation errors ✓
 ```
 
@@ -222,7 +222,7 @@ go build ./cmd/clem 2>&1
 
 ```bash
 # Run interactive mode
-clem
+hex
 
 # Test 1: Single tool call
 # Type: "read the README.md file"

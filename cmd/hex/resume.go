@@ -8,9 +8,9 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/ui"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/storage"
+	"github.com/harper/hex/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +24,9 @@ var resumeCmd = &cobra.Command{
 	Long: `Resume an interactive session from history.
 
 Examples:
-  clem resume               # Show interactive picker
-  clem resume --last        # Resume most recent conversation
-  clem resume conv-123      # Resume specific conversation by ID
+  hex resume               # Show interactive picker
+  hex resume --last        # Resume most recent conversation
+  hex resume conv-123      # Resume specific conversation by ID
 
 The picker shows recent conversations with:
   - Conversation title

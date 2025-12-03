@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully implemented YAML-based session templates for Clem. Users can now create reusable templates that define system prompts, initial messages, tool configurations, and model preferences for common workflows.
+Successfully implemented YAML-based session templates for Hex. Users can now create reusable templates that define system prompts, initial messages, tool configurations, and model preferences for common workflows.
 
 ## Implementation Details
 
@@ -30,14 +30,14 @@ Successfully implemented YAML-based session templates for Clem. Users can now cr
    - Tests for edge cases (empty content, invalid roles, etc.)
    - All tests passing
 
-4. **cmd/clem/templates.go**
+4. **cmd/hex/templates.go**
    - `templates` command - Main templates management command
    - `templates list` subcommand - List available templates
    - `loadTemplateByName(name)` - Helper to load template by name
    - `createExampleTemplates()` - Create default templates
    - Helpful error messages with suggestions
 
-5. **cmd/clem/templates_test.go**
+5. **cmd/hex/templates_test.go**
    - Tests for command registration
    - Tests for template loading
    - Tests for error handling
@@ -45,7 +45,7 @@ Successfully implemented YAML-based session templates for Clem. Users can now cr
 
 ### Files Modified
 
-1. **cmd/clem/root.go**
+1. **cmd/hex/root.go**
    - Added `templateName` flag
    - Added `--template` persistent flag
    - Template loading in `runInteractive()`
@@ -62,7 +62,7 @@ Successfully implemented YAML-based session templates for Clem. Users can now cr
 3. **internal/ui/update.go**
    - System prompt included in message requests
 
-4. **cmd/clem/export.go**
+4. **cmd/hex/export.go**
    - Fixed `getDatabase()` to `openDatabase(dbPath)`
 
 5. **internal/export/html.go**
@@ -70,7 +70,7 @@ Successfully implemented YAML-based session templates for Clem. Users can now cr
 
 ### Example Templates Created
 
-Three production-ready templates in `~/.clem/templates/`:
+Three production-ready templates in `~/.hex/templates/`:
 
 1. **code-review.yaml**
    - Expert code reviewer persona
@@ -117,12 +117,12 @@ All fields except `name` are optional.
 
 ### List Templates
 ```bash
-clem templates list
+hex templates list
 ```
 
 Output:
 ```
-Available templates (3 found in /Users/harper/.clem/templates):
+Available templates (3 found in /Users/harper/.hex/templates):
 
   code-review
     Description: Interactive code review session with best practices focus
@@ -135,17 +135,17 @@ Available templates (3 found in /Users/harper/.clem/templates):
     Description: Systematic debugging session with root cause analysis
     ...
 
-Use with: clem --template <name>
+Use with: hex --template <name>
 ```
 
 ### Use a Template
 ```bash
-clem --template code-review
-clem --template debug-session "My code is crashing"
+hex --template code-review
+hex --template debug-session "My code is crashing"
 ```
 
 ### Create Custom Templates
-1. Create YAML file in `~/.clem/templates/`
+1. Create YAML file in `~/.hex/templates/`
 2. Define system prompt, initial messages, etc.
 3. Use with `--template` flag
 
@@ -178,7 +178,7 @@ All tests passing:
 go test ./internal/templates/... -v
 # 15/15 tests passing
 
-go test ./cmd/clem -run TestTemplate -v
+go test ./cmd/hex -run TestTemplate -v
 # All template-related tests passing
 ```
 
@@ -200,8 +200,8 @@ Potential improvements for future iterations:
 1. **Tools Filtering**: Actually restrict tools based on `tools_enabled` field
 2. **Template Variables**: Support `{{variable}}` substitution in templates
 3. **Template Inheritance**: Allow templates to extend other templates
-4. **Template Validation Command**: `clem templates validate <name>`
-5. **Template Creation Wizard**: `clem templates create` interactive wizard
+4. **Template Validation Command**: `hex templates validate <name>`
+5. **Template Creation Wizard**: `hex templates create` interactive wizard
 6. **Global vs Project Templates**: Support both user and project-specific templates
 7. **Max Tokens Application**: Use template's `max_tokens` in API requests
 
@@ -225,17 +225,17 @@ Potential improvements for future iterations:
 - internal/templates/types.go (55 lines)
 - internal/templates/loader.go (120 lines)
 - internal/templates/loader_test.go (247 lines)
-- cmd/clem/templates.go (237 lines)
-- cmd/clem/templates_test.go (154 lines)
-- ~/.clem/templates/code-review.yaml
-- ~/.clem/templates/debug-session.yaml
-- ~/.clem/templates/refactor.yaml
+- cmd/hex/templates.go (237 lines)
+- cmd/hex/templates_test.go (154 lines)
+- ~/.hex/templates/code-review.yaml
+- ~/.hex/templates/debug-session.yaml
+- ~/.hex/templates/refactor.yaml
 
 **Modified:**
-- cmd/clem/root.go (added template loading logic)
+- cmd/hex/root.go (added template loading logic)
 - internal/ui/model.go (added system prompt field and setter)
 - internal/ui/update.go (system prompt in requests)
-- cmd/clem/export.go (fixed database function name)
+- cmd/hex/export.go (fixed database function name)
 - internal/export/html.go (fixed import conflict)
 
 **Total:** 813+ lines of new code, 3 example templates

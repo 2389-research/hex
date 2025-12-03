@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

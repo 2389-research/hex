@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/clem/internal/storage"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/storage"
+	"github.com/harper/hex/internal/ui/theme"
 	_ "modernc.org/sqlite"
 )
 

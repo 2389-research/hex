@@ -6,7 +6,7 @@ package skills
 import (
 	"context"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 // ToolAdapter adapts SkillTool to implement tools.Tool interface

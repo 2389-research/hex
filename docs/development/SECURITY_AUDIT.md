@@ -1,4 +1,4 @@
-# Security Audit Report - Clem v1.0
+# Security Audit Report - Hex v1.0
 
 **Date:** 2025-11-28
 **Tool:** govulncheck v1.1.4
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Security scan identified **12 vulnerabilities** in the Go 1.24.1 standard library affecting Clem. All vulnerabilities are **fixed in Go 1.24.9**.
+Security scan identified **12 vulnerabilities** in the Go 1.24.1 standard library affecting Hex. All vulnerabilities are **fixed in Go 1.24.9**.
 
 **Recommendation:** Upgrade to Go 1.24.9 or later before v1.0 release.
 
@@ -153,7 +153,7 @@ govulncheck ./...
 
 ### Unexploited Vulnerabilities
 
-Govulncheck also found **2 vulnerabilities in imported packages** and **2 vulnerabilities in required modules** that are **not called by Clem code**. These do not pose immediate risk but should be monitored.
+Govulncheck also found **2 vulnerabilities in imported packages** and **2 vulnerabilities in required modules** that are **not called by Hex code**. These do not pose immediate risk but should be monitored.
 
 Run `govulncheck -show verbose ./...` for full details.
 
@@ -173,7 +173,7 @@ Run `govulncheck -show verbose ./...` for full details.
 
 **Status:** 🔴 BLOCKING FOR v1.0 RELEASE
 
-Clem is affected by 12 known vulnerabilities in Go 1.24.1 standard library, including 4 high-severity issues affecting HTTP handling, TLS, and certificate validation.
+Hex is affected by 12 known vulnerabilities in Go 1.24.1 standard library, including 4 high-severity issues affecting HTTP handling, TLS, and certificate validation.
 
 **Action Required:** Upgrade to Go 1.24.9 before v1.0 release.
 

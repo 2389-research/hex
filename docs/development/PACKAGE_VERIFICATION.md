@@ -1,4 +1,4 @@
-# Package Verification Plan - Clem v1.0
+# Package Verification Plan - Hex v1.0
 
 **Date:** 2025-11-28
 **Purpose:** Verify all 6 distribution channels work correctly before v1.0 release
@@ -7,7 +7,7 @@
 
 ## Distribution Channels
 
-Clem v1.0 ships through 6 distribution channels. Each must be verified independently.
+Hex v1.0 ships through 6 distribution channels. Each must be verified independently.
 
 | # | Channel | Platform | Priority | Verification Status |
 |---|---------|----------|----------|---------------------|
@@ -24,7 +24,7 @@ Clem v1.0 ships through 6 distribution channels. Each must be verified independe
 
 **Platform:** macOS, Linux
 **Repository:** harper/homebrew-tap
-**Formula:** clem.rb
+**Formula:** hex.rb
 
 ### Prerequisites
 ```bash
@@ -35,47 +35,47 @@ brew tap harper/tap
 ### Installation Test
 ```bash
 # Clean install
-brew uninstall harper/tap/clem 2>/dev/null || true
-brew install harper/tap/clem
+brew uninstall harper/tap/hex 2>/dev/null || true
+brew install harper/tap/hex
 
 # Verify version
-clem --version | grep "1.0.0"
+hex --version | grep "1.0.0"
 
 # Verify binary location
-which clem
-# Expected: /opt/homebrew/bin/clem (Apple Silicon) or /usr/local/bin/clem (Intel)
+which hex
+# Expected: /opt/homebrew/bin/hex (Apple Silicon) or /usr/local/bin/hex (Intel)
 ```
 
 ### Functional Test
 ```bash
 # Test print mode
-clem --print "What is 2+2?" 2>&1 | head -5
+hex --print "What is 2+2?" 2>&1 | head -5
 
 # Test setup (skip if API key present)
-clem doctor
+hex doctor
 
 # Test interactive mode (manual)
-clem "Hello Claude"
+hex "Hello Claude"
 # Should launch TUI, type ctrl+c to exit
 ```
 
 ### Upgrade Test
 ```bash
 # Simulate upgrade
-brew upgrade harper/tap/clem
+brew upgrade harper/tap/hex
 
 # Verify new version
-clem --version
+hex --version
 ```
 
 ### Uninstall Test
 ```bash
 # Clean removal
-brew uninstall harper/tap/clem
+brew uninstall harper/tap/hex
 
 # Verify binary removed
-which clem
-# Expected: clem not found
+which hex
+# Expected: hex not found
 ```
 
 **Success Criteria:**
@@ -97,40 +97,40 @@ which clem
 
 ```bash
 # Download and inspect
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh > /tmp/install.sh
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh > /tmp/install.sh
 cat /tmp/install.sh | head -20
 
 # Execute install
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 
 # Verify installation
-clem --version | grep "1.0.0"
-which clem
-# Expected: /usr/local/bin/clem or ~/.local/bin/clem
+hex --version | grep "1.0.0"
+which hex
+# Expected: /usr/local/bin/hex or ~/.local/bin/hex
 ```
 
 ### Windows PowerShell Script
 
 ```powershell
 # Run as Administrator
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 
 # Verify installation
-clem --version
-# Expected output: clem version 1.0.0
+hex --version
+# Expected output: hex version 1.0.0
 
 # Check PATH
-where.exe clem
-# Expected: C:\Program Files\clem\clem.exe or similar
+where.exe hex
+# Expected: C:\Program Files\hex\hex.exe or similar
 ```
 
 ### Functional Test (Both Platforms)
 ```bash
 # Test basic functionality
-clem --print "Hello world"
+hex --print "Hello world"
 
 # Verify config directory created
-ls ~/.clem/
+ls ~/.hex/
 # Expected: config.yaml or empty directory
 ```
 
@@ -146,50 +146,50 @@ ls ~/.clem/
 
 ## 3. Docker Images Verification
 
-**Registry:** ghcr.io/harper/clem
+**Registry:** ghcr.io/harper/hex
 **Tags:** latest, 1.0.0, 1.0
 
 ### Pull and Inspect
 ```bash
 # Pull latest image
-docker pull ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:latest
 
 # Inspect image
-docker inspect ghcr.io/harper/clem:latest | jq '.[0].Config.Labels'
+docker inspect ghcr.io/harper/hex:latest | jq '.[0].Config.Labels'
 
 # Check size
-docker images ghcr.io/harper/clem:latest
+docker images ghcr.io/harper/hex:latest
 # Expected: < 50MB
 ```
 
 ### Run Tests
 ```bash
 # Test version
-docker run --rm ghcr.io/harper/clem:latest --version
-# Expected: clem version 1.0.0
+docker run --rm ghcr.io/harper/hex:latest --version
+# Expected: hex version 1.0.0
 
 # Test print mode (needs API key)
 docker run --rm \
   -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
-  ghcr.io/harper/clem:latest \
+  ghcr.io/harper/hex:latest \
   --print "What is 2+2?"
 
 # Test with mounted config
 docker run --rm \
-  -v ~/.clem:/root/.clem \
-  ghcr.io/harper/clem:latest \
+  -v ~/.hex:/root/.hex \
+  ghcr.io/harper/hex:latest \
   doctor
 ```
 
 ### Tag Verification
 ```bash
 # Verify all tags point to same image
-docker pull ghcr.io/harper/clem:1.0.0
-docker pull ghcr.io/harper/clem:1.0
-docker pull ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:1.0.0
+docker pull ghcr.io/harper/hex:1.0
+docker pull ghcr.io/harper/hex:latest
 
 # Compare image IDs (should be identical)
-docker images ghcr.io/harper/clem --format "{{.Tag}}\t{{.ID}}"
+docker images ghcr.io/harper/hex --format "{{.Tag}}\t{{.ID}}"
 ```
 
 **Success Criteria:**
@@ -206,7 +206,7 @@ docker images ghcr.io/harper/clem --format "{{.Tag}}\t{{.ID}}"
 ## 4. Binary Releases Verification
 
 **Location:** GitHub Releases page
-**URL:** https://github.com/harper/clem/releases/tag/v1.0.0
+**URL:** https://github.com/harper/hex/releases/tag/v1.0.0
 
 ### Platforms to Test
 - macOS Intel (darwin_amd64)
@@ -220,45 +220,45 @@ docker images ghcr.io/harper/clem --format "{{.Tag}}\t{{.ID}}"
 # Download
 VERSION=1.0.0
 PLATFORM=darwin_arm64
-curl -L -o clem.tar.gz \
-  "https://github.com/harper/clem/releases/download/v${VERSION}/clem_${VERSION}_${PLATFORM}.tar.gz"
+curl -L -o hex.tar.gz \
+  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
 
 # Extract
-tar -xzf clem.tar.gz
-chmod +x clem
+tar -xzf hex.tar.gz
+chmod +x hex
 
 # Verify
-./clem --version
-# Expected: clem version 1.0.0
+./hex --version
+# Expected: hex version 1.0.0
 ```
 
 ### Checksum Verification
 ```bash
 # Download checksums
 curl -L -o checksums.txt \
-  "https://github.com/harper/clem/releases/download/v${VERSION}/checksums.txt"
+  "https://github.com/harper/hex/releases/download/v${VERSION}/checksums.txt"
 
 # Verify binary
 shasum -a 256 -c checksums.txt --ignore-missing
-# Expected: clem_1.0.0_darwin_arm64.tar.gz: OK
+# Expected: hex_1.0.0_darwin_arm64.tar.gz: OK
 ```
 
 ### Signature Verification (if GPG signing enabled)
 ```bash
 # Download signature
-curl -L -o clem.tar.gz.sig \
-  "https://github.com/harper/clem/releases/download/v${VERSION}/clem_${VERSION}_${PLATFORM}.tar.gz.sig"
+curl -L -o hex.tar.gz.sig \
+  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz.sig"
 
 # Verify signature
-gpg --verify clem.tar.gz.sig clem.tar.gz
+gpg --verify hex.tar.gz.sig hex.tar.gz
 ```
 
 ### Test Each Platform
 ```bash
 # Test binary functionality
-./clem --print "Test"
-./clem doctor
-./clem --version
+./hex --print "Test"
+./hex doctor
+./hex --version
 ```
 
 **Success Criteria:**
@@ -279,67 +279,67 @@ gpg --verify clem.tar.gz.sig clem.tar.gz
 
 ```bash
 # Download package
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_amd64.deb
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_amd64.deb
 
 # Inspect package
-dpkg -I clem_1.0.0_amd64.deb
-dpkg -c clem_1.0.0_amd64.deb
+dpkg -I hex_1.0.0_amd64.deb
+dpkg -c hex_1.0.0_amd64.deb
 
 # Install
-sudo dpkg -i clem_1.0.0_amd64.deb
+sudo dpkg -i hex_1.0.0_amd64.deb
 
 # Verify installation
-which clem
-clem --version
-dpkg -l | grep clem
+which hex
+hex --version
+dpkg -l | grep hex
 
 # Test functionality
-clem --print "Test"
+hex --print "Test"
 
 # Uninstall
-sudo dpkg -r clem
+sudo dpkg -r hex
 ```
 
 ### RHEL/Fedora (.rpm)
 
 ```bash
 # Download package
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_x86_64.rpm
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.rpm
 
 # Inspect package
-rpm -qip clem_1.0.0_x86_64.rpm
-rpm -qlp clem_1.0.0_x86_64.rpm
+rpm -qip hex_1.0.0_x86_64.rpm
+rpm -qlp hex_1.0.0_x86_64.rpm
 
 # Install
-sudo rpm -i clem_1.0.0_x86_64.rpm
+sudo rpm -i hex_1.0.0_x86_64.rpm
 
 # Verify installation
-which clem
-clem --version
-rpm -qa | grep clem
+which hex
+hex --version
+rpm -qa | grep hex
 
 # Test functionality
-clem --print "Test"
+hex --print "Test"
 
 # Uninstall
-sudo rpm -e clem
+sudo rpm -e hex
 ```
 
 ### Alpine (.apk)
 
 ```bash
 # Download package
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_x86_64.apk
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.apk
 
 # Install
-sudo apk add --allow-untrusted clem_1.0.0_x86_64.apk
+sudo apk add --allow-untrusted hex_1.0.0_x86_64.apk
 
 # Verify
-which clem
-clem --version
+which hex
+hex --version
 
 # Uninstall
-sudo apk del clem
+sudo apk del hex
 ```
 
 **Success Criteria:**
@@ -360,38 +360,38 @@ sudo apk del clem
 ### Installation Test
 ```bash
 # Clean environment
-rm -f $(go env GOPATH)/bin/clem
+rm -f $(go env GOPATH)/bin/hex
 
 # Install from source
-go install github.com/harper/clem/cmd/clem@v1.0.0
+go install github.com/harper/hex/cmd/hex@v1.0.0
 
 # Verify installation
-clem --version
-# Expected: clem version 1.0.0 (or may show (devel) - acceptable)
+hex --version
+# Expected: hex version 1.0.0 (or may show (devel) - acceptable)
 
-which clem
-# Expected: $GOPATH/bin/clem
+which hex
+# Expected: $GOPATH/bin/hex
 ```
 
 ### Build from Source
 ```bash
 # Clone repository
-git clone https://github.com/harper/clem.git
-cd clem
+git clone https://github.com/harper/hex.git
+cd hex
 git checkout v1.0.0
 
 # Build
-go build -o clem ./cmd/clem
+go build -o hex ./cmd/hex
 
 # Verify
-./clem --version
+./hex --version
 ```
 
 ### Functional Test
 ```bash
 # Test binary
-clem --print "Test"
-clem doctor
+hex --print "Test"
+hex doctor
 ```
 
 **Success Criteria:**
@@ -409,46 +409,46 @@ Run these tests for **every distribution channel** after installation:
 
 ### 1. Version Check
 ```bash
-clem --version
-# Expected: clem version 1.0.0
+hex --version
+# Expected: hex version 1.0.0
 ```
 
 ### 2. Help Command
 ```bash
-clem --help
+hex --help
 # Should display usage information
 ```
 
 ### 3. Doctor Command
 ```bash
-clem doctor
+hex doctor
 # Should check configuration and dependencies
 ```
 
 ### 4. Print Mode (requires API key)
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-clem --print "What is 2+2?"
+hex --print "What is 2+2?"
 # Should return response about 4
 ```
 
 ### 5. Interactive Mode (manual)
 ```bash
-clem "Test prompt"
+hex "Test prompt"
 # Should launch TUI
 # Press Ctrl+C to exit
 ```
 
 ### 6. Config Directory
 ```bash
-ls -la ~/.clem/
+ls -la ~/.hex/
 # Should exist after first run
 ```
 
 ### 7. Database Creation
 ```bash
-clem "Test" # Run once
-ls ~/.clem/clem.db
+hex "Test" # Run once
+ls ~/.hex/hex.db
 # Database should exist
 ```
 
@@ -462,36 +462,36 @@ Create `scripts/verify-packages.sh`:
 #!/bin/bash
 set -e
 
-echo "=== Clem v1.0 Package Verification ==="
+echo "=== Hex v1.0 Package Verification ==="
 
 # 1. Homebrew
 echo "Testing Homebrew..."
-brew install harper/tap/clem
-clem --version | grep "1.0.0" || exit 1
-brew uninstall harper/tap/clem
+brew install harper/tap/hex
+hex --version | grep "1.0.0" || exit 1
+brew uninstall harper/tap/hex
 
 # 2. Install Script
 echo "Testing install script..."
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
-clem --version | grep "1.0.0" || exit 1
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
+hex --version | grep "1.0.0" || exit 1
 
 # 3. Docker
 echo "Testing Docker..."
-docker run --rm ghcr.io/harper/clem:latest --version | grep "1.0.0" || exit 1
+docker run --rm ghcr.io/harper/hex:latest --version | grep "1.0.0" || exit 1
 
 # 4. Binary Release
 echo "Testing binary release..."
 VERSION=1.0.0
 PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m)
-curl -L -o /tmp/clem.tar.gz \
-  "https://github.com/harper/clem/releases/download/v${VERSION}/clem_${VERSION}_${PLATFORM}.tar.gz"
-tar -xzf /tmp/clem.tar.gz -C /tmp
-/tmp/clem --version | grep "1.0.0" || exit 1
+curl -L -o /tmp/hex.tar.gz \
+  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
+tar -xzf /tmp/hex.tar.gz -C /tmp
+/tmp/hex --version | grep "1.0.0" || exit 1
 
 # 5. Go Install
 echo "Testing go install..."
-go install github.com/harper/clem/cmd/clem@v1.0.0
-$(go env GOPATH)/bin/clem --version || exit 1
+go install github.com/harper/hex/cmd/hex@v1.0.0
+$(go env GOPATH)/bin/hex --version || exit 1
 
 echo "✅ All packages verified successfully!"
 ```

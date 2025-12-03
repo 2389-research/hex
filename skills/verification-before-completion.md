@@ -52,7 +52,7 @@ Before saying "done", "fixed", "passing", or "working":
 
 # ✅ RIGHT: Actually run them
 $ go test ./internal/skills/...
-ok      github.com/harper/clem/internal/skills  0.123s
+ok      github.com/harper/hex/internal/skills  0.123s
 ```
 
 **Verify**:
@@ -68,7 +68,7 @@ ok      github.com/harper/clem/internal/skills  0.123s
 "The code looks good, should build fine"
 
 # ✅ RIGHT: Build it
-$ go build ./cmd/clem
+$ go build ./cmd/hex
 $ echo $?
 0
 ```
@@ -126,8 +126,8 @@ PASS
 "Feature is implemented"
 
 # ✅ RIGHT: Test it end-to-end
-$ go build ./cmd/clem
-$ ./clem --new-feature
+$ go build ./cmd/hex
+$ ./hex --new-feature
 Expected output appears
 ```
 
@@ -149,7 +149,7 @@ $ curl https://api.example.com/health
 {"status": "ok", "version": "1.2.3"}
 
 $ ssh server 'systemctl status clem'
-● clem.service - Clem Service
+● hex.service - Hex Service
    Active: active (running)
 ```
 
@@ -176,7 +176,7 @@ $ go test ./internal/skills/ -v
 === RUN   TestSkillLoader
 --- PASS: TestSkillLoader (0.00s)
 PASS
-ok      github.com/harper/clem/internal/skills  0.123s
+ok      github.com/harper/hex/internal/skills  0.123s
 
 "Tests added and verified passing. Coverage increased from 75% to 85%."
 ```
@@ -212,9 +212,9 @@ PASS
 **✅ Right Approach**:
 ```bash
 $ go test ./internal/auth/...
-ok      github.com/harper/clem/internal/auth    0.456s
+ok      github.com/harper/hex/internal/auth    0.456s
 
-$ go build ./cmd/clem
+$ go build ./cmd/hex
 $ echo $?
 0
 
@@ -230,10 +230,10 @@ $ echo $?
 
 **✅ Right Approach**:
 ```bash
-$ clem --help | grep "new-flag"
+$ hex --help | grep "new-flag"
   --new-flag string   New configuration option (default "value")
 
-$ clem --new-flag=test
+$ hex --new-flag=test
 Configuration loaded successfully
 Using new-flag: test
 
@@ -372,9 +372,9 @@ Implements skill loading, registry, and tool integration.
 
 Verified:
 $ go test ./internal/skills/
-ok      github.com/harper/clem/internal/skills  0.234s
+ok      github.com/harper/hex/internal/skills  0.234s
 
-$ go build ./cmd/clem
+$ go build ./cmd/hex
 $ echo $?
 0
 

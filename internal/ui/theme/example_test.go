@@ -3,7 +3,7 @@ package theme_test
 import (
 	"fmt"
 
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // ExampleDraculaTheme demonstrates basic usage of the Dracula theme
@@ -12,7 +12,7 @@ func ExampleDraculaTheme() {
 	t := theme.DraculaTheme()
 
 	// Use the theme to style text
-	title := t.Title.Render("Welcome to Clem")
+	title := t.Title.Render("Welcome to Hex")
 	subtitle := t.Subtitle.Render("A beautiful CLI interface")
 	body := t.Body.Render("This is some body text")
 

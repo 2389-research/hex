@@ -15,39 +15,39 @@ import (
 
 func TestPhase1Integration(t *testing.T) {
 	// Build binary
-	buildCmd := exec.Command("go", "build", "-o", "clem-test", "./cmd/clem")
+	buildCmd := exec.Command("go", "build", "-o", "hex-test", "./cmd/hex")
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err, "failed to build test binary")
-	defer func() { _ = os.Remove("../../clem-test")
+	defer func() { _ = os.Remove("../../hex-test")
 
-	clemBin := "../../clem-test"
+	hexBin := "../../hex-test"
 
 	t.Run("version flag", func(t *testing.T) {
-		cmd := exec.Command(clemBin, "--version")
+		cmd := exec.Command(hexBin, "--version")
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err, "version command should succeed")
 		assert.Contains(t, string(output), "0.1.0", "version should be 0.1.0")
 	})
 
 	t.Run("help flag", func(t *testing.T) {
-		cmd := exec.Command(clemBin, "--help")
+		cmd := exec.Command(hexBin, "--help")
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err, "help command should succeed")
-		assert.Contains(t, string(output), "Clem", "help should mention Clem")
+		assert.Contains(t, string(output), "Hex", "help should mention Hex")
 		assert.Contains(t, string(output), "--print", "help should mention --print flag")
 	})
 
 	t.Run("setup-token command", func(t *testing.T) {
 		tmpHome := t.TempDir()
-		cmd := exec.Command(clemBin, "setup-token", "test-key-xyz")
+		cmd := exec.Command(hexBin, "setup-token", "test-key-xyz")
 		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err, "setup-token should succeed")
 		assert.Contains(t, string(output), "✓", "should show success checkmark")
 
 		// Verify file was created
-		configPath := filepath.Join(tmpHome, ".clem", "config.yaml")
+		configPath := filepath.Join(tmpHome, ".hex", "config.yaml")
 		assert.FileExists(t, configPath, "config.yaml should be created")
 	})
 
@@ -55,13 +55,13 @@ func TestPhase1Integration(t *testing.T) {
 		tmpHome := t.TempDir()
 
 		// Setup first
-		setupCmd := exec.Command(clemBin, "setup-token", "test-key")
+		setupCmd := exec.Command(hexBin, "setup-token", "test-key")
 		setupCmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		err := setupCmd.Run()
 		require.NoError(t, err, "setup should succeed before doctor check")
 
 		// Run doctor
-		doctorCmd := exec.Command(clemBin, "doctor")
+		doctorCmd := exec.Command(hexBin, "doctor")
 		doctorCmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := doctorCmd.CombinedOutput()
 		require.NoError(t, err, "doctor command should succeed")
@@ -70,7 +70,7 @@ func TestPhase1Integration(t *testing.T) {
 
 	t.Run("print mode error without key", func(t *testing.T) {
 		tmpHome := t.TempDir()
-		cmd := exec.Command(clemBin, "--print", "test")
+		cmd := exec.Command(hexBin, "--print", "test")
 		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := cmd.CombinedOutput()
 		assert.Error(t, err, "print mode should error without API key")
@@ -83,23 +83,23 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 		t.Skip("Skipping real API test in short mode")
 	}
 
-	apiKey := os.Getenv("CLEM_API_KEY")
+	apiKey := os.Getenv("HEX_API_KEY")
 	if apiKey == "" {
-		t.Skip("CLEM_API_KEY not set, skipping real API test")
+		t.Skip("HEX_API_KEY not set, skipping real API test")
 	}
 
 	// Build binary
-	buildCmd := exec.Command("go", "build", "-o", "clem-test", "./cmd/clem")
+	buildCmd := exec.Command("go", "build", "-o", "hex-test", "./cmd/hex")
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err, "failed to build test binary")
-	defer func() { _ = os.Remove("../../clem-test")
+	defer func() { _ = os.Remove("../../hex-test")
 
-	clemBin := "../../clem-test"
+	hexBin := "../../hex-test"
 
 	// Test print mode with real API
-	cmd := exec.Command(clemBin, "--print", "Say hello in exactly 3 words")
-	cmd.Env = append(os.Environ(), "CLEM_API_KEY="+apiKey)
+	cmd := exec.Command(hexBin, "--print", "Say hello in exactly 3 words")
+	cmd.Env = append(os.Environ(), "HEX_API_KEY="+apiKey)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "print mode with real API should succeed")
 

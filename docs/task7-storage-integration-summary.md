@@ -1,22 +1,22 @@
 # Task 7: Storage Integration - Implementation Summary
 
 ## Overview
-Successfully implemented storage integration for Clem Phase 2, adding database persistence, conversation history, and --continue/--resume functionality.
+Successfully implemented storage integration for Hex Phase 2, adding database persistence, conversation history, and --continue/--resume functionality.
 
 ## What Was Implemented
 
-### 1. Database Management (`cmd/clem/storage.go`)
-- **`defaultDBPath()`**: Returns default database path (`~/.clem/clem.db`)
+### 1. Database Management (`cmd/hex/storage.go`)
+- **`defaultDBPath()`**: Returns default database path (`~/.hex/hex.db`)
 - **`openDatabase(path)`**: Opens database, creates directories, initializes schema
 - **`loadConversationHistory(db, convID)`**: Loads conversation and all its messages
 
-### 2. Command-Line Flags (`cmd/clem/root.go`)
+### 2. Command-Line Flags (`cmd/hex/root.go`)
 Added three new flags:
 - **`--continue`**: Resume the most recent conversation
 - **`--resume <id>`**: Resume a specific conversation by ID
-- **`--db-path <path>`**: Specify custom database path (default: `~/.clem/clem.db`)
+- **`--db-path <path>`**: Specify custom database path (default: `~/.hex/hex.db`)
 
-### 3. Interactive Mode Integration (`cmd/clem/root.go`)
+### 3. Interactive Mode Integration (`cmd/hex/root.go`)
 Modified `runInteractive()` to:
 - Open database on startup
 - Handle `--continue` flag: loads latest conversation
@@ -40,10 +40,10 @@ Modified `runInteractive()` to:
 
 ## Files Modified
 
-1. **`cmd/clem/root.go`** - Added flags, database opening, conversation loading
-2. **`cmd/clem/storage.go`** (new) - Database helper functions
-3. **`cmd/clem/storage_test.go`** (new) - Tests for database functionality
-4. **`cmd/clem/integration_test.go`** (new) - End-to-end integration tests
+1. **`cmd/hex/root.go`** - Added flags, database opening, conversation loading
+2. **`cmd/hex/storage.go`** (new) - Database helper functions
+3. **`cmd/hex/storage_test.go`** (new) - Tests for database functionality
+4. **`cmd/hex/integration_test.go`** (new) - End-to-end integration tests
 5. **`internal/ui/model.go`** - Added database field and methods
 6. **`internal/ui/update.go`** - Message persistence logic
 
@@ -67,8 +67,8 @@ Modified `runInteractive()` to:
 - Preserves model and conversation metadata
 
 ### Database Location
-- Default: `~/.clem/clem.db`
-- Creates `~/.clem` directory if it doesn't exist
+- Default: `~/.hex/hex.db`
+- Creates `~/.hex` directory if it doesn't exist
 - Can be overridden with `--db-path` flag
 
 ## Testing
@@ -88,31 +88,31 @@ Modified `runInteractive()` to:
 ### Test Results
 All tests passing:
 ```
-ok  	github.com/harper/clem/cmd/clem	0.245s
-ok  	github.com/harper/clem/internal/storage	(cached)
-ok  	github.com/harper/clem/internal/ui	(cached)
+ok  	github.com/harper/hex/cmd/hex	0.245s
+ok  	github.com/harper/hex/internal/storage	(cached)
+ok  	github.com/harper/hex/internal/ui	(cached)
 ```
 
 ## Usage Examples
 
 ### Start new conversation (creates in database):
 ```bash
-./clem
+./hex
 ```
 
 ### Continue most recent conversation:
 ```bash
-./clem --continue
+./hex --continue
 ```
 
 ### Resume specific conversation:
 ```bash
-./clem --resume conv-1732696800
+./hex --resume conv-1732696800
 ```
 
 ### Use custom database location:
 ```bash
-./clem --db-path /path/to/my/clem.db
+./hex --db-path /path/to/my/hex.db
 ```
 
 ## Technical Details

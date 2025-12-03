@@ -167,12 +167,12 @@ By **not** calling `CommitStreamingText()` early, we let the text accumulate unt
 
 Build verified:
 ```bash
-$ cd clean && go build ./cmd/clem
+$ cd clean && go build ./cmd/hex
 # Success!
 ```
 
 Manual testing needed:
-1. Run `clem`
+1. Run `hex`
 2. Request multiple tools (e.g., "create 3 files: a.txt, b.txt, c.txt")
 3. Approve tools
 4. Verify app continues working (doesn't "die")

@@ -1,6 +1,6 @@
 # Performance Baseline and Optimization Guide
 
-This document tracks performance benchmarks for Clem and provides guidelines for optimization.
+This document tracks performance benchmarks for Hex and provides guidelines for optimization.
 
 **Last Updated:** 2025-11-28
 **Platform:** Darwin ARM64 (Apple M4 Max)
@@ -130,8 +130,8 @@ This document tracks performance benchmarks for Clem and provides guidelines for
 
 | Benchmark | Target | Actual | Status |
 |-----------|--------|--------|--------|
-| `clem --help` | < 100ms | ~50ms | ✅ PASS |
-| `clem version` | < 100ms | ~45ms | ✅ PASS |
+| `hex --help` | < 100ms | ~50ms | ✅ PASS |
+| `hex version` | < 100ms | ~45ms | ✅ PASS |
 
 **Key Findings:**
 - ✅ Startup is well under target
@@ -186,7 +186,7 @@ go test -bench=. -benchmem -benchtime=2s ./internal/storage/
 go test -bench=. -benchmem -benchtime=2s ./internal/tools/
 
 # Startup benchmarks
-go test -bench=. -benchmem ./cmd/clem/
+go test -bench=. -benchmem ./cmd/hex/
 ```
 
 ### Run Specific Benchmark

@@ -45,7 +45,7 @@ func (i *Installer) installFromGit(repoURL string) error {
 
 	// Check if already installed
 	if i.loader.State().IsInstalled(pluginName) {
-		return fmt.Errorf("plugin %s is already installed. Use 'clem plugin update %s' to update", pluginName, pluginName)
+		return fmt.Errorf("plugin %s is already installed. Use 'hex plugin update %s' to update", pluginName, pluginName)
 	}
 
 	// Clone repository
@@ -121,7 +121,7 @@ func (i *Installer) installFromLocal(sourcePath string) error {
 
 	// Check if already installed
 	if i.loader.State().IsInstalled(manifest.Name) {
-		return fmt.Errorf("plugin %s is already installed. Use 'clem plugin update %s' to update", manifest.Name, manifest.Name)
+		return fmt.Errorf("plugin %s is already installed. Use 'hex plugin update %s' to update", manifest.Name, manifest.Name)
 	}
 
 	targetDir := filepath.Join(i.loader.GetPluginsDir(), manifest.Name)

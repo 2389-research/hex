@@ -6,7 +6,7 @@
 - `internal/skills/`
 - `internal/permissions/`
 - `internal/commands/`
-- Modified files: `internal/tools/executor.go`, `cmd/clem/root.go`, `internal/ui/view.go`
+- Modified files: `internal/tools/executor.go`, `cmd/hex/root.go`, `internal/ui/view.go`
 
 **Overall Assessment**: The code is well-structured with comprehensive test coverage. Found several important issues that should be addressed, plus some minor improvements.
 
@@ -448,7 +448,7 @@ func extractFilePath(params map[string]interface{}) string {
 
 ### Root Command Integration
 
-**File**: `cmd/clem/root.go`
+**File**: `cmd/hex/root.go`
 
 **Only saw first 100 lines** - couldn't review full integration. Need to check:
 - How hooks engine is initialized

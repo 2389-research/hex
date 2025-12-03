@@ -9,7 +9,7 @@
 
 ### ✅ 1. Fix Version Test (2 minutes)
 
-**File:** `cmd/clem/root_test.go:31`
+**File:** `cmd/hex/root_test.go:31`
 
 **Change:**
 ```go
@@ -22,7 +22,7 @@ assert.Contains(t, buf.String(), "1.0.0")
 
 **Verification:**
 ```bash
-go test ./cmd/clem -run TestVersionFlag -v
+go test ./cmd/hex -run TestVersionFlag -v
 # PASS
 ```
 
@@ -189,7 +189,7 @@ All 4 high-priority tasks for v1.0 release preparation are complete:
 - `HIGH_PRIORITY_TASKS_COMPLETE.md` (This file)
 
 ### Modified
-- `cmd/clem/root_test.go` - Version test fix (1 line)
+- `cmd/hex/root_test.go` - Version test fix (1 line)
 - `README.md` - v1.0 updates (~150 lines across 6 sections)
 
 ---
@@ -197,7 +197,7 @@ All 4 high-priority tasks for v1.0 release preparation are complete:
 ## Quality Assurance
 
 **Tests Run:**
-- ✅ `go test ./cmd/clem -run TestVersionFlag` - PASS
+- ✅ `go test ./cmd/hex -run TestVersionFlag` - PASS
 - ✅ `govulncheck ./...` - 12 vulnerabilities found (documented)
 
 **Documentation:**

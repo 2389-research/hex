@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes how to complete the integration of the hooks system into Clem. The core implementation is complete, but a few integration points need to be wired up manually.
+This document describes how to complete the integration of the hooks system into Hex. The core implementation is complete, but a few integration points need to be wired up manually.
 
 ## What's Implemented
 
@@ -21,7 +21,7 @@ This document describes how to complete the integration of the hooks system into
    - PreCompact
 
 2. **config.go** - Configuration loading system:
-   - Loads from `~/.clem/settings.json` (user config)
+   - Loads from `~/.hex/settings.json` (user config)
    - Loads from `.claude/settings.json` (project config)
    - Project config overrides user config
    - Supports single hooks or arrays of hooks per event
@@ -63,7 +63,7 @@ This document describes how to complete the integration of the hooks system into
 
 ### 1. Session Lifecycle Hooks
 
-**File: `cmd/clem/root.go` (runInteractive function)**
+**File: `cmd/hex/root.go` (runInteractive function)**
 
 Add at session start (after database opened):
 
@@ -237,7 +237,7 @@ All tests should pass. Coverage is >80%.
 
 ## Next Steps
 
-1. Wire up SessionStart/SessionEnd in `cmd/clem/root.go`
+1. Wire up SessionStart/SessionEnd in `cmd/hex/root.go`
 2. Add hookEngine field to `internal/ui/Model`
 3. Wire up UserPromptSubmit in UI message handling
 4. Wire up Stop event after Claude responses
@@ -310,7 +310,7 @@ Once fully integrated, users can:
 - `internal/tools/executor.go` - Added hook integration for PreToolUse/PostToolUse
 
 ### Files That Need Modification:
-- `cmd/clem/root.go` - Wire up SessionStart/SessionEnd
+- `cmd/hex/root.go` - Wire up SessionStart/SessionEnd
 - `internal/ui/model.go` - Add hookEngine field and methods
 - `internal/ui/update.go` - Fire UserPromptSubmit and Stop hooks
 
@@ -319,7 +319,7 @@ Once fully integrated, users can:
 ```
 ┌─────────────────────────────────────────┐
 │         Application Layer               │
-│  (cmd/clem/root.go, internal/ui/)       │
+│  (cmd/hex/root.go, internal/ui/)       │
 │                                          │
 │  - Session lifecycle management          │
 │  - User interaction handling             │

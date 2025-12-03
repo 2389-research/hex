@@ -1,6 +1,6 @@
 # Tool System Architecture
 
-This package implements the tool execution system for Clem, providing a clean abstraction for executing tools (Read, Write, Bash, etc.) with permission management and API integration.
+This package implements the tool execution system for Hex, providing a clean abstraction for executing tools (Read, Write, Bash, etc.) with permission management and API integration.
 
 ## Architecture Overview
 

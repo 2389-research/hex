@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/core"
 	"github.com/spf13/cobra"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check installation health",
-	Long:  "Verify that Clem is correctly installed and configured",
+	Long:  "Verify that Hex is correctly installed and configured",
 	RunE:  runDoctor,
 }
 
@@ -21,7 +21,7 @@ func init() {
 }
 
 func runDoctor(_ *cobra.Command, _ []string) error {
-	fmt.Println("Clem Health Check")
+	fmt.Println("Hex Health Check")
 	fmt.Println("=================")
 	fmt.Println()
 
@@ -57,14 +57,14 @@ func checkHomeDirectory() bool {
 		return false
 	}
 
-	clemDir := filepath.Join(home, ".clem")
-	if _, err := os.Stat(clemDir); os.IsNotExist(err) {
-		printCheck(".clem directory", false, "not found")
-		fmt.Printf("  Run: mkdir -p %s\n", clemDir)
+	hexDir := filepath.Join(home, ".hex")
+	if _, err := os.Stat(hexDir); os.IsNotExist(err) {
+		printCheck(".hex directory", false, "not found")
+		fmt.Printf("  Run: mkdir -p %s\n", hexDir)
 		return false
 	}
 
-	printCheck(".clem directory", true, clemDir)
+	printCheck(".hex directory", true, hexDir)
 	return true
 }
 
@@ -75,10 +75,10 @@ func checkConfigFile() bool {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".clem", "config.yaml")
+	configPath := filepath.Join(home, ".hex", "config.yaml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		printCheck("Config file", false, "not found")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
+		fmt.Println("  Run: hex setup-token <your-api-key>")
 		return false
 	}
 
@@ -95,8 +95,8 @@ func checkAPIKey() bool {
 
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
-		fmt.Println("  Or set: export CLEM_API_KEY=<your-key>")
+		fmt.Println("  Run: hex setup-token <your-api-key>")
+		fmt.Println("  Or set: export HEX_API_KEY=<your-key>")
 		return false
 	}
 

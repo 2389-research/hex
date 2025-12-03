@@ -29,7 +29,7 @@ Task 1 of Week 4 (Distribution & Release) is now complete. All installation scri
   - Requires Administrator privileges (checked at start)
   - Auto-detects architecture (AMD64/ARM64)
   - Downloads Windows .zip release
-  - Installs to `%ProgramFiles%\Clem`
+  - Installs to `%ProgramFiles%\Hex`
   - Automatically adds to system PATH
   - Verifies installation
   - PowerShell 5.1+ compatible
@@ -48,13 +48,13 @@ Updated `README.md` with comprehensive installation instructions:
 
 ```bash
 # macOS and Linux
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 
 # Windows (PowerShell as Administrator)
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 
 # Verify installation
-clem --version
+hex --version
 ```
 ```
 
@@ -126,7 +126,7 @@ Added v1.0.0 entry to `CHANGELOG.md`:
 
 ### 🎉 First Production Release
 
-Clem v1.0.0 is the first production-ready release...
+Hex v1.0.0 is the first production-ready release...
 
 **Complete Feature Set**:
 - ✅ Interactive TUI with Bubbletea
@@ -162,7 +162,7 @@ Clem v1.0.0 is the first production-ready release...
 
 Updated version numbers throughout codebase:
 
-- `cmd/clem/root.go`: `version = "1.0.0"` (line 24)
+- `cmd/hex/root.go`: `version = "1.0.0"` (line 24)
 - `README.md`: `**Latest Version**: v1.0.0` (line 10)
 
 ## Testing
@@ -179,49 +179,49 @@ All scripts are:
 ### 1. Quick Install Script
 ```bash
 # Unix/Linux
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 
 # Windows
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 ```
 
 ### 2. Homebrew
 ```bash
-brew install harper/tap/clem
+brew install harper/tap/hex
 ```
 
 ### 3. Go Install
 ```bash
-go install github.com/harper/clem/cmd/clem@v1.0.0
+go install github.com/harper/hex/cmd/hex@v1.0.0
 ```
 
 ### 4. Docker
 ```bash
-docker pull ghcr.io/harper/clem:1.0.0
+docker pull ghcr.io/harper/hex:1.0.0
 ```
 
 ### 5. Linux Packages
 ```bash
 # Debian/Ubuntu
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.deb
-sudo dpkg -i clem_1.0.0_Linux_x86_64.deb
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 
 # RedHat/Fedora
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.rpm
-sudo rpm -i clem_1.0.0_Linux_x86_64.rpm
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 
 # Alpine
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.apk
-sudo apk add --allow-untrusted clem_1.0.0_Linux_x86_64.apk
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
 ### 6. Manual Binary
 ```bash
 # Download from GitHub Releases
-# https://github.com/harper/clem/releases/tag/v1.0.0
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Darwin_x86_64.tar.gz
-tar -xzf clem_1.0.0_Darwin_x86_64.tar.gz
-sudo mv clem /usr/local/bin/
+# https://github.com/harper/hex/releases/tag/v1.0.0
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
+tar -xzf hex_1.0.0_Darwin_x86_64.tar.gz
+sudo mv hex /usr/local/bin/
 ```
 
 ## Files Created/Modified
@@ -236,7 +236,7 @@ sudo mv clem /usr/local/bin/
 ### Modified
 1. `README.md` - Added Windows installation instructions
 2. `CHANGELOG.md` - Added v1.0.0 entry (100+ lines)
-3. `cmd/clem/root.go` - Bumped version to 1.0.0
+3. `cmd/hex/root.go` - Bumped version to 1.0.0
 
 ## Success Criteria
 

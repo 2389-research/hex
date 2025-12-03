@@ -60,7 +60,7 @@
 ## Release Day
 
 ### Version Bump
-- [ ] Update version in `cmd/clem/root.go` (line 24)
+- [ ] Update version in `cmd/hex/root.go` (line 24)
   ```go
   version = "1.0.0"
   ```
@@ -74,7 +74,7 @@
 ### Create Release Branch
 ```bash
 git checkout -b release/v1.0.0
-git add cmd/clem/root.go README.md CHANGELOG.md
+git add cmd/hex/root.go README.md CHANGELOG.md
 git commit -m "chore: bump version to v1.0.0"
 ```
 
@@ -89,8 +89,8 @@ git commit -m "chore: bump version to v1.0.0"
   ```
 - [ ] Test binary manually
   ```bash
-  ./dist/clem_darwin_amd64_v1/clem --version
-  ./dist/clem_darwin_amd64_v1/clem --help
+  ./dist/hex_darwin_amd64_v1/hex --version
+  ./dist/hex_darwin_amd64_v1/hex --help
   ```
 - [ ] Verify installation scripts work
   ```bash
@@ -102,7 +102,7 @@ git commit -m "chore: bump version to v1.0.0"
 # Create annotated tag
 git tag -a v1.0.0 -m "Release v1.0.0
 
-Clem v1.0.0 is the first production-ready release.
+Hex v1.0.0 is the first production-ready release.
 
 Features:
 - Interactive TUI with Bubbletea
@@ -122,7 +122,7 @@ git push origin v1.0.0
 
 ### Monitor CI/CD
 - [ ] GitHub Actions workflow triggers
-  - Visit: https://github.com/harper/clem/actions
+  - Visit: https://github.com/harper/hex/actions
 - [ ] All tests pass in CI
 - [ ] GoReleaser builds all artifacts
 - [ ] Homebrew tap updates successfully
@@ -133,21 +133,21 @@ git push origin v1.0.0
 - [ ] Binary archives downloadable from GitHub Releases
 - [ ] Checksums.txt present and correct
   ```bash
-  curl -sL https://github.com/harper/clem/releases/download/v1.0.0/checksums.txt
+  curl -sL https://github.com/harper/hex/releases/download/v1.0.0/checksums.txt
   ```
 - [ ] Linux packages available (.deb, .rpm, .apk)
 - [ ] Docker image pullable
   ```bash
-  docker pull ghcr.io/harper/clem:1.0.0
-  docker pull ghcr.io/harper/clem:latest
+  docker pull ghcr.io/harper/hex:1.0.0
+  docker pull ghcr.io/harper/hex:latest
   ```
 - [ ] Homebrew formula updated
   ```bash
-  brew upgrade harper/tap/clem
+  brew upgrade harper/tap/hex
   ```
 
 ### Create/Edit GitHub Release
-- [ ] Navigate to: https://github.com/harper/clem/releases/tag/v1.0.0
+- [ ] Navigate to: https://github.com/harper/hex/releases/tag/v1.0.0
 - [ ] Edit release notes (see template below)
 - [ ] Mark as "Latest release"
 - [ ] Verify artifacts are attached
@@ -157,9 +157,9 @@ git push origin v1.0.0
 ## GitHub Release Notes Template
 
 ```markdown
-# 🎉 Clem v1.0.0 - Production Release
+# 🎉 Hex v1.0.0 - Production Release
 
-We're excited to announce the first production-ready release of Clem, a clean-room implementation of Claude CLI in Go!
+We're excited to announce the first production-ready release of Hex, a clean-room implementation of Claude CLI in Go!
 
 ## ✨ Highlights
 
@@ -209,48 +209,48 @@ We're excited to announce the first production-ready release of Clem, a clean-ro
 
 **macOS/Linux:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 ```
 
 **Windows (PowerShell as Admin):**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 ```
 
 ### Package Managers
 
 **Homebrew (macOS/Linux):**
 ```bash
-brew install harper/tap/clem
+brew install harper/tap/hex
 ```
 
 **Debian/Ubuntu (.deb):**
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.deb
-sudo dpkg -i clem_1.0.0_Linux_x86_64.deb
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 ```
 
 **RedHat/Fedora (.rpm):**
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.rpm
-sudo rpm -i clem_1.0.0_Linux_x86_64.rpm
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 ```
 
 **Alpine Linux (.apk):**
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.apk
-sudo apk add --allow-untrusted clem_1.0.0_Linux_x86_64.apk
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
 **Docker:**
 ```bash
-docker pull ghcr.io/harper/clem:1.0.0
-docker run --rm -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY ghcr.io/harper/clem:1.0.0
+docker pull ghcr.io/harper/hex:1.0.0
+docker run --rm -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY ghcr.io/harper/hex:1.0.0
 ```
 
 **Go Install:**
 ```bash
-go install github.com/harper/clem/cmd/clem@v1.0.0
+go install github.com/harper/hex/cmd/hex@v1.0.0
 ```
 
 ## 🏁 Quick Start
@@ -260,24 +260,24 @@ go install github.com/harper/clem/cmd/clem@v1.0.0
 export ANTHROPIC_API_KEY='your-api-key-here'
 
 # Start interactive session
-clem
+hex
 
 # One-shot query
-clem --print "Hello, world!"
+hex --print "Hello, world!"
 
 # Resume last conversation
-clem --continue
+hex --continue
 
 # Use with images
-clem --image screenshot.png "What's in this image?"
+hex --image screenshot.png "What's in this image?"
 ```
 
 ## 📚 Documentation
 
-- [User Guide](https://github.com/harper/clem/blob/main/docs/USER_GUIDE.md) - Complete usage guide
-- [Architecture](https://github.com/harper/clem/blob/main/docs/ARCHITECTURE.md) - System design
-- [Tools Reference](https://github.com/harper/clem/blob/main/docs/TOOLS.md) - All 13 tools
-- [MCP Integration](https://github.com/harper/clem/blob/main/docs/MCP_INTEGRATION.md) - MCP guide
+- [User Guide](https://github.com/harper/hex/blob/main/docs/USER_GUIDE.md) - Complete usage guide
+- [Architecture](https://github.com/harper/hex/blob/main/docs/ARCHITECTURE.md) - System design
+- [Tools Reference](https://github.com/harper/hex/blob/main/docs/TOOLS.md) - All 13 tools
+- [MCP Integration](https://github.com/harper/hex/blob/main/docs/MCP_INTEGRATION.md) - MCP guide
 
 ## 🔒 Security
 
@@ -290,7 +290,7 @@ This release includes:
 
 ## 📊 What's New in v1.0.0
 
-See [CHANGELOG.md](https://github.com/harper/clem/blob/main/CHANGELOG.md) for full details.
+See [CHANGELOG.md](https://github.com/harper/hex/blob/main/CHANGELOG.md) for full details.
 
 ### Added
 - Interactive TUI with Bubbletea
@@ -338,7 +338,7 @@ None! Please report any issues on GitHub.
 
 ## 📝 Full Changelog
 
-**Full Changelog**: https://github.com/harper/clem/compare/v0.5.0...v1.0.0
+**Full Changelog**: https://github.com/harper/hex/compare/v0.5.0...v1.0.0
 ```
 
 ---
@@ -349,34 +349,34 @@ None! Please report any issues on GitHub.
 
 **macOS (Homebrew):**
 ```bash
-brew install harper/tap/clem
-clem --version
-clem --print "Test query"
+brew install harper/tap/hex
+hex --version
+hex --print "Test query"
 ```
 
 **Linux (Install Script):**
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
-clem --version
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
+hex --version
 ```
 
 **Ubuntu (Debian Package):**
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.deb
-sudo dpkg -i clem_1.0.0_Linux_x86_64.deb
-clem --version
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
+hex --version
 ```
 
 **Docker:**
 ```bash
-docker pull ghcr.io/harper/clem:1.0.0
-docker run --rm ghcr.io/harper/clem:1.0.0 --version
+docker pull ghcr.io/harper/hex:1.0.0
+docker run --rm ghcr.io/harper/hex:1.0.0 --version
 ```
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
-clem --version
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
+hex --version
 ```
 
 ### Functional Testing
@@ -473,7 +473,7 @@ git tag -d v1.0.0
 git push origin :refs/tags/v1.0.0
 
 # Delete GitHub Release
-# Visit: https://github.com/harper/clem/releases
+# Visit: https://github.com/harper/hex/releases
 # Delete v1.0.0 release
 
 # Update README to point to v0.5.0

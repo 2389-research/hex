@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // ConnectionStatus represents API connection state
@@ -110,7 +110,7 @@ func (s *StatusBar) ClearCustomMessage() {
 func (s *StatusBar) View() string {
 	if s.width < 40 {
 		// Too narrow, show minimal info
-		return s.theme.StatusBar.Render("Clem")
+		return s.theme.StatusBar.Render("Hex")
 	}
 
 	var parts []string
@@ -245,7 +245,7 @@ func (s *StatusBar) GetFullHelp() string {
 		key  string
 		desc string
 	}{
-		{"Ctrl+C", "Quit Clem"},
+		{"Ctrl+C", "Quit Hex"},
 		{"Ctrl+L", "Clear screen"},
 		{"Ctrl+K", "Clear conversation"},
 		{"Ctrl+S", "Save conversation"},

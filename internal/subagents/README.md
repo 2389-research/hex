@@ -4,7 +4,7 @@ Complete implementation of Phase 5 from the Alignment Roadmap: isolated subagent
 
 ## Overview
 
-The subagent framework enables Clem to spawn isolated Claude instances for specialized tasks. Each subagent runs with:
+The subagent framework enables Hex to spawn isolated Claude instances for specialized tasks. Each subagent runs with:
 - **Isolated context**: Separate conversation history and working memory
 - **Specialized configuration**: Type-specific tools, temperature, and token limits
 - **Parallel execution**: Multiple subagents can run concurrently
@@ -45,7 +45,7 @@ The subagent framework enables Clem to spawn isolated Claude instances for speci
 internal/subagents/
 ├── types.go          # Type definitions and configuration
 ├── context.go        # Context isolation (separate conversation history)
-├── executor.go       # Isolated execution engine (spawns clem processes)
+├── executor.go       # Isolated execution engine (spawns hex processes)
 ├── dispatcher.go     # Parallel dispatch coordination
 └── subagents_test.go # Comprehensive tests (81.3% coverage)
 ```
@@ -250,9 +250,9 @@ Tests cover:
 
 ### Process Spawning
 
-- Spawns `clem --print` subprocess per subagent
+- Spawns `hex --print` subprocess per subagent
 - Inherits environment (API keys, config)
-- Sets `CLEM_SUBAGENT_TYPE` and `CLEM_SUBAGENT_CONTEXT_ID`
+- Sets `HEX_SUBAGENT_TYPE` and `HEX_SUBAGENT_CONTEXT_ID`
 - Captures stdout/stderr
 - Respects timeouts and cancellation
 
@@ -276,14 +276,14 @@ Potential improvements:
 ## Integration Points
 
 ### Task Tool
-- `/Users/harper/Public/src/2389/clem/internal/tools/task_tool.go`
+- `/Users/harper/Public/src/2389/hex/internal/tools/task_tool.go`
 - Enhanced to use framework via `NewTaskToolWithFramework()`
 - Backward compatible with legacy mode
 
 ### Hooks Engine
-- `/Users/harper/Public/src/2389/clem/internal/hooks/events.go`
+- `/Users/harper/Public/src/2389/hex/internal/hooks/events.go`
 - SubagentStop event defined
-- `/Users/harper/Public/src/2389/clem/internal/hooks/engine.go`
+- `/Users/harper/Public/src/2389/hex/internal/hooks/engine.go`
 - `FireSubagentStop()` method
 
 ## Performance Characteristics

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Implemented a comprehensive tab completion system for Clem's Bubbletea UI with fuzzy matching support. Users can now press Tab to get intelligent completions for tools, files, and commands with fuzzy search capabilities.
+Implemented a comprehensive tab completion system for Hex's Bubbletea UI with fuzzy matching support. Users can now press Tab to get intelligent completions for tools, files, and commands with fuzzy search capabilities.
 
 ## Deliverables
 

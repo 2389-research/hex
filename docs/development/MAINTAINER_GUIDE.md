@@ -1,6 +1,6 @@
 # Maintainer Guide
 
-Quick reference for Clem maintainers.
+Quick reference for Hex maintainers.
 
 ## Daily Operations
 
@@ -81,13 +81,13 @@ git push origin "v${VERSION}"
 
 ```bash
 # Test install script
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 
 # Test Homebrew (after tap updates)
-brew upgrade harper/tap/clem
+brew upgrade harper/tap/hex
 
 # Test Docker
-docker pull ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:latest
 ```
 
 ## Common Tasks
@@ -133,13 +133,13 @@ make test
 
 ```bash
 # Build locally
-docker build -t clem:local .
+docker build -t hex:local .
 
 # Run locally
-docker run -it --rm clem:local --help
+docker run -it --rm hex:local --help
 
 # Test multi-platform
-docker buildx build --platform linux/amd64,linux/arm64 -t clem:test .
+docker buildx build --platform linux/amd64,linux/arm64 -t hex:test .
 ```
 
 ## CI/CD Troubleshooting

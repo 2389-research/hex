@@ -1,4 +1,4 @@
-# Full "clem" → "hex" Rename Design
+# Full "hex" → "hex" Rename Design
 
 **Date**: 2025-12-02
 **Status**: Approved
@@ -8,10 +8,10 @@
 
 This is a comprehensive codebase rename touching 8 categories:
 
-1. **Go module path**: `github.com/harper/clem` → `github.com/harper/hex`
+1. **Go module path**: `github.com/harper/hex` → `github.com/harper/hex`
 2. **All import paths**: Every file importing internal packages
-3. **Binary/command name**: `cmd/clem/` → `cmd/hex/`
-4. **Config directory references**: `~/.clem/` → `~/.hex/`
+3. **Binary/command name**: `cmd/hex/` → `cmd/hex/`
+4. **Config directory references**: `~/.hex/` → `~/.hex/`
 5. **Documentation**: README, docs/, CHANGELOG, code comments
 6. **Default paths**: Database paths, log file references
 7. **GitHub Actions**: Workflow files, badge URLs
@@ -35,14 +35,14 @@ This is a comprehensive codebase rename touching 8 categories:
 ### Phase 2: Core Go Changes
 4. Update `go.mod`: Change module path to `github.com/harper/hex`
 5. Update all Go imports:
-   - `github.com/harper/clem/internal/` → `github.com/harper/hex/internal/`
-   - `github.com/harper/clem/pkg/` → `github.com/harper/hex/pkg/`
-6. Rename directory: `cmd/clem/` → `cmd/hex/`
+   - `github.com/harper/hex/internal/` → `github.com/harper/hex/internal/`
+   - `github.com/harper/hex/pkg/` → `github.com/harper/hex/pkg/`
+6. Rename directory: `cmd/hex/` → `cmd/hex/`
 7. Run `go mod tidy`
 8. **Checkpoint**: `go build ./...` and `go test ./...`
 
 ### Phase 3: Configuration & Paths
-9. Update all `~/.clem` references to `~/.hex`
+9. Update all `~/.hex` references to `~/.hex`
 10. Update database path defaults (`defaultDBPath()`)
 11. Update log file paths and config references
 12. **Checkpoint**: Build and run `./hex --help`
@@ -52,7 +52,7 @@ This is a comprehensive codebase rename touching 8 categories:
 14. Update CHANGELOG.md
 15. Update all `docs/` files
 16. Update CLI help text and error messages
-17. Update code comments mentioning "clem"
+17. Update code comments mentioning "hex"
 
 ### Phase 5: GitHub Actions & CI
 18. Update `.github/workflows/*.yml`
@@ -68,8 +68,8 @@ This is a comprehensive codebase rename touching 8 categories:
     - `./hex --version`
     - Interactive mode (verify UI says "hex")
     - Database creation (verify `~/.hex/` directory)
-25. Search for missed references: `rg -i "clem"`
-26. Check docs: `rg -i "clem" README.md docs/`
+25. Search for missed references: `rg -i "hex"`
+26. Check docs: `rg -i "hex" README.md docs/`
 
 ### Phase 7: Finalization
 27. Commit all changes
@@ -80,7 +80,7 @@ This is a comprehensive codebase rename touching 8 categories:
 
 ## Edge Cases
 
-- Template strings with "Clem" in user messages (update to "Hex")
+- Template strings with "Hex" in user messages (update to "Hex")
 - External MCP servers referencing binary name (document breaking change)
 - Examples directory with hardcoded paths (update all)
 
@@ -88,14 +88,14 @@ This is a comprehensive codebase rename touching 8 categories:
 
 If issues arise:
 1. `git reset --hard backup-before-hex-rename`
-2. Rename GitHub repo back to "clem"
+2. Rename GitHub repo back to "hex"
 3. Update remote URL back
 
 ## Success Criteria
 
 - All tests pass
 - Binary builds as `hex`
-- CLI says "hex" not "clem"
+- CLI says "hex" not "hex"
 - Config directory is `~/.hex/`
-- No "clem" references in code (except git history)
+- No "hex" references in code (except git history)
 - CI passes on GitHub

@@ -34,3 +34,5 @@ build/
 config.yaml
 .scratch/
 test-react/
+hex
+reacttest/

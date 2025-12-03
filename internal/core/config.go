@@ -22,9 +22,9 @@ type Config struct {
 
 // LoadConfig loads configuration from multiple sources
 // Priority (highest to lowest):
-// 1. Environment variables (CLEM_*)
+// 1. Environment variables (HEX_*)
 // 2. .env file (current directory)
-// 3. ~/.clem/config.yaml
+// 3. ~/.hex/config.yaml
 // 4. Defaults
 func LoadConfig() (*Config, error) {
 	// Load .env file if it exists (don't error if missing)
@@ -38,7 +38,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("default_tools", []string{"Bash", "Read", "Write", "Edit", "Grep"})
 
 	// Environment variables
-	v.SetEnvPrefix("CLEM")
+	v.SetEnvPrefix("HEX")
 	v.AutomaticEnv()
 	// Bind specific keys to handle underscore conversion
 	_ = v.BindEnv("api_key")
@@ -51,15 +51,15 @@ func LoadConfig() (*Config, error) {
 	v.SetConfigType("yaml")
 
 	// Check for custom config path
-	if configPath := os.Getenv("CLEM_CONFIG_PATH"); configPath != "" {
+	if configPath := os.Getenv("HEX_CONFIG_PATH"); configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
 		// Add search paths
 		v.AddConfigPath(".") // Current directory
 		home, err := os.UserHomeDir()
 		if err == nil {
-			clemDir := filepath.Join(home, ".clem")
-			v.AddConfigPath(clemDir)
+			hexDir := filepath.Join(home, ".hex")
+			v.AddConfigPath(hexDir)
 		}
 	}
 
@@ -81,7 +81,7 @@ func LoadConfig() (*Config, error) {
 // GetAPIKey returns the API key from config or environment
 func (c *Config) GetAPIKey() (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set CLEM_API_KEY or run 'clem setup-token'")
+		return "", fmt.Errorf("API key not configured. Set HEX_API_KEY or run 'hex setup-token'")
 	}
 	return c.APIKey, nil
 }

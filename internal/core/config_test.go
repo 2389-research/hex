@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +22,8 @@ model: claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 
 	// Set config path
-	_ = os.Setenv("CLEM_CONFIG_PATH", configPath)
-	defer func() { _ = os.Unsetenv("CLEM_CONFIG_PATH") }()
+	_ = os.Setenv("HEX_CONFIG_PATH", configPath)
+	defer func() { _ = os.Unsetenv("HEX_CONFIG_PATH") }()
 
 	// Load config
 	cfg, err := core.LoadConfig()
@@ -34,12 +34,12 @@ model: claude-sonnet-4-5-20250929
 
 func TestConfigFromEnv(t *testing.T) {
 	// Clean up any existing config path
-	_ = os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Unsetenv("HEX_CONFIG_PATH")
 
-	_ = os.Setenv("CLEM_API_KEY", "env-key-456")
-	_ = os.Setenv("CLEM_MODEL", "claude-opus-4-5-20250929")
-	defer func() { _ = os.Unsetenv("CLEM_API_KEY") }()
-	defer func() { _ = os.Unsetenv("CLEM_MODEL") }()
+	_ = os.Setenv("HEX_API_KEY", "env-key-456")
+	_ = os.Setenv("HEX_MODEL", "claude-opus-4-5-20250929")
+	defer func() { _ = os.Unsetenv("HEX_API_KEY") }()
+	defer func() { _ = os.Unsetenv("HEX_MODEL") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -56,10 +56,10 @@ func TestConfigPrecedence(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0600)
 	require.NoError(t, err)
 
-	_ = os.Setenv("CLEM_CONFIG_PATH", configPath)
-	_ = os.Setenv("CLEM_API_KEY", "env-key")
-	defer func() { _ = os.Unsetenv("CLEM_CONFIG_PATH") }()
-	defer func() { _ = os.Unsetenv("CLEM_API_KEY") }()
+	_ = os.Setenv("HEX_CONFIG_PATH", configPath)
+	_ = os.Setenv("HEX_API_KEY", "env-key")
+	defer func() { _ = os.Unsetenv("HEX_CONFIG_PATH") }()
+	defer func() { _ = os.Unsetenv("HEX_API_KEY") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -68,11 +68,11 @@ func TestConfigPrecedence(t *testing.T) {
 
 func TestConfigDefaults(t *testing.T) {
 	// Clean all env vars that might affect the test
-	_ = os.Unsetenv("CLEM_CONFIG_PATH")
-	_ = os.Unsetenv("CLEM_API_KEY")
-	_ = os.Unsetenv("CLEM_MODEL")
-	_ = os.Unsetenv("CLEM_PERMISSION_MODE")
-	_ = os.Unsetenv("CLEM_DEFAULT_TOOLS")
+	_ = os.Unsetenv("HEX_CONFIG_PATH")
+	_ = os.Unsetenv("HEX_API_KEY")
+	_ = os.Unsetenv("HEX_MODEL")
+	_ = os.Unsetenv("HEX_PERMISSION_MODE")
+	_ = os.Unsetenv("HEX_DEFAULT_TOOLS")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -110,8 +110,8 @@ func TestConfigFromDotEnv(t *testing.T) {
 	tmpDir := t.TempDir()
 	dotEnvPath := filepath.Join(tmpDir, ".env")
 
-	dotEnvContent := `CLEM_API_KEY=dotenv-key-789
-CLEM_MODEL=claude-sonnet-4-5-20250929
+	dotEnvContent := `HEX_API_KEY=dotenv-key-789
+HEX_MODEL=claude-sonnet-4-5-20250929
 `
 	err := os.WriteFile(dotEnvPath, []byte(dotEnvContent), 0600)
 	require.NoError(t, err)
@@ -122,9 +122,9 @@ CLEM_MODEL=claude-sonnet-4-5-20250929
 	_ = os.Chdir(tmpDir)
 
 	// Clean env vars
-	_ = os.Unsetenv("CLEM_API_KEY")
-	_ = os.Unsetenv("CLEM_MODEL")
-	_ = os.Unsetenv("CLEM_CONFIG_PATH")
+	_ = os.Unsetenv("HEX_API_KEY")
+	_ = os.Unsetenv("HEX_MODEL")
+	_ = os.Unsetenv("HEX_CONFIG_PATH")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)

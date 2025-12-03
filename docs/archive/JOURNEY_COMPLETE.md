@@ -1,4 +1,4 @@
-# Clem Phase 2: Journey Complete
+# Hex Phase 2: Journey Complete
 
 **Date**: November 27, 2025
 **Version**: v0.2.0
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Phase 2 of the Clem project is **100% complete**. All 14 tasks have been implemented, tested, and documented. Clem now has a full-featured interactive mode with tool execution, conversation persistence, and a beautiful terminal UI.
+Phase 2 of the Hex project is **100% complete**. All 14 tasks have been implemented, tested, and documented. Hex now has a full-featured interactive mode with tool execution, conversation persistence, and a beautiful terminal UI.
 
 ## What Was Built
 
@@ -21,7 +21,7 @@ Phase 2 of the Clem project is **100% complete**. All 14 tasks have been impleme
 - Real-time status indicators and token counters
 
 #### 2. Storage System
-- SQLite database at `~/.clem/clem.db`
+- SQLite database at `~/.hex/hex.db`
 - Hybrid schema: normalized tables + JSON for flexibility
 - Conversation CRUD operations
 - Message CRUD operations
@@ -215,11 +215,11 @@ Created comprehensive documentation for v0.2.0:
 
 From the original Phase 2 plan, all criteria met:
 
-- ✅ `clem` launches interactive TUI with rich formatting
+- ✅ `hex` launches interactive TUI with rich formatting
 - ✅ Streaming responses with progressive text rendering
 - ✅ Conversations saved to SQLite automatically
-- ✅ `clem --continue` resumes most recent conversation
-- ✅ `clem --resume <id>` loads specific conversation
+- ✅ `hex --continue` resumes most recent conversation
+- ✅ `hex --resume <id>` loads specific conversation
 - ✅ Read/Write/Bash tools fully functional with safety
 - ✅ Tool execution visible in UI with status updates
 - ✅ All tests pass (unit + integration)
@@ -315,7 +315,7 @@ Planned for v0.3.0 (Q1 2026):
 
 1. **Upgrade smoothly** - v0.2.0 is fully backward compatible
 2. **Read USER_GUIDE.md** - Comprehensive guide for all features
-3. **Try interactive mode** - Just run `clem` without flags
+3. **Try interactive mode** - Just run `hex` without flags
 4. **Explore tools** - Safe to experiment, approval required for dangerous ops
 5. **Report bugs** - Use GitHub issues with reproduction steps
 
@@ -386,7 +386,7 @@ Built with excellent open source libraries:
 
 ## Final Notes
 
-Phase 2 represents a **major milestone** for Clem:
+Phase 2 represents a **major milestone** for Hex:
 
 - Transformed from simple CLI to full-featured AI assistant
 - Brought Claude's tool-using capabilities to the terminal

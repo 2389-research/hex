@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 // Example demonstrates the complete tool system workflow

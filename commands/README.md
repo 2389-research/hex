@@ -104,7 +104,7 @@ Commands support Go template syntax for arguments:
 You can override built-in commands or add custom ones by creating files in:
 
 - **Project-level**: `.claude/commands/*.md` (highest priority)
-- **User-level**: `~/.clem/commands/*.md` (overrides built-in)
+- **User-level**: `~/.hex/commands/*.md` (overrides built-in)
 - **Built-in**: `commands/*.md` (lowest priority)
 
 Example custom command (`.claude/commands/mycommand.md`):

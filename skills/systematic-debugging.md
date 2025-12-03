@@ -241,7 +241,7 @@ log.Printf("TRACE: Exiting function with result: %+v, err: %v", result, err)
 ### Debugger (Delve for Go)
 
 ```bash
-dlv debug ./cmd/clem
+dlv debug ./cmd/hex
 (dlv) break main.go:42
 (dlv) continue
 (dlv) print variable

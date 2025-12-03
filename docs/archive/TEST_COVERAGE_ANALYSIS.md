@@ -81,7 +81,7 @@ This is a **state management bug** that only shows up when you:
 
 To properly test this bug fix, you need to:
 
-1. Start the actual app (`./clem`)
+1. Start the actual app (`./hex`)
 2. Request multiple tools from Claude
 3. Let the API stream back a response with text + tool_use blocks
 4. Verify the app doesn't crash with a 400 error
@@ -100,7 +100,7 @@ To properly test this bug fix, you need to:
 ### Short Term
 Keep the manual testing approach:
 ```bash
-./clem
+./hex
 > create 3 files: test1.txt, test2.txt, test3.txt
 # Verify app continues working, check debug.log
 ```

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/clem/internal/ui/theme"
+	"github.com/harper/hex/internal/ui/theme"
 )
 
 // Gradient helper function for title bars
@@ -44,7 +44,7 @@ func (m *Model) View() string {
 	var b strings.Builder
 
 	// Title with status indicator and favorite star (with gradient)
-	titleText := fmt.Sprintf("Clem • %s", m.Model)
+	titleText := fmt.Sprintf("Hex • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
@@ -168,7 +168,7 @@ func (m *Model) renderIntroView() string {
 	b.WriteString("\n")
 
 	// Welcome message
-	welcome := m.theme.Emphasized.Render("Welcome to Clem!")
+	welcome := m.theme.Emphasized.Render("Welcome to Hex!")
 	tagline := m.theme.Muted.Render("Your intelligent command-line assistant powered by Claude")
 	b.WriteString(padding + welcome + "\n")
 	b.WriteString(padding + tagline + "\n\n\n")

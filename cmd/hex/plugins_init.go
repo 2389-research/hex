@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/plugins"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/plugins"
 )
 
 // initializePlugins loads all enabled plugins and returns the registry

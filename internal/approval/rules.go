@@ -39,7 +39,7 @@ func NewRules() (*Rules, error) {
 		return nil, fmt.Errorf("get home directory: %w", err)
 	}
 
-	rulesPath := filepath.Join(home, ".clem", "approval_rules.json")
+	rulesPath := filepath.Join(home, ".hex", "approval_rules.json")
 
 	r := &Rules{
 		rules: make(map[string]RuleDecision),

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 )
 
 func TestHistoryCommand_NoHistory(t *testing.T) {

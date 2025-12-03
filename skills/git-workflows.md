@@ -31,7 +31,7 @@ git commit -m "feat: add password reset endpoint"
 
 ❌ **Bad - Multiple Things**:
 ```bash
-git add internal/auth/ internal/database/ cmd/clem/
+git add internal/auth/ internal/database/ cmd/hex/
 git commit -m "various fixes and improvements"
 ```
 

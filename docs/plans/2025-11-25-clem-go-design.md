@@ -1,4 +1,4 @@
-# Clem - Go Implementation Design
+# Hex - Go Implementation Design
 
 **Date:** 2025-11-25
 **Goal:** Full feature parity reimplementation of Claude Code CLI in Go
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Clem is a complete Go reimplementation of Claude Code CLI with full feature parity. Built with modern Go practices, leveraging battle-tested libraries, and emphasizing real-world testing over mocks.
+Hex is a complete Go reimplementation of Claude Code CLI with full feature parity. Built with modern Go practices, leveraging battle-tested libraries, and emphasizing real-world testing over mocks.
 
 **Key Technologies:**
 - **CLI:** Cobra for argument parsing
@@ -26,8 +26,8 @@ Clem is a complete Go reimplementation of Claude Code CLI with full feature pari
 ### Project Structure
 
 ```
-clem/
-├── cmd/clem/              # Main entry point
+hex/
+├── cmd/hex/              # Main entry point
 │   └── main.go
 ├── internal/              # Private implementation
 │   ├── core/              # Core types and API client
@@ -187,7 +187,7 @@ func (r *Runtime) CallTool(serverName, toolName string, input map[string]interfa
 ```
 
 **Lifecycle:**
-1. Server config loaded from `~/.clem/mcp.json`
+1. Server config loaded from `~/.hex/mcp.json`
 2. Servers started on demand or at session start
 3. Health checks every 30s
 4. Graceful shutdown on SIGTERM
@@ -200,7 +200,7 @@ func (r *Runtime) CallTool(serverName, toolName string, input map[string]interfa
 **Framework:** HashiCorp go-plugin
 
 **Benefits:**
-- Process isolation (plugin crashes don't crash Clem)
+- Process isolation (plugin crashes don't crash Hex)
 - Language agnostic (plugins can be in any language)
 - gRPC communication
 - Protocol versioning
@@ -209,7 +209,7 @@ func (r *Runtime) CallTool(serverName, toolName string, input map[string]interfa
 **Plugin Interface:**
 ```go
 // pkg/plugin/interface.go
-type ClementPlugin interface {
+type HexentPlugin interface {
     Name() string
     Version() string
     GetTools() []ToolDefinition
@@ -224,15 +224,15 @@ type ClementPlugin interface {
 ```go
 var Handshake = plugin.HandshakeConfig{
     ProtocolVersion:  1,
-    MagicCookieKey:   "CLEM_PLUGIN",
-    MagicCookieValue: "clem",
+    MagicCookieKey:   "HEX_PLUGIN",
+    MagicCookieValue: "hex",
 }
 
 type PluginLoader struct {
     client *plugin.Client
 }
 
-func (l *PluginLoader) LoadPlugin(path string) (ClementPlugin, error) {
+func (l *PluginLoader) LoadPlugin(path string) (HexentPlugin, error) {
     client := plugin.NewClient(&plugin.ClientConfig{
         HandshakeConfig: Handshake,
         Plugins:         PluginMap,
@@ -241,14 +241,14 @@ func (l *PluginLoader) LoadPlugin(path string) (ClementPlugin, error) {
     })
 
     rpcClient, err := client.Client()
-    raw, err := rpcClient.Dispense("clem")
-    return raw.(ClementPlugin), nil
+    raw, err := rpcClient.Dispense("hex")
+    return raw.(HexentPlugin), nil
 }
 ```
 
 **Plugin Discovery:**
-- Scan `~/.clem/plugins/` directory
-- Load plugins marked as enabled in `~/.clem/config.yaml`
+- Scan `~/.hex/plugins/` directory
+- Load plugins marked as enabled in `~/.hex/config.yaml`
 - Hot reload support (restart plugin process)
 
 ---
@@ -425,16 +425,16 @@ func (p *PrintMode) WriteResponse(resp *core.MessageResponse) error {
 
 ---
 
-### 7. CLI Interface (`cmd/clem/main.go`)
+### 7. CLI Interface (`cmd/hex/main.go`)
 
 **Framework:** Cobra
 
 **Root Command:**
 ```go
 var rootCmd = &cobra.Command{
-    Use:   "clem [prompt]",
-    Short: "Clem - AI assistant CLI",
-    Long:  "Clem is a powerful AI assistant for your terminal",
+    Use:   "hex [prompt]",
+    Short: "Hex - AI assistant CLI",
+    Long:  "Hex is a powerful AI assistant for your terminal",
     Args:  cobra.ArbitraryArgs,
     Run:   runInteractive,
 }
@@ -466,35 +466,35 @@ func init() {
 
 **Subcommands:**
 ```go
-// clem mcp
+// hex mcp
 var mcpCmd = &cobra.Command{
     Use:   "mcp",
     Short: "Manage MCP servers",
 }
 mcpCmd.AddCommand(mcpListCmd, mcpAddCmd, mcpRemoveCmd, mcpGetCmd)
 
-// clem plugin
+// hex plugin
 var pluginCmd = &cobra.Command{
     Use:   "plugin",
     Short: "Manage plugins",
 }
 pluginCmd.AddCommand(pluginListCmd, pluginInstallCmd, pluginEnableCmd, pluginDisableCmd)
 
-// clem doctor
+// hex doctor
 var doctorCmd = &cobra.Command{
     Use:   "doctor",
     Short: "Check installation health",
     Run:   runDoctor,
 }
 
-// clem setup-token
+// hex setup-token
 var setupCmd = &cobra.Command{
     Use:   "setup-token [token]",
     Short: "Configure API token",
     Run:   runSetup,
 }
 
-// clem export
+// hex export
 var exportCmd = &cobra.Command{
     Use:   "export",
     Short: "Export conversation to JSON",
@@ -535,9 +535,9 @@ type PluginConfig struct {
 
 **Configuration Precedence (highest to lowest):**
 1. Command-line flags
-2. Environment variables (CLEM_*)
+2. Environment variables (HEX_*)
 3. `.env` file (current directory)
-4. `~/.clem/config.yaml`
+4. `~/.hex/config.yaml`
 5. Defaults
 
 **Example config.yaml:**
@@ -566,7 +566,7 @@ mcp_servers:
 
 plugins:
   myplugin:
-    path: ~/.clem/plugins/myplugin
+    path: ~/.hex/plugins/myplugin
     enabled: true
 ```
 
@@ -632,8 +632,8 @@ func TestToolValidation(t *testing.T) {
 
 ## When
 - User sends: "Read the file test.txt"
-- Clem uses Read tool to read test.txt
-- Clem responds with file contents
+- Hex uses Read tool to read test.txt
+- Hex responds with file contents
 
 ## Then
 - File is read successfully
@@ -648,7 +648,7 @@ func TestScenario_ToolExecution(t *testing.T) {
     // Setup: Real filesystem
     tmpDir := t.TempDir()
     testFile := filepath.Join(tmpDir, "test.txt")
-    os.WriteFile(testFile, []byte("Hello, Clem!"), 0644)
+    os.WriteFile(testFile, []byte("Hello, Hex!"), 0644)
 
     // Setup: VCR for API calls
     r, err := recorder.New("fixtures/tool_execution")
@@ -687,7 +687,7 @@ func TestScenario_ToolExecution(t *testing.T) {
     // Execute tool
     result, err := readTool.Execute(context.Background(), resp.ToolCalls[0].Input)
     require.NoError(t, err)
-    assert.Contains(t, result.Content, "Hello, Clem!")
+    assert.Contains(t, result.Content, "Hello, Hex!")
 
     // Verify: Conversation saved to real DB
     messages, err := store.LoadConversation(convID)
@@ -708,7 +708,7 @@ func TestScenario_ToolExecution(t *testing.T) {
 **Example:**
 ```go
 func TestGolden_HelpOutput(t *testing.T) {
-    cmd := exec.Command("clem", "--help")
+    cmd := exec.Command("hex", "--help")
     output, err := cmd.CombinedOutput()
     require.NoError(t, err)
 
@@ -863,7 +863,7 @@ require (
 - API client (basic, non-streaming)
 - Print mode (text output)
 
-**Deliverable:** `clem --print "hello"` works
+**Deliverable:** `hex --print "hello"` works
 
 ### Phase 2: Core Features (Week 2-3)
 - Interactive UI (Bubbletea)

@@ -138,7 +138,7 @@ func (t *WebSearchTool) search(ctx context.Context, query string) ([]SearchResul
 	}
 
 	// Set user agent to avoid being blocked
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Clem/1.0)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Hex/1.0)")
 
 	// Execute request
 	resp, err := t.httpClient.Do(req)

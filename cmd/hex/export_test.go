@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/clem/internal/export"
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/export"
+	"github.com/harper/hex/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

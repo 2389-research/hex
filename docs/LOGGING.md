@@ -1,6 +1,6 @@
-# Logging in Clem
+# Logging in Hex
 
-Clem uses structured logging to help with debugging, monitoring, and understanding what's happening during execution.
+Hex uses structured logging to help with debugging, monitoring, and understanding what's happening during execution.
 
 ## Enabling Logging
 
@@ -8,7 +8,7 @@ By default, logging is set to `info` level and outputs to stderr. You can custom
 
 ### Log Levels
 
-Clem supports four log levels:
+Hex supports four log levels:
 
 - **debug**: Verbose output including internal state, API calls, and detailed execution flow
 - **info**: General informational messages about application state (default)
@@ -23,13 +23,13 @@ Set the minimum log level to display:
 
 ```bash
 # Show only errors
-clem --log-level error
+hex --log-level error
 
 # Show debug output for troubleshooting
-clem --log-level debug "explain this code"
+hex --log-level debug "explain this code"
 
 # Default (info level)
-clem "write a function"
+hex "write a function"
 ```
 
 #### `--log-file`
@@ -38,10 +38,10 @@ Write logs to a file instead of (or in addition to) stderr:
 
 ```bash
 # Log to file only
-clem --log-file clem.log "help me debug this"
+hex --log-file hex.log "help me debug this"
 
 # Log to file AND stderr when using debug level
-clem --log-level debug --log-file debug.log "investigate issue"
+hex --log-level debug --log-file debug.log "investigate issue"
 ```
 
 When `--log-file` is specified:
@@ -54,10 +54,10 @@ Choose the log output format:
 
 ```bash
 # Human-readable text format (default)
-clem --log-format text
+hex --log-format text
 
 # JSON format for parsing/integration with log aggregators
-clem --log-format json --log-file logs.jsonl
+hex --log-format json --log-file logs.jsonl
 ```
 
 ## Log Output Examples
@@ -65,23 +65,23 @@ clem --log-format json --log-file logs.jsonl
 ### Text Format (Default)
 
 ```
-time=2025-11-28T11:30:00.123-06:00 level=INFO msg="Clem starting" version=0.5.0
-time=2025-11-28T11:30:00.150-06:00 level=DEBUG msg="Opening database" path=/Users/harper/.clem/clem.db
-time=2025-11-28T11:30:00.200-06:00 level=INFO msg="Database opened successfully" path=/Users/harper/.clem/clem.db
+time=2025-11-28T11:30:00.123-06:00 level=INFO msg="Hex starting" version=0.5.0
+time=2025-11-28T11:30:00.150-06:00 level=DEBUG msg="Opening database" path=/Users/harper/.hex/hex.db
+time=2025-11-28T11:30:00.200-06:00 level=INFO msg="Database opened successfully" path=/Users/harper/.hex/hex.db
 time=2025-11-28T11:30:00.250-06:00 level=DEBUG msg="Loading MCP tools"
 time=2025-11-28T11:30:00.300-06:00 level=WARN msg="Failed to load MCP tools" error="config file not found"
-time=2025-11-28T11:30:05.500-06:00 level=INFO msg="Clem shutting down"
+time=2025-11-28T11:30:05.500-06:00 level=INFO msg="Hex shutting down"
 ```
 
 ### JSON Format
 
 ```json
-{"time":"2025-11-28T11:30:00.123-06:00","level":"INFO","msg":"Clem starting","version":"0.5.0"}
-{"time":"2025-11-28T11:30:00.150-06:00","level":"DEBUG","msg":"Opening database","path":"/Users/harper/.clem/clem.db"}
-{"time":"2025-11-28T11:30:00.200-06:00","level":"INFO","msg":"Database opened successfully","path":"/Users/harper/.clem/clem.db"}
+{"time":"2025-11-28T11:30:00.123-06:00","level":"INFO","msg":"Hex starting","version":"0.5.0"}
+{"time":"2025-11-28T11:30:00.150-06:00","level":"DEBUG","msg":"Opening database","path":"/Users/harper/.hex/hex.db"}
+{"time":"2025-11-28T11:30:00.200-06:00","level":"INFO","msg":"Database opened successfully","path":"/Users/harper/.hex/hex.db"}
 {"time":"2025-11-28T11:30:00.250-06:00","level":"DEBUG","msg":"Loading MCP tools"}
 {"time":"2025-11-28T11:30:00.300-06:00","level":"WARN","msg":"Failed to load MCP tools","error":"config file not found"}
-{"time":"2025-11-28T11:30:05.500-06:00","level":"INFO","msg":"Clem shutting down"}
+{"time":"2025-11-28T11:30:05.500-06:00","level":"INFO","msg":"Hex shutting down"}
 ```
 
 ## Troubleshooting with Logs
@@ -93,7 +93,7 @@ time=2025-11-28T11:30:05.500-06:00 level=INFO msg="Clem shutting down"
 Enable debug logging to see database operations:
 
 ```bash
-clem --log-level debug --log-file debug.log --continue
+hex --log-level debug --log-file debug.log --continue
 ```
 
 Look for messages like:
@@ -104,7 +104,7 @@ Look for messages like:
 #### MCP Tool Loading Issues
 
 ```bash
-clem --log-level debug
+hex --log-level debug
 ```
 
 Look for:
@@ -125,14 +125,14 @@ When using `--log-file`, consider these locations:
 
 ```bash
 # In current directory
-clem --log-file ./clem.log
+hex --log-file ./hex.log
 
 # In home directory
-clem --log-file ~/clem.log
+hex --log-file ~/hex.log
 
 # In a dedicated logs directory
-mkdir -p ~/.clem/logs
-clem --log-file ~/.clem/logs/clem-$(date +%Y%m%d).log
+mkdir -p ~/.hex/logs
+hex --log-file ~/.hex/logs/hex-$(date +%Y%m%d).log
 ```
 
 ### Parsing JSON Logs
@@ -156,7 +156,7 @@ cat logs.jsonl | jq -r .level | sort | uniq -c
 
 ```ini
 [Service]
-ExecStart=/usr/local/bin/clem --log-level info --log-file /var/log/clem/clem.log --log-format json
+ExecStart=/usr/local/bin/hex --log-level info --log-file /var/log/hex/hex.log --log-format json
 StandardOutput=journal
 StandardError=journal
 ```
@@ -165,11 +165,11 @@ StandardError=journal
 
 ```bash
 #!/bin/bash
-LOG_DIR="$HOME/.clem/logs"
+LOG_DIR="$HOME/.hex/logs"
 mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/clem-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="$LOG_DIR/hex-$(date +%Y%m%d-%H%M%S).log"
 
-clem --log-level debug --log-file "$LOG_FILE" "$@"
+hex --log-level debug --log-file "$LOG_FILE" "$@"
 ```
 
 ## Best Practices
@@ -181,18 +181,18 @@ clem --log-level debug --log-file "$LOG_FILE" "$@"
 
 2. **Log to files for long sessions**:
    ```bash
-   clem --log-file ~/.clem/session.log
+   hex --log-file ~/.hex/session.log
    ```
 
 3. **Use JSON format for automated processing**:
    ```bash
-   clem --log-format json --log-file logs.jsonl
+   hex --log-format json --log-file logs.jsonl
    ```
 
 4. **Rotate log files** to prevent them from growing too large:
    ```bash
    # Keep last 5 log files
-   find ~/.clem/logs -name "clem-*.log" -mtime +5 -delete
+   find ~/.hex/logs -name "hex-*.log" -mtime +5 -delete
    ```
 
 ## Performance Impact

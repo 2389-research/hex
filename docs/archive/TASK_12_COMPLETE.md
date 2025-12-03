@@ -48,7 +48,7 @@ Task 12 has been successfully implemented. The tool execution UI now integrates 
 
 - Updated main `View()` to prioritize tool UI over input/search
 
-### 5. Root Command Integration (`cmd/clem/root.go`)
+### 5. Root Command Integration (`cmd/hex/root.go`)
 - Added import for `tools` package
 - Created tool registry with Read, Write, and Bash tools
 - Created tool executor with approval function (UI handles actual approval)
@@ -97,7 +97,7 @@ Task 12 has been successfully implemented. The tool execution UI now integrates 
 2. `/Users/harper/workspace/2389/cc-deobfuscate/clean/internal/ui/model.go`
 3. `/Users/harper/workspace/2389/cc-deobfuscate/clean/internal/ui/update.go`
 4. `/Users/harper/workspace/2389/cc-deobfuscate/clean/internal/ui/view.go`
-5. `/Users/harper/workspace/2389/cc-deobfuscate/clean/cmd/clem/root.go`
+5. `/Users/harper/workspace/2389/cc-deobfuscate/clean/cmd/hex/root.go`
 
 ## Files Created
 
@@ -130,7 +130,7 @@ To manually test the tool execution flow:
 ### Test Scenarios
 
 #### Scenario 1: Read Tool
-1. Run: `./clem`
+1. Run: `./hex`
 2. Type: "What files are in this directory?"
 3. If Claude requests to use the Read tool:
    - You'll see an approval prompt with tool details
@@ -139,19 +139,19 @@ To manually test the tool execution flow:
    - Claude will continue with the results
 
 #### Scenario 2: Write Tool
-1. Run: `./clem`
+1. Run: `./hex`
 2. Type: "Create a test file called hello.txt with the content 'Hello World'"
 3. Approve the Write tool when prompted
 4. Verify file was created: `cat hello.txt`
 
 #### Scenario 3: Bash Tool
-1. Run: `./clem`
+1. Run: `./hex`
 2. Type: "Run ls -la to show me all files"
 3. Approve the Bash tool when prompted
 4. See command output in the conversation
 
 #### Scenario 4: Tool Denial
-1. Run: `./clem`
+1. Run: `./hex`
 2. Type: "Read the file /etc/passwd"
 3. Press 'n' or 'Esc' when approval prompt appears
 4. Verify tool was denied and error message shows

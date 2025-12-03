@@ -1,6 +1,6 @@
 # MCP Integration Architecture
 
-Complete technical reference for Clem's Model Context Protocol (MCP) integration.
+Complete technical reference for Hex's Model Context Protocol (MCP) integration.
 
 ## Table of Contents
 
@@ -24,9 +24,9 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 - **Extensible capabilities** (tools, resources, prompts)
 - **Language-agnostic** JSON-RPC 2.0 messaging
 
-### Why Integrate MCP with Clem?
+### Why Integrate MCP with Hex?
 
-**Extensibility**: Add capabilities without modifying Clem source code
+**Extensibility**: Add capabilities without modifying Hex source code
 
 **Ecosystem**: Leverage community-built MCP servers
 
@@ -47,7 +47,7 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Clem CLI                            │
+│                         Hex CLI                            │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │              Tool Registry (Unified)                  │  │
@@ -62,7 +62,7 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 │  │                                                        │ │
 │  │  Fetches tools from MCP Client                        │ │
 │  │  Wraps each tool in MCPToolAdapter                    │ │
-│  │  Registers with Clem Tool Registry                    │ │
+│  │  Registers with Hex Tool Registry                    │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                          ▲                                  │
 │                          │                                  │
@@ -99,7 +99,7 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 - Tool listing and execution
 
 **MCP Tool Adapter** (`internal/mcp/tool_adapter.go`):
-- Bridge MCP tools to Clem's Tool interface
+- Bridge MCP tools to Hex's Tool interface
 - Result format conversion
 - Error handling
 
@@ -170,7 +170,7 @@ type Tool struct {
 1. **Initialization**:
    ```go
    client := mcp.NewClient("npx", "-y", "@modelcontextprotocol/server-filesystem", "/data")
-   err := client.Initialize(ctx, "clem", "1.0.0", "2024-11-05")
+   err := client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
    ```
 
 2. **List Tools**:
@@ -199,7 +199,7 @@ type Tool struct {
 
 ### 3. MCP Tool Adapter
 
-**Purpose**: Wrap MCP tools to implement Clem's Tool interface
+**Purpose**: Wrap MCP tools to implement Hex's Tool interface
 
 **Key Type**:
 ```go
@@ -241,7 +241,7 @@ MCP result format:
 }
 ```
 
-Clem result format:
+Hex result format:
 ```go
 &tools.Result{
     ToolName: "filesystem_read_file",
@@ -283,9 +283,9 @@ err := manager.RefreshTools(ctx)
 // Get all tools for registration
 mcpTools := manager.GetTools()
 
-// Register with Clem's tool registry
+// Register with Hex's tool registry
 for _, tool := range mcpTools {
-    clemRegistry.Register(tool)
+    hexRegistry.Register(tool)
 }
 ```
 
@@ -348,7 +348,7 @@ for _, tool := range mcpTools {
     "protocolVersion": "2024-11-05",
     "capabilities": {},
     "clientInfo": {
-      "name": "clem",
+      "name": "hex",
       "version": "1.0.0"
     }
   }
@@ -505,7 +505,7 @@ for _, serverConfig := range servers {
     }
 
     // 4. Initialize handshake
-    err = client.Initialize(ctx, "clem", "1.0.0", "2024-11-05")
+    err = client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
     if err != nil {
         log.Printf("Failed to initialize %s: %v", serverConfig.Name, err)
         client.Close()
@@ -525,7 +525,7 @@ for _, serverConfig := range servers {
     for _, tool := range mcpTools {
         // Add server name prefix to avoid collisions
         prefixedTool := mcp.WithPrefix(tool, serverConfig.Name)
-        clemRegistry.Register(prefixedTool)
+        hexRegistry.Register(prefixedTool)
     }
 
     log.Printf("Loaded %d tools from %s", len(mcpTools), serverConfig.Name)
@@ -539,7 +539,7 @@ To avoid name collisions between servers and built-in tools, MCP tools are prefi
 **Example**:
 - Server name: `filesystem`
 - Tool name from server: `read_file`
-- Registered name in Clem: `filesystem_read_file`
+- Registered name in Hex: `filesystem_read_file`
 
 **Implementation**:
 ```go
@@ -569,7 +569,7 @@ if err != nil {
 
 **Initialize Errors**:
 ```go
-err := client.Initialize(ctx, "clem", "1.0.0", "2024-11-05")
+err := client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
 if err != nil {
     // Protocol version mismatch, server error
     // Close client, skip server
@@ -591,7 +591,7 @@ if err != nil {
 }
 ```
 
-**Graceful Degradation**: If MCP servers fail to load, Clem continues with built-in tools only
+**Graceful Degradation**: If MCP servers fail to load, Hex continues with built-in tools only
 
 ## Server Development
 
@@ -684,9 +684,9 @@ chmod +x my-server.js
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node my-server.js
 ```
 
-**5. Add to Clem**:
+**5. Add to Hex**:
 ```bash
-clem mcp add myserver node my-server.js
+hex mcp add myserver node my-server.js
 ```
 
 #### Python Example
@@ -767,9 +767,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-**3. Add to Clem**:
+**3. Add to Hex**:
 ```bash
-clem mcp add calc python my_server.py
+hex mcp add calc python my_server.py
 ```
 
 ### Best Practices for Server Development
@@ -1041,11 +1041,11 @@ MCP prompts are pre-defined conversation templates:
 
 **Enable verbose logging**:
 ```bash
-CLEM_DEBUG=1 clem
+HEX_DEBUG=1 hex
 ```
 
 **Check server stderr**:
-Server logs go to stderr, which Clem forwards to terminal:
+Server logs go to stderr, which Hex forwards to terminal:
 ```
 [MCP:filesystem] Server started successfully
 [MCP:filesystem] Tool called: read_file
@@ -1092,7 +1092,7 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | npx -y @modelcontextprot
 **Cause**: Tool name doesn't match server's tools
 
 **Solutions**:
-- List tools with `clem mcp list`
+- List tools with `hex mcp list`
 - Check for typos in tool name
 - Verify tool is registered (check server logs)
 - Remember server name prefix: `filesystem_read_file`, not `read_file`
@@ -1169,7 +1169,7 @@ https://github.com/modelcontextprotocol/servers/tree/main/src/postgres
 |---------|----------|-------|
 | 2024-11-05 | Nov 2024 | Initial stable release |
 
-### Clem MCP Implementation Status
+### Hex MCP Implementation Status
 
 | Feature | Status | Version |
 |---------|--------|---------|
@@ -1186,5 +1186,5 @@ https://github.com/modelcontextprotocol/servers/tree/main/src/postgres
 
 **See Also**:
 - [TOOLS.md](TOOLS.md) - User-facing tool documentation
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Overall Clem architecture
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Overall Hex architecture
 - [examples/mcp/](../examples/mcp/) - Working examples

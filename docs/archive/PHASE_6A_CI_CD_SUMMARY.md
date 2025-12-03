@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document summarizes the complete CI/CD and installation infrastructure implemented for Clem CLI in Phase 6A. The goal was to transform Clem from a development project into a production-ready, distributable tool.
+This document summarizes the complete CI/CD and installation infrastructure implemented for Hex CLI in Phase 6A. The goal was to transform Hex from a development project into a production-ready, distributable tool.
 
 ## Files Created/Modified
 
@@ -65,10 +65,10 @@ This document summarizes the complete CI/CD and installation infrastructure impl
 - macOS: amd64, arm64
 - Windows: amd64, arm64
 
-**Release Naming**: `clem_v1.2.3_Darwin_x86_64.tar.gz`
+**Release Naming**: `hex_v1.2.3_Darwin_x86_64.tar.gz`
 
 #### 4. `Dockerfile`
-**Purpose**: Container image for Clem
+**Purpose**: Container image for Hex
 
 **Features**:
 - Multi-stage build (minimal runtime image)
@@ -79,8 +79,8 @@ This document summarizes the complete CI/CD and installation infrastructure impl
 
 **Usage**:
 ```bash
-docker pull ghcr.io/harper/clem:latest
-docker run -it --rm ghcr.io/harper/clem:latest --help
+docker pull ghcr.io/harper/hex:latest
+docker run -it --rm ghcr.io/harper/hex:latest --help
 ```
 
 #### 5. `.dockerignore`
@@ -111,7 +111,7 @@ docker run -it --rm ghcr.io/harper/clem:latest --help
 
 **Usage**:
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 ```
 
 ### Build System
@@ -211,7 +211,7 @@ curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
 
 ### 1. Install Script (Recommended)
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 ```
 - Automatic OS/arch detection
 - Checksum verification
@@ -219,14 +219,14 @@ curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
 
 ### 2. Homebrew
 ```bash
-brew install harper/tap/clem
+brew install harper/tap/hex
 ```
 - Automatic updates via `brew upgrade`
 - Managed by GoReleaser
 
 ### 3. Go Install
 ```bash
-go install github.com/harper/clem/cmd/clem@latest
+go install github.com/harper/hex/cmd/hex@latest
 ```
 - Requires Go 1.24+
 - Always latest version
@@ -237,16 +237,16 @@ go install github.com/harper/clem/cmd/clem@latest
 
 ### 5. Build from Source
 ```bash
-git clone https://github.com/harper/clem.git
-cd clem
+git clone https://github.com/harper/hex.git
+cd hex
 make install
 ```
 - Full development environment
 
 ### 6. Docker
 ```bash
-docker pull ghcr.io/harper/clem:latest
-docker run -it --rm ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:latest
+docker run -it --rm ghcr.io/harper/hex:latest
 ```
 - Containerized execution
 - No local installation needed
@@ -450,7 +450,7 @@ make verify
 
 ## Conclusion
 
-Phase 6A successfully established a production-ready CI/CD infrastructure for Clem. The implementation provides:
+Phase 6A successfully established a production-ready CI/CD infrastructure for Hex. The implementation provides:
 
 - **Automated testing** on every change
 - **Multi-platform releases** with one command
@@ -458,7 +458,7 @@ Phase 6A successfully established a production-ready CI/CD infrastructure for Cl
 - **Comprehensive documentation** for contributors
 - **Professional project structure** for open source
 
-Clem is now ready for public distribution and community contributions.
+Hex is now ready for public distribution and community contributions.
 
 ## Files Summary
 

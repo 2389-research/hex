@@ -1,13 +1,13 @@
 # Claude Code Feature Audit
 
 **Generated:** 2025-12-01
-**Purpose:** Comprehensive comparison of Clem's implementation against Claude Code's documented functionality
+**Purpose:** Comprehensive comparison of Hex's implementation against Claude Code's documented functionality
 
 ## Executive Summary
 
 ### What We Have
 
-Clem has successfully implemented the **core functionality** needed for an AI assistant CLI:
+Hex has successfully implemented the **core functionality** needed for an AI assistant CLI:
 
 **✅ Strong Implementation:**
 - Interactive TUI with conversation management
@@ -49,7 +49,7 @@ The major gaps are in **extensibility systems**:
 
 ## Feature Comparison Matrix
 
-| Category | Feature | Claude Code | Clem | Status | Notes |
+| Category | Feature | Claude Code | Hex | Status | Notes |
 |----------|---------|-------------|------|--------|-------|
 | **Core Modes** | Interactive TUI | ✅ | ✅ | ✅ Complete | Full bubbletea UI |
 | | Print mode (--print) | ✅ | ✅ | ✅ Complete | Non-interactive execution |
@@ -82,9 +82,9 @@ The major gaps are in **extensibility systems**:
 | | Skill tool | ✅ | ❌ | ❌ Missing | Can't invoke skills |
 | | Built-in skills | ✅ | ❌ | ❌ Missing | No TDD, debugging, etc. |
 | **Plugins** | Plugin manifest | ✅ | ❌ | ❌ Missing | No plugin.json |
-| | Plugin install/uninstall | ✅ | ❌ | ❌ Missing | No `clem plugin` commands |
+| | Plugin install/uninstall | ✅ | ❌ | ❌ Missing | No `hex plugin` commands |
 | | Plugin marketplace | ✅ | ❌ | ❌ Missing | No distribution |
-| | Plugin discovery | ✅ | ❌ | ❌ Missing | No ~/.clem/plugins/ |
+| | Plugin discovery | ✅ | ❌ | ❌ Missing | No ~/.hex/plugins/ |
 | **Slash Cmds** | Custom commands | ✅ | ❌ | ❌ Missing | No .claude/commands/ |
 | | SlashCommand tool | ✅ | ❌ | ❌ Missing | Can't invoke /commands |
 | | Built-in commands | ✅ | ❌ | ❌ Missing | No /brainstorm, /plan, etc. |
@@ -137,10 +137,10 @@ The major gaps are in **extensibility systems**:
 | | --teleport / --remote | ✅ | ❌ | ❌ Missing | Remote execution |
 | **Subcommands** | doctor | ✅ | ✅ | ✅ Complete | Health check |
 | | setup-token | ✅ | ✅ | ✅ Complete | API key setup |
-| | history | Custom | ✅ | ✅ Complete | Clem-specific |
-| | favorites | Custom | ✅ | ✅ Complete | Clem-specific |
-| | export | Custom | ✅ | ✅ Complete | Clem-specific |
-| | templates | Custom | ✅ | ✅ Complete | Clem-specific |
+| | history | Custom | ✅ | ✅ Complete | Hex-specific |
+| | favorites | Custom | ✅ | ✅ Complete | Hex-specific |
+| | export | Custom | ✅ | ✅ Complete | Hex-specific |
+| | templates | Custom | ✅ | ✅ Complete | Hex-specific |
 | | mcp | ✅ | ⚠️ | ⚠️ Partial | list/add/remove only |
 | | mcp serve | ✅ | ❌ | ❌ Missing | Run as MCP server |
 | | mcp tools/resources | ✅ | ❌ | ❌ Missing | Diagnostic commands |
@@ -187,25 +187,25 @@ The major gaps are in **extensibility systems**:
 ### 2. Subcommands
 
 **Implemented:**
-- ✅ `clem doctor` - Health check
-- ✅ `clem setup-token` - API key configuration
-- ✅ `clem history` - Conversation history (Clem-specific)
-- ✅ `clem favorites` - Favorite conversations (Clem-specific)
-- ✅ `clem export` - Export conversations (Clem-specific)
-- ✅ `clem templates` - Template management (Clem-specific)
-- ✅ `clem mcp list/add/remove` - Basic MCP management
+- ✅ `hex doctor` - Health check
+- ✅ `hex setup-token` - API key configuration
+- ✅ `hex history` - Conversation history (Hex-specific)
+- ✅ `hex favorites` - Favorite conversations (Hex-specific)
+- ✅ `hex export` - Export conversations (Hex-specific)
+- ✅ `hex templates` - Template management (Hex-specific)
+- ✅ `hex mcp list/add/remove` - Basic MCP management
 
 **Missing:**
-- ❌ `clem mcp serve` - Run Clem as MCP server
-- ❌ `clem mcp servers` - List configured servers
-- ❌ `clem mcp tools` - List available MCP tools
-- ❌ `clem mcp info` - Server information
-- ❌ `clem mcp call` - Test MCP tool calls
-- ❌ `clem mcp grep` - Search MCP capabilities
-- ❌ `clem mcp resources` - List MCP resources
-- ❌ `clem mcp read` - Read MCP resource
-- ❌ `clem plugin install/uninstall/enable/disable/update/list/show/search`
-- ❌ `clem migrate-installer` - Installation migration
+- ❌ `hex mcp serve` - Run Hex as MCP server
+- ❌ `hex mcp servers` - List configured servers
+- ❌ `hex mcp tools` - List available MCP tools
+- ❌ `hex mcp info` - Server information
+- ❌ `hex mcp call` - Test MCP tool calls
+- ❌ `hex mcp grep` - Search MCP capabilities
+- ❌ `hex mcp resources` - List MCP resources
+- ❌ `hex mcp read` - Read MCP resource
+- ❌ `hex plugin install/uninstall/enable/disable/update/list/show/search`
+- ❌ `hex migrate-installer` - Installation migration
 
 ### 3. Tool System
 
@@ -246,12 +246,12 @@ The major gaps are in **extensibility systems**:
 - ✅ Server discovery and initialization
 - ✅ Tool schema loading
 - ✅ Tool invocation
-- ✅ Basic `clem mcp` commands (list/add/remove)
+- ✅ Basic `hex mcp` commands (list/add/remove)
 - ✅ Error handling and logging
 
 **Missing:**
 - ❌ MCP resource providers (ListMcpResourcesTool, ReadMcpResourceTool)
-- ❌ `clem mcp serve` - Run Clem as MCP server
+- ❌ `hex mcp serve` - Run Hex as MCP server
 - ❌ Advanced diagnostic commands (servers, tools, info, call, grep, resources, read)
 - ❌ --strict-mcp-config flag (control auto-discovery)
 - ❌ --mcp-debug flag (MCP-specific debugging)
@@ -444,7 +444,7 @@ Claude Code provides 10 lifecycle hooks:
 ### 13. Configuration System
 
 **Implemented:**
-- ✅ ~/.clem/config.yaml (user config)
+- ✅ ~/.hex/config.yaml (user config)
 - ✅ API key configuration
 - ✅ Template system
 
@@ -522,7 +522,7 @@ Claude Code provides 10 lifecycle hooks:
 
 8. **MCP Enhancements**
    - Resource tools (List/Read)
-   - `clem mcp serve`
+   - `hex mcp serve`
    - Diagnostic commands
    - Plugin-bundled servers
 
@@ -537,7 +537,7 @@ Claude Code provides 10 lifecycle hooks:
 
 ---
 
-## What Clem Does WELL
+## What Hex Does WELL
 
 ### Strengths
 
@@ -642,7 +642,7 @@ Claude Code provides 10 lifecycle hooks:
 
 ## Conclusion
 
-Clem has **excellent foundations** with a solid core implementation, comprehensive tool system, and production-quality code. The main gaps are in **extensibility systems** (hooks, skills, plugins, slash commands) that allow users to customize and extend functionality.
+Hex has **excellent foundations** with a solid core implementation, comprehensive tool system, and production-quality code. The main gaps are in **extensibility systems** (hooks, skills, plugins, slash commands) that allow users to customize and extend functionality.
 
 **Strategic Options:**
 

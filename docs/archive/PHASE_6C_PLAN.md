@@ -1,7 +1,7 @@
 # Phase 6C: Quality-of-Life Features Implementation Plan
 
 ## Overview
-Add smart productivity features to make Clem feel polished and professional.
+Add smart productivity features to make Hex feel polished and professional.
 
 ## Tasks
 
@@ -34,17 +34,17 @@ Add smart productivity features to make Clem feel polished and professional.
 - FTS5 search returns relevant results
 
 ### Task 2: History Command Implementation
-**Goal:** Add `clem history` command with search capabilities
+**Goal:** Add `hex history` command with search capabilities
 
 **Files to create:**
-- `cmd/clem/history.go`
-- `cmd/clem/history_test.go`
+- `cmd/hex/history.go`
+- `cmd/hex/history_test.go`
 
 **Implementation:**
 1. Create history command with subcommands:
-   - `clem history` - Show recent (default 20)
-   - `clem history search "docker"` - FTS5 search
-   - `clem history --limit 50` - Show more results
+   - `hex history` - Show recent (default 20)
+   - `hex history search "docker"` - FTS5 search
+   - `hex history --limit 50` - Show more results
 2. Format output with:
    - Timestamp (relative: "2 hours ago")
    - Message preview (truncated to 60 chars)
@@ -58,7 +58,7 @@ Add smart productivity features to make Clem feel polished and professional.
 - Integration with history repository
 
 **Definition of Done:**
-- `clem history` shows recent commands
+- `hex history` shows recent commands
 - Search works with FTS5
 - Output is readable and useful
 - Tests pass
@@ -70,8 +70,8 @@ Add smart productivity features to make Clem feel polished and professional.
 - `internal/templates/loader.go`
 - `internal/templates/loader_test.go`
 - `internal/templates/types.go`
-- `cmd/clem/templates.go`
-- `cmd/clem/templates_test.go`
+- `cmd/hex/templates.go`
+- `cmd/hex/templates_test.go`
 
 **Implementation:**
 1. Create template types:
@@ -84,15 +84,15 @@ Add smart productivity features to make Clem feel polished and professional.
    }
    ```
 2. Implement template loader:
-   - Read from `~/.clem/templates/`
+   - Read from `~/.hex/templates/`
    - Parse YAML files
    - Validate structure
 3. Add commands:
-   - `clem templates list` - Show available
-   - `clem --template code-review` - Use template
+   - `hex templates list` - Show available
+   - `hex --template code-review` - Use template
 4. Create example templates:
-   - `~/.clem/templates/code-review.yaml`
-   - `~/.clem/templates/debug-session.yaml`
+   - `~/.hex/templates/code-review.yaml`
+   - `~/.hex/templates/debug-session.yaml`
 
 **Tests:**
 - YAML parsing
@@ -143,8 +143,8 @@ Add smart productivity features to make Clem feel polished and professional.
 - `internal/storage/migrations/004_favorites.sql` (new)
 - `internal/storage/conversations.go`
 - `internal/storage/conversations_test.go`
-- `cmd/clem/favorites.go` (new)
-- `cmd/clem/favorites_test.go` (new)
+- `cmd/hex/favorites.go` (new)
+- `cmd/hex/favorites_test.go` (new)
 
 **Implementation:**
 1. Add migration:
@@ -154,8 +154,8 @@ Add smart productivity features to make Clem feel polished and professional.
    - `SetFavorite(db, convID, isFavorite)`
    - `ListFavorites(db)`
 3. Add commands:
-   - `clem favorite <conv-id>` - Toggle favorite
-   - `clem favorites` - List all favorites
+   - `hex favorite <conv-id>` - Toggle favorite
+   - `hex favorites` - List all favorites
 4. Update UI to show ⭐ for favorites
 5. Add Ctrl+F keyboard shortcut in interactive mode
 
@@ -216,8 +216,8 @@ Add smart productivity features to make Clem feel polished and professional.
 - `internal/export/markdown.go`
 - `internal/export/json.go`
 - `internal/export/html.go`
-- `cmd/clem/export.go`
-- `cmd/clem/export_test.go`
+- `cmd/hex/export.go`
+- `cmd/hex/export_test.go`
 
 **Implementation:**
 1. Create exporters:
@@ -225,9 +225,9 @@ Add smart productivity features to make Clem feel polished and professional.
    - JSON exporter with full structure
    - HTML exporter with syntax highlighting (use Chroma)
 2. Add command:
-   - `clem export <conv-id> --format markdown`
-   - `clem export <conv-id> --format json`
-   - `clem export <conv-id> --format html`
+   - `hex export <conv-id> --format markdown`
+   - `hex export <conv-id> --format json`
+   - `hex export <conv-id> --format html`
 3. Include metadata:
    - Timestamp
    - Model used

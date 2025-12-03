@@ -1,39 +1,39 @@
-# Clem Architecture Diagram
+# Hex Architecture Diagram
 
-This directory contains a comprehensive architecture diagram of the Clem project, visualizing all components, data flows, and relationships.
+This directory contains a comprehensive architecture diagram of the Hex project, visualizing all components, data flows, and relationships.
 
 ## Files
 
-- **`clem-architecture.dot`** (18KB) - Source GraphViz DOT file
-- **`clem-architecture.png`** (605KB) - High-resolution PNG render
-- **`clem-architecture.svg`** (98KB) - Scalable SVG render (recommended for viewing)
+- **`hex-architecture.dot`** (18KB) - Source GraphViz DOT file
+- **`hex-architecture.png`** (605KB) - High-resolution PNG render
+- **`hex-architecture.svg`** (98KB) - Scalable SVG render (recommended for viewing)
 
 ## Viewing the Diagram
 
 ### Recommended: SVG
-Open `clem-architecture.svg` in your browser for the best experience:
+Open `hex-architecture.svg` in your browser for the best experience:
 ```bash
-open clem-architecture.svg  # macOS
-xdg-open clem-architecture.svg  # Linux
-start clem-architecture.svg  # Windows
+open hex-architecture.svg  # macOS
+xdg-open hex-architecture.svg  # Linux
+start hex-architecture.svg  # Windows
 ```
 
 ### Alternative: PNG
-View `clem-architecture.png` in any image viewer or browser.
+View `hex-architecture.png` in any image viewer or browser.
 
 ## Regenerating the Diagram
 
-If you modify `clem-architecture.dot`, regenerate the images with:
+If you modify `hex-architecture.dot`, regenerate the images with:
 
 ```bash
 # Generate PNG
-dot -Tpng clem-architecture.dot -o clem-architecture.png
+dot -Tpng hex-architecture.dot -o hex-architecture.png
 
 # Generate SVG (scalable, recommended)
-dot -Tsvg clem-architecture.dot -o clem-architecture.svg
+dot -Tsvg hex-architecture.dot -o hex-architecture.svg
 
 # Generate PDF (for documentation)
-dot -Tpdf clem-architecture.dot -o clem-architecture.pdf
+dot -Tpdf hex-architecture.dot -o hex-architecture.pdf
 ```
 
 ## What's Visualized
@@ -41,10 +41,10 @@ dot -Tpdf clem-architecture.dot -o clem-architecture.pdf
 The diagram shows:
 
 ### 1. External Systems (Light Blue)
-- **User** - The developer using Clem
+- **User** - The developer using Hex
 - **Anthropic API** - Claude messages endpoint with streaming
 - **MCP Servers** - External tool servers (filesystem, fetch, custom)
-- **File System** - User's project files and Clem config
+- **File System** - User's project files and Hex config
 
 ### 2. CLI Layer (Light Green)
 All entry point commands organized by category:
@@ -94,7 +94,7 @@ SQLite persistence layer:
 - `conversations.go` - Conversation CRUD + favorites + FTS5 search
 - `messages.go` - Message CRUD with JSON tool calls
 - `migrations/` - Embedded SQL migrations (001-004)
-- `~/.clem/clem.db` - SQLite database (WAL mode)
+- `~/.hex/hex.db` - SQLite database (WAL mode)
 
 ### 6. Tools Package (Light Salmon)
 Tool execution system with 13+ tools:
@@ -126,14 +126,14 @@ Tool execution system with 13+ tools:
 Model Context Protocol integration:
 - `registry.go` - Server configuration (`.mcp.json`)
 - `client.go` - JSON-RPC client (stdio transport)
-- `tool_adapter.go` - MCP→Clem tool bridge
+- `tool_adapter.go` - MCP→Hex tool bridge
 - `tool_manager.go` - Multi-server tool management
 
 ### 8. Templates & Export (Lavender)
 **Templates:**
 - `templates/types.go` - Template structs
 - `templates/loader.go` - YAML loading
-- `~/.clem/templates/` - Template files (code-review.yaml, etc.)
+- `~/.hex/templates/` - Template files (code-review.yaml, etc.)
 
 **Export:**
 - `export/exporter.go` - Exporter interface

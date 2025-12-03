@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

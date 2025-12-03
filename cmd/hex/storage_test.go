@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/clem/internal/storage"
+	"github.com/harper/hex/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,9 +53,9 @@ func TestOpenDatabaseCreatesDirectory(t *testing.T) {
 func TestDefaultDBPath(t *testing.T) {
 	path := defaultDBPath()
 
-	// Should end with .clem/clem.db
-	assert.Contains(t, path, ".clem")
-	assert.Contains(t, path, "clem.db")
+	// Should end with .hex/hex.db
+	assert.Contains(t, path, ".hex")
+	assert.Contains(t, path, "hex.db")
 
 	// Should be absolute path
 	assert.True(t, filepath.IsAbs(path))

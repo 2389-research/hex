@@ -1,6 +1,6 @@
-# Integration Tests for Clem Phase 2
+# Integration Tests for Hex Phase 2
 
-This directory contains end-to-end integration tests for the Clem CLI Phase 2 implementation.
+This directory contains end-to-end integration tests for the Hex CLI Phase 2 implementation.
 
 ## Test Files
 

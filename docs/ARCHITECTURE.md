@@ -1,6 +1,6 @@
-# Clem Architecture Documentation
+# Hex Architecture Documentation
 
-Technical overview of Clem's design, architecture, and implementation.
+Technical overview of Hex's design, architecture, and implementation.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Technical overview of Clem's design, architecture, and implementation.
 
 ## System Overview
 
-Clem is a Go-based CLI for Claude with three main operational modes:
+Hex is a Go-based CLI for Claude with three main operational modes:
 
 1. **Print Mode**: Single request-response (non-interactive)
 2. **Interactive Mode**: Full TUI with streaming and tools
@@ -27,7 +27,7 @@ Clem is a Go-based CLI for Claude with three main operational modes:
 ```
 ┌─────────────────────────────────────────────────────┐
 │                     CLI Layer                        │
-│                   (cmd/clem)                         │
+│                   (cmd/hex)                         │
 │                                                      │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐   │
 │  │   Print    │  │ Interactive│  │   Resume   │   │
@@ -68,8 +68,8 @@ Clem is a Go-based CLI for Claude with three main operational modes:
 ## Project Structure
 
 ```
-clem/
-├── cmd/clem/              # CLI entry point and commands
+hex/
+├── cmd/hex/              # CLI entry point and commands
 │   ├── main.go           # Application entry
 │   ├── root.go           # Root command + interactive mode
 │   ├── print.go          # Print mode implementation
@@ -130,7 +130,7 @@ clem/
 
 ## Core Components
 
-### 1. CLI Layer (cmd/clem)
+### 1. CLI Layer (cmd/hex)
 
 **Purpose**: Command-line interface and mode orchestration
 
@@ -296,7 +296,7 @@ Config Loader ──> API Client ──> Anthropic API
 ### Interactive Mode Flow
 
 ```
-User starts Clem
+User starts Hex
     │
     ▼
 Initialize DB ──> Load last conversation (if --continue)

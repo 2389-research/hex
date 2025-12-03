@@ -16,7 +16,7 @@ func TestNewLoader(t *testing.T) {
 		t.Error("UserDir should not be empty")
 	}
 
-	// UserDir should contain .clem/commands
+	// UserDir should contain .hex/commands
 	if !filepath.IsAbs(loader.UserDir) {
 		t.Error("UserDir should be absolute path")
 	}

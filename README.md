@@ -1,8 +1,8 @@
-# Clem - Claude CLI
+# Hex - Claude CLI
 
-[![Test](https://github.com/harper/clem/workflows/Test/badge.svg)](https://github.com/harper/clem/actions/workflows/test.yml)
-[![Release](https://github.com/harper/clem/workflows/Release/badge.svg)](https://github.com/harper/clem/actions/workflows/release.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/harper/clem)](https://goreportcard.com/report/github.com/harper/clem)
+[![Test](https://github.com/harper/hex/workflows/Test/badge.svg)](https://github.com/harper/hex/actions/workflows/test.yml)
+[![Release](https://github.com/harper/hex/workflows/Release/badge.svg)](https://github.com/harper/hex/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/harper/hex)](https://goreportcard.com/report/github.com/harper/hex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
@@ -11,7 +11,7 @@ A Go implementation of Claude Code CLI with interactive mode and tool execution 
 
 ## Features
 
-Clem v1.0 is a production-ready Claude CLI with comprehensive tool support, interactive TUI, and MCP integration.
+Hex v1.0 is a production-ready Claude CLI with comprehensive tool support, interactive TUI, and MCP integration.
 
 ### Core Features
 - ✅ **Print Mode** - Non-interactive command-line queries
@@ -44,66 +44,66 @@ Clem v1.0 is a production-ready Claude CLI with comprehensive tool support, inte
 
 ```bash
 # macOS and Linux
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 
 # Windows (PowerShell as Administrator)
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 
 # Verify installation
-clem --version
+hex --version
 ```
 
 **Method 2: Homebrew (macOS/Linux)**
 
 ```bash
 # Add tap and install
-brew install harper/tap/clem
+brew install harper/tap/hex
 
 # Verify installation
-clem --version
+hex --version
 ```
 
 **Method 3: Go Install**
 
 ```bash
 # Requires Go 1.24+
-go install github.com/harper/clem/cmd/clem@latest
+go install github.com/harper/hex/cmd/hex@latest
 
 # Verify installation
-clem --version
+hex --version
 ```
 
 **Method 4: Download Binary**
 
-Download pre-built binaries from the [releases page](https://github.com/harper/clem/releases):
+Download pre-built binaries from the [releases page](https://github.com/harper/hex/releases):
 
 1. Download the archive for your platform
 2. Extract the binary
 3. Move to a directory in your PATH (e.g., `/usr/local/bin`)
-4. Run `clem --version` to verify
+4. Run `hex --version` to verify
 
 **Method 5: Build from Source**
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/clem.git
-cd clem
+git clone https://github.com/harper/hex.git
+cd hex
 
 # Build and install
 make install
 
 # Verify installation
-clem --version
+hex --version
 ```
 
 ### Setup
 
 ```bash
 # Configure API key
-clem setup-token sk-ant-api03-...
+hex setup-token sk-ant-api03-...
 
 # Verify configuration
-clem doctor
+hex doctor
 ```
 
 ### Usage
@@ -111,31 +111,31 @@ clem doctor
 **Interactive Mode** (full TUI):
 ```bash
 # Start new conversation
-clem
+hex
 
 # Start with initial prompt
-clem "Help me debug this code"
+hex "Help me debug this code"
 
 # Resume last conversation
-clem --continue
+hex --continue
 
 # Resume specific conversation
-clem --resume conv-1234567890
+hex --resume conv-1234567890
 ```
 
 **Print Mode** (quick one-off):
 ```bash
 # Simple query
-clem --print "What is the capital of France?"
+hex --print "What is the capital of France?"
 
 # With JSON output
-clem --print --output-format json "List 3 programming languages"
+hex --print --output-format json "List 3 programming languages"
 ```
 
 ## What's New in v1.0.0
 
 ### Production-Ready Release
-After 6 phases of development, Clem v1.0 is production-ready with:
+After 6 phases of development, Hex v1.0 is production-ready with:
 - ✅ **94.7% project completion** (Grade A)
 - ✅ **73.8% test coverage** across 115+ test files
 - ✅ **29,000+ lines of code** with comprehensive documentation
@@ -152,7 +152,7 @@ After 6 phases of development, Clem v1.0 is production-ready with:
 - 🎯 **Multiple views** (Chat, History, Tools)
 
 **Conversation Persistence**
-- 💾 SQLite storage (`~/.clem/clem.db`)
+- 💾 SQLite storage (`~/.hex/hex.db`)
 - 🔄 Resume with `--continue` or `--resume <id>`
 - 🏷️ Automatic conversation titles
 - 📅 Full message history
@@ -211,7 +211,7 @@ Type `y` to approve, `n` (or Enter) to deny.
 
 Three ways to configure:
 
-**1. Config file** (`~/.clem/config.yaml`):
+**1. Config file** (`~/.hex/config.yaml`):
 ```yaml
 api_key: sk-ant-api03-...
 model: claude-sonnet-4-5-20250929
@@ -220,13 +220,13 @@ model: claude-sonnet-4-5-20250929
 **2. Environment variables**:
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-api03-...
-export CLEM_MODEL=claude-sonnet-4-5-20250929
+export HEX_MODEL=claude-sonnet-4-5-20250929
 ```
 
 **3. `.env` file** (in project directory):
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
-CLEM_MODEL=claude-sonnet-4-5-20250929
+HEX_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ## Tools
@@ -252,17 +252,17 @@ CLEM_MODEL=claude-sonnet-4-5-20250929
 
 ### MCP Integration
 
-**Extend Clem with MCP servers** - Use external tools from the Model Context Protocol ecosystem:
+**Extend Hex with MCP servers** - Use external tools from the Model Context Protocol ecosystem:
 
 ```bash
 # Add an MCP server
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
 
 # List configured servers
-clem mcp list
+hex mcp list
 
 # MCP tools are automatically available in conversations
-clem
+hex
 > "List all markdown files in my Documents directory"
 ```
 
@@ -334,8 +334,8 @@ pre-commit --version
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/clem.git
-cd clem
+git clone https://github.com/harper/hex.git
+cd hex
 
 # Install pre-commit hooks
 pre-commit install
@@ -397,8 +397,8 @@ git commit --no-verify
 ### Project Structure
 
 ```
-clem/
-├── cmd/clem/           # CLI entry point
+hex/
+├── cmd/hex/           # CLI entry point
 ├── internal/           # Private implementation
 │   ├── core/          # API client, types, config
 │   ├── ui/            # Bubbletea TUI
@@ -465,14 +465,14 @@ Contributions welcome! Please:
 
 **API key not found**:
 ```bash
-clem setup-token sk-ant-api03-...
-clem doctor
+hex setup-token sk-ant-api03-...
+hex doctor
 ```
 
 **Database locked**:
 ```bash
-# Close other Clem instances
-lsof ~/.clem/clem.db
+# Close other Hex instances
+lsof ~/.hex/hex.db
 ```
 
 **Tool timeout**:
@@ -537,7 +537,7 @@ MIT
 
 ---
 
-**Download**: `go install github.com/harper/clem/cmd/clem@latest`
+**Download**: `go install github.com/harper/hex/cmd/hex@latest`
 
 **Documentation**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 

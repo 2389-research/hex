@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/clem/internal/mcp"
+	"github.com/harper/hex/internal/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,7 @@ var mcpCmd = &cobra.Command{
 	Short: "Manage MCP (Model Context Protocol) servers",
 	Long: `Manage MCP servers that provide external tools and resources.
 
-MCP servers extend Clem's capabilities by providing additional tools
+MCP servers extend Hex's capabilities by providing additional tools
 that can be used during conversations with Claude.`,
 }
 
@@ -29,9 +29,9 @@ The server will be configured to use stdio transport. The command
 and arguments specify how to launch the server process.
 
 Examples:
-  clem mcp add weather node weather-server.js
-  clem mcp add database python -m database_server --port 8080
-  clem mcp add files /usr/local/bin/file-server`,
+  hex mcp add weather node weather-server.js
+  hex mcp add database python -m database_server --port 8080
+  hex mcp add files /usr/local/bin/file-server`,
 	Args:               cobra.MinimumNArgs(2),
 	DisableFlagParsing: true,
 	RunE: func(_ *cobra.Command, args []string) error {
@@ -126,7 +126,7 @@ func runMCPList(cmd *cobra.Command, baseDir string) error {
 	if len(servers) == 0 {
 		cmd.Println("No MCP servers configured.")
 		cmd.Println()
-		cmd.Println("Add a server with: clem mcp add <name> <command> [args...]")
+		cmd.Println("Add a server with: hex mcp add <name> <command> [args...]")
 		return nil
 	}
 

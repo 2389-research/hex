@@ -1,4 +1,4 @@
-# Clem Phase 2: Interactive Mode - Implementation Plan
+# Hex Phase 2: Interactive Mode - Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Bubbletea, lipgloss, glamour (Charm ecosystem), SQLite (modernc.org/sqlite), SSE streaming, os/exec for sandboxed bash
 
-**Success Criteria:** `clem` (no flags) launches interactive chat with streaming responses, tool execution, conversation history, and rich UI.
+**Success Criteria:** `hex` (no flags) launches interactive chat with streaming responses, tool execution, conversation history, and rich UI.
 
 ---
 
@@ -33,7 +33,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/clem/internal/storage"
+	"github.com/yourusername/hex/internal/storage"
 )
 
 func TestInitializeSchema(t *testing.T) {
@@ -219,7 +219,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/clem/internal/storage"
+	"github.com/yourusername/hex/internal/storage"
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
@@ -401,8 +401,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/clem/internal/core"
-	"github.com/yourusername/clem/internal/storage"
+	"github.com/yourusername/hex/internal/core"
+	"github.com/yourusername/hex/internal/storage"
 )
 
 func TestCreateMessage(t *testing.T) {
@@ -632,7 +632,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 )
 
 func TestParseSSEChunk(t *testing.T) {
@@ -864,7 +864,7 @@ git commit -m "feat: add SSE streaming support for interactive mode
 - Create: `internal/ui/model_test.go`
 - Create: `internal/ui/update.go`
 - Create: `internal/ui/view.go`
-- Modify: `cmd/clem/root.go`
+- Modify: `cmd/hex/root.go`
 
 **Step 1: Install Bubbletea dependencies**
 
@@ -888,7 +888,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yourusername/clem/internal/ui"
+	"github.com/yourusername/hex/internal/ui"
 )
 
 func TestNewModel(t *testing.T) {
@@ -966,7 +966,7 @@ func NewModel(conversationID, model string) *Model {
 	ta.ShowLineNumbers = false
 
 	vp := viewport.New(80, 20)
-	vp.SetContent("Welcome to Clem! Type your message below.")
+	vp.SetContent("Welcome to Hex! Type your message below.")
 
 	return &Model{
 		ConversationID: conversationID,
@@ -1105,7 +1105,7 @@ func (m *Model) View() string {
 	var b strings.Builder
 
 	// Title
-	title := titleStyle.Render(fmt.Sprintf("Clem • %s", m.Model))
+	title := titleStyle.Render(fmt.Sprintf("Hex • %s", m.Model))
 	b.WriteString(title + "\n\n")
 
 	// Viewport with messages
@@ -1126,7 +1126,7 @@ func (m *Model) View() string {
 
 **Step 7: Wire into root command**
 
-Modify `cmd/clem/root.go`, update `runInteractive`:
+Modify `cmd/hex/root.go`, update `runInteractive`:
 ```go
 func runInteractive(prompt string) error {
 	// Create new conversation
@@ -1155,7 +1155,7 @@ func runInteractive(prompt string) error {
 
 ```bash
 make build
-./clem
+./hex
 # Type a message and press Enter
 # Press Ctrl+C to quit
 ```
@@ -1173,7 +1173,7 @@ Expected: PASS (model tests)
 **Step 10: Commit**
 
 ```bash
-git add internal/ui/ cmd/clem/root.go go.mod go.sum
+git add internal/ui/ cmd/hex/root.go go.mod go.sum
 git commit -m "feat: add basic Bubbletea interactive UI
 
 - Model with messages, input textarea, viewport
@@ -1204,11 +1204,11 @@ Due to the comprehensive nature of Phase 2, I'll create a summary of the remaini
 
 ## Success Criteria
 
-✓ `clem` launches interactive TUI with rich formatting
+✓ `hex` launches interactive TUI with rich formatting
 ✓ Streaming responses with progressive text rendering
 ✓ Conversations saved to SQLite automatically
-✓ `clem --continue` resumes most recent conversation
-✓ `clem --resume <id>` loads specific conversation
+✓ `hex --continue` resumes most recent conversation
+✓ `hex --resume <id>` loads specific conversation
 ✓ Read/Write/Bash tools fully functional with safety
 ✓ Tool execution visible in UI with status updates
 ✓ All tests pass (unit + integration)

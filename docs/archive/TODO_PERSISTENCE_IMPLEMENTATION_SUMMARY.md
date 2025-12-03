@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented SQLite persistence for the TodoWrite tool in the Clem project following TDD (Test-Driven Development) principles. The implementation allows todos to be automatically saved to and loaded from the database, with optional conversation scoping.
+Successfully implemented SQLite persistence for the TodoWrite tool in the Hex project following TDD (Test-Driven Development) principles. The implementation allows todos to be automatically saved to and loaded from the database, with optional conversation scoping.
 
 ## Implementation Details
 
@@ -162,8 +162,8 @@ PASS: 29/29 tests
 ```bash
 go test -v ./internal/storage ./internal/tools -run "Test.*Todo"
 
-ok  	github.com/harper/clem/internal/storage	0.222s
-ok  	github.com/harper/clem/internal/tools	0.318s
+ok  	github.com/harper/hex/internal/storage	0.222s
+ok  	github.com/harper/hex/internal/tools	0.318s
 
 Total: 39 passing tests across both packages
 ```
@@ -183,7 +183,7 @@ Total: 39 passing tests across both packages
 
 ### Basic usage with auto-save
 ```go
-db, _ := storage.OpenDatabase("~/.clem/clem.db")
+db, _ := storage.OpenDatabase("~/.hex/hex.db")
 tool := tools.NewTodoWriteToolWithDB(db)
 
 result, _ := tool.Execute(ctx, map[string]interface{}{

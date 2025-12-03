@@ -5,17 +5,17 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/plugins"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/plugins"
 	"github.com/spf13/cobra"
 )
 
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
-	Short: "Manage Clem plugins",
+	Short: "Manage Hex plugins",
 	Long: `Install, uninstall, enable, and disable plugins.
 
-Plugins extend Clem with additional skills, commands, hooks, and MCP servers.`,
+Plugins extend Hex with additional skills, commands, hooks, and MCP servers.`,
 }
 
 var pluginInstallCmd = &cobra.Command{
@@ -28,9 +28,9 @@ Sources can be:
   - Local directory path: ./my-plugin or ~/plugins/my-plugin
 
 Examples:
-  clem plugin install https://github.com/user/clem-go-plugin.git
-  clem plugin install ./my-local-plugin
-  clem plugin install ~/plugins/my-plugin`,
+  hex plugin install https://github.com/user/hex-go-plugin.git
+  hex plugin install ./my-local-plugin
+  hex plugin install ~/plugins/my-plugin`,
 	Args: cobra.ExactArgs(1),
 	RunE: runPluginInstall,
 }
@@ -138,7 +138,7 @@ func runPluginList(_ *cobra.Command, _ []string) error {
 	if len(allPlugins) == 0 {
 		fmt.Println("No plugins installed.")
 		fmt.Println("\nInstall a plugin with:")
-		fmt.Println("  clem plugin install <source>")
+		fmt.Println("  hex plugin install <source>")
 		return nil
 	}
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/harper/clem/internal/export"
+	"github.com/harper/hex/internal/export"
 	"github.com/spf13/cobra"
 )
 
@@ -40,13 +40,13 @@ Formats:
 
 Examples:
   # Export as Markdown to stdout
-  clem export abc123
+  hex export abc123
 
   # Export as JSON to file
-  clem export abc123 --format json --output conversation.json
+  hex export abc123 --format json --output conversation.json
 
   # Export as HTML
-  clem export abc123 --format html --output conversation.html`,
+  hex export abc123 --format html --output conversation.html`,
 	Args: cobra.ExactArgs(1),
 	RunE: runExport,
 }

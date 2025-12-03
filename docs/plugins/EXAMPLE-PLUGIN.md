@@ -1,6 +1,6 @@
 # Example Plugin Structure
 
-This document shows how to create a plugin for Clem.
+This document shows how to create a plugin for Hex.
 
 ## Directory Structure
 
@@ -28,7 +28,7 @@ The minimal plugin requires only a `plugin.json` file:
 {
   "name": "my-plugin",
   "version": "1.0.0",
-  "description": "A simple Clem plugin"
+  "description": "A simple Hex plugin"
 }
 ```
 
@@ -45,7 +45,7 @@ The minimal plugin requires only a `plugin.json` file:
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/clem-go-plugin.git"
+    "url": "https://github.com/yourusername/hex-go-plugin.git"
   },
   "keywords": ["go", "golang", "development"],
 
@@ -154,13 +154,13 @@ Users can install your plugin in several ways:
 ### From Git Repository
 
 ```bash
-clem plugin install https://github.com/yourusername/clem-go-plugin.git
+hex plugin install https://github.com/yourusername/hex-go-plugin.git
 ```
 
 ### From Local Directory
 
 ```bash
-clem plugin install ./my-plugin
+hex plugin install ./my-plugin
 ```
 
 ## Plugin Manifest Fields
@@ -211,16 +211,16 @@ Control when your plugin activates:
 
 ```bash
 # Install from local directory
-clem plugin install ./my-plugin
+hex plugin install ./my-plugin
 
 # List installed plugins
-clem plugin list
+hex plugin list
 
 # Test that skills and commands are loaded
-clem
+hex
 
 # Uninstall when done
-clem plugin uninstall my-plugin
+hex plugin uninstall my-plugin
 ```
 
 ## Best Practices
@@ -254,6 +254,6 @@ Specialized knowledge (security, performance, accessibility, etc.)
 ## Support
 
 For questions or issues:
-- Check [Clem documentation](../../README.md)
+- Check [Hex documentation](../../README.md)
 - Open an issue in the plugin repository
 - Contact plugin author (see plugin.json)

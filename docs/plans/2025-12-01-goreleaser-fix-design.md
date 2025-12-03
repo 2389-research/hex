@@ -6,7 +6,7 @@
 
 ## Overview
 
-Fix the GoReleaser configuration which currently references the wrong project ("toki" instead of "clem") and cannot build binaries due to misconfigured GitHub Actions workflow.
+Fix the GoReleaser configuration which currently references the wrong project ("toki" instead of "hex") and cannot build binaries due to misconfigured GitHub Actions workflow.
 
 ## Current Problems
 
@@ -38,17 +38,17 @@ Each runner builds natively for its architecture:
 ### 1. `.goreleaser.yml`
 
 **Project naming:**
-- Change `id: toki` → `id: clem`
-- Change `binary: toki` → `binary: clem`
-- Change `main: ./cmd/toki` → `main: ./cmd/clem`
-- Update archive name template from `toki_` to `clem_`
+- Change `id: toki` → `id: hex`
+- Change `binary: toki` → `binary: hex`
+- Change `main: ./cmd/toki` → `main: ./cmd/hex`
+- Update archive name template from `toki_` to `hex_`
 
 **Build settings:**
 ```yaml
 builds:
-  - id: clem
-    binary: clem
-    main: ./cmd/clem
+  - id: hex
+    binary: hex
+    main: ./cmd/hex
     env:
       - CGO_ENABLED=1
     goos:
@@ -99,7 +99,7 @@ jobs:
 **Remove:**
 - Entire `publish-homebrew` job
 
-### 3. `cmd/clem/root.go`
+### 3. `cmd/hex/root.go`
 
 **Add version variables:**
 ```go
@@ -129,8 +129,8 @@ These get populated at build time via ldflags.
    - Creates tar.gz archive
    - Uploads to GitHub Release
 6. Result: Single release with two artifacts:
-   - `clem_v1.2.3_Darwin_x86_64.tar.gz`
-   - `clem_v1.2.3_Darwin_arm64.tar.gz`
+   - `hex_v1.2.3_Darwin_x86_64.tar.gz`
+   - `hex_v1.2.3_Darwin_arm64.tar.gz`
    - `checksums.txt`
    - Auto-generated changelog
 
@@ -149,10 +149,10 @@ These can be added incrementally after macOS releases are working.
 2. Verify both matrix jobs run
 3. Check that binaries are built for both architectures
 4. Download and test each binary
-5. Verify `clem --version` shows correct version/commit/date
+5. Verify `hex --version` shows correct version/commit/date
 
 ## Files to Modify
 
 1. `.goreleaser.yml` - Update project name and build config
 2. `.github/workflows/release.yml` - Add matrix, remove Homebrew job
-3. `cmd/clem/root.go` - Add commit and date variables
+3. `cmd/hex/root.go` - Add commit and date variables

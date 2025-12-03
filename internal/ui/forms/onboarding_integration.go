@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Integration layer for onboarding flow with Model
 // ABOUTME: Provides async command for running first-time onboarding
 package forms
@@ -55,7 +55,7 @@ func saveOnboardingConfig(configPath string, result *OnboardingFormResult) error
 	}
 
 	// Build config content
-	content := "# Clem Configuration\n"
+	content := "# Hex Configuration\n"
 	content += "# Created by onboarding wizard\n\n"
 	content += "model = \"" + result.Model + "\"\n"
 	content += "api_key = \"" + result.APIKey + "\"\n"
@@ -66,7 +66,7 @@ func saveOnboardingConfig(configPath string, result *OnboardingFormResult) error
 	return os.WriteFile(configPath, []byte(content), 0600)
 }
 
-// IsFirstRun checks if this is the first time running Clem
+// IsFirstRun checks if this is the first time running Hex
 // by checking if the config file exists
 func IsFirstRun(configPath string) bool {
 	_, err := os.Stat(configPath)

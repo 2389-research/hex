@@ -154,7 +154,7 @@ case toolBatchExecutionMsg:
 ## Build Status
 
 ```bash
-$ go build ./cmd/clem
+$ go build ./cmd/hex
 # Success! No errors.
 ```
 

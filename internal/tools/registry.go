@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/core"
 )
 
 // Registry manages available tools

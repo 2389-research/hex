@@ -1,4 +1,4 @@
-# Clem - Product Roadmap (UPDATED 2025-11-28)
+# Hex - Product Roadmap (UPDATED 2025-11-28)
 
 **Vision:** Production-ready Claude Code alternative in Go with full feature parity
 
@@ -20,7 +20,7 @@
 - **2,236 lines of code**
 
 **Deliverables:**
-- ✅ Working binary (`clem`)
+- ✅ Working binary (`hex`)
 - ✅ 15+ passing tests
 - ✅ Integration tests
 - ✅ Documentation complete
@@ -74,7 +74,7 @@
 - ✅ All 13 tools implemented and tested
 - ✅ Permission system with approval callbacks
 - ✅ MCP client with stdio transport
-- ✅ Tool adapter for MCP→Clem bridge
+- ✅ Tool adapter for MCP→Hex bridge
 - ✅ Multi-server support
 
 **Completion:** 95% (minor gaps: MCP approval heuristics, client lifecycle management)

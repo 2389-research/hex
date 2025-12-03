@@ -8,7 +8,7 @@ The smart suggestion system analyzes your input in real-time and suggests releva
 ### Example 1: File Path Detection
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Clem • claude-3-5-sonnet-20241022 ●                             │
+│ Hex • claude-3-5-sonnet-20241022 ●                             │
 │                                                                  │
 │ [Chat Messages Appear Here]                                     │
 │                                                                  │
@@ -70,7 +70,7 @@ Tokens: 0 in / 0 out [Chat] ctrl+c: quit • enter: send • tab: accept
 ### Example 3: URL Detection
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Fetch https://api.github.com/repos/harper/clem                  │
+│ Fetch https://api.github.com/repos/harper/hex                  │
 └──────────────────────────────────────────────────────────────────┘
 
 ╭──────────────────────────────────────────────────────────────────╮
@@ -78,7 +78,7 @@ Tokens: 0 in / 0 out [Chat] ctrl+c: quit • enter: send • tab: accept
 │                                                                  │
 │ → web_fetch                                                      │
 │   Detected HTTP/HTTPS URL                                       │
-│   Action: :web_fetch https://api.github.com/repos/harper/clem   │
+│   Action: :web_fetch https://api.github.com/repos/harper/hex   │
 │                                                                  │
 │ Tab: accept • Esc: dismiss                                      │
 ╰──────────────────────────────────────────────────────────────────╯

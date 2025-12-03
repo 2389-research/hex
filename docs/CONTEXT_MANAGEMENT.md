@@ -1,6 +1,6 @@
-# Context Management in Clem
+# Context Management in Hex
 
-Clem implements intelligent context management to handle long conversations efficiently and avoid hitting Claude's token limits.
+Hex implements intelligent context management to handle long conversations efficiently and avoid hitting Claude's token limits.
 
 ## Overview
 
@@ -9,7 +9,7 @@ Claude models have large context windows (up to 200k tokens for Sonnet), but:
 - Very long contexts can degrade model performance
 - Some conversations naturally exceed even 200k tokens
 
-Clem's context management system automatically:
+Hex's context management system automatically:
 - **Estimates token usage** in real-time
 - **Prunes old messages** when approaching limits
 - **Preserves important context** (system messages, tool uses, recent exchanges)
@@ -18,7 +18,7 @@ Clem's context management system automatically:
 
 ## Token Estimation
 
-Clem uses a simple but effective heuristic to estimate tokens:
+Hex uses a simple but effective heuristic to estimate tokens:
 
 ```
 tokens ≈ characters / 4
@@ -30,7 +30,7 @@ You can see estimated token usage in the status bar at the bottom of the screen.
 
 ## Context Pruning
 
-When your conversation approaches the context limit, Clem automatically prunes messages using a smart strategy:
+When your conversation approaches the context limit, Hex automatically prunes messages using a smart strategy:
 
 ### What Gets Kept
 
@@ -81,13 +81,13 @@ Set the maximum context window size in tokens.
 **Examples:**
 ```bash
 # Use smaller context window for faster responses
-clem --max-context-tokens 50000
+hex --max-context-tokens 50000
 
 # Use nearly full Sonnet context
-clem --max-context-tokens 195000
+hex --max-context-tokens 195000
 
 # Conservative limit for older models
-clem --max-context-tokens 100000
+hex --max-context-tokens 100000
 ```
 
 #### `--context-strategy <strategy>`
@@ -104,13 +104,13 @@ Choose how to manage context when it gets full.
 **Examples:**
 ```bash
 # Never prune - good for critical conversations
-clem --context-strategy keep-all
+hex --context-strategy keep-all
 
 # Auto-prune old messages (default)
-clem --context-strategy prune
+hex --context-strategy prune
 
 # Summarize removed context (when implemented)
-clem --context-strategy summarize
+hex --context-strategy summarize
 ```
 
 ## Status Bar Indicators
@@ -165,13 +165,13 @@ Same conversation, pruned:
 
 ```bash
 # For most conversations
-clem --max-context-tokens 100000
+hex --max-context-tokens 100000
 
 # For code generation (needs more context)
-clem --max-context-tokens 150000
+hex --max-context-tokens 150000
 
 # For quick Q&A (save money)
-clem --max-context-tokens 50000
+hex --max-context-tokens 50000
 ```
 
 ### 2. Monitor Context Usage
@@ -185,12 +185,12 @@ Watch the status bar. When you see the context bar filling up:
 
 Instead of:
 ```bash
-clem --continue  # Could load 150k tokens of old context
+hex --continue  # Could load 150k tokens of old context
 ```
 
 Consider:
 ```bash
-clem  # Fresh conversation for new topic
+hex  # Fresh conversation for new topic
 ```
 
 ### 4. Resume Important Conversations
@@ -198,15 +198,15 @@ clem  # Fresh conversation for new topic
 For ongoing work:
 ```bash
 # List conversations
-clem list
+hex list
 
 # Resume specific conversation
-clem --resume conv-12345
+hex --resume conv-12345
 ```
 
 ## How Pruning Works Internally
 
-When you send a message, Clem:
+When you send a message, Hex:
 
 1. **Estimates tokens** for all messages
 2. **Checks if pruning needed** (`EstimateMessagesTokens` > `MaxTokens`)
@@ -224,7 +224,7 @@ Your full conversation history is always preserved in the database. Pruning only
 
 ### Summarization (Phase 6B+)
 
-Instead of just removing messages, Clem will summarize them:
+Instead of just removing messages, Hex will summarize them:
 
 ```
 [System] Previous conversation summary:
@@ -241,7 +241,7 @@ This preserves context while using fewer tokens.
 Retrieve relevant context from past conversations:
 
 ```bash
-clem --enable-rag
+hex --enable-rag
 ```
 
 This will:
@@ -314,7 +314,7 @@ summaryMsg := context.CreateSummaryMessage(summary)
 ### Example 1: Conservative Token Usage
 
 ```bash
-clem --max-context-tokens 50000 --context-strategy prune
+hex --max-context-tokens 50000 --context-strategy prune
 ```
 
 Aggressively prunes to keep costs low. Good for:
@@ -325,7 +325,7 @@ Aggressively prunes to keep costs low. Good for:
 ### Example 2: Maximum Context
 
 ```bash
-clem --max-context-tokens 195000 --context-strategy keep-all
+hex --max-context-tokens 195000 --context-strategy keep-all
 ```
 
 Use nearly full context window. Good for:
@@ -336,7 +336,7 @@ Use nearly full context window. Good for:
 ### Example 3: Balanced (Default)
 
 ```bash
-clem  # Uses defaults: 180000 tokens, prune strategy
+hex  # Uses defaults: 180000 tokens, prune strategy
 ```
 
 Good balance of context and cost. Suitable for most use cases.

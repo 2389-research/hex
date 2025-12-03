@@ -5,8 +5,8 @@ package context_test
 import (
 	"fmt"
 
-	"github.com/harper/clem/internal/context"
-	"github.com/harper/clem/internal/core"
+	"github.com/harper/hex/internal/context"
+	"github.com/harper/hex/internal/core"
 )
 
 // ExampleManager_tokenSavings demonstrates the token savings from context pruning

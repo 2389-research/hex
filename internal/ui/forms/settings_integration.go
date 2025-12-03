@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Integration layer for settings wizard with Model
 // ABOUTME: Provides async command for running settings wizard
 package forms

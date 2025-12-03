@@ -1,10 +1,10 @@
-# Clem UI Guide
+# Hex UI Guide
 
-This guide covers the interactive UI features, keyboard shortcuts, and customization options for Clem's TUI (Terminal User Interface).
+This guide covers the interactive UI features, keyboard shortcuts, and customization options for Hex's TUI (Terminal User Interface).
 
 ## Overview
 
-Clem features a modern, interactive terminal UI built with Bubbletea that provides:
+Hex features a modern, interactive terminal UI built with Bubbletea that provides:
 - Real-time streaming responses with token rate display
 - Interactive tool approval with risk assessment
 - Multiple view modes (Chat, History, Tools)
@@ -15,7 +15,7 @@ Clem features a modern, interactive terminal UI built with Bubbletea that provid
 
 ### Title Bar
 ```
-Clem • claude-3-5-sonnet-20241022 ● ⚡ Streaming (42 tok/s)
+Hex • claude-3-5-sonnet-20241022 ● ⚡ Streaming (42 tok/s)
 ```
 - Model name
 - Connection status indicator (○ disconnected, ● connected, ◉ streaming/error)
@@ -66,7 +66,7 @@ Shows:
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+C` | Quit Clem |
+| `Ctrl+C` | Quit Hex |
 | `Esc` | Exit current mode / Quit |
 | `?` | Toggle help panel |
 | `Tab` | Switch view (Chat → History → Tools → Chat) |
@@ -208,7 +208,7 @@ Press `?` to toggle the full help panel:
 ┌─────────────────────────────────────────┐
 │ Keyboard Shortcuts                      │
 │                                         │
-│ Ctrl+C         Quit Clem               │
+│ Ctrl+C         Quit Hex               │
 │ Ctrl+L         Clear screen            │
 │ Ctrl+K         Clear conversation      │
 │ ...                                    │
@@ -221,7 +221,7 @@ Press `?` again or `Esc` to hide it.
 
 ### Normal Chat
 ```
-Clem • claude-3-5-sonnet-20241022 ●
+Hex • claude-3-5-sonnet-20241022 ●
 
 You: Hello!
 Assistant: Hi\! How can I help you today?
@@ -233,7 +233,7 @@ Assistant: Of course\! Please share the code you would like...
 
 ### Streaming Response
 ```
-Clem • claude-3-5-sonnet-20241022 ◉ ⚡ Streaming (38 tok/s)
+Hex • claude-3-5-sonnet-20241022 ◉ ⚡ Streaming (38 tok/s)
 
 You: What is recursion?
 
@@ -243,7 +243,7 @@ Recursion is a programming technique where a function calls itself...
 
 ### Tool Execution
 ```
-Clem • claude-3-5-sonnet-20241022 ● ⣾ Running bash... (0.8s)
+Hex • claude-3-5-sonnet-20241022 ● ⣾ Running bash... (0.8s)
 
 ┌─ Tool Approval Required ───────────────────────┐
 │ Tool: bash                                      │

@@ -1,4 +1,4 @@
-# Codex Best Practices → clem Integration Plan
+# Codex Best Practices → hex Integration Plan
 
 **Based on**: CODEX_AUDIT.md analysis
 **Goal**: Adopt high-impact patterns from Codex to improve clem
@@ -86,14 +86,14 @@ codex resume {id}         # Specific session
 - First user message (as title)
 
 ### Current State in clem
-- Sessions stored in `~/.clem/clem.db`
+- Sessions stored in `~/.hex/hex.db`
 - No built-in resume functionality
 - User must manually track conversation IDs
 
 ### Implementation Plan
 
 #### Phase 1: CLI Resume Command
-**File**: `cmd/clem/root.go`
+**File**: `cmd/hex/root.go`
 
 Add new command:
 ```go
@@ -164,7 +164,7 @@ func GetMostRecentConversation(db *sql.DB) (*Conversation, error)
 **File**: `internal/ui/model.go:204-210`
 
 ```go
-// Load CLAUDE.md from current directory or ~/.clem/CLAUDE.md
+// Load CLAUDE.md from current directory or ~/.hex/CLAUDE.md
 claudeMdPath := filepath.Join(".", "CLAUDE.md")
 if _, err := os.Stat(claudeMdPath); os.IsNotExist(err) {
     home, _ := os.UserHomeDir()
@@ -188,7 +188,7 @@ if _, err := os.Stat(claudeMdPath); os.IsNotExist(err) {
 func LoadAgentsMd(cwd string) (string, error) {
     var sections []string
 
-    // 1. Global ~/.clem/AGENTS.md
+    // 1. Global ~/.hex/AGENTS.md
     if global := loadGlobal(); global != "" {
         sections = append(sections, global)
     }
@@ -278,7 +278,7 @@ func (c *Client) CallTool(name string, input map[string]any) (string, error)
 ```
 
 #### Phase 2: Configuration
-**File**: `~/.clem/config.yaml`
+**File**: `~/.hex/config.yaml`
 
 ```yaml
 mcp_servers:
@@ -402,7 +402,7 @@ Ctrl+V / Cmd+V to paste images directly
 ### Implementation Plan
 
 #### Phase 1: CLI Input
-**File**: `cmd/clem/root.go`
+**File**: `cmd/hex/root.go`
 
 ```go
 var imageFiles []string
@@ -466,7 +466,7 @@ func ReadClipboardImage() ([]byte, error) {
 3. **Test long conversations** to verify compaction works
 
 ### Do This Month
-1. **Session resuming CLI** - Basic `clem resume --last`
+1. **Session resuming CLI** - Basic `hex resume --last`
 2. **AGENTS.md directory traversal** - Better than current approach
 3. **Session picker TUI** - Nice UX improvement
 
@@ -496,4 +496,4 @@ For each adopted practice:
 
 - Codex source: `/Users/harper/workspace/2389/agent-class/agents/codex`
 - Audit doc: `CODEX_AUDIT.md`
-- clem source: `/Users/harper/Public/src/2389/clem`
+- hex source: `/Users/harper/Public/src/2389/clem`

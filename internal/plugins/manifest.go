@@ -1,4 +1,4 @@
-// ABOUTME: Plugin manifest schema and validation for Clem plugins
+// ABOUTME: Plugin manifest schema and validation for Hex plugins
 // ABOUTME: Defines plugin.json structure with validation and parsing logic
 
 package plugins

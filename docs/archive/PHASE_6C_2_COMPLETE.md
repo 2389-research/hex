@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 6C.2 successfully delivers 7 major productivity features that transform Clem from a capable AI CLI into a polished, professional-grade tool. All features were implemented in parallel using 7 specialized subagents, achieving massive development velocity.
+Phase 6C.2 successfully delivers 7 major productivity features that transform Hex from a capable AI CLI into a polished, professional-grade tool. All features were implemented in parallel using 7 specialized subagents, achieving massive development velocity.
 
 **Development Time**: ~2 hours (parallel) vs ~14 hours (sequential) - **7x speedup**
 **Files Created**: 35+ new files
@@ -16,12 +16,12 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 ### Task 2: History Command ✅
 
 **Files Created**:
-- `cmd/clem/history.go` (179 lines)
-- `cmd/clem/history_test.go` (365 lines)
+- `cmd/hex/history.go` (179 lines)
+- `cmd/hex/history_test.go` (365 lines)
 
 **Features**:
-- `clem history` - Show recent 20 entries
-- `clem history search "docker"` - FTS5 full-text search
+- `hex history` - Show recent 20 entries
+- `hex history search "docker"` - FTS5 full-text search
 - `--limit N` flag - Customize result count
 - Relative timestamps ("2 hours ago", "yesterday")
 - Smart truncation (60 chars, word-aware)
@@ -35,14 +35,14 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 - `internal/templates/types.go` (template definitions)
 - `internal/templates/loader.go` (YAML loading logic)
 - `internal/templates/loader_test.go` (15 tests)
-- `cmd/clem/templates.go` (template commands)
-- `cmd/clem/templates_test.go`
+- `cmd/hex/templates.go` (template commands)
+- `cmd/hex/templates_test.go`
 - Example templates: `code-review.yaml`, `debug-session.yaml`, `refactor.yaml`
 
 **Features**:
-- YAML-based templates in `~/.clem/templates/`
-- `clem templates list` - Show available templates
-- `clem --template code-review` - Use template
+- YAML-based templates in `~/.hex/templates/`
+- `hex templates list` - Show available templates
+- `hex --template code-review` - Use template
 - System prompt configuration
 - Initial messages pre-population
 - Model preference override
@@ -78,8 +78,8 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 
 **Files Created**:
 - `internal/storage/migrations/004_favorites.sql`
-- `cmd/clem/favorites.go` (favorite commands)
-- `cmd/clem/favorites_test.go` (4 tests)
+- `cmd/hex/favorites.go` (favorite commands)
+- `cmd/hex/favorites_test.go` (4 tests)
 
 **Files Modified**:
 - `internal/storage/conversations.go` (added SetFavorite, ListFavorites)
@@ -89,8 +89,8 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 - `internal/ui/view.go` (⭐ display)
 
 **Features**:
-- `clem favorite <conv-id>` - Toggle favorite
-- `clem favorites` - List all favorites
+- `hex favorite <conv-id>` - Toggle favorite
+- `hex favorites` - List all favorites
 - **Ctrl+F** shortcut in interactive mode
 - **⭐** star emoji in title bar
 - Relative timestamps in list
@@ -125,11 +125,11 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 - `internal/export/json.go` (JSON exporter)
 - `internal/export/html.go` (HTML with Chroma syntax highlighting)
 - `internal/export/exporter_test.go` (13 tests)
-- `cmd/clem/export.go` (export command)
-- `cmd/clem/export_test.go` (10 tests)
+- `cmd/hex/export.go` (export command)
+- `cmd/hex/export_test.go` (10 tests)
 
 **Features**:
-- `clem export <conv-id> --format markdown` (or json, html)
+- `hex export <conv-id> --format markdown` (or json, html)
 - `--output <file>` flag (defaults to stdout)
 - Format aliases: `md` → markdown, `htm` → html
 - **Markdown**: Clean output with YAML frontmatter
@@ -188,7 +188,7 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 ### Package Breakdown
 | Package | Files | Lines | Tests |
 |---------|-------|-------|-------|
-| cmd/clem | 6 | ~1,200 | 36 |
+| cmd/hex | 6 | ~1,200 | 36 |
 | internal/export | 5 | ~800 | 23 |
 | internal/suggestions | 4 | ~700 | 34 |
 | internal/templates | 3 | ~600 | 15 |
@@ -202,12 +202,12 @@ Phase 6C.2 successfully delivers 7 major productivity features that transform Cl
 - **Migration 004**: Added `is_favorite` column to conversations table
 
 ### CLI Commands Added
-- `clem history` - View command history
-- `clem history search "query"` - Search history
-- `clem templates list` - List templates
-- `clem favorite <conv-id>` - Toggle favorite
-- `clem favorites` - List favorites
-- `clem export <conv-id>` - Export conversation
+- `hex history` - View command history
+- `hex history search "query"` - Search history
+- `hex templates list` - List templates
+- `hex favorite <conv-id>` - Toggle favorite
+- `hex favorites` - List favorites
+- `hex export <conv-id>` - Export conversation
 
 ### CLI Flags Added
 - `--template <name>` - Use session template
@@ -277,7 +277,7 @@ Phase 6C.2 is complete! This marks the **completion of Phase 6 entirely**:
 - ✅ Phase 6C.1: UI Improvements (spinners, approval UI, status bar)
 - ✅ Phase 6C.2: Smart Features (history, templates, autocomplete, favorites, quick actions, export, suggestions)
 
-**Clem v0.6.0 is feature-complete and production-ready!**
+**Hex v0.6.0 is feature-complete and production-ready!**
 
 Potential future enhancements (Phase 7+):
 - Persistent learning for smart suggestions
@@ -288,4 +288,4 @@ Potential future enhancements (Phase 7+):
 
 ## Conclusion
 
-Phase 6C.2 successfully delivers 7 major productivity features through parallel subagent development, achieving a 7x development speedup while maintaining 100% test coverage and zero known issues. Clem is now a polished, professional-grade AI CLI tool ready for production use.
+Phase 6C.2 successfully delivers 7 major productivity features through parallel subagent development, achieving a 7x development speedup while maintaining 100% test coverage and zero known issues. Hex is now a polished, professional-grade AI CLI tool ready for production use.

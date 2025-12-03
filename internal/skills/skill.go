@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/harper/clem/internal/frontmatter"
+	"github.com/harper/hex/internal/frontmatter"
 	"gopkg.in/yaml.v3"
 )
 

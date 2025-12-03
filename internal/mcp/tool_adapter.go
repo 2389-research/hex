@@ -1,5 +1,5 @@
-// ABOUTME: Adapter that wraps MCP tools to implement Clem's Tool interface
-// ABOUTME: Bridges MCP protocol tools with Clem's tool execution system
+// ABOUTME: Adapter that wraps MCP tools to implement Hex's Tool interface
+// ABOUTME: Bridges MCP protocol tools with Hex's tool execution system
 
 package mcp
 
@@ -9,11 +9,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/harper/clem/internal/core"
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/core"
+	"github.com/harper/hex/internal/tools"
 )
 
-// MCPToolAdapter wraps an MCP tool to implement Clem's Tool interface
+// MCPToolAdapter wraps an MCP tool to implement Hex's Tool interface
 //
 //nolint:revive // MCP prefix clarifies this adapts MCP tools vs other tool types
 type MCPToolAdapter struct {
@@ -48,7 +48,7 @@ func (a *MCPToolAdapter) RequiresApproval(_ map[string]interface{}) bool {
 	return false
 }
 
-// Execute runs the MCP tool and converts the result to Clem's Result format
+// Execute runs the MCP tool and converts the result to Hex's Result format
 func (a *MCPToolAdapter) Execute(ctx context.Context, params map[string]interface{}) (*tools.Result, error) {
 	// Ensure params is non-nil
 	if params == nil {
@@ -72,12 +72,12 @@ func (a *MCPToolAdapter) Execute(ctx context.Context, params map[string]interfac
 		}, nil
 	}
 
-	// Convert MCP result to Clem Result
+	// Convert MCP result to Hex Result
 	result := a.convertMCPResult(mcpResult)
 	return result, nil
 }
 
-// convertMCPResult converts an MCP tool response to a Clem Result
+// convertMCPResult converts an MCP tool response to a Hex Result
 func (a *MCPToolAdapter) convertMCPResult(mcpResult map[string]interface{}) *tools.Result {
 	result := &tools.Result{
 		ToolName: a.mcpTool.Name,
@@ -125,7 +125,7 @@ func (a *MCPToolAdapter) convertMCPResult(mcpResult map[string]interface{}) *too
 	return result
 }
 
-// AsToolDefinition converts the MCP tool to Clem's ToolDefinition format
+// AsToolDefinition converts the MCP tool to Hex's ToolDefinition format
 // This is used when registering the tool with the API
 func (a *MCPToolAdapter) AsToolDefinition() core.ToolDefinition {
 	return core.ToolDefinition{
@@ -179,7 +179,7 @@ func (m *MCPToolManager) RefreshTools(ctx context.Context) error {
 	return nil
 }
 
-// GetTools returns all available MCP tools as Clem tools
+// GetTools returns all available MCP tools as Hex tools
 func (m *MCPToolManager) GetTools() []tools.Tool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

@@ -10,13 +10,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/clem/internal/project"
+	"github.com/harper/hex/internal/project"
 )
 
 // Loader discovers and loads commands from multiple directories
 type Loader struct {
-	UserDir     string   // User-global commands directory (~/.clem/commands/)
-	ProjectDir  string   // Project-local commands directory (.clem/commands/)
+	UserDir     string   // User-global commands directory (~/.hex/commands/)
+	ProjectDir  string   // Project-local commands directory (.hex/commands/)
 	BuiltinDir  string   // Built-in commands directory (embedded or distributed)
 	PluginPaths []string // Additional command paths from plugins
 }
@@ -24,9 +24,9 @@ type Loader struct {
 // NewLoader creates a loader with default directories
 func NewLoader() *Loader {
 	homeDir, _ := os.UserHomeDir()
-	userDir := filepath.Join(homeDir, ".clem", "commands")
+	userDir := filepath.Join(homeDir, ".hex", "commands")
 
-	// Find project directory by looking for .clem directory
+	// Find project directory by looking for .hex directory
 	projectDir := project.FindDir("commands")
 
 	return &Loader{

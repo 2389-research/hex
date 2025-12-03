@@ -1,14 +1,14 @@
-# Clem Phase 1: Foundation - Implementation Plan
+# Hex Phase 1: Foundation - Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build the foundational components of Clem CLI - project setup, CLI framework, configuration, basic API client, and print mode.
+**Goal:** Build the foundational components of Hex CLI - project setup, CLI framework, configuration, basic API client, and print mode.
 
 **Architecture:** Go monolith using Cobra for CLI, Viper for config, stdlib HTTP for API client. Focus on working end-to-end flow before adding complexity.
 
 **Tech Stack:** Go 1.21+, Cobra, Viper, godotenv, testify
 
-**Success Criteria:** `clem --print "hello"` successfully calls Anthropic API and prints response.
+**Success Criteria:** `hex --print "hello"` successfully calls Anthropic API and prints response.
 
 ---
 
@@ -25,17 +25,17 @@
 
 ```bash
 cd /Users/harper/workspace/2389/cc-deobfuscate/clean
-go mod init github.com/yourusername/clem
+go mod init github.com/yourusername/hex
 ```
 
-Expected output: `go: creating new go.mod: module github.com/yourusername/clem`
+Expected output: `go: creating new go.mod: module github.com/yourusername/hex`
 
 **Step 2: Create .gitignore**
 
 Create `.gitignore`:
 ```
 # Binaries
-clem
+hex
 *.exe
 *.dll
 *.so
@@ -76,7 +76,7 @@ Create `Makefile`:
 .PHONY: build test clean install run
 
 build:
-	go build -o clem ./cmd/clem
+	go build -o hex ./cmd/hex
 
 test:
 	go test -v -race ./...
@@ -85,14 +85,14 @@ test-short:
 	go test -v -short ./...
 
 clean:
-	rm -f clem
+	rm -f hex
 	go clean
 
 install:
-	go install ./cmd/clem
+	go install ./cmd/hex
 
 run:
-	go run ./cmd/clem
+	go run ./cmd/hex
 
 lint:
 	golangci-lint run
@@ -104,24 +104,24 @@ lint:
 
 Create `README.md`:
 ```markdown
-# Clem
+# Hex
 
 AI assistant CLI built in Go.
 
 ## Installation
 
 ```bash
-go install github.com/yourusername/clem/cmd/clem@latest
+go install github.com/yourusername/hex/cmd/hex@latest
 ```
 
 ## Usage
 
 ```bash
 # Interactive mode
-clem
+hex
 
 # Print mode
-clem --print "your prompt"
+hex --print "your prompt"
 ```
 
 ## Development
@@ -150,14 +150,14 @@ git commit -m "feat: initialize Go project structure"
 ## Task 2: Project Structure and Core Types
 
 **Files:**
-- Create: `cmd/clem/main.go`
+- Create: `cmd/hex/main.go`
 - Create: `internal/core/types.go`
 - Create: `internal/core/types_test.go`
 
 **Step 1: Create directory structure**
 
 ```bash
-mkdir -p cmd/clem
+mkdir -p cmd/hex
 mkdir -p internal/core
 mkdir -p internal/ui
 mkdir -p internal/storage
@@ -177,7 +177,7 @@ package core_test
 import (
 	"testing"
 
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -338,7 +338,7 @@ Expected: PASS (2 tests)
 
 **Step 7: Create minimal main.go**
 
-Create `cmd/clem/main.go`:
+Create `cmd/hex/main.go`:
 ```go
 package main
 
@@ -348,7 +348,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Clem - AI Assistant CLI")
+	fmt.Println("Hex - AI Assistant CLI")
 	fmt.Println("Version: 0.1.0")
 	os.Exit(0)
 }
@@ -358,12 +358,12 @@ func main() {
 
 ```bash
 make build
-./clem
+./hex
 ```
 
 Expected output:
 ```
-Clem - AI Assistant CLI
+Hex - AI Assistant CLI
 Version: 0.1.0
 ```
 
@@ -379,9 +379,9 @@ git commit -m "feat: add core types and minimal main"
 ## Task 3: CLI Framework with Cobra
 
 **Files:**
-- Modify: `cmd/clem/main.go`
-- Create: `cmd/clem/root.go`
-- Create: `cmd/clem/root_test.go`
+- Modify: `cmd/hex/main.go`
+- Create: `cmd/hex/root.go`
+- Create: `cmd/hex/root_test.go`
 
 **Step 1: Install Cobra**
 
@@ -392,7 +392,7 @@ go mod tidy
 
 **Step 2: Write test for root command**
 
-Create `cmd/clem/root_test.go`:
+Create `cmd/hex/root_test.go`:
 ```go
 package main
 
@@ -430,14 +430,14 @@ func TestPrintFlag(t *testing.T) {
 **Step 3: Run test to verify it fails**
 
 ```bash
-go test ./cmd/clem/... -v
+go test ./cmd/hex/... -v
 ```
 
 Expected: FAIL with "undefined: rootCmd"
 
 **Step 4: Implement root command**
 
-Create `cmd/clem/root.go`:
+Create `cmd/hex/root.go`:
 ```go
 package main
 
@@ -461,9 +461,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "clem [prompt]",
-	Short: "Clem - AI assistant CLI",
-	Long: `Clem is an AI assistant for your terminal.
+	Use:   "hex [prompt]",
+	Short: "Hex - AI assistant CLI",
+	Long: `Hex is an AI assistant for your terminal.
 
 Start an interactive session or use --print for one-off queries.`,
 	Version: version,
@@ -520,7 +520,7 @@ func runInteractive(prompt string) error {
 
 **Step 5: Update main.go**
 
-Modify `cmd/clem/main.go`:
+Modify `cmd/hex/main.go`:
 ```go
 package main
 
@@ -540,7 +540,7 @@ func main() {
 **Step 6: Run tests to verify they pass**
 
 ```bash
-go test ./cmd/clem/... -v
+go test ./cmd/hex/... -v
 ```
 
 Expected: PASS (3 tests)
@@ -549,9 +549,9 @@ Expected: PASS (3 tests)
 
 ```bash
 make build
-./clem --help
-./clem --version
-./clem --print "hello"
+./hex --help
+./hex --version
+./hex --print "hello"
 ```
 
 Expected outputs:
@@ -562,7 +562,7 @@ Expected outputs:
 **Step 8: Commit**
 
 ```bash
-git add cmd/clem/
+git add cmd/hex/
 git commit -m "feat: add Cobra CLI framework with flags"
 ```
 
@@ -594,7 +594,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -611,8 +611,8 @@ model: claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 
 	// Set config path
-	os.Setenv("CLEM_CONFIG_PATH", configPath)
-	defer os.Unsetenv("CLEM_CONFIG_PATH")
+	os.Setenv("HEX_CONFIG_PATH", configPath)
+	defer os.Unsetenv("HEX_CONFIG_PATH")
 
 	// Load config
 	cfg, err := core.LoadConfig()
@@ -622,10 +622,10 @@ model: claude-sonnet-4-5-20250929
 }
 
 func TestConfigFromEnv(t *testing.T) {
-	os.Setenv("CLEM_API_KEY", "env-key-456")
-	os.Setenv("CLEM_MODEL", "claude-opus-4-5-20250929")
-	defer os.Unsetenv("CLEM_API_KEY")
-	defer os.Unsetenv("CLEM_MODEL")
+	os.Setenv("HEX_API_KEY", "env-key-456")
+	os.Setenv("HEX_MODEL", "claude-opus-4-5-20250929")
+	defer os.Unsetenv("HEX_API_KEY")
+	defer os.Unsetenv("HEX_MODEL")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -642,10 +642,10 @@ func TestConfigPrecedence(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0644)
 	require.NoError(t, err)
 
-	os.Setenv("CLEM_CONFIG_PATH", configPath)
-	os.Setenv("CLEM_API_KEY", "env-key")
-	defer os.Unsetenv("CLEM_CONFIG_PATH")
-	defer os.Unsetenv("CLEM_API_KEY")
+	os.Setenv("HEX_CONFIG_PATH", configPath)
+	os.Setenv("HEX_API_KEY", "env-key")
+	defer os.Unsetenv("HEX_CONFIG_PATH")
+	defer os.Unsetenv("HEX_API_KEY")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -686,9 +686,9 @@ type Config struct {
 
 // LoadConfig loads configuration from multiple sources
 // Priority (highest to lowest):
-// 1. Environment variables (CLEM_*)
+// 1. Environment variables (HEX_*)
 // 2. .env file (current directory)
-// 3. ~/.clem/config.yaml
+// 3. ~/.hex/config.yaml
 // 4. Defaults
 func LoadConfig() (*Config, error) {
 	// Load .env file if it exists (don't error if missing)
@@ -702,7 +702,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("default_tools", []string{"Bash", "Read", "Write", "Edit", "Grep"})
 
 	// Environment variables
-	v.SetEnvPrefix("CLEM")
+	v.SetEnvPrefix("HEX")
 	v.AutomaticEnv()
 
 	// Config file
@@ -710,15 +710,15 @@ func LoadConfig() (*Config, error) {
 	v.SetConfigType("yaml")
 
 	// Check for custom config path
-	if configPath := os.Getenv("CLEM_CONFIG_PATH"); configPath != "" {
+	if configPath := os.Getenv("HEX_CONFIG_PATH"); configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
 		// Add search paths
 		v.AddConfigPath(".") // Current directory
 		home, err := os.UserHomeDir()
 		if err == nil {
-			clemDir := filepath.Join(home, ".clem")
-			v.AddConfigPath(clemDir)
+			hexDir := filepath.Join(home, ".hex")
+			v.AddConfigPath(hexDir)
 		}
 	}
 
@@ -740,7 +740,7 @@ func LoadConfig() (*Config, error) {
 // GetAPIKey returns the API key from config or environment
 func (c *Config) GetAPIKey() (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set CLEM_API_KEY or run 'clem setup-token'")
+		return "", fmt.Errorf("API key not configured. Set HEX_API_KEY or run 'hex setup-token'")
 	}
 	return c.APIKey, nil
 }
@@ -760,13 +760,13 @@ Create `.env.example`:
 ```bash
 # Anthropic API Key
 # Get yours at: https://console.anthropic.com/
-CLEM_API_KEY=sk-ant-api03-...
+HEX_API_KEY=sk-ant-api03-...
 
 # Optional: Model to use
-CLEM_MODEL=claude-sonnet-4-5-20250929
+HEX_MODEL=claude-sonnet-4-5-20250929
 
 # Optional: Permission mode (ask, allow, deny, plan)
-CLEM_PERMISSION_MODE=ask
+HEX_PERMISSION_MODE=ask
 ```
 
 **Step 7: Update .gitignore to exclude config**
@@ -812,7 +812,7 @@ import (
 	"github.com/dnaeon/go-vcr/v2/recorder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 )
 
 func TestCreateMessage(t *testing.T) {
@@ -1011,7 +1011,7 @@ Expected: First run will record API call (needs real API key), subsequent runs r
 
 To run with real API:
 ```bash
-export CLEM_API_KEY=your-key-here
+export HEX_API_KEY=your-key-here
 go test ./internal/core/... -v -run TestCreateMessage
 ```
 
@@ -1027,12 +1027,12 @@ git commit -m "feat: add Anthropic API client with VCR testing"
 ## Task 6: Wire Print Mode to API
 
 **Files:**
-- Modify: `cmd/clem/root.go`
-- Create: `cmd/clem/print.go`
+- Modify: `cmd/hex/root.go`
+- Create: `cmd/hex/print.go`
 
 **Step 1: Implement print mode handler**
 
-Create `cmd/clem/print.go`:
+Create `cmd/hex/print.go`:
 ```go
 package main
 
@@ -1041,7 +1041,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 )
 
 func runPrintMode(prompt string) error {
@@ -1104,7 +1104,7 @@ func formatOutput(resp *core.MessageResponse, format string) error {
 
 **Step 2: Update root command**
 
-Modify `cmd/clem/root.go` - replace stub `runPrintMode`:
+Modify `cmd/hex/root.go` - replace stub `runPrintMode`:
 ```go
 // Remove the stub runPrintMode function
 // It's now in print.go
@@ -1116,8 +1116,8 @@ Modify `cmd/clem/root.go` - replace stub `runPrintMode`:
 make build
 
 # Test with environment variable
-export CLEM_API_KEY=your-key-here
-./clem --print "Say hello in one sentence"
+export HEX_API_KEY=your-key-here
+./hex --print "Say hello in one sentence"
 ```
 
 Expected: Actual response from Claude API
@@ -1125,7 +1125,7 @@ Expected: Actual response from Claude API
 **Step 4: Test JSON output**
 
 ```bash
-./clem --print --output-format json "Say hello"
+./hex --print --output-format json "Say hello"
 ```
 
 Expected: JSON formatted response
@@ -1133,8 +1133,8 @@ Expected: JSON formatted response
 **Step 5: Test error handling**
 
 ```bash
-unset CLEM_API_KEY
-./clem --print "test"
+unset HEX_API_KEY
+./hex --print "test"
 ```
 
 Expected: Error message about missing API key
@@ -1142,7 +1142,7 @@ Expected: Error message about missing API key
 **Step 6: Commit**
 
 ```bash
-git add cmd/clem/
+git add cmd/hex/
 git commit -m "feat: wire print mode to Anthropic API"
 ```
 
@@ -1151,12 +1151,12 @@ git commit -m "feat: wire print mode to Anthropic API"
 ## Task 7: Setup Token Command
 
 **Files:**
-- Create: `cmd/clem/setup.go`
-- Modify: `cmd/clem/root.go`
+- Create: `cmd/hex/setup.go`
+- Modify: `cmd/hex/root.go`
 
 **Step 1: Implement setup-token command**
 
-Create `cmd/clem/setup.go`:
+Create `cmd/hex/setup.go`:
 ```go
 package main
 
@@ -1176,7 +1176,7 @@ var setupCmd = &cobra.Command{
 
 Get your API key from: https://console.anthropic.com/
 
-This command will save your API key to ~/.clem/config.yaml`,
+This command will save your API key to ~/.hex/config.yaml`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runSetup,
 }
@@ -1191,7 +1191,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		apiKey = args[0]
 	} else {
-		fmt.Println("Usage: clem setup-token <your-api-key>")
+		fmt.Println("Usage: hex setup-token <your-api-key>")
 		fmt.Println("\nGet your API key from: https://console.anthropic.com/")
 		return nil
 	}
@@ -1202,14 +1202,14 @@ func runSetup(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("get home dir: %w", err)
 	}
 
-	// Create .clem directory
-	clemDir := filepath.Join(home, ".clem")
-	if err := os.MkdirAll(clemDir, 0755); err != nil {
-		return fmt.Errorf("create .clem dir: %w", err)
+	// Create .hex directory
+	hexDir := filepath.Join(home, ".hex")
+	if err := os.MkdirAll(hexDir, 0755); err != nil {
+		return fmt.Errorf("create .hex dir: %w", err)
 	}
 
 	// Write config
-	configPath := filepath.Join(clemDir, "config.yaml")
+	configPath := filepath.Join(hexDir, "config.yaml")
 	config := map[string]string{
 		"api_key": apiKey,
 	}
@@ -1240,19 +1240,19 @@ go mod tidy
 
 ```bash
 make build
-./clem setup-token test-key-123
+./hex setup-token test-key-123
 ```
 
 Expected output:
 ```
 ✓ API key configured successfully
-  Saved to: /Users/harper/.clem/config.yaml
+  Saved to: /Users/harper/.hex/config.yaml
 ```
 
 **Step 4: Verify config file**
 
 ```bash
-cat ~/.clem/config.yaml
+cat ~/.hex/config.yaml
 ```
 
 Expected:
@@ -1263,7 +1263,7 @@ api_key: test-key-123
 **Step 5: Test that config is loaded**
 
 ```bash
-./clem --print "test"
+./hex --print "test"
 ```
 
 Should use the configured API key
@@ -1271,7 +1271,7 @@ Should use the configured API key
 **Step 6: Commit**
 
 ```bash
-git add cmd/clem/setup.go
+git add cmd/hex/setup.go
 git commit -m "feat: add setup-token command"
 ```
 
@@ -1280,12 +1280,12 @@ git commit -m "feat: add setup-token command"
 ## Task 8: Doctor Command
 
 **Files:**
-- Create: `cmd/clem/doctor.go`
-- Modify: `cmd/clem/root.go`
+- Create: `cmd/hex/doctor.go`
+- Modify: `cmd/hex/root.go`
 
 **Step 1: Implement doctor command**
 
-Create `cmd/clem/doctor.go`:
+Create `cmd/hex/doctor.go`:
 ```go
 package main
 
@@ -1295,13 +1295,13 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/yourusername/clem/internal/core"
+	"github.com/yourusername/hex/internal/core"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check installation health",
-	Long:  "Verify that Clem is correctly installed and configured",
+	Long:  "Verify that Hex is correctly installed and configured",
 	RunE:  runDoctor,
 }
 
@@ -1310,7 +1310,7 @@ func init() {
 }
 
 func runDoctor(cmd *cobra.Command, args []string) error {
-	fmt.Println("Clem Health Check")
+	fmt.Println("Hex Health Check")
 	fmt.Println("=================\n")
 
 	checks := []check{
@@ -1345,14 +1345,14 @@ func checkHomeDirectory() bool {
 		return false
 	}
 
-	clemDir := filepath.Join(home, ".clem")
-	if _, err := os.Stat(clemDir); os.IsNotExist(err) {
-		printCheck(".clem directory", false, "not found")
-		fmt.Printf("  Run: mkdir -p %s\n", clemDir)
+	hexDir := filepath.Join(home, ".hex")
+	if _, err := os.Stat(hexDir); os.IsNotExist(err) {
+		printCheck(".hex directory", false, "not found")
+		fmt.Printf("  Run: mkdir -p %s\n", hexDir)
 		return false
 	}
 
-	printCheck(".clem directory", true, clemDir)
+	printCheck(".hex directory", true, hexDir)
 	return true
 }
 
@@ -1363,10 +1363,10 @@ func checkConfigFile() bool {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".clem", "config.yaml")
+	configPath := filepath.Join(home, ".hex", "config.yaml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		printCheck("Config file", false, "not found")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
+		fmt.Println("  Run: hex setup-token <your-api-key>")
 		return false
 	}
 
@@ -1383,8 +1383,8 @@ func checkAPIKey() bool {
 
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
-		fmt.Println("  Run: clem setup-token <your-api-key>")
-		fmt.Println("  Or set: export CLEM_API_KEY=<your-key>")
+		fmt.Println("  Run: hex setup-token <your-api-key>")
+		fmt.Println("  Or set: export HEX_API_KEY=<your-key>")
 		return false
 	}
 
@@ -1407,8 +1407,8 @@ func printCheck(name string, passed bool, detail string) {
 make build
 
 # Test without config
-rm ~/.clem/config.yaml 2>/dev/null || true
-./clem doctor
+rm ~/.hex/config.yaml 2>/dev/null || true
+./hex doctor
 ```
 
 Expected: Shows failures for missing config
@@ -1416,8 +1416,8 @@ Expected: Shows failures for missing config
 **Step 3: Setup config and test again**
 
 ```bash
-./clem setup-token test-key-123
-./clem doctor
+./hex setup-token test-key-123
+./hex doctor
 ```
 
 Expected: All checks pass
@@ -1425,7 +1425,7 @@ Expected: All checks pass
 **Step 4: Commit**
 
 ```bash
-git add cmd/clem/doctor.go
+git add cmd/hex/doctor.go
 git commit -m "feat: add doctor command for health checks"
 ```
 
@@ -1458,39 +1458,39 @@ import (
 
 func TestPhase1Integration(t *testing.T) {
 	// Build binary
-	buildCmd := exec.Command("go", "build", "-o", "clem-test", "./cmd/clem")
+	buildCmd := exec.Command("go", "build", "-o", "hex-test", "./cmd/hex")
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err)
-	defer os.Remove("../../clem-test")
+	defer os.Remove("../../hex-test")
 
-	clemBin := "../../clem-test"
+	hexBin := "../../hex-test"
 
 	t.Run("version flag", func(t *testing.T) {
-		cmd := exec.Command(clemBin, "--version")
+		cmd := exec.Command(hexBin, "--version")
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err)
 		assert.Contains(t, string(output), "0.1.0")
 	})
 
 	t.Run("help flag", func(t *testing.T) {
-		cmd := exec.Command(clemBin, "--help")
+		cmd := exec.Command(hexBin, "--help")
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err)
-		assert.Contains(t, string(output), "Clem")
+		assert.Contains(t, string(output), "Hex")
 		assert.Contains(t, string(output), "--print")
 	})
 
 	t.Run("setup-token command", func(t *testing.T) {
 		tmpHome := t.TempDir()
-		cmd := exec.Command(clemBin, "setup-token", "test-key-xyz")
+		cmd := exec.Command(hexBin, "setup-token", "test-key-xyz")
 		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := cmd.CombinedOutput()
 		require.NoError(t, err)
 		assert.Contains(t, string(output), "✓")
 
 		// Verify file was created
-		configPath := filepath.Join(tmpHome, ".clem", "config.yaml")
+		configPath := filepath.Join(tmpHome, ".hex", "config.yaml")
 		assert.FileExists(t, configPath)
 	})
 
@@ -1498,13 +1498,13 @@ func TestPhase1Integration(t *testing.T) {
 		tmpHome := t.TempDir()
 
 		// Setup first
-		setupCmd := exec.Command(clemBin, "setup-token", "test-key")
+		setupCmd := exec.Command(hexBin, "setup-token", "test-key")
 		setupCmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		err := setupCmd.Run()
 		require.NoError(t, err)
 
 		// Run doctor
-		doctorCmd := exec.Command(clemBin, "doctor")
+		doctorCmd := exec.Command(hexBin, "doctor")
 		doctorCmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := doctorCmd.CombinedOutput()
 		require.NoError(t, err)
@@ -1513,7 +1513,7 @@ func TestPhase1Integration(t *testing.T) {
 
 	t.Run("print mode error without key", func(t *testing.T) {
 		tmpHome := t.TempDir()
-		cmd := exec.Command(clemBin, "--print", "test")
+		cmd := exec.Command(hexBin, "--print", "test")
 		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		output, err := cmd.CombinedOutput()
 		assert.Error(t, err)
@@ -1526,23 +1526,23 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 		t.Skip("Skipping real API test")
 	}
 
-	apiKey := os.Getenv("CLEM_API_KEY")
+	apiKey := os.Getenv("HEX_API_KEY")
 	if apiKey == "" {
-		t.Skip("CLEM_API_KEY not set")
+		t.Skip("HEX_API_KEY not set")
 	}
 
 	// Build binary
-	buildCmd := exec.Command("go", "build", "-o", "clem-test", "./cmd/clem")
+	buildCmd := exec.Command("go", "build", "-o", "hex-test", "./cmd/hex")
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err)
-	defer os.Remove("../../clem-test")
+	defer os.Remove("../../hex-test")
 
-	clemBin := "../../clem-test"
+	hexBin := "../../hex-test"
 
 	// Test print mode with real API
-	cmd := exec.Command(clemBin, "--print", "Say hello in exactly 3 words")
-	cmd.Env = append(os.Environ(), "CLEM_API_KEY="+apiKey)
+	cmd := exec.Command(hexBin, "--print", "Say hello in exactly 3 words")
+	cmd.Env = append(os.Environ(), "HEX_API_KEY="+apiKey)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 
@@ -1559,7 +1559,7 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 go test -tags=integration ./tests/integration/... -v
 
 # With real API
-export CLEM_API_KEY=your-key-here
+export HEX_API_KEY=your-key-here
 go test -tags=integration ./tests/integration/... -v
 ```
 
@@ -1584,7 +1584,7 @@ git commit -m "test: add Phase 1 integration tests"
 
 Update `README.md`:
 ```markdown
-# Clem
+# Hex
 
 AI assistant CLI built in Go with full Claude Code feature parity.
 
@@ -1592,16 +1592,16 @@ AI assistant CLI built in Go with full Claude Code feature parity.
 
 ```bash
 # Install
-go install github.com/yourusername/clem/cmd/clem@latest
+go install github.com/yourusername/hex/cmd/hex@latest
 
 # Setup API key
-clem setup-token sk-ant-api03-...
+hex setup-token sk-ant-api03-...
 
 # Check health
-clem doctor
+hex doctor
 
 # Use it!
-clem --print "explain quantum computing in one sentence"
+hex --print "explain quantum computing in one sentence"
 ```
 
 ## Features
@@ -1627,18 +1627,18 @@ clem --print "explain quantum computing in one sentence"
 
 ```bash
 # Basic usage
-clem --print "your prompt"
+hex --print "your prompt"
 
 # JSON output
-clem --print --output-format json "your prompt"
+hex --print --output-format json "your prompt"
 
 # Different model
-clem --print --model claude-opus-4-5-20250929 "your prompt"
+hex --print --model claude-opus-4-5-20250929 "your prompt"
 ```
 
 ### Configuration
 
-Create `~/.clem/config.yaml`:
+Create `~/.hex/config.yaml`:
 ```yaml
 api_key: sk-ant-api03-...
 model: claude-sonnet-4-5-20250929
@@ -1646,8 +1646,8 @@ model: claude-sonnet-4-5-20250929
 
 Or use environment variables:
 ```bash
-export CLEM_API_KEY=sk-ant-api03-...
-export CLEM_MODEL=claude-sonnet-4-5-20250929
+export HEX_API_KEY=sk-ant-api03-...
+export HEX_MODEL=claude-sonnet-4-5-20250929
 ```
 
 Or use `.env` file in current directory.
@@ -1687,13 +1687,13 @@ go test ./...
 go test -tags=integration ./tests/integration/...
 
 # With real API
-CLEM_API_KEY=your-key go test ./...
+HEX_API_KEY=your-key go test ./...
 ```
 
 ## Architecture
 
 ```
-cmd/clem/           # CLI entry point
+cmd/hex/           # CLI entry point
 internal/           # Private implementation
   core/             # Core types, API client, config
   ui/               # Terminal UI (Phase 2)
@@ -1717,7 +1717,7 @@ Create `docs/PHASE1.md`:
 ```markdown
 # Phase 1: Foundation - Complete ✅
 
-Phase 1 establishes the foundation for Clem CLI.
+Phase 1 establishes the foundation for Hex CLI.
 
 ## What Was Built
 
@@ -1735,8 +1735,8 @@ Phase 1 establishes the foundation for Clem CLI.
 ### 3. Configuration System
 - Viper for multi-source config
 - Priority: flags > env > .env > config file > defaults
-- Support for ~/.clem/config.yaml
-- Environment variable support (CLEM_*)
+- Support for ~/.hex/config.yaml
+- Environment variable support (HEX_*)
 
 ### 4. API Client
 - HTTP client for Anthropic API
@@ -1751,9 +1751,9 @@ Phase 1 establishes the foundation for Clem CLI.
 - Proper error messages
 
 ### 6. Commands
-- `clem --print` - Send query, print response
-- `clem setup-token` - Configure API key
-- `clem doctor` - Health check
+- `hex --print` - Send query, print response
+- `hex setup-token` - Configure API key
+- `hex doctor` - Health check
 
 ## Success Metrics
 
@@ -1767,7 +1767,7 @@ Phase 1 establishes the foundation for Clem CLI.
 ## Files Created
 
 ```
-cmd/clem/
+cmd/hex/
   main.go           # Entry point
   root.go           # Root command
   print.go          # Print mode handler
@@ -1801,7 +1801,7 @@ Phase 2 will add:
 - SQLite storage
 - Conversation history (--continue, --resume)
 
-See `docs/plans/2025-11-25-clem-phase2-interactive.md`
+See `docs/plans/2025-11-25-hex-phase2-interactive.md`
 ```
 
 **Step 3: Final test of everything**
@@ -1815,10 +1815,10 @@ make build
 make test
 
 # Manual smoke test
-./clem --version
-./clem --help
-./clem setup-token test-key
-./clem doctor
+./hex --version
+./hex --help
+./hex setup-token test-key
+./hex doctor
 ```
 
 **Step 4: Commit**
@@ -1848,7 +1848,7 @@ Full feature list in docs/PHASE1.md"
 ## Phase 1 Complete! 🎉
 
 **Deliverables:**
-- ✅ Working `clem --print "prompt"` command
+- ✅ Working `hex --print "prompt"` command
 - ✅ Configuration from multiple sources
 - ✅ Setup and doctor commands
 - ✅ Comprehensive test suite
@@ -1857,11 +1857,11 @@ Full feature list in docs/PHASE1.md"
 
 **What Works:**
 ```bash
-clem --print "Say hello"                    # Basic usage
-clem --print --output-format json "test"    # JSON output
-clem --model claude-opus-4-5-20250929       # Model selection
-clem setup-token sk-ant-...                 # Configure API
-clem doctor                                 # Health check
+hex --print "Say hello"                    # Basic usage
+hex --print --output-format json "test"    # JSON output
+hex --model claude-opus-4-5-20250929       # Model selection
+hex setup-token sk-ant-...                 # Configure API
+hex doctor                                 # Health check
 ```
 
 **Next Steps:**

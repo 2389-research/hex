@@ -13,8 +13,8 @@ func TestFindDir(t *testing.T) {
 	// Create a temporary directory structure
 	tmpDir := t.TempDir()
 
-	// Create .clem/skills directory
-	skillsDir := filepath.Join(tmpDir, ".clem", "skills")
+	// Create .hex/skills directory
+	skillsDir := filepath.Join(tmpDir, ".hex", "skills")
 	if err := os.MkdirAll(skillsDir, 0o750); err != nil { //nolint:gosec // G301 - test directory
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestFindDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Should find .clem/skills by walking up
+	// Should find .hex/skills by walking up
 	found := FindDir("skills")
 
 	// Resolve symlinks for comparison (macOS /var -> /private/var)
@@ -60,7 +60,7 @@ func TestFindDir(t *testing.T) {
 }
 
 func TestFindDirNotFound(t *testing.T) {
-	// Create a temporary directory without .clem
+	// Create a temporary directory without .hex
 	tmpDir := t.TempDir()
 
 	// Save original cwd and restore after test

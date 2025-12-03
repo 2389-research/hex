@@ -1,4 +1,4 @@
-// ABOUTME: MCP tool loader that integrates MCP servers with Clem's tool registry
+// ABOUTME: MCP tool loader that integrates MCP servers with Hex's tool registry
 // ABOUTME: Loads .mcp.json config and initializes MCP clients with their tools
 
 package mcp
@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/tools"
 )
 
 // LoadMCPTools loads MCP server configurations from .mcp.json and registers their tools
@@ -65,7 +65,7 @@ func loadServerTools(serverConfig ServerConfig, registry *tools.Registry) error 
 	}
 
 	// Initialize the client
-	if err := client.Initialize(ctx, "clem", "0.1.0", "2024-11-05"); err != nil {
+	if err := client.Initialize(ctx, "hex", "0.1.0", "2024-11-05"); err != nil {
 		_ = client.Shutdown()
 		return fmt.Errorf("failed to initialize: %w", err)
 	}

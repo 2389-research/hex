@@ -37,7 +37,7 @@ This guide walks through setting up code signing and notarization for macOS bina
 
 1. Go to https://appstoreconnect.apple.com/access/api
 2. Click the **+** button under "Keys"
-3. Enter a name (e.g., "Clem GoReleaser")
+3. Enter a name (e.g., "Hex GoReleaser")
 4. Select **Developer** role
 5. Click **Generate**
 6. **Download the .p8 file immediately** (only available once!)
@@ -61,7 +61,7 @@ base64 -i AuthKey_ABC123DEFG.p8 | pbcopy
 ## Step 5: Add GitHub Secrets
 
 Go to your repository settings:
-https://github.com/2389-research/clem/settings/secrets/actions
+https://github.com/2389-research/hex/settings/secrets/actions
 
 Add these 5 secrets:
 
@@ -122,17 +122,17 @@ Download a binary from the release and verify:
 
 ```bash
 # Check code signature
-codesign -dv --verbose=4 clem
+codesign -dv --verbose=4 hex
 
 # Should show:
 # Authority=Developer ID Application: Your Name (TEAM_ID)
 # TeamIdentifier=YOUR_TEAM_ID
 
 # Check notarization
-spctl -a -vv -t install clem
+spctl -a -vv -t install hex
 
 # Should show:
-# clem: accepted
+# hex: accepted
 # source=Notarized Developer ID
 ```
 

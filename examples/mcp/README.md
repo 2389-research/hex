@@ -1,6 +1,6 @@
 # MCP Integration Examples
 
-Practical examples for using MCP (Model Context Protocol) servers with Clem.
+Practical examples for using MCP (Model Context Protocol) servers with Hex.
 
 ## Table of Contents
 
@@ -31,10 +31,10 @@ npm install -g @modelcontextprotocol/server-sqlite
 
 ```bash
 # Add server to Clem
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
 
 # Verify it's configured
-clem mcp list
+hex mcp list
 ```
 
 ### 3. Use in Conversation
@@ -58,11 +58,11 @@ clem
 # Install
 npm install -g @modelcontextprotocol/server-filesystem
 
-# Add to Clem (allow access to project directory)
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
+# Add to Hex (allow access to project directory)
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
 
 # Or allow multiple directories
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents ~/Projects
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents ~/Projects
 ```
 
 ### Available Tools
@@ -133,7 +133,7 @@ Claude: "I've created a 'logs' directory and moved 8 log files:
 npm install -g @modelcontextprotocol/server-fetch
 
 # Add to Clem
-clem mcp add fetch npx -y @modelcontextprotocol/server-fetch
+hex mcp add fetch npx -y @modelcontextprotocol/server-fetch
 ```
 
 ### Available Tools
@@ -214,8 +214,8 @@ Claude: "GitHub is operational. The status page shows:
 # Install
 npm install -g @modelcontextprotocol/server-sqlite
 
-# Add to Clem (specify database file)
-clem mcp add database npx -y @modelcontextprotocol/server-sqlite ~/myapp.db
+# Add to Hex (specify database file)
+hex mcp add database npx -y @modelcontextprotocol/server-sqlite ~/myapp.db
 ```
 
 ### Available Tools
@@ -377,7 +377,7 @@ main().catch(console.error);
 chmod +x weather-server.js
 
 # Add to Clem
-clem mcp add weather node weather-server.js
+hex mcp add weather node weather-server.js
 ```
 
 ### Usage
@@ -397,7 +397,7 @@ Claude: "The current weather in San Francisco is 68°F and Partly Cloudy."
 **Setup**: Filesystem server
 
 ```bash
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
 ```
 
 **Conversation**:
@@ -428,7 +428,7 @@ Claude: "I've analyzed 45 TypeScript files. Here are the error handling patterns
 **Setup**: Fetch server
 
 ```bash
-clem mcp add fetch npx -y @modelcontextprotocol/server-fetch
+hex mcp add fetch npx -y @modelcontextprotocol/server-fetch
 ```
 
 **Conversation**:
@@ -464,7 +464,7 @@ Recommendation: Update API documentation to clearly mark 'email' as required.
 **Setup**: SQLite server
 
 ```bash
-clem mcp add db npx -y @modelcontextprotocol/server-sqlite app.db
+hex mcp add db npx -y @modelcontextprotocol/server-sqlite app.db
 ```
 
 **Conversation**:
@@ -493,8 +493,8 @@ Migration to v5 completed successfully!
 **Setup**: Filesystem + Fetch servers
 
 ```bash
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
-clem mcp add fetch npx -y @modelcontextprotocol/server-fetch
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem $(pwd)
+hex mcp add fetch npx -y @modelcontextprotocol/server-fetch
 ```
 
 **Conversation**:
@@ -701,7 +701,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 MCP servers are separate processes. Monitor their resource usage:
 
 ```bash
-# While Clem is running
+# While Hex is running
 ps aux | grep npx
 ```
 
@@ -710,7 +710,7 @@ ps aux | grep npx
 For production setups, pin specific server versions:
 
 ```bash
-clem mcp add filesystem npx -y @modelcontextprotocol/server-filesystem@1.0.2 /data
+hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem@1.0.2 /data
 ```
 
 ### 7. Keep .mcp.json in Version Control
@@ -742,13 +742,13 @@ npm install -g @modelcontextprotocol/server-filesystem
 
 ```bash
 # List configured servers
-clem mcp list
+hex mcp list
 
 # Verify .mcp.json exists and is valid
 cat .mcp.json | jq
 
-# Check Clem output for errors
-clem 2>&1 | grep -i mcp
+# Check Hex output for errors
+hex 2>&1 | grep -i mcp
 ```
 
 ### Permission Errors

@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Task tool enables Clem to spawn sub-agent processes to handle complex, multi-step tasks autonomously. This is similar to Claude Code's task delegation system, where a parent agent can launch child agents to work on specific problems.
+The Task tool enables Hex to spawn sub-agent processes to handle complex, multi-step tasks autonomously. This is similar to Claude Code's task delegation system, where a parent agent can launch child agents to work on specific problems.
 
 ## How It Works
 
 The Task tool works by:
 
-1. **Spawning a New Process**: Launches a new `clem` process as a subprocess
+1. **Spawning a New Process**: Launches a new `hex` process as a subprocess
 2. **Passing Context**: The prompt and configuration are passed to the subprocess
 3. **Inheriting Environment**: API keys and environment variables are inherited from parent
 4. **Capturing Output**: The subprocess output is captured and returned as the tool result
@@ -16,13 +16,13 @@ The Task tool works by:
 ## Architecture
 
 ```
-Parent Clem Process
+Parent Hex Process
     |
     |- Tool: Task
          |
-         |- exec.Command("clem", "--print", prompt)
+         |- exec.Command("hex", "--print", prompt)
               |
-              |- Child Clem Process
+              |- Child Hex Process
                    |
                    |- Executes task
                    |- Returns output
@@ -97,19 +97,19 @@ Parent Clem Process
 The tool builds a command like:
 
 ```bash
-clem --print "Your prompt here"
+hex --print "Your prompt here"
 ```
 
 With optional flags:
 
 ```bash
-clem --model claude-sonnet-4 --print "Your prompt here"
+hex --model claude-sonnet-4 --print "Your prompt here"
 ```
 
 Or:
 
 ```bash
-clem --resume conv-123 --print "Your prompt here"
+hex --resume conv-123 --print "Your prompt here"
 ```
 
 ### Environment Inheritance
@@ -122,13 +122,13 @@ The subprocess inherits:
 
 ### Binary Discovery
 
-The tool tries to find the `clem` binary in this order:
+The tool tries to find the `hex` binary in this order:
 
-1. If `ClembinPath` is set, use that
-2. Look for `clem` in PATH using `exec.LookPath`
+1. If `HexbinPath` is set, use that
+2. Look for `hex` in PATH using `exec.LookPath`
 3. Try to build from source by:
    - Finding `go.mod` in current directory or up to 5 levels up
-   - Running `go build -o /tmp/clem-<timestamp> ./cmd/clem`
+   - Running `go build -o /tmp/hex-<timestamp> ./cmd/hex`
    - Using the temporary binary
 
 ### Timeout Handling
@@ -227,7 +227,7 @@ This implementation is simplified compared to Claude Code's full MCP (Model Cont
 
 Despite the limitations, this approach works well because:
 
-1. **Print Mode**: The `--print` flag makes Clem execute non-interactively and return a single response
+1. **Print Mode**: The `--print` flag makes Hex execute non-interactively and return a single response
 2. **Simple Tasks**: Many tasks don't need bidirectional communication
 3. **Environment Sharing**: API keys and config are inherited automatically
 4. **Clean Output**: Combined stdout/stderr provides complete output
@@ -329,4 +329,4 @@ if !result.Success {
 
 ## Conclusion
 
-The Task tool provides a practical sub-agent system for Clem that works within the constraints of subprocess execution. While not as sophisticated as full MCP support, it enables complex task delegation and autonomous operation for many common scenarios.
+The Task tool provides a practical sub-agent system for Hex that works within the constraints of subprocess execution. While not as sophisticated as full MCP support, it enables complex task delegation and autonomous operation for many common scenarios.

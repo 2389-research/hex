@@ -1,4 +1,4 @@
-// ABOUTME: Configuration loading for .clem/settings.json
+// ABOUTME: Configuration loading for .hex/settings.json
 // ABOUTME: Loads hook definitions from user and project locations with proper merging
 
 // Package hooks provides lifecycle hooks for Claude Code events.
@@ -48,7 +48,7 @@ type MatchConfig struct {
 	Level string `json:"level,omitempty"`
 }
 
-// Settings represents the .clem/settings.json structure
+// Settings represents the .hex/settings.json structure
 type Settings struct {
 	Hooks map[EventType]interface{} `json:"hooks,omitempty"`
 }
@@ -70,10 +70,10 @@ func NewConfig() *Config {
 func LoadConfig() (*Config, error) {
 	config := NewConfig()
 
-	// Load user config from ~/.clem/settings.json
+	// Load user config from ~/.hex/settings.json
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
-		userConfigPath := filepath.Join(homeDir, ".clem", "settings.json")
+		userConfigPath := filepath.Join(homeDir, ".hex", "settings.json")
 		if err := config.loadFromFile(userConfigPath); err != nil {
 			// Ignore file not found, but report other errors
 			if !os.IsNotExist(err) {
@@ -82,8 +82,8 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	// Load project config from .clem/settings.json
-	projectConfigPath := ".clem/settings.json"
+	// Load project config from .hex/settings.json
+	projectConfigPath := ".hex/settings.json"
 	if err := config.loadFromFile(projectConfigPath); err != nil {
 		// Ignore file not found, but report other errors
 		if !os.IsNotExist(err) {

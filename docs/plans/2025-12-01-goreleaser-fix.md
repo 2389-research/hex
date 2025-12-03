@@ -10,19 +10,19 @@
 
 ---
 
-## Task 1: Add version variables to cmd/clem/root.go
+## Task 1: Add version variables to cmd/hex/root.go
 
 **Files:**
-- Modify: `cmd/clem/root.go:22-24`
+- Modify: `cmd/hex/root.go:22-24`
 
 **Step 1: Read the current version variable location**
 
-Run: `grep -n "var (" cmd/clem/root.go | head -1`
+Run: `grep -n "var (" cmd/hex/root.go | head -1`
 Expected: Line 22 shows `var (`
 
 **Step 2: Add commit and date variables**
 
-Edit `cmd/clem/root.go` at lines 22-24:
+Edit `cmd/hex/root.go` at lines 22-24:
 
 ```go
 var (
@@ -37,13 +37,13 @@ var (
 
 **Step 3: Verify syntax**
 
-Run: `go build ./cmd/clem`
+Run: `go build ./cmd/hex`
 Expected: Successful build
 
 **Step 4: Commit**
 
 ```bash
-git add cmd/clem/root.go
+git add cmd/hex/root.go
 git commit -m "feat: add commit and date variables for build-time injection
 
 - Add commit and date vars alongside existing version var
@@ -68,9 +68,9 @@ Replace the entire `builds:` section:
 
 ```yaml
 builds:
-  - id: clem
-    binary: clem
-    main: ./cmd/clem
+  - id: hex
+    binary: hex
+    main: ./cmd/hex
     env:
       - CGO_ENABLED=1
     goos:
@@ -93,10 +93,10 @@ Replace the entire `archives:` section:
 
 ```yaml
 archives:
-  - id: clem
+  - id: hex
     formats: [tar.gz]
     name_template: >-
-      clem_
+      hex_
       {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
@@ -133,7 +133,7 @@ Replace:
 With:
 
 ```yaml
-# GoReleaser configuration for clem
+# GoReleaser configuration for hex
 # Builds for macOS (Intel + Apple Silicon) using native GitHub Actions runners
 # CGO is required for SQLite support via modernc.org/sqlite
 ```
@@ -142,9 +142,9 @@ With:
 
 ```bash
 git add .goreleaser.yml
-git commit -m "fix: update goreleaser config for clem project
+git commit -m "fix: update goreleaser config for hex project
 
-- Change project name from toki to clem
+- Change project name from toki to hex
 - Update binary name and main path
 - Remove Homebrew integration (not ready yet)
 - Update header comments
@@ -269,12 +269,12 @@ Expected: Builds successfully for current platform
 
 **Step 3: Check output binary**
 
-Run: `ls -lh dist/clem_darwin_*/clem`
+Run: `ls -lh dist/hex_darwin_*/hex`
 Expected: Binary file exists
 
 **Step 4: Test binary runs**
 
-Run: `dist/clem_darwin_*/clem --version`
+Run: `dist/hex_darwin_*/hex --version`
 Expected: Shows version output (dev build)
 
 **Step 5: Clean up**
@@ -310,7 +310,7 @@ brew install goreleaser
 goreleaser build --snapshot --clean --single-target
 
 # Verify binary works
-dist/clem_darwin_*/clem --version
+dist/hex_darwin_*/hex --version
 
 # Clean up
 rm -rf dist/
@@ -333,13 +333,13 @@ rm -rf dist/
    - Upload both binaries
 
 4. Monitor the workflow:
-   - https://github.com/harperreed/clem/actions
+   - https://github.com/harperreed/hex/actions
 
 ## Release Artifacts
 
 Each release includes:
-- `clem_vX.Y.Z_Darwin_x86_64.tar.gz` - Intel binary
-- `clem_vX.Y.Z_Darwin_arm64.tar.gz` - Apple Silicon binary
+- `hex_vX.Y.Z_Darwin_x86_64.tar.gz` - Intel binary
+- `hex_vX.Y.Z_Darwin_arm64.tar.gz` - Apple Silicon binary
 - `checksums.txt` - SHA256 checksums
 - Auto-generated changelog from commits
 
@@ -347,15 +347,15 @@ Each release includes:
 
 \`\`\`bash
 # Download the appropriate binary
-curl -L -O https://github.com/harperreed/clem/releases/download/v1.0.1/clem_v1.0.1_Darwin_arm64.tar.gz
+curl -L -O https://github.com/harperreed/hex/releases/download/v1.0.1/hex_v1.0.1_Darwin_arm64.tar.gz
 
 # Verify checksum
-curl -L -O https://github.com/harperreed/clem/releases/download/v1.0.1/checksums.txt
+curl -L -O https://github.com/harperreed/hex/releases/download/v1.0.1/checksums.txt
 shasum -a 256 -c checksums.txt --ignore-missing
 
 # Extract and test
-tar xzf clem_v1.0.1_Darwin_arm64.tar.gz
-./clem --version
+tar xzf hex_v1.0.1_Darwin_arm64.tar.gz
+./hex --version
 \`\`\`
 
 ## Troubleshooting
@@ -371,9 +371,9 @@ tar xzf clem_v1.0.1_Darwin_arm64.tar.gz
 - Verify database migrations are compatible
 
 **Binary won't run:**
-- Check macOS Gatekeeper: `xattr -d com.apple.quarantine clem`
-- Verify architecture: `file clem`
-- Check dynamic libraries: `otool -L clem`
+- Check macOS Gatekeeper: `xattr -d com.apple.quarantine hex`
+- Verify architecture: `file hex`
+- Check dynamic libraries: `otool -L hex`
 ```
 
 **Step 2: Commit documentation**
@@ -408,7 +408,7 @@ Expected: Shows 5 commits for this work
 
 Run: `git diff HEAD~5 --stat`
 Expected: Shows changes to:
-- cmd/clem/root.go
+- cmd/hex/root.go
 - .goreleaser.yml
 - .github/workflows/release.yml
 - docs/release-testing.md

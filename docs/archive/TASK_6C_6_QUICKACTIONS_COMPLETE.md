@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully implemented the quick actions menu system for Clem's interactive UI. Users can now press `:` to open a Vim-style command palette with fuzzy search capabilities.
+Successfully implemented the quick actions menu system for Hex's interactive UI. Users can now press `:` to open a Vim-style command palette with fuzzy search capabilities.
 
 ## What Was Implemented
 

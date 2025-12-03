@@ -1,8 +1,8 @@
-# MCP (Model Context Protocol) Implementation for Clem
+# MCP (Model Context Protocol) Implementation for Hex
 
 ## Overview
 
-This document describes the Phase 5B MCP foundation implementation for Clem. The implementation provides a solid foundation for integrating external MCP servers that provide additional tools and capabilities.
+This document describes the Phase 5B MCP foundation implementation for Hex. The implementation provides a solid foundation for integrating external MCP servers that provide additional tools and capabilities.
 
 ## Architecture
 
@@ -22,20 +22,20 @@ This document describes the Phase 5B MCP foundation implementation for Clem. The
    - Thread-safe operations with mutex protection
 
 3. **Tool Adapter** (`internal/mcp/tool_adapter.go`)
-   - Wraps MCP tools to implement Clem's `Tool` interface
-   - Converts between MCP and Clem result formats
+   - Wraps MCP tools to implement Hex's `Tool` interface
+   - Converts between MCP and Hex result formats
    - Enables seamless integration with existing tool system
    - Includes `MCPToolManager` for managing multiple tools from a server
 
-4. **CLI Commands** (`cmd/clem/mcp.go`)
-   - `clem mcp add <name> <command> [args...]` - Add MCP server
-   - `clem mcp list` - List configured servers
-   - `clem mcp remove <name>` - Remove server
+4. **CLI Commands** (`cmd/hex/mcp.go`)
+   - `hex mcp add <name> <command> [args...]` - Add MCP server
+   - `hex mcp list` - List configured servers
+   - `hex mcp remove <name>` - Remove server
 
 ### Data Flow
 
 ```
-User Command (clem mcp add)
+User Command (hex mcp add)
   ↓
 Registry (add/persist to .mcp.json)
   ↓
@@ -47,7 +47,7 @@ List tools from server
   ↓
 Tool Adapter wraps each tool
   ↓
-Tools available in Clem tool registry
+Tools available in Hex tool registry
   ↓
 Claude can use MCP tools alongside built-in tools
 ```
@@ -176,7 +176,7 @@ Response includes content blocks (text, image, resource, etc.).
 - Name/description forwarding
 - Execute delegation to MCP client
 - Result format conversion
-- Integration with Clem tool registry
+- Integration with Hex tool registry
 - Error handling
 
 **Note:** Some tests depend on client tests passing.
@@ -187,19 +187,19 @@ Response includes content blocks (text, image, resource, etc.).
 
 ```bash
 # Add a weather server
-clem mcp add weather node weather-server.js
+hex mcp add weather node weather-server.js
 
 # Add a database server with args
-clem mcp add database python -m database_server -- --port 8080
+hex mcp add database python -m database_server -- --port 8080
 
 # Add a file system server
-clem mcp add files /usr/local/bin/file-server
+hex mcp add files /usr/local/bin/file-server
 ```
 
 ### Listing Servers
 
 ```bash
-clem mcp list
+hex mcp list
 ```
 
 Output:
@@ -221,12 +221,12 @@ Config: /path/to/project/.mcp.json
 ### Removing a Server
 
 ```bash
-clem mcp remove weather
+hex mcp remove weather
 ```
 
-## Integration with Clem
+## Integration with Hex
 
-MCP tools integrate seamlessly with Clem's existing tool system:
+MCP tools integrate seamlessly with Hex's existing tool system:
 
 ```go
 // Load MCP servers from registry
@@ -235,19 +235,19 @@ registry.Load()
 
 // Connect to an MCP server
 client, err := mcp.NewClient("node", "weather-server.js")
-client.Initialize(ctx, "clem", "1.0.0", "2024-11-05")
+client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
 
 // Create tool manager
 toolManager := mcp.NewMCPToolManager(client)
 toolManager.RefreshTools(ctx)
 
-// Get MCP tools as Clem tools
+// Get MCP tools as Hex tools
 mcpTools := toolManager.GetTools()
 
-// Register with Clem's tool registry
-clemRegistry := tools.NewRegistry()
+// Register with Hex's tool registry
+hexRegistry := tools.NewRegistry()
 for _, tool := range mcpTools {
-    clemRegistry.Register(tool)
+    hexRegistry.Register(tool)
 }
 
 // Now MCP tools are available alongside built-in tools
@@ -293,14 +293,14 @@ for _, tool := range mcpTools {
 - `internal/mcp/client.go` - MCP client with JSON-RPC over stdio
 - `internal/mcp/registry.go` - Server configuration management
 - `internal/mcp/tool_adapter.go` - Tool adapter and manager
-- `cmd/clem/mcp.go` - CLI commands
+- `cmd/hex/mcp.go` - CLI commands
 
 ### Tests
 - `internal/mcp/client_test.go` - Client functionality tests
 - `internal/mcp/registry_test.go` - Registry tests (all passing)
 - `internal/mcp/tool_adapter_test.go` - Adapter tests
 - `internal/mcp/mock_server_test.go` - Mock MCP server for testing
-- `cmd/clem/mcp_test.go` - CLI command tests
+- `cmd/hex/mcp_test.go` - CLI command tests
 
 ### Documentation
 - `MCP_IMPLEMENTATION.md` - This file
@@ -320,6 +320,6 @@ The core functionality (registry, CLI) is solid. The client and adapter tests ne
 
 ## Conclusion
 
-This Phase 5B implementation provides a robust foundation for MCP integration in Clem. The registry system is production-ready, CLI commands work for basic operations, and the architecture supports easy extension to HTTP transport and additional MCP features in future phases.
+This Phase 5B implementation provides a robust foundation for MCP integration in Hex. The registry system is production-ready, CLI commands work for basic operations, and the architecture supports easy extension to HTTP transport and additional MCP features in future phases.
 
-The tool adapter successfully bridges MCP tools into Clem's existing tool system, enabling seamless use of external tools alongside built-in capabilities.
+The tool adapter successfully bridges MCP tools into Hex's existing tool system, enabling seamless use of external tools alongside built-in capabilities.

@@ -1,6 +1,6 @@
 # Phase 1: Foundation - Complete
 
-Phase 1 establishes the foundation for Clem CLI.
+Phase 1 establishes the foundation for Hex CLI.
 
 ## What Was Built
 
@@ -19,8 +19,8 @@ Phase 1 establishes the foundation for Clem CLI.
 ### 3. Configuration System
 - Viper for multi-source config
 - Priority: flags > env > .env > config file > defaults
-- Support for ~/.clem/config.yaml
-- Environment variable support (CLEM_*)
+- Support for ~/.hex/config.yaml
+- Environment variable support (HEX_*)
 
 ### 4. API Client
 - HTTP client for Anthropic API
@@ -35,9 +35,9 @@ Phase 1 establishes the foundation for Clem CLI.
 - Proper error messages
 
 ### 6. Commands
-- `clem --print` - Send query, print response
-- `clem setup-token` - Configure API key
-- `clem doctor` - Health check
+- `hex --print` - Send query, print response
+- `hex setup-token` - Configure API key
+- `hex doctor` - Health check
 
 ## Success Metrics
 
@@ -51,7 +51,7 @@ Phase 1 establishes the foundation for Clem CLI.
 ## Files Created
 
 ```
-cmd/clem/
+cmd/hex/
   main.go           # Entry point
   root.go           # Root command
   root_test.go      # Command tests
@@ -105,19 +105,19 @@ go.sum
 
 ```bash
 # Basic usage
-clem --print "Say hello"
+hex --print "Say hello"
 
 # JSON output
-clem --print --output-format json "test"
+hex --print --output-format json "test"
 
 # Model selection
-clem --model claude-opus-4-5-20250929 --print "test"
+hex --model claude-opus-4-5-20250929 --print "test"
 
 # Configuration
-clem setup-token sk-ant-...
+hex setup-token sk-ant-...
 
 # Health check
-clem doctor
+hex doctor
 ```
 
 ## Next: Phase 2
@@ -128,4 +128,4 @@ Phase 2 will add:
 - SQLite storage
 - Conversation history (--continue, --resume)
 
-See `docs/plans/2025-11-25-clem-phase2-interactive.md` (when created)
+See `docs/plans/2025-11-25-hex-phase2-interactive.md` (when created)

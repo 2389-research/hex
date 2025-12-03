@@ -1,8 +1,8 @@
-# Clem v1.0.0 - Distribution Infrastructure Complete
+# Hex v1.0.0 - Distribution Infrastructure Complete
 
 ## Executive Summary
 
-All distribution infrastructure for Clem v1.0.0 is now complete and production-ready. The project can be released at any time with full confidence in the release automation, installation methods, and package distribution.
+All distribution infrastructure for Hex v1.0.0 is now complete and production-ready. The project can be released at any time with full confidence in the release automation, installation methods, and package distribution.
 
 **Status**: ✅ Ready for v1.0.0 Release
 
@@ -16,12 +16,12 @@ All distribution infrastructure for Clem v1.0.0 is now complete and production-r
 
 **Unix/Linux**:
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/clem/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
 ```
 
 **Windows**:
 ```powershell
-iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
 ```
 
 **Features**:
@@ -43,7 +43,7 @@ iwr -useb https://raw.githubusercontent.com/harper/clem/main/install.ps1 | iex
 ### 2. Homebrew (macOS/Linux) ✅
 
 ```bash
-brew install harper/tap/clem
+brew install harper/tap/hex
 ```
 
 **Setup**:
@@ -56,14 +56,14 @@ brew install harper/tap/clem
 - Repository: `harper/homebrew-tap`
 - Formula folder: `Formula/`
 - Auto-update on tag push
-- Test included: `system "#{bin}/clem", "--version"`
+- Test included: `system "#{bin}/hex", "--version"`
 
 ---
 
 ### 3. Go Install ✅
 
 ```bash
-go install github.com/harper/clem/cmd/clem@v1.0.0
+go install github.com/harper/hex/cmd/hex@v1.0.0
 ```
 
 **Advantages**:
@@ -77,15 +77,15 @@ go install github.com/harper/clem/cmd/clem@v1.0.0
 ### 4. Docker Images ✅
 
 ```bash
-docker pull ghcr.io/harper/clem:1.0.0
-docker pull ghcr.io/harper/clem:latest
+docker pull ghcr.io/harper/hex:1.0.0
+docker pull ghcr.io/harper/hex:latest
 ```
 
 **Image Tags**:
-- `ghcr.io/harper/clem:1.0.0` (specific version)
-- `ghcr.io/harper/clem:v1` (major version)
-- `ghcr.io/harper/clem:v1.0` (minor version)
-- `ghcr.io/harper/clem:latest` (latest stable)
+- `ghcr.io/harper/hex:1.0.0` (specific version)
+- `ghcr.io/harper/hex:v1` (major version)
+- `ghcr.io/harper/hex:v1.0` (minor version)
+- `ghcr.io/harper/hex:latest` (latest stable)
 
 **Configuration**:
 - Multi-stage Dockerfile
@@ -99,27 +99,27 @@ docker pull ghcr.io/harper/clem:latest
 
 **Debian/Ubuntu (.deb)**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.deb
-sudo dpkg -i clem_1.0.0_Linux_x86_64.deb
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 ```
 
 **RedHat/Fedora (.rpm)**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.rpm
-sudo rpm -i clem_1.0.0_Linux_x86_64.rpm
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 ```
 
 **Alpine Linux (.apk)**:
 ```bash
-wget https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.apk
-sudo apk add --allow-untrusted clem_1.0.0_Linux_x86_64.apk
+wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
 **Configuration**:
 - GoReleaser nfpms configuration
 - Formats: deb, rpm, apk
-- Includes LICENSE and README in `/usr/share/doc/clem/`
-- Installs binary to `/usr/bin/clem`
+- Includes LICENSE and README in `/usr/share/doc/hex/`
+- Installs binary to `/usr/bin/hex`
 
 ---
 
@@ -128,19 +128,19 @@ sudo apk add --allow-untrusted clem_1.0.0_Linux_x86_64.apk
 **Download from GitHub Releases**:
 ```bash
 # macOS (Intel)
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Darwin_x86_64.tar.gz
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
 
 # macOS (Apple Silicon)
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Darwin_arm64.tar.gz
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_arm64.tar.gz
 
 # Linux (Intel)
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_x86_64.tar.gz
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.tar.gz
 
 # Linux (ARM)
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Linux_arm64.tar.gz
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_arm64.tar.gz
 
 # Windows
-curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Windows_x86_64.zip
+curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Windows_x86_64.zip
 ```
 
 **Platforms Supported**:
@@ -153,7 +153,7 @@ curl -LO https://github.com/harper/clem/releases/download/v1.0.0/clem_1.0.0_Wind
 - Windows: `.zip`
 
 **Contents**:
-- `clem` binary (or `clem.exe` on Windows)
+- `hex` binary (or `hex.exe` on Windows)
 - `LICENSE`
 - `README.md`
 - `CHANGELOG.md`
@@ -294,7 +294,7 @@ Build: Successful
 
 ### Files Modified
 
-1. `cmd/clem/root.go` - version = "1.0.0"
+1. `cmd/hex/root.go` - version = "1.0.0"
 2. `README.md` - Latest Version: v1.0.0
 3. `CHANGELOG.md` - v1.0.0 entry added
 4. `install.sh` - Existing (verified)
@@ -307,7 +307,7 @@ Build: Successful
 ```bash
 M  README.md
 M  CHANGELOG.md
-M  cmd/clem/root.go
+M  cmd/hex/root.go
 A  install.ps1
 A  scripts/verify-packages.sh
 A  RELEASE_CHECKLIST.md
@@ -332,7 +332,7 @@ A  DISTRIBUTION_READY.md
    ```bash
    git tag -a v1.0.0 -m "Release v1.0.0
 
-   Clem v1.0.0 - First Production Release
+   Hex v1.0.0 - First Production Release
 
    Features:
    - Interactive TUI with Bubbletea
@@ -352,7 +352,7 @@ A  DISTRIBUTION_READY.md
    ```
 
 3. **Monitor GitHub Actions**
-   - Visit: https://github.com/harper/clem/actions
+   - Visit: https://github.com/harper/hex/actions
    - Watch release workflow
    - Verify all jobs pass
    - Check artifacts
@@ -366,7 +366,7 @@ A  DISTRIBUTION_READY.md
    - Test each installation method manually
 
 5. **Edit GitHub Release**
-   - Navigate to: https://github.com/harper/clem/releases/tag/v1.0.0
+   - Navigate to: https://github.com/harper/hex/releases/tag/v1.0.0
    - Use template from `RELEASE_CHECKLIST.md`
    - Add highlights and installation instructions
    - Mark as "Latest release"
@@ -400,7 +400,7 @@ A  DISTRIBUTION_READY.md
    - Homebrew tap updated
 
 4. **GitHub Release Created**
-   - Title: "Clem v1.0.0"
+   - Title: "Hex v1.0.0"
    - Body: Generated from CHANGELOG
    - Artifacts: All binaries and packages
    - Status: Draft (you edit and publish)
@@ -511,19 +511,19 @@ Release is successful when:
 
 ## Contact & Support
 
-**Repository**: https://github.com/harper/clem
+**Repository**: https://github.com/harper/hex
 
-**Issues**: https://github.com/harper/clem/issues
+**Issues**: https://github.com/harper/hex/issues
 
-**Discussions**: https://github.com/harper/clem/discussions
+**Discussions**: https://github.com/harper/hex/discussions
 
-**Documentation**: https://github.com/harper/clem/tree/main/docs
+**Documentation**: https://github.com/harper/hex/tree/main/docs
 
 ---
 
 ## Conclusion
 
-Clem v1.0.0 distribution infrastructure is complete and production-ready. All installation methods are documented, tested, and automated. The release can proceed with high confidence.
+Hex v1.0.0 distribution infrastructure is complete and production-ready. All installation methods are documented, tested, and automated. The release can proceed with high confidence.
 
 **Recommendation**: Proceed with v1.0.0 release following the steps in `RELEASE_CHECKLIST.md`.
 

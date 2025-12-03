@@ -1,7 +1,7 @@
 # WebSearch Tool Implementation Summary
 
 ## Overview
-Implemented the WebSearch tool for Clem following Test-Driven Development (TDD) methodology.
+Implemented the WebSearch tool for Hex following Test-Driven Development (TDD) methodology.
 
 ## Test Results
 
@@ -48,7 +48,7 @@ Implemented the WebSearch tool for Clem following Test-Driven Development (TDD) 
 === RUN   TestWebSearchTool_Execute_DomainFilteringCaseInsensitive
 --- PASS: TestWebSearchTool_Execute_DomainFilteringCaseInsensitive (0.00s)
 PASS
-ok  	github.com/harper/clem/internal/tools	0.219s
+ok  	github.com/harper/hex/internal/tools	0.219s
 ```
 
 ## Implementation Details
@@ -158,7 +158,7 @@ The tool:
 
 ## Next Steps
 
-To integrate into Clem:
+To integrate into Hex:
 1. Register the tool in the tool registry
 2. Add to tool documentation
 3. Add approval UI handling for web search

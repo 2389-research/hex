@@ -1,4 +1,4 @@
-// Package forms provides beautiful huh-based forms for the clem TUI.
+// Package forms provides beautiful huh-based forms for the hex TUI.
 // ABOUTME: Integration layer between old QuickActionsRegistry and new huh forms
 // ABOUTME: Converts registry actions to form actions and runs the form
 package forms

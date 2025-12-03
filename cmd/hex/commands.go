@@ -3,9 +3,9 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/harper/clem/internal/commands"
-	"github.com/harper/clem/internal/logging"
-	"github.com/harper/clem/internal/tools"
+	"github.com/harper/hex/internal/commands"
+	"github.com/harper/hex/internal/logging"
+	"github.com/harper/hex/internal/tools"
 )
 
 // initializeCommands loads commands from all sources and returns registry and tool
@@ -48,11 +48,11 @@ func initializeCommands(pluginCommandPaths []string) (*commands.Registry, tools.
 func findBuiltinCommandsDir() string {
 	// Try several possible locations
 	possibleDirs := []string{
-		"./commands",                     // Development: same directory as binary
-		"../commands",                    // Development: parent directory
-		"/usr/local/share/clem/commands", // Linux install
-		"/opt/clem/commands",             // Alternative Linux
-		filepath.Join(getUserHome(), ".clem", "builtin-commands"), // Fallback
+		"./commands",                    // Development: same directory as binary
+		"../commands",                   // Development: parent directory
+		"/usr/local/share/hex/commands", // Linux install
+		"/opt/hex/commands",             // Alternative Linux
+		filepath.Join(getUserHome(), ".hex", "builtin-commands"), // Fallback
 	}
 
 	for _, dir := range possibleDirs {

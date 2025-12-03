@@ -1,4 +1,4 @@
-// Package tools provides the tool system for extending Clem with external capabilities.
+// Package tools provides the tool system for extending Hex with external capabilities.
 // ABOUTME: AskUserQuestion tool for interactive decision-making
 // ABOUTME: Presents multiple-choice questions to users and collects answers
 package tools

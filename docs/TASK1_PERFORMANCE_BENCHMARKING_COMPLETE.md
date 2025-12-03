@@ -8,7 +8,7 @@
 
 ## Summary
 
-Successfully established comprehensive performance baselines for Clem across all critical subsystems. Created 4 benchmark suites with 25+ individual benchmarks covering startup, API operations, database operations, and tool execution.
+Successfully established comprehensive performance baselines for Hex across all critical subsystems. Created 4 benchmark suites with 25+ individual benchmarks covering startup, API operations, database operations, and tool execution.
 
 ---
 
@@ -21,7 +21,7 @@ Successfully established comprehensive performance baselines for Clem across all
 | `internal/core/bench_test.go` | 6 benchmarks | API client, HTTP, JSON marshaling |
 | `internal/storage/bench_test.go` | 8 benchmarks | CRUD operations, transactions, concurrency |
 | `internal/tools/bench_test.go` | 11 benchmarks | Tool execution, registry, approval system |
-| `cmd/clem/bench_test.go` | 2 benchmarks | Startup time measurement |
+| `cmd/hex/bench_test.go` | 2 benchmarks | Startup time measurement |
 
 **Total:** 27 benchmarks covering all major subsystems
 
@@ -191,7 +191,7 @@ Now that we have solid baselines, we can proceed to:
 
 ```
 clean/
-├── cmd/clem/
+├── cmd/hex/
 │   └── bench_test.go              (New: 55 lines)
 ├── internal/
 │   ├── core/

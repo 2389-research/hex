@@ -2,7 +2,7 @@
 
 ## What is it?
 
-The Quick Actions Menu is a Vim-style command palette that appears when you press `:` in Clem's interactive mode. It provides fuzzy-searchable shortcuts to tools and common actions.
+The Quick Actions Menu is a Vim-style command palette that appears when you press `:` in Hex's interactive mode. It provides fuzzy-searchable shortcuts to tools and common actions.
 
 ## How to Use
 
@@ -106,7 +106,7 @@ When the Quick Actions modal is open:
 
 ## Integration with Tools
 
-The quick actions system is designed to integrate with Clem's tool execution system:
+The quick actions system is designed to integrate with Hex's tool execution system:
 
 1. User types `:read config.yaml`
 2. Quick Actions parses command: `read` + `config.yaml`

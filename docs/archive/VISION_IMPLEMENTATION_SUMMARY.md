@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented multimodal (vision) support for Clem CLI, enabling image analysis alongside text prompts. This implementation follows TDD principles and maintains full backward compatibility.
+Successfully implemented multimodal (vision) support for Hex CLI, enabling image analysis alongside text prompts. This implementation follows TDD principles and maintains full backward compatibility.
 
 ## Files Created/Modified
 
@@ -49,11 +49,11 @@ Successfully implemented multimodal (vision) support for Clem CLI, enabling imag
    - Added `TestCreateMessageWithImage()` for vision API calls
    - Added `TestMessageRequestSerialization()` for request formatting
 
-4. **cmd/clem/root.go**
+4. **cmd/hex/root.go**
    - Added `imagePaths []string` global flag variable
    - Registered `--image` flag (repeatable StringSlice)
 
-5. **cmd/clem/print.go**
+5. **cmd/hex/print.go**
    - Updated `runPrintMode()` to handle image paths
    - Loads images and creates multimodal ContentBlock arrays
    - Maintains text-only path for backward compatibility
@@ -115,31 +115,31 @@ All existing core tests: PASS
 ### Basic Image Analysis
 
 ```bash
-clem --print --image screenshot.png "What's in this image?"
+hex --print --image screenshot.png "What's in this image?"
 ```
 
 ### Multiple Images
 
 ```bash
-clem --print --image diagram1.png --image diagram2.png "Compare these diagrams"
+hex --print --image diagram1.png --image diagram2.png "Compare these diagrams"
 ```
 
 ### Screenshot Error Analysis
 
 ```bash
-clem --print --image error-screen.png "What's the error and how do I fix it?"
+hex --print --image error-screen.png "What's the error and how do I fix it?"
 ```
 
 ### OCR / Text Extraction
 
 ```bash
-clem --print --image document.jpg "Extract all text from this image"
+hex --print --image document.jpg "Extract all text from this image"
 ```
 
 ### Image-Only Request
 
 ```bash
-clem --print --image photo.jpg
+hex --print --image photo.jpg
 ```
 
 ## API Token Cost Implications
