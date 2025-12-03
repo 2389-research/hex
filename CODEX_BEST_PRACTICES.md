@@ -1,7 +1,7 @@
 # Codex Best Practices → hex Integration Plan
 
 **Based on**: CODEX_AUDIT.md analysis
-**Goal**: Adopt high-impact patterns from Codex to improve clem
+**Goal**: Adopt high-impact patterns from Codex to improve hex
 
 ---
 
@@ -85,7 +85,7 @@ codex resume {id}         # Specific session
 - Last activity time
 - First user message (as title)
 
-### Current State in clem
+### Current State in hex
 - Sessions stored in `~/.hex/hex.db`
 - No built-in resume functionality
 - User must manually track conversation IDs
@@ -160,7 +160,7 @@ func GetMostRecentConversation(db *sql.DB) (*Conversation, error)
 
 **Key insight**: Override files **replace** instead of merge
 
-### Current State in clem
+### Current State in hex
 **File**: `internal/ui/model.go:204-210`
 
 ```go

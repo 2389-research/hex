@@ -312,7 +312,7 @@ args = ["server.js"]
 
 ---
 
-## Differences from clem
+## Differences from hex
 
 | Feature | Codex | hex |
 |---------|-------|------|
@@ -374,7 +374,7 @@ cargo test -p codex-tui  # Run TUI tests
 
 ---
 
-## Key Takeaways for clem
+## Key Takeaways for hex
 
 ### What to Consider Adopting
 1. **Auto-compaction**: Actually use the compaction infrastructure
