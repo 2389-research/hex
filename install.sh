@@ -1,5 +1,5 @@
 #!/bin/bash
-# ABOUTME: Installation script for Clem CLI
+# ABOUTME: Installation script for Hex CLI
 # ABOUTME: Downloads latest release and installs to system or user bin directory
 
 set -e
@@ -12,8 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="harper/clem"
-BINARY_NAME="clem"
+REPO="harper/hex"
+BINARY_NAME="hex"
 INSTALL_DIR=""
 USE_SUDO=false
 
@@ -231,7 +231,7 @@ check_path() {
 # Main installation flow
 main() {
     echo ""
-    info "Clem CLI Installer"
+    info "Hex CLI Installer"
     echo ""
 
     # Detect system
@@ -275,7 +275,7 @@ main() {
     echo "  2. Verify configuration:"
     echo "     ${BINARY_NAME} doctor"
     echo ""
-    echo "  3. Start using Clem:"
+    echo "  3. Start using Hex:"
     echo "     ${BINARY_NAME}"
     echo ""
     info "Documentation: https://github.com/${REPO}/blob/main/docs/USER_GUIDE.md"

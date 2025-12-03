@@ -1,4 +1,4 @@
-# ABOUTME: Windows PowerShell installation script for Clem CLI
+# ABOUTME: Windows PowerShell installation script for Hex CLI
 # ABOUTME: Downloads and installs the latest release for Windows
 
 #Requires -RunAsAdministrator
@@ -6,9 +6,9 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$Repo = "harper/clem"
-$BinaryName = "clem.exe"
-$InstallDir = "$env:ProgramFiles\Clem"
+$Repo = "harper/hex"
+$BinaryName = "hex.exe"
+$InstallDir = "$env:ProgramFiles\Hex"
 
 # Colors for output
 function Write-Info {
@@ -71,16 +71,16 @@ function Download-Binary {
     # Remove 'v' prefix from version
     $versionNumber = $Version -replace '^v', ''
 
-    Write-Info "Downloading Clem $versionNumber for Windows $Arch..."
+    Write-Info "Downloading Hex $versionNumber for Windows $Arch..."
 
     # Construct download URL
-    $archiveName = "clem_${versionNumber}_Windows_${Arch}.zip"
+    $archiveName = "hex_${versionNumber}_Windows_${Arch}.zip"
     $downloadUrl = "https://github.com/$Repo/releases/download/$Version/$archiveName"
 
     Write-Info "URL: $downloadUrl"
 
     # Create temporary directory
-    $tempDir = Join-Path $env:TEMP "clem-install-$(Get-Random)"
+    $tempDir = Join-Path $env:TEMP "hex-install-$(Get-Random)"
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     try {
@@ -175,7 +175,7 @@ function Test-Installation {
 
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""
-            Write-Host "✅ Clem installed successfully!" -ForegroundColor Green
+            Write-Host "✅ Hex installed successfully!" -ForegroundColor Green
             Write-Host "   Version: $versionOutput" -ForegroundColor Gray
             Write-Host ""
             Write-Host "Next steps:" -ForegroundColor Cyan
@@ -184,10 +184,10 @@ function Test-Installation {
             Write-Host "  2. Set up your API key:" -ForegroundColor Gray
             Write-Host "     `$env:ANTHROPIC_API_KEY = 'your-key-here'" -ForegroundColor Yellow
             Write-Host ""
-            Write-Host "  3. Start using Clem:" -ForegroundColor Gray
-            Write-Host "     clem              # Interactive mode" -ForegroundColor Yellow
-            Write-Host "     clem --help       # See all options" -ForegroundColor Yellow
-            Write-Host "     clem --print `"Hello!`"  # One-shot query" -ForegroundColor Yellow
+            Write-Host "  3. Start using Hex:" -ForegroundColor Gray
+            Write-Host "     hex              # Interactive mode" -ForegroundColor Yellow
+            Write-Host "     hex --help       # See all options" -ForegroundColor Yellow
+            Write-Host "     hex --print `"Hello!`"  # One-shot query" -ForegroundColor Yellow
             Write-Host ""
         }
         else {
@@ -196,7 +196,7 @@ function Test-Installation {
     }
     catch {
         Write-ErrorMsg "Installation verification failed: $_"
-        Write-Warning "Try running 'clem --version' after restarting your terminal"
+        Write-Warning "Try running 'hex --version' after restarting your terminal"
         exit 1
     }
 }
@@ -204,7 +204,7 @@ function Test-Installation {
 # Main installation flow
 function Main {
     Write-Host ""
-    Write-Host "Clem Installation Script for Windows" -ForegroundColor Cyan
+    Write-Host "Hex Installation Script for Windows" -ForegroundColor Cyan
     Write-Host "=====================================" -ForegroundColor Cyan
     Write-Host ""
 
