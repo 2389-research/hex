@@ -5,6 +5,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/pagent/internal/ui/layout"
 	"github.com/harper/pagent/internal/ui/themes"
 )
 
@@ -31,11 +32,6 @@ func (h *HelpOverlay) View() string {
 
 	descStyle := lipgloss.NewStyle().
 		Foreground(h.theme.Foreground())
-
-	borderStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(h.theme.BorderFocus()).
-		Padding(1, 2)
 
 	title := titleStyle.Render("Keyboard Shortcuts")
 
@@ -65,5 +61,8 @@ func (h *HelpOverlay) View() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return borderStyle.Render(content)
+	return layout.NewBorderStyle(h.theme).
+		WithFocus(true).
+		WithSpacing(layout.NewPadding(1, 2, 1, 2)).
+		Render(content)
 }

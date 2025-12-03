@@ -5,6 +5,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/pagent/internal/ui/layout"
 	"github.com/harper/pagent/internal/ui/themes"
 )
 
@@ -40,12 +41,6 @@ func (e *ErrorDisplay) View() string {
 		Foreground(e.theme.Subtle()).
 		Italic(true)
 
-	borderStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(e.theme.Error()).
-		Padding(1, 2).
-		MarginTop(1)
-
 	var lines []string
 	lines = append(lines, titleStyle.Render("❌ "+e.title))
 
@@ -60,5 +55,13 @@ func (e *ErrorDisplay) View() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return borderStyle.Render(content)
+
+	// Create spacing with padding and margin
+	spacing := layout.NewPadding(1, 2, 1, 2)
+	spacing.MarginTop = 1
+
+	return layout.NewBorderStyle(e.theme).
+		WithColor(e.theme.Error()).
+		WithSpacing(spacing).
+		Render(content)
 }
