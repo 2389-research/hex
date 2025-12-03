@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/harper/clem/internal/agentsmd"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/logging"
@@ -170,6 +171,20 @@ func runInteractive(prompt string) error {
 		}
 		systemPrompt = template.SystemPrompt
 		logging.InfoWith("Loaded template", "name", template.Name)
+	}
+
+	// Load AGENTS.md context from directory hierarchy (repo root → CWD)
+	agentsContext, err := agentsmd.LoadContext()
+	if err != nil {
+		logging.WarnWith("Failed to load AGENTS.md context", "error", err.Error())
+	} else if agentsContext != "" {
+		// Combine AGENTS.md context with template system prompt
+		if systemPrompt != "" {
+			systemPrompt = agentsContext + "\n\n" + systemPrompt
+		} else {
+			systemPrompt = agentsContext
+		}
+		logging.InfoWith("Loaded AGENTS.md context", "length", len(agentsContext))
 	}
 
 	// Use default model if not specified, or from template

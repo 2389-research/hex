@@ -8,6 +8,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/harper/clem/internal/agentsmd"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/logging"
@@ -19,6 +20,18 @@ import (
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model
 // This is used by both normal interactive mode and the resume command
 func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt string) error {
+	// Load AGENTS.md context from directory hierarchy (repo root → CWD)
+	agentsContext, err := agentsmd.LoadContext()
+	if err != nil {
+		logging.WarnWith("Failed to load AGENTS.md context", "error", err.Error())
+	} else if agentsContext != "" {
+		// Set AGENTS.md context as system prompt
+		// Note: Resumed conversations may already have a system prompt from their original session
+		// AGENTS.md context is loaded fresh each time to reflect current directory context
+		uiModel.SetSystemPrompt(agentsContext)
+		logging.InfoWith("Loaded AGENTS.md context", "length", len(agentsContext))
+	}
+
 	// Load config to get API key
 	cfg, err := core.LoadConfig()
 	if err != nil {
