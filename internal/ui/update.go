@@ -100,6 +100,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Task 12: Handle tool approval keys
 		// Phase 2: Use Huh forms for approval
+		// Forward KeyMsg to approval form if active
 		if m.toolApprovalMode && m.huhApproval != nil {
 			// Let Huh form handle all input
 			approvalModel, cmd := m.huhApproval.Update(msg)
@@ -412,6 +413,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.approvalPrompt != nil {
 			m.approvalPrompt.SetWidth(msg.Width)
+		}
+		// Phase 2: Forward WindowSizeMsg to Huh approval form for tmux compatibility
+		if m.toolApprovalMode && m.huhApproval != nil {
+			approvalModel, cmd := m.huhApproval.Update(msg)
+			if approval, ok := approvalModel.(*components.HuhApproval); ok {
+				m.huhApproval = approval
+			}
+			cmds = append(cmds, cmd)
 		}
 	}
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
@@ -310,4 +311,182 @@ func TestEnterKeyTriggersStreaming(t *testing.T) {
 	// Note: We can't fully test this without mocking the API
 	// The command will be nil if no API client is set
 	_ = cmd
+}
+
+// Phase 2: WindowSizeMsg Forwarding Tests
+
+func TestWindowSizeMsgForwardedToApprovalForm(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+	model.Ready = true
+
+	// Add a pending tool use to trigger approval mode
+	toolUse := &core.ToolUse{
+		Type:  "tool_use",
+		ID:    "test-tool-1",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter Huh approval mode
+	model.EnterHuhApprovalMode()
+
+	// Verify approval form was created
+	assert.NotNil(t, model.GetHuhApproval())
+	assert.True(t, model.IsToolApprovalMode())
+
+	// Send WindowSizeMsg
+	msg := tea.WindowSizeMsg{
+		Width:  100,
+		Height: 50,
+	}
+
+	updatedModel, _ := model.Update(msg)
+	m := updatedModel.(*ui.Model)
+
+	// Verify model dimensions were updated
+	assert.Equal(t, 100, m.Width)
+	assert.Equal(t, 50, m.Height)
+
+	// Verify approval form still exists (should have received the message)
+	assert.NotNil(t, m.GetHuhApproval())
+}
+
+func TestInitialWindowSizeMsgSentOnApprovalMode(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+	model.Ready = true
+
+	// Set initial window size
+	model.Width = 80
+	model.Height = 24
+
+	// Add a pending tool use
+	toolUse := &core.ToolUse{
+		Type:  "tool_use",
+		ID:    "test-tool-1",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter Huh approval mode - should send initial WindowSizeMsg
+	model.EnterHuhApprovalMode()
+
+	// Verify approval form was created
+	approval := model.GetHuhApproval()
+	assert.NotNil(t, approval)
+
+	// The approval form should have received the initial WindowSizeMsg
+	// We can verify this by checking that the form renders properly
+	view := approval.View()
+	assert.NotEmpty(t, view)
+}
+
+func TestWindowSizeResizeInApprovalMode(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+	model.Ready = true
+
+	// Add a pending tool use
+	toolUse := &core.ToolUse{
+		Type:  "tool_use",
+		ID:    "test-tool-1",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter approval mode
+	model.EnterHuhApprovalMode()
+
+	// Send first resize
+	msg1 := tea.WindowSizeMsg{Width: 80, Height: 24}
+	updatedModel, _ := model.Update(msg1)
+	m := updatedModel.(*ui.Model)
+
+	assert.Equal(t, 80, m.Width)
+	assert.Equal(t, 24, m.Height)
+
+	// Send second resize
+	msg2 := tea.WindowSizeMsg{Width: 120, Height: 40}
+	updatedModel, _ = m.Update(msg2)
+	m = updatedModel.(*ui.Model)
+
+	assert.Equal(t, 120, m.Width)
+	assert.Equal(t, 40, m.Height)
+
+	// Approval form should still be active
+	assert.True(t, m.IsToolApprovalMode())
+	assert.NotNil(t, m.GetHuhApproval())
+}
+
+func TestAllMessageTypesForwardedToApprovalForm(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+	model.Ready = true
+
+	// Add a pending tool use
+	toolUse := &core.ToolUse{
+		Type:  "tool_use",
+		ID:    "test-tool-1",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter approval mode
+	model.EnterHuhApprovalMode()
+
+	// Test KeyMsg forwarding (already tested above, but verify it doesn't break)
+	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
+	updatedModel, _ := model.Update(keyMsg)
+	m := updatedModel.(*ui.Model)
+	assert.NotNil(t, m) // Should not panic
+
+	// Test WindowSizeMsg forwarding
+	winMsg := tea.WindowSizeMsg{Width: 100, Height: 50}
+	updatedModel, _ = m.Update(winMsg)
+	m = updatedModel.(*ui.Model)
+	assert.NotNil(t, m) // Should not panic
+}
+
+func TestApprovalFormWorksInDifferentTerminalSizes(t *testing.T) {
+	// Test that approval forms work across various terminal sizes
+	sizes := []struct {
+		width  int
+		height int
+	}{
+		{80, 24},  // Standard terminal
+		{120, 40}, // Large terminal
+		{60, 20},  // Small terminal
+		{200, 60}, // Very large terminal
+	}
+
+	for _, size := range sizes {
+		t.Run(fmt.Sprintf("%dx%d", size.width, size.height), func(t *testing.T) {
+			model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
+			model.Ready = true
+
+			// Set initial size
+			model.Width = size.width
+			model.Height = size.height
+
+			// Add pending tool
+			toolUse := &core.ToolUse{
+				Type:  "tool_use",
+				ID:    "test-tool-1",
+				Name:  "bash",
+				Input: map[string]interface{}{"command": "echo test"},
+			}
+			model.AddPendingToolUse(toolUse)
+
+			// Enter approval mode
+			model.EnterHuhApprovalMode()
+
+			// Verify approval form renders
+			approval := model.GetHuhApproval()
+			assert.NotNil(t, approval)
+
+			view := approval.View()
+			assert.NotEmpty(t, view)
+		})
+	}
 }

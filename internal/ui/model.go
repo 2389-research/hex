@@ -1056,6 +1056,13 @@ func (m *Model) EnterHuhApprovalMode() {
 	toolName := m.pendingToolUses[0].Name
 	m.huhApproval = components.NewHuhApproval(m.theme, toolName, description)
 	// Note: Init() cmd will be handled by the bubbletea Update loop when huhApproval.Update() is called
+
+	// Phase 2: Send initial WindowSizeMsg for tmux compatibility
+	// This ensures the form renders correctly on first display
+	m.huhApproval.Update(tea.WindowSizeMsg{
+		Width:  m.Width,
+		Height: m.Height,
+	})
 }
 
 // ExitHuhApprovalMode closes the approval dialog
