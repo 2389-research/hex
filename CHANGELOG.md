@@ -98,7 +98,7 @@ Database schema migrations run automatically. No manual intervention required.
 
 ### Known Issues
 
-None critical. See [GitHub Issues](https://github.com/harper/hex/issues) for minor enhancements.
+None critical. See [GitHub Issues](https://github.com/2389-research/hex/issues) for minor enhancements.
 
 ### Thanks
 
@@ -134,7 +134,7 @@ Three parallel development efforts transforming Hex from a feature-complete prot
 - 6 installation methods:
   - Install script: `curl -sSL https://... | bash`
   - Homebrew: `brew install harper/tap/hex`
-  - Go install: `go install github.com/harper/hex/cmd/hex@latest`
+  - Go install: `go install github.com/2389-research/hex/cmd/hex@latest`
   - Pre-built binaries from GitHub Releases
   - Build from source: `make install`
   - Docker: `docker pull ghcr.io/harper/hex:latest`
@@ -596,5 +596,5 @@ Three new tools complete Hex's core tool suite:
 - Real components over mocks in tests
 - Integration tests with real filesystem interactions
 
-[0.2.0]: https://github.com/harper/hex/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/harper/hex/releases/tag/v0.1.0
+[0.2.0]: https://github.com/2389-research/hex/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/2389-research/hex/releases/tag/v0.1.0

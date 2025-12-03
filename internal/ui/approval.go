@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // RiskLevel represents the risk level of a tool operation

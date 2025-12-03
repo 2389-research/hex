@@ -3,9 +3,9 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/harper/hex/internal/commands"
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/commands"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // initializeCommands loads commands from all sources and returns registry and tool

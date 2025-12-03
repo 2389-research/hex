@@ -4,10 +4,10 @@
 package components
 
 import (
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // Table wraps bubbles.Table with Dracula styling and additional functionality

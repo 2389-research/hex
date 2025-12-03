@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/hex/internal/storage"
+	"github.com/2389-research/hex/internal/storage"
 )
 
 // defaultDBPath returns the default database path (~/.hex/hex.db)

@@ -226,7 +226,7 @@ brew install harper/tap/hex
 
 ### 3. Go Install
 ```bash
-go install github.com/harper/hex/cmd/hex@latest
+go install github.com/2389-research/hex/cmd/hex@latest
 ```
 - Requires Go 1.24+
 - Always latest version
@@ -237,7 +237,7 @@ go install github.com/harper/hex/cmd/hex@latest
 
 ### 5. Build from Source
 ```bash
-git clone https://github.com/harper/hex.git
+git clone https://github.com/2389-research/hex.git
 cd hex
 make install
 ```

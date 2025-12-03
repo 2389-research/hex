@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // ExampleReadTool demonstrates basic file reading

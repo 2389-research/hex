@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/2389-research/hex/internal/agentsmd"
+	ctxmgr "github.com/2389-research/hex/internal/context"
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/mcp"
+	"github.com/2389-research/hex/internal/tools"
+	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/agentsmd"
-	ctxmgr "github.com/harper/hex/internal/context"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/mcp"
-	"github.com/harper/hex/internal/tools"
-	"github.com/harper/hex/internal/ui"
 )
 
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model

@@ -6,9 +6,9 @@ package integration
 import (
 	"testing"
 
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 

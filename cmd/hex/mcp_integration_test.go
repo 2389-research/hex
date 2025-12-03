@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/hex/internal/mcp"
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/mcp"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 func TestMCPToolsRegistration_NoConfig(t *testing.T) {

@@ -114,7 +114,7 @@ All tests passing:
 === RUN   TestDisplayHistoryEntry
 --- PASS: TestDisplayHistoryEntry (0.00s)
 PASS
-ok      github.com/harper/hex/cmd/hex 0.312s
+ok      github.com/2389-research/hex/cmd/hex 0.312s
 ```
 
 ## Manual Testing

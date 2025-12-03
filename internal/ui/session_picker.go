@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/2389-research/hex/internal/storage"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/hex/internal/storage"
 )
 
 // SessionPicker is a TUI for selecting a conversation to resume

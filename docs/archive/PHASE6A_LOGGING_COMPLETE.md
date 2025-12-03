@@ -76,7 +76,7 @@ All logging tests passing:
 === RUN   TestConcurrentLogging
 --- PASS: TestConcurrentLogging (0.00s)
 PASS
-ok      github.com/harper/hex/internal/logging 0.223s
+ok      github.com/2389-research/hex/internal/logging 0.223s
 ```
 
 ### Integration Tests
@@ -93,7 +93,7 @@ All CLI logging tests passing:
 === RUN   TestLoggingInvalidPath
 --- PASS: TestLoggingInvalidPath (0.00s)
 PASS
-ok      github.com/harper/hex/cmd/hex 0.292s
+ok      github.com/2389-research/hex/cmd/hex 0.292s
 ```
 
 ## Example Log Output

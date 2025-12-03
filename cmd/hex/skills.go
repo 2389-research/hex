@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/skills"
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/skills"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // initializeSkills loads skills from all sources and returns registry and tool

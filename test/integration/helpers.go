@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/storage"
 	"github.com/google/uuid"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 

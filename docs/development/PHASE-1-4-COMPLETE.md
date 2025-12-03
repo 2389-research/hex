@@ -298,16 +298,16 @@ go test ./... -short
 # ✅ All packages passing
 
 go test ./internal/hooks/... -cover
-# ok  	github.com/harper/hex/internal/hooks	0.650s	coverage: 100%
+# ok  	github.com/2389-research/hex/internal/hooks	0.650s	coverage: 100%
 
 go test ./internal/skills/... -cover
-# ok  	github.com/harper/hex/internal/skills	1.132s	coverage: 90.4%
+# ok  	github.com/2389-research/hex/internal/skills	1.132s	coverage: 90.4%
 
 go test ./internal/permissions/... -cover
-# ok  	github.com/harper/hex/internal/permissions	0.226s	coverage: 88+ tests
+# ok  	github.com/2389-research/hex/internal/permissions	0.226s	coverage: 88+ tests
 
 go test ./internal/commands/... -cover
-# ok  	github.com/harper/hex/internal/commands	(cached)	coverage: 93.0%
+# ok  	github.com/2389-research/hex/internal/commands	(cached)	coverage: 93.0%
 ```
 
 ### Integration Test

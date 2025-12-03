@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 func TestMCPTool_Name(t *testing.T) {

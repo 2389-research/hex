@@ -63,7 +63,7 @@ brew install harper/tap/hex
 ### 3. Go Install ✅
 
 ```bash
-go install github.com/harper/hex/cmd/hex@v1.0.0
+go install github.com/2389-research/hex/cmd/hex@v1.0.0
 ```
 
 **Advantages**:
@@ -99,19 +99,19 @@ docker pull ghcr.io/harper/hex:latest
 
 **Debian/Ubuntu (.deb)**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
 sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 ```
 
 **RedHat/Fedora (.rpm)**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
 sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 ```
 
 **Alpine Linux (.apk)**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
 sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
@@ -128,19 +128,19 @@ sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 **Download from GitHub Releases**:
 ```bash
 # macOS (Intel)
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
 
 # macOS (Apple Silicon)
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_arm64.tar.gz
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_arm64.tar.gz
 
 # Linux (Intel)
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.tar.gz
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.tar.gz
 
 # Linux (ARM)
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_arm64.tar.gz
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_arm64.tar.gz
 
 # Windows
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Windows_x86_64.zip
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Windows_x86_64.zip
 ```
 
 **Platforms Supported**:
@@ -352,7 +352,7 @@ A  DISTRIBUTION_READY.md
    ```
 
 3. **Monitor GitHub Actions**
-   - Visit: https://github.com/harper/hex/actions
+   - Visit: https://github.com/2389-research/hex/actions
    - Watch release workflow
    - Verify all jobs pass
    - Check artifacts
@@ -366,7 +366,7 @@ A  DISTRIBUTION_READY.md
    - Test each installation method manually
 
 5. **Edit GitHub Release**
-   - Navigate to: https://github.com/harper/hex/releases/tag/v1.0.0
+   - Navigate to: https://github.com/2389-research/hex/releases/tag/v1.0.0
    - Use template from `RELEASE_CHECKLIST.md`
    - Add highlights and installation instructions
    - Mark as "Latest release"
@@ -511,13 +511,13 @@ Release is successful when:
 
 ## Contact & Support
 
-**Repository**: https://github.com/harper/hex
+**Repository**: https://github.com/2389-research/hex
 
-**Issues**: https://github.com/harper/hex/issues
+**Issues**: https://github.com/2389-research/hex/issues
 
-**Discussions**: https://github.com/harper/hex/discussions
+**Discussions**: https://github.com/2389-research/hex/discussions
 
-**Documentation**: https://github.com/harper/hex/tree/main/docs
+**Documentation**: https://github.com/2389-research/hex/tree/main/docs
 
 ---
 

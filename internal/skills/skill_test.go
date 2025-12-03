@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/hex/internal/frontmatter"
+	"github.com/2389-research/hex/internal/frontmatter"
 )
 
 func TestParseBytes_ValidSkill(t *testing.T) {

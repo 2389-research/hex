@@ -48,7 +48,7 @@ Implemented the WebSearch tool for Hex following Test-Driven Development (TDD) m
 === RUN   TestWebSearchTool_Execute_DomainFilteringCaseInsensitive
 --- PASS: TestWebSearchTool_Execute_DomainFilteringCaseInsensitive (0.00s)
 PASS
-ok  	github.com/harper/hex/internal/tools	0.219s
+ok  	github.com/2389-research/hex/internal/tools	0.219s
 ```
 
 ## Implementation Details

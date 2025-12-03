@@ -3,8 +3,8 @@ package dashboard
 import (
 	"testing"
 
+	"github.com/2389-research/hex/internal/ui/theme"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 func TestNewPluginDashboard(t *testing.T) {

@@ -112,9 +112,9 @@ builds:
     goarch: [amd64, arm64]
     ldflags:
       - -s -w  # Strip debug info
-      - -X github.com/harper/hex/internal/core.Version={{.Version}}
-      - -X github.com/harper/hex/internal/core.Commit={{.ShortCommit}}
-      - -X github.com/harper/hex/internal/core.Date={{.Date}}
+      - -X github.com/2389-research/hex/internal/core.Version={{.Version}}
+      - -X github.com/2389-research/hex/internal/core.Commit={{.ShortCommit}}
+      - -X github.com/2389-research/hex/internal/core.Date={{.Date}}
 ```
 
 ### Archives
@@ -234,7 +234,7 @@ brew install harper/tap/hex
 
 **Usage**:
 ```bash
-go install github.com/harper/hex/cmd/hex@latest
+go install github.com/2389-research/hex/cmd/hex@latest
 ```
 
 ### 4. Pre-built Binaries
@@ -264,19 +264,19 @@ docker run -it --rm ghcr.io/harper/hex:latest --help
 
 **Debian/Ubuntu**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.deb
 sudo dpkg -i hex_1.2.3_Linux_x86_64.deb
 ```
 
 **Fedora/RHEL**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.rpm
+wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.rpm
 sudo rpm -i hex_1.2.3_Linux_x86_64.rpm
 ```
 
 **Alpine**:
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.apk
+wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.apk
 apk add --allow-untrusted hex_1.2.3_Linux_x86_64.apk
 ```
 
@@ -356,8 +356,8 @@ View workflow runs:
 Add to README.md:
 
 ```markdown
-[![Test](https://github.com/harper/hex/workflows/Test/badge.svg)](https://github.com/harper/hex/actions/workflows/test.yml)
-[![Release](https://github.com/harper/hex/workflows/Release/badge.svg)](https://github.com/harper/hex/actions/workflows/release.yml)
+[![Test](https://github.com/2389-research/hex/workflows/Test/badge.svg)](https://github.com/2389-research/hex/actions/workflows/test.yml)
+[![Release](https://github.com/2389-research/hex/workflows/Release/badge.svg)](https://github.com/2389-research/hex/actions/workflows/release.yml)
 ```
 
 ### Coverage Reports

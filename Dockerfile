@@ -24,7 +24,7 @@ ARG VERSION=dev
 ARG COMMIT=unknown
 ARG DATE
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X github.com/harper/hex/internal/core.Version=${VERSION} -X github.com/harper/hex/internal/core.Commit=${COMMIT} -X github.com/harper/hex/internal/core.Date=${DATE}" \
+    -ldflags="-s -w -X github.com/2389-research/hex/internal/core.Version=${VERSION} -X github.com/2389-research/hex/internal/core.Commit=${COMMIT} -X github.com/2389-research/hex/internal/core.Date=${DATE}" \
     -o hex \
     ./cmd/hex
 

@@ -8,7 +8,7 @@
 
 This is a comprehensive codebase rename touching 8 categories:
 
-1. **Go module path**: `github.com/harper/hex` → `github.com/harper/hex`
+1. **Go module path**: `github.com/2389-research/hex` → `github.com/2389-research/hex`
 2. **All import paths**: Every file importing internal packages
 3. **Binary/command name**: `cmd/hex/` → `cmd/hex/`
 4. **Config directory references**: `~/.hex/` → `~/.hex/`
@@ -33,10 +33,10 @@ This is a comprehensive codebase rename touching 8 categories:
 3. Create backup branch: `git branch backup-before-hex-rename`
 
 ### Phase 2: Core Go Changes
-4. Update `go.mod`: Change module path to `github.com/harper/hex`
+4. Update `go.mod`: Change module path to `github.com/2389-research/hex`
 5. Update all Go imports:
-   - `github.com/harper/hex/internal/` → `github.com/harper/hex/internal/`
-   - `github.com/harper/hex/pkg/` → `github.com/harper/hex/pkg/`
+   - `github.com/2389-research/hex/internal/` → `github.com/2389-research/hex/internal/`
+   - `github.com/2389-research/hex/pkg/` → `github.com/2389-research/hex/pkg/`
 6. Rename directory: `cmd/hex/` → `cmd/hex/`
 7. Run `go mod tidy`
 8. **Checkpoint**: `go build ./...` and `go test ./...`

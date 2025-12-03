@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/ui/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // ApprovalDecision represents the user's decision on tool approval

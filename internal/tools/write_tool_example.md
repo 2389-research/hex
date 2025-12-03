@@ -10,7 +10,7 @@ package main
 import (
     "context"
     "fmt"
-    "github.com/harper/hex/internal/tools"
+    "github.com/2389-research/hex/internal/tools"
 )
 
 func main() {
@@ -68,7 +68,7 @@ package main
 import (
     "context"
     "fmt"
-    "github.com/harper/hex/internal/tools"
+    "github.com/2389-research/hex/internal/tools"
 )
 
 func main() {

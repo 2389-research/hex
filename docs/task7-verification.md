@@ -21,10 +21,10 @@ go test ./... -short -timeout 30s
 
 Expected: All tests pass
 ```
-ok  	github.com/harper/hex/cmd/hex
-ok  	github.com/harper/hex/internal/core
-ok  	github.com/harper/hex/internal/storage
-ok  	github.com/harper/hex/internal/ui
+ok  	github.com/2389-research/hex/cmd/hex
+ok  	github.com/2389-research/hex/internal/core
+ok  	github.com/2389-research/hex/internal/storage
+ok  	github.com/2389-research/hex/internal/ui
 ```
 
 ### 3. Verify Build
@@ -150,10 +150,10 @@ sqlite3 ~/.hex/hex.db "SELECT id, title FROM conversations ORDER BY updated_at D
 ### All Tests Status
 ```bash
 $ go test ./... -short
-ok  	github.com/harper/hex/cmd/hex	0.245s
-ok  	github.com/harper/hex/internal/core	(cached)
-ok  	github.com/harper/hex/internal/storage	(cached)
-ok  	github.com/harper/hex/internal/ui	(cached)
+ok  	github.com/2389-research/hex/cmd/hex	0.245s
+ok  	github.com/2389-research/hex/internal/core	(cached)
+ok  	github.com/2389-research/hex/internal/storage	(cached)
+ok  	github.com/2389-research/hex/internal/ui	(cached)
 ```
 
 ## Files Added/Modified

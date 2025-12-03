@@ -206,7 +206,7 @@ docker images ghcr.io/harper/hex --format "{{.Tag}}\t{{.ID}}"
 ## 4. Binary Releases Verification
 
 **Location:** GitHub Releases page
-**URL:** https://github.com/harper/hex/releases/tag/v1.0.0
+**URL:** https://github.com/2389-research/hex/releases/tag/v1.0.0
 
 ### Platforms to Test
 - macOS Intel (darwin_amd64)
@@ -221,7 +221,7 @@ docker images ghcr.io/harper/hex --format "{{.Tag}}\t{{.ID}}"
 VERSION=1.0.0
 PLATFORM=darwin_arm64
 curl -L -o hex.tar.gz \
-  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
+  "https://github.com/2389-research/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
 
 # Extract
 tar -xzf hex.tar.gz
@@ -236,7 +236,7 @@ chmod +x hex
 ```bash
 # Download checksums
 curl -L -o checksums.txt \
-  "https://github.com/harper/hex/releases/download/v${VERSION}/checksums.txt"
+  "https://github.com/2389-research/hex/releases/download/v${VERSION}/checksums.txt"
 
 # Verify binary
 shasum -a 256 -c checksums.txt --ignore-missing
@@ -247,7 +247,7 @@ shasum -a 256 -c checksums.txt --ignore-missing
 ```bash
 # Download signature
 curl -L -o hex.tar.gz.sig \
-  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz.sig"
+  "https://github.com/2389-research/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz.sig"
 
 # Verify signature
 gpg --verify hex.tar.gz.sig hex.tar.gz
@@ -279,7 +279,7 @@ gpg --verify hex.tar.gz.sig hex.tar.gz
 
 ```bash
 # Download package
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_amd64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_amd64.deb
 
 # Inspect package
 dpkg -I hex_1.0.0_amd64.deb
@@ -304,7 +304,7 @@ sudo dpkg -r hex
 
 ```bash
 # Download package
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.rpm
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.rpm
 
 # Inspect package
 rpm -qip hex_1.0.0_x86_64.rpm
@@ -329,7 +329,7 @@ sudo rpm -e hex
 
 ```bash
 # Download package
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.apk
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_x86_64.apk
 
 # Install
 sudo apk add --allow-untrusted hex_1.0.0_x86_64.apk
@@ -363,7 +363,7 @@ sudo apk del hex
 rm -f $(go env GOPATH)/bin/hex
 
 # Install from source
-go install github.com/harper/hex/cmd/hex@v1.0.0
+go install github.com/2389-research/hex/cmd/hex@v1.0.0
 
 # Verify installation
 hex --version
@@ -376,7 +376,7 @@ which hex
 ### Build from Source
 ```bash
 # Clone repository
-git clone https://github.com/harper/hex.git
+git clone https://github.com/2389-research/hex.git
 cd hex
 git checkout v1.0.0
 
@@ -484,13 +484,13 @@ echo "Testing binary release..."
 VERSION=1.0.0
 PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m)
 curl -L -o /tmp/hex.tar.gz \
-  "https://github.com/harper/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
+  "https://github.com/2389-research/hex/releases/download/v${VERSION}/hex_${VERSION}_${PLATFORM}.tar.gz"
 tar -xzf /tmp/hex.tar.gz -C /tmp
 /tmp/hex --version | grep "1.0.0" || exit 1
 
 # 5. Go Install
 echo "Testing go install..."
-go install github.com/harper/hex/cmd/hex@v1.0.0
+go install github.com/2389-research/hex/cmd/hex@v1.0.0
 $(go env GOPATH)/bin/hex --version || exit 1
 
 echo "✅ All packages verified successfully!"

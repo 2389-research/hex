@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/hex/internal/core"
+	"github.com/2389-research/hex/internal/core"
 )
 
 // Summarizer creates summaries of conversation history

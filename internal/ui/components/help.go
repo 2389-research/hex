@@ -6,11 +6,11 @@ package components
 import (
 	"strings"
 
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // HelpMode represents different help contexts

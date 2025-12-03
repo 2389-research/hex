@@ -6,7 +6,7 @@ package tools_test
 import (
 	"testing"
 
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/tools"
 	"github.com/stretchr/testify/assert"
 )
 

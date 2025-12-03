@@ -1,8 +1,8 @@
 # Hex - Claude CLI
 
-[![Test](https://github.com/harper/hex/workflows/Test/badge.svg)](https://github.com/harper/hex/actions/workflows/test.yml)
-[![Release](https://github.com/harper/hex/workflows/Release/badge.svg)](https://github.com/harper/hex/actions/workflows/release.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/harper/hex)](https://goreportcard.com/report/github.com/harper/hex)
+[![Test](https://github.com/2389-research/hex/workflows/Test/badge.svg)](https://github.com/2389-research/hex/actions/workflows/test.yml)
+[![Release](https://github.com/2389-research/hex/workflows/Release/badge.svg)](https://github.com/2389-research/hex/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/2389-research/hex)](https://goreportcard.com/report/github.com/2389-research/hex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
@@ -67,7 +67,7 @@ hex --version
 
 ```bash
 # Requires Go 1.24+
-go install github.com/harper/hex/cmd/hex@latest
+go install github.com/2389-research/hex/cmd/hex@latest
 
 # Verify installation
 hex --version
@@ -75,7 +75,7 @@ hex --version
 
 **Method 4: Download Binary**
 
-Download pre-built binaries from the [releases page](https://github.com/harper/hex/releases):
+Download pre-built binaries from the [releases page](https://github.com/2389-research/hex/releases):
 
 1. Download the archive for your platform
 2. Extract the binary
@@ -86,7 +86,7 @@ Download pre-built binaries from the [releases page](https://github.com/harper/h
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/hex.git
+git clone https://github.com/2389-research/hex.git
 cd hex
 
 # Build and install
@@ -334,7 +334,7 @@ pre-commit --version
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/hex.git
+git clone https://github.com/2389-research/hex.git
 cd hex
 
 # Install pre-commit hooks
@@ -537,7 +537,7 @@ MIT
 
 ---
 
-**Download**: `go install github.com/harper/hex/cmd/hex@latest`
+**Download**: `go install github.com/2389-research/hex/cmd/hex@latest`
 
 **Documentation**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 

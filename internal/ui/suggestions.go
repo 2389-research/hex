@@ -4,7 +4,7 @@
 package ui
 
 import (
-	"github.com/harper/hex/internal/suggestions"
+	"github.com/2389-research/hex/internal/suggestions"
 )
 
 // Suggestion is an alias for suggestions.Suggestion

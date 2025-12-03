@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/harper/hex/internal/export"
+	"github.com/2389-research/hex/internal/export"
 	"github.com/spf13/cobra"
 )
 

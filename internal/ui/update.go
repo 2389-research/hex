@@ -10,12 +10,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/2389-research/hex/internal/approval"
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/tools"
+	"github.com/2389-research/hex/internal/ui/forms"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/approval"
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/storage"
-	"github.com/harper/hex/internal/tools"
-	"github.com/harper/hex/internal/ui/forms"
 )
 
 // Update handles Bubbletea messages

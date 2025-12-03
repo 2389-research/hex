@@ -6,9 +6,9 @@ package components
 import (
 	"fmt"
 
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // ProgressType represents different types of progress indicators

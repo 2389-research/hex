@@ -4,8 +4,8 @@
 package forms
 
 import (
+	"github.com/2389-research/hex/internal/core"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/core"
 )
 
 // ApprovalResultMsg is sent when the approval form completes

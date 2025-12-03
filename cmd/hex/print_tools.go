@@ -4,9 +4,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/permissions"
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/permissions"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // setupPrintModeTools creates and configures tool registry and executor for print mode

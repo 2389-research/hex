@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/plugins"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/plugins"
 	"github.com/spf13/cobra"
 )
 

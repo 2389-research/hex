@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/storage"
-	"github.com/harper/hex/internal/ui"
 	"github.com/spf13/cobra"
 )
 

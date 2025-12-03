@@ -79,17 +79,17 @@ Successfully implemented a comprehensive tool system architecture that provides 
 ### Test Coverage: 100%
 
 ```
-github.com/harper/hex/internal/tools/executor.go:22:    NewExecutor         100.0%
-github.com/harper/hex/internal/tools/executor.go:30:    Execute             100.0%
-github.com/harper/hex/internal/tools/mock_tool.go:17:   Name                100.0%
-github.com/harper/hex/internal/tools/mock_tool.go:22:   Description         100.0%
-github.com/harper/hex/internal/tools/mock_tool.go:27:   RequiresApproval    100.0%
-github.com/harper/hex/internal/tools/mock_tool.go:32:   Execute             100.0%
-github.com/harper/hex/internal/tools/registry.go:19:    NewRegistry         100.0%
-github.com/harper/hex/internal/tools/registry.go:26:    Register            100.0%
-github.com/harper/hex/internal/tools/registry.go:39:    Get                 100.0%
-github.com/harper/hex/internal/tools/registry.go:52:    List                100.0%
-github.com/harper/hex/internal/tools/types.go:23:       ResultToToolResult  100.0%
+github.com/2389-research/hex/internal/tools/executor.go:22:    NewExecutor         100.0%
+github.com/2389-research/hex/internal/tools/executor.go:30:    Execute             100.0%
+github.com/2389-research/hex/internal/tools/mock_tool.go:17:   Name                100.0%
+github.com/2389-research/hex/internal/tools/mock_tool.go:22:   Description         100.0%
+github.com/2389-research/hex/internal/tools/mock_tool.go:27:   RequiresApproval    100.0%
+github.com/2389-research/hex/internal/tools/mock_tool.go:32:   Execute             100.0%
+github.com/2389-research/hex/internal/tools/registry.go:19:    NewRegistry         100.0%
+github.com/2389-research/hex/internal/tools/registry.go:26:    Register            100.0%
+github.com/2389-research/hex/internal/tools/registry.go:39:    Get                 100.0%
+github.com/2389-research/hex/internal/tools/registry.go:52:    List                100.0%
+github.com/2389-research/hex/internal/tools/types.go:23:       ResultToToolResult  100.0%
 total:                                                    (statements)        100.0%
 ```
 

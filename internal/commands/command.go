@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/harper/hex/internal/frontmatter"
+	"github.com/2389-research/hex/internal/frontmatter"
 	"gopkg.in/yaml.v3"
 )
 

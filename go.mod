@@ -1,4 +1,4 @@
-module github.com/harper/hex
+module github.com/2389-research/hex
 
 go 1.24.1
 

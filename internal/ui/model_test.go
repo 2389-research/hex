@@ -5,7 +5,7 @@ package ui_test
 import (
 	"testing"
 
-	"github.com/harper/hex/internal/ui"
+	"github.com/2389-research/hex/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 

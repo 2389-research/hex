@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/harper/hex/internal/core"
+	"github.com/2389-research/hex/internal/core"
 )
 
 // BenchmarkClientCreation measures client initialization overhead

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // LoadMCPTools loads MCP server configurations from .mcp.json and registers their tools

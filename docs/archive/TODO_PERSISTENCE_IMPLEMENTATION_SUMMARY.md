@@ -162,8 +162,8 @@ PASS: 29/29 tests
 ```bash
 go test -v ./internal/storage ./internal/tools -run "Test.*Todo"
 
-ok  	github.com/harper/hex/internal/storage	0.222s
-ok  	github.com/harper/hex/internal/tools	0.318s
+ok  	github.com/2389-research/hex/internal/storage	0.222s
+ok  	github.com/2389-research/hex/internal/tools	0.318s
 
 Total: 39 passing tests across both packages
 ```

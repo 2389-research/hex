@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/harper/hex/internal/storage"
+	"github.com/2389-research/hex/internal/storage"
 )
 
 // JSONExporter exports conversations as JSON

@@ -3,7 +3,7 @@
 
 package tools
 
-import "github.com/harper/hex/internal/core"
+import "github.com/2389-research/hex/internal/core"
 
 // ToolUse is an alias for core.ToolUse for convenience
 // Use core.ToolUse directly in new code

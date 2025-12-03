@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/hex/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 

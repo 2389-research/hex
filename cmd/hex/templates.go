@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/hex/internal/templates"
+	"github.com/2389-research/hex/internal/templates"
 	"github.com/spf13/cobra"
 )
 

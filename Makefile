@@ -5,7 +5,7 @@ BINARY_NAME=hex
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS=-ldflags "-s -w -X github.com/harper/hex/internal/core.Version=$(VERSION) -X github.com/harper/hex/internal/core.Commit=$(COMMIT) -X github.com/harper/hex/internal/core.Date=$(DATE)"
+LDFLAGS=-ldflags "-s -w -X github.com/2389-research/hex/internal/core.Version=$(VERSION) -X github.com/2389-research/hex/internal/core.Commit=$(COMMIT) -X github.com/2389-research/hex/internal/core.Date=$(DATE)"
 
 ## build: Build binary for current platform
 build:

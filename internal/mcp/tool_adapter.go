@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/harper/hex/internal/core"
-	"github.com/harper/hex/internal/tools"
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/tools"
 )
 
 // MCPToolAdapter wraps an MCP tool to implement Hex's Tool interface

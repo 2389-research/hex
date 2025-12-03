@@ -237,10 +237,10 @@ $ go build ./internal/ui && go build ./internal/export
 ✓ All modified packages compile successfully
 
 $ go test ./internal/ui -run TestViewRendersChat
-ok      github.com/harper/hex/internal/ui      0.468s
+ok      github.com/2389-research/hex/internal/ui      0.468s
 
 $ go test ./internal/export -run TestHTML
-ok      github.com/harper/hex/internal/export  0.216s
+ok      github.com/2389-research/hex/internal/export  0.216s
 ```
 
 ## Files Modified Summary

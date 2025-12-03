@@ -88,9 +88,9 @@ Modified `runInteractive()` to:
 ### Test Results
 All tests passing:
 ```
-ok  	github.com/harper/hex/cmd/hex	0.245s
-ok  	github.com/harper/hex/internal/storage	(cached)
-ok  	github.com/harper/hex/internal/ui	(cached)
+ok  	github.com/2389-research/hex/cmd/hex	0.245s
+ok  	github.com/2389-research/hex/internal/storage	(cached)
+ok  	github.com/2389-research/hex/internal/ui	(cached)
 ```
 
 ## Usage Examples

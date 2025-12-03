@@ -52,7 +52,7 @@ Before saying "done", "fixed", "passing", or "working":
 
 # ✅ RIGHT: Actually run them
 $ go test ./internal/skills/...
-ok      github.com/harper/hex/internal/skills  0.123s
+ok      github.com/2389-research/hex/internal/skills  0.123s
 ```
 
 **Verify**:
@@ -176,7 +176,7 @@ $ go test ./internal/skills/ -v
 === RUN   TestSkillLoader
 --- PASS: TestSkillLoader (0.00s)
 PASS
-ok      github.com/harper/hex/internal/skills  0.123s
+ok      github.com/2389-research/hex/internal/skills  0.123s
 
 "Tests added and verified passing. Coverage increased from 75% to 85%."
 ```
@@ -212,7 +212,7 @@ PASS
 **✅ Right Approach**:
 ```bash
 $ go test ./internal/auth/...
-ok      github.com/harper/hex/internal/auth    0.456s
+ok      github.com/2389-research/hex/internal/auth    0.456s
 
 $ go build ./cmd/hex
 $ echo $?
@@ -372,7 +372,7 @@ Implements skill loading, registry, and tool integration.
 
 Verified:
 $ go test ./internal/skills/
-ok      github.com/harper/hex/internal/skills  0.234s
+ok      github.com/2389-research/hex/internal/skills  0.234s
 
 $ go build ./cmd/hex
 $ echo $?

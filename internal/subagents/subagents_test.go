@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/hex/internal/subagents"
+	"github.com/2389-research/hex/internal/subagents"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

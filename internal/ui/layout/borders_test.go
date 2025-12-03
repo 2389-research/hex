@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 func TestNewSpacing(t *testing.T) {

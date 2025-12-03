@@ -97,7 +97,7 @@ All tools require user approval for dangerous operations and include:
 
 ```bash
 # Install or upgrade to v0.2.0
-go install github.com/harper/hex/cmd/hex@v0.2.0
+go install github.com/2389-research/hex/cmd/hex@v0.2.0
 
 # Verify installation
 hex doctor
@@ -199,6 +199,6 @@ Found a bug? Have a feature request?
 
 Thank you for using Hex! This release represents a major milestone in bringing Claude's capabilities to the terminal.
 
-**Download:** `go install github.com/harper/hex/cmd/hex@v0.2.0`
+**Download:** `go install github.com/2389-research/hex/cmd/hex@v0.2.0`
 
 **Full Changelog:** [CHANGELOG.md](CHANGELOG.md)

@@ -122,7 +122,7 @@ git push origin v1.0.0
 
 ### Monitor CI/CD
 - [ ] GitHub Actions workflow triggers
-  - Visit: https://github.com/harper/hex/actions
+  - Visit: https://github.com/2389-research/hex/actions
 - [ ] All tests pass in CI
 - [ ] GoReleaser builds all artifacts
 - [ ] Homebrew tap updates successfully
@@ -133,7 +133,7 @@ git push origin v1.0.0
 - [ ] Binary archives downloadable from GitHub Releases
 - [ ] Checksums.txt present and correct
   ```bash
-  curl -sL https://github.com/harper/hex/releases/download/v1.0.0/checksums.txt
+  curl -sL https://github.com/2389-research/hex/releases/download/v1.0.0/checksums.txt
   ```
 - [ ] Linux packages available (.deb, .rpm, .apk)
 - [ ] Docker image pullable
@@ -147,7 +147,7 @@ git push origin v1.0.0
   ```
 
 ### Create/Edit GitHub Release
-- [ ] Navigate to: https://github.com/harper/hex/releases/tag/v1.0.0
+- [ ] Navigate to: https://github.com/2389-research/hex/releases/tag/v1.0.0
 - [ ] Edit release notes (see template below)
 - [ ] Mark as "Latest release"
 - [ ] Verify artifacts are attached
@@ -226,19 +226,19 @@ brew install harper/tap/hex
 
 **Debian/Ubuntu (.deb):**
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
 sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 ```
 
 **RedHat/Fedora (.rpm):**
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
 sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 ```
 
 **Alpine Linux (.apk):**
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
 sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
@@ -250,7 +250,7 @@ docker run --rm -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY ghcr.io/harper/hex:1.0.0
 
 **Go Install:**
 ```bash
-go install github.com/harper/hex/cmd/hex@v1.0.0
+go install github.com/2389-research/hex/cmd/hex@v1.0.0
 ```
 
 ## 🏁 Quick Start
@@ -274,10 +274,10 @@ hex --image screenshot.png "What's in this image?"
 
 ## 📚 Documentation
 
-- [User Guide](https://github.com/harper/hex/blob/main/docs/USER_GUIDE.md) - Complete usage guide
-- [Architecture](https://github.com/harper/hex/blob/main/docs/ARCHITECTURE.md) - System design
-- [Tools Reference](https://github.com/harper/hex/blob/main/docs/TOOLS.md) - All 13 tools
-- [MCP Integration](https://github.com/harper/hex/blob/main/docs/MCP_INTEGRATION.md) - MCP guide
+- [User Guide](https://github.com/2389-research/hex/blob/main/docs/USER_GUIDE.md) - Complete usage guide
+- [Architecture](https://github.com/2389-research/hex/blob/main/docs/ARCHITECTURE.md) - System design
+- [Tools Reference](https://github.com/2389-research/hex/blob/main/docs/TOOLS.md) - All 13 tools
+- [MCP Integration](https://github.com/2389-research/hex/blob/main/docs/MCP_INTEGRATION.md) - MCP guide
 
 ## 🔒 Security
 
@@ -290,7 +290,7 @@ This release includes:
 
 ## 📊 What's New in v1.0.0
 
-See [CHANGELOG.md](https://github.com/harper/hex/blob/main/CHANGELOG.md) for full details.
+See [CHANGELOG.md](https://github.com/2389-research/hex/blob/main/CHANGELOG.md) for full details.
 
 ### Added
 - Interactive TUI with Bubbletea
@@ -338,7 +338,7 @@ None! Please report any issues on GitHub.
 
 ## 📝 Full Changelog
 
-**Full Changelog**: https://github.com/harper/hex/compare/v0.5.0...v1.0.0
+**Full Changelog**: https://github.com/2389-research/hex/compare/v0.5.0...v1.0.0
 ```
 
 ---
@@ -362,7 +362,7 @@ hex --version
 
 **Ubuntu (Debian Package):**
 ```bash
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
 sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 hex --version
 ```
@@ -473,7 +473,7 @@ git tag -d v1.0.0
 git push origin :refs/tags/v1.0.0
 
 # Delete GitHub Release
-# Visit: https://github.com/harper/hex/releases
+# Visit: https://github.com/2389-research/hex/releases
 # Delete v1.0.0 release
 
 # Update README to point to v0.5.0

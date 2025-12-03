@@ -55,7 +55,7 @@ Phase 6 transforms Hex from a feature-complete prototype into a production-ready
 **Installation Methods:**
 1. Install script: `curl -sSL https://... | bash`
 2. Homebrew: `brew install harper/tap/hex`
-3. Go install: `go install github.com/harper/hex/cmd/hex@latest`
+3. Go install: `go install github.com/2389-research/hex/cmd/hex@latest`
 4. Pre-built binaries from GitHub Releases
 5. Build from source: `make install`
 6. Docker: `docker pull ghcr.io/harper/hex:latest`

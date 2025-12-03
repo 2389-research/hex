@@ -3,7 +3,7 @@ package theme_test
 import (
 	"fmt"
 
-	"github.com/harper/hex/internal/ui/theme"
+	"github.com/2389-research/hex/internal/ui/theme"
 )
 
 // ExampleDraculaTheme demonstrates basic usage of the Dracula theme

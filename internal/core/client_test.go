@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/harper/hex/internal/core"
+	"github.com/2389-research/hex/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/dnaeon/go-vcr.v2/cassette"

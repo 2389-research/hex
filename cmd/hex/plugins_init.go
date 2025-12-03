@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/harper/hex/internal/logging"
-	"github.com/harper/hex/internal/plugins"
+	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/plugins"
 )
 
 // initializePlugins loads all enabled plugins and returns the registry

@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/harper/hex/internal/subagents"
+	"github.com/2389-research/hex/internal/subagents"
 )
 
 const (

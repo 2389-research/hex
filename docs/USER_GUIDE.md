@@ -25,10 +25,10 @@ Complete guide to using Hex, the Go-based Claude CLI with interactive mode and t
 
 ```bash
 # Install latest version
-go install github.com/harper/hex/cmd/hex@latest
+go install github.com/2389-research/hex/cmd/hex@latest
 
 # Or install specific version
-go install github.com/harper/hex/cmd/hex@v0.2.0
+go install github.com/2389-research/hex/cmd/hex@v0.2.0
 
 # Verify installation
 hex --version
@@ -38,7 +38,7 @@ hex --version
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/hex.git
+git clone https://github.com/2389-research/hex.git
 cd hex
 
 # Build

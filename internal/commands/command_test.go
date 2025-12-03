@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/harper/hex/internal/frontmatter"
+	"github.com/2389-research/hex/internal/frontmatter"
 )
 
 func TestParse(t *testing.T) {

@@ -11,11 +11,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/2389-research/hex/internal/storage"
 	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
-	"github.com/harper/hex/internal/storage"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

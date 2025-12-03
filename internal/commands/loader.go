@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/harper/hex/internal/project"
+	"github.com/2389-research/hex/internal/project"
 )
 
 // Loader discovers and loads commands from multiple directories

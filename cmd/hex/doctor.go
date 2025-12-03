@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/hex/internal/core"
+	"github.com/2389-research/hex/internal/core"
 	"github.com/spf13/cobra"
 )
 

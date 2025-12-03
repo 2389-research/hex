@@ -192,7 +192,7 @@ brew install harper/tap/hex
 
 ### 3. Go Install
 ```bash
-go install github.com/harper/hex/cmd/hex@v1.0.0
+go install github.com/2389-research/hex/cmd/hex@v1.0.0
 ```
 
 ### 4. Docker
@@ -203,23 +203,23 @@ docker pull ghcr.io/harper/hex:1.0.0
 ### 5. Linux Packages
 ```bash
 # Debian/Ubuntu
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.deb
 sudo dpkg -i hex_1.0.0_Linux_x86_64.deb
 
 # RedHat/Fedora
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.rpm
 sudo rpm -i hex_1.0.0_Linux_x86_64.rpm
 
 # Alpine
-wget https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
+wget https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Linux_x86_64.apk
 sudo apk add --allow-untrusted hex_1.0.0_Linux_x86_64.apk
 ```
 
 ### 6. Manual Binary
 ```bash
 # Download from GitHub Releases
-# https://github.com/harper/hex/releases/tag/v1.0.0
-curl -LO https://github.com/harper/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
+# https://github.com/2389-research/hex/releases/tag/v1.0.0
+curl -LO https://github.com/2389-research/hex/releases/download/v1.0.0/hex_1.0.0_Darwin_x86_64.tar.gz
 tar -xzf hex_1.0.0_Darwin_x86_64.tar.gz
 sudo mv hex /usr/local/bin/
 ```

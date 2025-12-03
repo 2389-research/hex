@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/huh"
-	"github.com/harper/hex/internal/ui/theme"
 )
 
 // SettingsFormResult contains the result of the settings wizard
