@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/glamour/ansi"
 	ctxmgr "github.com/harper/pagent/internal/context"
 	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/storage"
@@ -295,16 +296,98 @@ func (m *Model) SetStatus(status Status) {
 	}
 }
 
-// RenderMessage renders a message using glamour for assistant messages
+// RenderMessage renders a message using glamour for assistant messages with theme colors
 func (m *Model) RenderMessage(msg Message) (string, error) {
-	if msg.Role == "assistant" && m.renderer != nil {
-		rendered, err := m.renderer.Render(msg.Content)
-		if err != nil {
-			return msg.Content, err
+	if msg.Role == "assistant" {
+		// Create themed renderer if we don't have one or need to update width
+		if m.renderer == nil {
+			renderer, err := m.createThemedRenderer()
+			if err == nil {
+				m.renderer = renderer
+			}
 		}
-		return rendered, nil
+
+		if m.renderer != nil {
+			rendered, err := m.renderer.Render(msg.Content)
+			if err != nil {
+				return msg.Content, err
+			}
+			return rendered, nil
+		}
 	}
 	return msg.Content, nil
+}
+
+// createThemedRenderer creates a glamour renderer with theme-aware styling
+func (m *Model) createThemedRenderer() (*glamour.TermRenderer, error) {
+	// Build custom glamour style config from our theme colors
+	// This ensures markdown rendering matches the overall theme aesthetic
+	fg := string(m.theme.Foreground())
+	primary := string(m.theme.Primary())
+	secondary := string(m.theme.Secondary())
+	subtle := string(m.theme.Subtle())
+	warning := string(m.theme.Warning())
+
+	style := ansi.StyleConfig{
+		Document: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: &fg,
+			},
+		},
+		H1: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: &primary,
+			},
+		},
+		H2: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: &secondary,
+			},
+		},
+		H3: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: &secondary,
+			},
+		},
+		Emph: ansi.StylePrimitive{
+			Color: &warning,
+		},
+		Strong: ansi.StylePrimitive{
+			Color: &primary,
+		},
+		Link: ansi.StylePrimitive{
+			Color: &primary,
+		},
+		LinkText: ansi.StylePrimitive{
+			Color: &secondary,
+		},
+		Code: ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: &fg,
+			},
+		},
+		CodeBlock: ansi.StyleCodeBlock{
+			StyleBlock: ansi.StyleBlock{
+				StylePrimitive: ansi.StylePrimitive{
+					Color: &fg,
+				},
+			},
+		},
+		List: ansi.StyleList{
+			LevelIndent: 2,
+		},
+		Item: ansi.StylePrimitive{
+			Color: &fg,
+		},
+		Enumeration: ansi.StylePrimitive{
+			Color: &subtle,
+		},
+	}
+
+	return glamour.NewTermRenderer(
+		glamour.WithStyles(style),
+		glamour.WithWordWrap(m.Width-10),
+	)
 }
 
 // EnterSearchMode activates search mode

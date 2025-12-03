@@ -44,7 +44,7 @@ func NewTable(theme themes.Theme, columns []string, rows [][]string) *Table {
 		table.WithHeight(10),
 	)
 
-	// Apply theme styles
+	// Apply theme styles with enhanced visual feedback
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
@@ -52,10 +52,16 @@ func NewTable(theme themes.Theme, columns []string, rows [][]string) *Table {
 		BorderBottom(true).
 		Bold(true).
 		Foreground(theme.Primary())
+
+	// Enhanced selected style with better visual feedback
 	s.Selected = s.Selected.
 		Foreground(theme.Background()).
 		Background(theme.Primary()).
-		Bold(false)
+		Bold(true).
+		Underline(true).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(theme.Primary()).
+		Padding(0, 1)
 
 	t.SetStyles(s)
 

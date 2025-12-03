@@ -11,6 +11,14 @@ import (
 	"github.com/harper/pagent/internal/ui/themes"
 )
 
+// Consistent spacing and layout constants
+const (
+	paddingHorizontal = 2
+	paddingVertical   = 1
+	marginBottom      = 1
+	borderRadius      = 1
+)
+
 // viewStyles holds all the lipgloss styles for the view, created from the theme
 type viewStyles struct {
 	title            lipgloss.Style
@@ -30,19 +38,22 @@ type viewStyles struct {
 	suggestionHint   lipgloss.Style
 }
 
-// createViewStyles creates all view styles from the current theme
+// createViewStyles creates all view styles from the current theme with consistent spacing
 func (m *Model) createViewStyles() viewStyles {
 	theme := m.theme
 
 	return viewStyles{
 		title: lipgloss.NewStyle().
+			Padding(paddingVertical, paddingHorizontal).
 			Bold(true).
-			Foreground(theme.Primary()),
+			Foreground(theme.Primary()).
+			MarginBottom(marginBottom),
 
 		input: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(theme.BorderFocus()).
-			Padding(0, 1),
+			Padding(0, paddingHorizontal).
+			MarginTop(marginBottom),
 
 		statusBar: lipgloss.NewStyle().
 			Foreground(theme.Subtle()).
@@ -113,15 +124,24 @@ func (m *Model) View() string {
 
 	var b strings.Builder
 
-	// Title with status indicator and favorite star - use gradient!
+	// Title with status indicator and favorite star - use gradient with decorative border!
 	titleText := fmt.Sprintf("Pagen • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
 	// Apply gradient to title using theme's title gradient
-	title := themes.RenderGradient(titleText, m.theme.TitleGradient())
+	titleGradient := themes.RenderGradient(titleText, m.theme.TitleGradient())
+
+	// Add decorative border with theme colors
+	titleStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(m.theme.BorderFocus()).
+		Padding(0, 2).
+		MarginBottom(1)
+
+	titleWithBorder := titleStyle.Render(titleGradient)
 	statusIndicator := m.renderStatusIndicator(styles)
-	b.WriteString(title + " " + statusIndicator)
+	b.WriteString(titleWithBorder + " " + statusIndicator)
 
 	// Phase 6C: Add streaming indicator if streaming
 	if m.Streaming && m.streamingDisplay != nil {
