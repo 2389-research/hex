@@ -231,3 +231,79 @@ func TestModelExitHuhApprovalMode(t *testing.T) {
 	assert.False(t, model.IsToolApprovalMode())
 	assert.Nil(t, model.GetHuhApproval())
 }
+
+// Phase 1: Message Formatting Tests
+
+func TestMessageBulletFormatting(t *testing.T) {
+	model := ui.NewModel("test-conv", "claude-sonnet-4", "dracula")
+	model.Ready = true // Ensure model is ready for viewport rendering
+
+	// Add user and assistant messages
+	model.AddMessage("user", "Hello")
+	model.AddMessage("assistant", "Hi there")
+
+	// Update viewport to render messages
+	model.UpdateViewport()
+
+	// Get rendered content
+	content := model.Viewport.View()
+
+	// User messages should NOT have bullet
+	assert.Contains(t, content, "You: Hello")
+	assert.NotContains(t, content, "● You:")
+
+	// Assistant messages SHOULD have ● bullet
+	assert.Contains(t, content, "● Assistant:")
+}
+
+func TestStreamingMessageBulletFormatting(t *testing.T) {
+	model := ui.NewModel("test-conv", "claude-sonnet-4", "dracula")
+	model.Ready = true
+
+	// Add user message first
+	model.AddMessage("user", "Hello")
+
+	// Set streaming text
+	model.StreamingText = "This is streaming..."
+
+	// Update viewport
+	model.UpdateViewport()
+
+	// Get rendered content
+	content := model.Viewport.View()
+
+	// Streaming assistant messages should have ● bullet
+	assert.Contains(t, content, "● Assistant:")
+}
+
+func TestMultipleAssistantMessagesBullets(t *testing.T) {
+	model := ui.NewModel("test-conv", "claude-sonnet-4", "dracula")
+	model.Ready = true
+
+	// Add multiple messages
+	model.AddMessage("user", "First question")
+	model.AddMessage("assistant", "First answer")
+	model.AddMessage("user", "Second question")
+	model.AddMessage("assistant", "Second answer")
+
+	// Update viewport
+	model.UpdateViewport()
+
+	// Get rendered content
+	content := model.Viewport.View()
+
+	// Count occurrences of assistant bullet
+	bulletCount := 0
+	for i := 0; i < len(content)-len("● Assistant:"); i++ {
+		if content[i:i+len("● Assistant:")] == "● Assistant:" {
+			bulletCount++
+		}
+	}
+
+	// Should have exactly 2 assistant message bullets
+	assert.Equal(t, 2, bulletCount, "Expected exactly 2 assistant message bullets")
+
+	// User messages should not have bullets
+	assert.Contains(t, content, "You: First question")
+	assert.Contains(t, content, "You: Second question")
+}

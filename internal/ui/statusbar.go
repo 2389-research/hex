@@ -146,6 +146,11 @@ func (s *StatusBar) SetConnectionStatus(status ConnectionStatus) {
 	s.connection = status
 }
 
+// SetConnection is an alias for SetConnectionStatus for API compatibility
+func (s *StatusBar) SetConnection(status ConnectionStatus) {
+	s.SetConnectionStatus(status)
+}
+
 // SetMode updates the current mode
 func (s *StatusBar) SetMode(mode string) {
 	s.currentMode = mode

@@ -214,6 +214,11 @@ func (m *Model) View() string {
 		}
 	}
 
+	if m.tokenViz != nil && m.TokensInput+m.TokensOutput > 0 {
+		m.tokenViz.SetWidth(m.Width - 4)
+		b.WriteString(m.tokenViz.RenderCompact() + "\n")
+	}
+
 	// Phase 6C: Enhanced status bar
 	b.WriteString("\n" + m.renderStatusBarEnhanced(styles))
 

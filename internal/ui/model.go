@@ -21,6 +21,7 @@ import (
 	"github.com/harper/pagent/internal/tools"
 	"github.com/harper/pagent/internal/ui/components"
 	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/pagent/internal/ui/visualization"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -167,6 +168,8 @@ type Model struct {
 	// Phase 2: Huh Integration - New form-based components
 	huhApproval *components.HuhApproval
 	// huhQuickActions *components.HuhQuickActions // TODO: Phase 2 - implement quick actions with Huh
+
+	tokenViz *visualization.TokenVisualization
 }
 
 // ToolResult represents a tool execution result for the API
@@ -212,6 +215,9 @@ func NewModel(conversationID, model, themeName string) *Model {
 	suggestionDetector := NewSuggestionDetector()
 	suggestionLearner := NewSuggestionLearner()
 
+	tokenViz := visualization.NewTokenVisualization(theme)
+	tokenViz.SetWidth(80)
+
 	return &Model{
 		ConversationID:       conversationID,
 		Model:                model,
@@ -239,6 +245,7 @@ func NewModel(conversationID, model, themeName string) *Model {
 		suggestions:          []*Suggestion{},
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
+		tokenViz:             tokenViz,
 	}
 }
 
@@ -285,6 +292,18 @@ func (m *Model) NextView() {
 func (m *Model) UpdateTokens(input, output int) {
 	m.TokensInput += input
 	m.TokensOutput += output
+
+	if m.tokenViz != nil {
+		maxTokens := 200000
+		usage := visualization.TokenUsage{
+			InputTokens:  m.TokensInput,
+			OutputTokens: m.TokensOutput,
+			TotalTokens:  m.TokensInput + m.TokensOutput,
+			MaxTokens:    maxTokens,
+			ModelName:    m.Model,
+		}
+		m.tokenViz.Update(usage)
+	}
 }
 
 // SetStatus sets the current UI status

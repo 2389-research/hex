@@ -458,12 +458,12 @@ func (m *Model) UpdateViewport() {
 		if msg.Role == "user" {
 			content.WriteString("You: " + msg.Content + "\n\n")
 		} else {
-			// Use glamour for assistant messages
+			// Use glamour for assistant messages with ● bullet
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString("Assistant:\n" + rendered + "\n")
+				content.WriteString("● Assistant:\n" + rendered + "\n")
 			} else {
-				content.WriteString("Assistant: " + msg.Content + "\n\n")
+				content.WriteString("● Assistant: " + msg.Content + "\n\n")
 			}
 
 			// Render embedded component if present (Phase 3)
@@ -486,7 +486,7 @@ func (m *Model) UpdateViewport() {
 
 	// Append streaming text if present
 	if m.StreamingText != "" {
-		content.WriteString("\nAssistant:\n")
+		content.WriteString("\n● Assistant:\n")
 		// Render streaming text with glamour if available
 		rendered, err := m.RenderMessage(Message{
 			Role:    "assistant",
