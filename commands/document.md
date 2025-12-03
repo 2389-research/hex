@@ -143,13 +143,13 @@ fmt.Printf("User: %s\n", user.Email)
 
 **Getting Started:**
 ```markdown
-# Getting Started with Clem
+# Getting Started with Hex
 
 ## Installation
 
 ### macOS
 ```bash
-brew install clem
+brew install hex
 ```
 
 ### Linux

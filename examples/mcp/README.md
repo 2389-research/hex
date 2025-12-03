@@ -27,10 +27,10 @@ npm install -g @modelcontextprotocol/server-fetch
 npm install -g @modelcontextprotocol/server-sqlite
 ```
 
-### 2. Configure Clem
+### 2. Configure Hex
 
 ```bash
-# Add server to Clem
+# Add server to Hex
 hex mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
 
 # Verify it's configured
@@ -40,8 +40,8 @@ hex mcp list
 ### 3. Use in Conversation
 
 ```bash
-# Start Clem
-clem
+# Start Hex
+hex
 
 # MCP tools are automatically loaded
 # Ask Claude to use them:
@@ -132,7 +132,7 @@ Claude: "I've created a 'logs' directory and moved 8 log files:
 # Install
 npm install -g @modelcontextprotocol/server-fetch
 
-# Add to Clem
+# Add to Hex
 hex mcp add fetch npx -y @modelcontextprotocol/server-fetch
 ```
 
@@ -197,7 +197,7 @@ Claude: "GitHub is operational. The status page shows:
     "-y",
     "@modelcontextprotocol/server-fetch",
     "--user-agent",
-    "Clem/1.0"
+    "Hex/1.0"
   ]
 }
 ```
@@ -376,7 +376,7 @@ main().catch(console.error);
 # Make executable
 chmod +x weather-server.js
 
-# Add to Clem
+# Add to Hex
 hex mcp add weather node weather-server.js
 ```
 
@@ -690,7 +690,7 @@ Configure servers with minimal necessary permissions:
 
 ### 4. Test Servers Manually
 
-Before adding to Clem, test server works standalone:
+Before adding to Hex, test server works standalone:
 
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | npx -y @modelcontextprotocol/server-filesystem /path

@@ -148,7 +148,7 @@ Expected output appears
 $ curl https://api.example.com/health
 {"status": "ok", "version": "1.2.3"}
 
-$ ssh server 'systemctl status clem'
+$ ssh server 'systemctl status hex'
 ● hex.service - Hex Service
    Active: active (running)
 ```
@@ -366,7 +366,7 @@ Verification before completion:
 
 **Example Commit Message**:
 ```
-feat: add skill system to Clem
+feat: add skill system to Hex
 
 Implements skill loading, registry, and tool integration.
 

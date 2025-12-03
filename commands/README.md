@@ -1,6 +1,6 @@
 # Built-in Slash Commands
 
-This directory contains Clem's built-in slash commands - reusable prompt templates for common workflows.
+This directory contains Hex's built-in slash commands - reusable prompt templates for common workflows.
 
 ## Available Commands
 

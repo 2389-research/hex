@@ -168,7 +168,7 @@ func GetMostRecentConversation(db *sql.DB) (*Conversation, error)
 claudeMdPath := filepath.Join(".", "CLAUDE.md")
 if _, err := os.Stat(claudeMdPath); os.IsNotExist(err) {
     home, _ := os.UserHomeDir()
-    claudeMdPath = filepath.Join(home, ".clem", "CLAUDE.md")
+    claudeMdPath = filepath.Join(home, ".hex", "CLAUDE.md")
 }
 ```
 
@@ -496,4 +496,4 @@ For each adopted practice:
 
 - Codex source: `/Users/harper/workspace/2389/agent-class/agents/codex`
 - Audit doc: `CODEX_AUDIT.md`
-- hex source: `/Users/harper/Public/src/2389/clem`
+- hex source: `/Users/harper/Public/src/2389/hex`

@@ -13,7 +13,7 @@ NC='\033[0m'
 
 # Configuration
 VERSION="1.0.0"
-REPO="harper/clem"
+REPO="harper/hex"
 TEST_DIR=$(mktemp -d)
 RESULTS_FILE="$TEST_DIR/verification-results.txt"
 
@@ -76,7 +76,7 @@ test_binary() {
 
 # Header
 echo ""
-log_info "Clem v$VERSION - Package Verification"
+log_info "Hex v$VERSION - Package Verification"
 echo "========================================"
 echo ""
 log_info "Test directory: $TEST_DIR"
@@ -124,7 +124,7 @@ run_test() {
 test_binary_archive() {
     log_info "Test 1: Binary Archive (.tar.gz)"
 
-    local archive_name="clem_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.tar.gz"
+    local archive_name="hex_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.tar.gz"
     local download_url="https://github.com/$REPO/releases/download/v${VERSION}/${archive_name}"
 
     log_info "Downloading: $download_url"
@@ -137,7 +137,7 @@ test_binary_archive() {
     log_info "Extracting archive..."
     tar -xzf "$TEST_DIR/$archive_name" -C "$TEST_DIR"
 
-    test_binary "$TEST_DIR/clem" "Binary Archive"
+    test_binary "$TEST_DIR/hex" "Binary Archive"
 }
 
 # Test 2: Checksums
@@ -161,7 +161,7 @@ test_checksums() {
     log_info "Checksums file downloaded successfully"
 
     # Verify our archive is in the checksums
-    local archive_name="clem_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.tar.gz"
+    local archive_name="hex_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.tar.gz"
     if ! grep -q "$archive_name" "$TEST_DIR/checksums.txt"; then
         log_error "Archive $archive_name not found in checksums.txt"
         return 1
@@ -187,7 +187,7 @@ test_homebrew() {
     fi
 
     # Check if formula exists
-    if ! brew info harper/tap/clem >/dev/null 2>&1; then
+    if ! brew info harper/tap/hex >/dev/null 2>&1; then
         log_error "Homebrew formula not found"
         return 1
     fi
@@ -206,12 +206,12 @@ test_docker() {
     log_info "Test 4: Docker Image"
 
     # Pull image
-    local image="ghcr.io/harper/clem:${VERSION}"
+    local image="ghcr.io/harper/hex:${VERSION}"
     log_info "Pulling: $image"
 
     if ! docker pull "$image" >/dev/null 2>&1; then
         # Try latest tag
-        image="ghcr.io/harper/clem:latest"
+        image="ghcr.io/harper/hex:latest"
         log_info "Trying latest tag: $image"
         if ! docker pull "$image" >/dev/null 2>&1; then
             log_error "Failed to pull Docker image"
@@ -240,24 +240,24 @@ test_linux_packages() {
     log_info "Test 5: Linux Packages"
 
     # Test .deb
-    local deb_url="https://github.com/$REPO/releases/download/v${VERSION}/clem_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.deb"
-    if curl -fsSL "$deb_url" -o "$TEST_DIR/clem.deb"; then
+    local deb_url="https://github.com/$REPO/releases/download/v${VERSION}/hex_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.deb"
+    if curl -fsSL "$deb_url" -o "$TEST_DIR/hex.deb"; then
         log_success ".deb package available"
     else
         log_error ".deb package not found"
     fi
 
     # Test .rpm
-    local rpm_url="https://github.com/$REPO/releases/download/v${VERSION}/clem_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.rpm"
-    if curl -fsSL "$rpm_url" -o "$TEST_DIR/clem.rpm"; then
+    local rpm_url="https://github.com/$REPO/releases/download/v${VERSION}/hex_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.rpm"
+    if curl -fsSL "$rpm_url" -o "$TEST_DIR/hex.rpm"; then
         log_success ".rpm package available"
     else
         log_error ".rpm package not found"
     fi
 
     # Test .apk
-    local apk_url="https://github.com/$REPO/releases/download/v${VERSION}/clem_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.apk"
-    if curl -fsSL "$apk_url" -o "$TEST_DIR/clem.apk"; then
+    local apk_url="https://github.com/$REPO/releases/download/v${VERSION}/hex_${VERSION}_${OS_TITLE}_${ARCH_TITLE}.apk"
+    if curl -fsSL "$apk_url" -o "$TEST_DIR/hex.apk"; then
         log_success ".apk package available"
     else
         log_error ".apk package not found"

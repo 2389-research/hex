@@ -1,4 +1,4 @@
-# ABOUTME: Multi-stage Dockerfile for building minimal Clem container image
+# ABOUTME: Multi-stage Dockerfile for building minimal Hex container image
 # ABOUTME: Produces a small, secure image with only the binary and minimal runtime dependencies
 
 # Build stage
@@ -24,9 +24,9 @@ ARG VERSION=dev
 ARG COMMIT=unknown
 ARG DATE
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X github.com/harper/clem/internal/core.Version=${VERSION} -X github.com/harper/clem/internal/core.Commit=${COMMIT} -X github.com/harper/clem/internal/core.Date=${DATE}" \
-    -o clem \
-    ./cmd/clem
+    -ldflags="-s -w -X github.com/harper/hex/internal/core.Version=${VERSION} -X github.com/harper/hex/internal/core.Commit=${COMMIT} -X github.com/harper/hex/internal/core.Date=${DATE}" \
+    -o hex \
+    ./cmd/hex
 
 # Runtime stage
 FROM alpine:latest
@@ -35,24 +35,24 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 
 # Create non-root user
-RUN addgroup -g 1000 clem && \
-    adduser -D -u 1000 -G clem clem
+RUN addgroup -g 1000 hex && \
+    adduser -D -u 1000 -G hex hex
 
 # Create config directory
-RUN mkdir -p /home/clem/.clem && \
-    chown -R clem:clem /home/clem
+RUN mkdir -p /home/hex/.hex && \
+    chown -R hex:hex /home/hex
 
-WORKDIR /home/clem
+WORKDIR /home/hex
 
 # Copy binary from builder
-COPY --from=builder /build/clem /usr/local/bin/clem
+COPY --from=builder /build/hex /usr/local/bin/hex
 
 # Switch to non-root user
-USER clem
+USER hex
 
 # Set environment variables
-ENV HOME=/home/clem
+ENV HOME=/home/hex
 
 # Default command
-ENTRYPOINT ["/usr/local/bin/clem"]
+ENTRYPOINT ["/usr/local/bin/hex"]
 CMD ["--help"]

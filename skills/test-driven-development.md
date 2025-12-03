@@ -242,7 +242,7 @@ func TestCalculateOrderTotal_WithTax(t *testing.T) { /* ... */ }
 
 ## Integration with Hex Workflow
 
-When implementing features in Clem:
+When implementing features in Hex:
 
 1. **Create failing test** in `internal/*/your_feature_test.go`
 2. **Run test** with `go test ./internal/...`
