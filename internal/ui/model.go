@@ -590,6 +590,7 @@ func (m *Model) GetPrunedMessages() []core.Message {
 func (m *Model) ApproveToolUse() tea.Cmd {
 	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
+		m.toolApprovalForm = nil
 		return nil
 	}
 
@@ -605,7 +606,8 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.pendingToolUses = nil
 	m.executingToolUses = toolUses // Save for status display
 	m.toolApprovalMode = false
-	m.approvalPrompt = nil // Clear approval prompt for next time
+	m.approvalPrompt = nil   // Clear approval prompt for next time
+	m.toolApprovalForm = nil // Clear embedded form
 	m.executingTool = true
 
 	// Phase 6C: Start spinner for tool execution
@@ -634,6 +636,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 func (m *Model) DenyToolUse() tea.Cmd {
 	if len(m.pendingToolUses) == 0 {
 		m.toolApprovalMode = false
+		m.toolApprovalForm = nil
 		return nil
 	}
 
@@ -660,6 +663,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 
 	m.pendingToolUses = nil
 	m.toolApprovalMode = false
+	m.toolApprovalForm = nil
 	m.updateViewport()
 
 	// Send all denial results back to API
