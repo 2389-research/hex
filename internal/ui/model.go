@@ -567,30 +567,30 @@ func (m *Model) updateContextUsage() {
 }
 
 // GetPrunedMessages returns messages pruned to fit context limit
+// Filters out "tool" role messages (for UI display only) and includes ContentBlock for tool results
 func (m *Model) GetPrunedMessages() []core.Message {
-	if m.contextManager == nil {
-		// No context manager, return all messages
-		coreMessages := make([]core.Message, len(m.Messages))
-		for i, msg := range m.Messages {
-			coreMessages[i] = core.Message{
-				Role:    msg.Role,
-				Content: msg.Content,
-			}
+	// Filter and convert to core messages
+	// Skip "tool" role messages - they're for UI display only (Anthropic API only accepts user/assistant/system)
+	coreMessages := make([]core.Message, 0, len(m.Messages))
+	for _, msg := range m.Messages {
+		if msg.Role == "tool" {
+			continue
 		}
-		return coreMessages
+		coreMessages = append(coreMessages, core.Message{
+			Role:         msg.Role,
+			Content:      msg.Content,
+			ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
+		})
 	}
 
-	// Convert to core messages
-	coreMessages := make([]core.Message, len(m.Messages))
-	for i, msg := range m.Messages {
-		coreMessages[i] = core.Message{
-			Role:    msg.Role,
-			Content: msg.Content,
-		}
+	// If no context manager, return all messages
+	if m.contextManager == nil {
+		return coreMessages
 	}
 
 	// Prune if needed
 	if m.contextManager.ShouldPrune(coreMessages) {
+		_, _ = fmt.Fprintf(os.Stderr, "[CONTEXT] Pruning messages: %d → %d\n", len(coreMessages), m.contextManager.MaxTokens)
 		return m.contextManager.Prune(coreMessages)
 	}
 
@@ -970,29 +970,13 @@ func (m *Model) sendToolResults() tea.Cmd {
 	apiClient := m.apiClient
 	toolRegistry := m.toolRegistry
 	model := m.Model
-	messages := make([]Message, len(m.Messages))
-	copy(messages, m.Messages)
+	// Get pruned messages (automatically compacts if near context limit)
+	apiMessages := m.GetPrunedMessages()
 	systemPrompt := m.systemPrompt
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d messages for API request\n", len(messages))
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d pruned messages for API request\n", len(apiMessages))
 
 	return func() tea.Msg {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing\n")
-		// Build messages from captured state, filtering out "tool" role messages
-		// (Anthropic API only accepts user/assistant/system roles)
-		apiMessages := make([]core.Message, 0, len(messages))
-		for _, msg := range messages {
-			// Skip messages with "tool" role - they're for UI display only
-			if msg.Role == "tool" {
-				_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: skipping tool role message\n")
-				continue
-			}
-			apiMessages = append(apiMessages, core.Message{
-				Role:         msg.Role,
-				Content:      msg.Content,
-				ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
-			})
-		}
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: filtered to %d API messages (from %d total)\n", len(apiMessages), len(messages))
+		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing with %d messages\n", len(apiMessages))
 
 		// Get tool definitions from registry
 		var tools []core.ToolDefinition

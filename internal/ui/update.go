@@ -780,20 +780,8 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 // streamMessage starts streaming a message from the API
 func (m *Model) streamMessage(_ string) tea.Cmd {
-	// Build message history for API, filtering out "tool" role messages
-	// (Anthropic API only accepts user/assistant/system roles)
-	messages := make([]core.Message, 0, len(m.Messages))
-	for _, msg := range m.Messages {
-		// Skip messages with "tool" role - they're for UI display only
-		if msg.Role == "tool" {
-			continue
-		}
-		messages = append(messages, core.Message{
-			Role:         msg.Role,
-			Content:      msg.Content,
-			ContentBlock: msg.ContentBlock, // Include content blocks (for tool_result blocks)
-		})
-	}
+	// Get pruned message history (automatically compacts if near context limit)
+	messages := m.GetPrunedMessages()
 
 	// Get tool definitions from registry
 	var tools []core.ToolDefinition
