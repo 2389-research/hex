@@ -36,7 +36,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Store the stream channel and start reading
 		m.streamChan = msg.channel
 		m.SetStatus(StatusStreaming)
-		m.updateViewport()
+		m.UpdateViewport()
 		return m, m.readStreamChunks(m.streamChan)
 
 	// Task 12: Handle tool execution results
@@ -74,7 +74,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.AddMessage("tool", resultMsg)
 		}
 
-		m.updateViewport()
+		m.UpdateViewport()
 
 		// Send tool results back to API and continue conversation
 		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
@@ -101,7 +101,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.AddMessage("tool", resultMsg)
 		}
 
-		m.updateViewport()
+		m.UpdateViewport()
 
 		// Send ALL tool results back to API in one user message
 		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
@@ -321,7 +321,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if input != "" {
 					m.AddMessage("user", input)
 					m.Input.Reset()
-					m.updateViewport()
+					m.UpdateViewport()
 
 					// Task 7: Save user message to database
 					if err := m.saveMessage("user", input); err != nil {
@@ -419,7 +419,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Viewport.Height = msg.Height - 8
 		if !m.Ready {
 			m.Ready = true
-			m.updateViewport()
+			m.UpdateViewport()
 		}
 		// Phase 6C: Update component widths
 		if m.statusBar != nil {
@@ -466,8 +466,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// updateViewport renders messages into viewport
-func (m *Model) updateViewport() {
+// UpdateViewport renders messages into viewport
+func (m *Model) UpdateViewport() {
 	var content strings.Builder
 	for _, msg := range m.Messages {
 		if msg.Role == "user" {
@@ -479,6 +479,22 @@ func (m *Model) updateViewport() {
 				content.WriteString("Assistant:\n" + rendered + "\n")
 			} else {
 				content.WriteString("Assistant: " + msg.Content + "\n\n")
+			}
+
+			// Render embedded component if present (Phase 3)
+			if msg.Component != nil {
+				switch comp := msg.Component.(type) {
+				case *components.Table:
+					componentView := comp.View()
+					content.WriteString("\n" + componentView + "\n\n")
+				case *components.Progress:
+					componentView := comp.View()
+					content.WriteString(componentView + "\n\n")
+				case tea.Model:
+					// Generic tea.Model support
+					componentView := comp.View()
+					content.WriteString(componentView + "\n\n")
+				}
 			}
 		}
 	}
@@ -514,7 +530,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		m.streamChan = nil
 		m.streamCancel = nil
 		m.streamCtx = nil
-		m.updateViewport()
+		m.UpdateViewport()
 		return m, nil
 	}
 
@@ -580,7 +596,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			m.streamingDisplay.AppendText(chunk.Delta.Text)
 		}
 		m.SetStatus(StatusStreaming)
-		m.updateViewport()
+		m.UpdateViewport()
 		// Continue reading from stream
 		if m.streamChan != nil {
 			return m, m.readStreamChunks(m.streamChan)
@@ -654,7 +670,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		m.streamCancel = nil
 		m.streamCtx = nil
 
-		m.updateViewport()
+		m.UpdateViewport()
 		return m, nil
 	}
 

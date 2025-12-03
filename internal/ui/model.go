@@ -56,6 +56,10 @@ type Message struct {
 	Role         string
 	Content      string
 	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
+
+	// Rich component for inline rendering (Phase 3)
+	Component   interface{} // Can be *components.Table, *components.Progress, etc.
+	ComponentID string      // Unique ID for routing events to component
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -250,6 +254,18 @@ func (m *Model) AddMessage(role, content string) {
 		Content: content,
 	})
 	// Update context usage after adding message
+	m.updateContextUsage()
+}
+
+// AddMessageWithComponent adds a message with an embedded component
+func (m *Model) AddMessageWithComponent(role, content string, component interface{}) {
+	componentID := fmt.Sprintf("comp-%d", len(m.Messages))
+	m.Messages = append(m.Messages, Message{
+		Role:        role,
+		Content:     content,
+		Component:   component,
+		ComponentID: componentID,
+	})
 	m.updateContextUsage()
 }
 
@@ -490,7 +506,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 		}
 	}
 
-	m.updateViewport()
+	m.UpdateViewport()
 
 	// Execute all tools in batch
 	toolCmd := m.executeToolsBatch(toolUses)
@@ -532,7 +548,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 
 	m.pendingToolUses = nil
 	m.toolApprovalMode = false
-	m.updateViewport()
+	m.UpdateViewport()
 
 	// Send all denial results back to API
 	return m.sendToolResults()
@@ -619,7 +635,7 @@ func (m *Model) ClearConversation() {
 	if m.streamingDisplay != nil {
 		m.streamingDisplay.Reset()
 	}
-	m.updateViewport()
+	m.UpdateViewport()
 }
 
 // ExportConversation exports the conversation to a string

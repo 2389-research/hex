@@ -144,6 +144,6 @@ func TestViewMarkdownRendering(t *testing.T) {
 	// The view should exist and contain content
 	view := model.View()
 	assert.True(t, len(view) > 0)
-	// View should contain the model name at minimum
-	assert.Contains(t, view, "Clem")
+	// View should contain the app name at minimum
+	assert.Contains(t, view, "Pagen")
 }
