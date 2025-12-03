@@ -168,6 +168,12 @@ func runInteractive(prompt string) error {
 		logging.InfoWith("Loaded template", "name", template.Name)
 	}
 
+	// Load config early to get theme preference
+	cfg, err := core.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
 	// Use default model if not specified, or from template
 	modelName := model
 	if modelName == "" {
@@ -178,9 +184,19 @@ func runInteractive(prompt string) error {
 		}
 	}
 
-	// Determine theme: prioritize --theme flag, fall back to default
+	// Determine theme: prioritize --theme flag, then config file, then default
 	themeName := theme
 	if themeName == "" {
+		themeName = cfg.Theme
+	}
+	if themeName == "" {
+		themeName = "dracula"
+	}
+
+	// Validate theme and warn if unknown
+	validThemes := map[string]bool{"dracula": true, "gruvbox": true, "nord": true}
+	if themeName != "" && !validThemes[themeName] {
+		logging.Warn("Unknown theme '%s', falling back to dracula. Available themes: dracula, gruvbox, nord", themeName)
 		themeName = "dracula"
 	}
 
@@ -267,11 +283,7 @@ func runInteractive(prompt string) error {
 	}
 
 	// Task 6: Create and set API client
-	// Load config to get API key
-	cfg, err := core.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
+	// Config already loaded above for theme
 
 	// Initialize hook manager
 	hookManager := hooks.NewManager(cfg.Hooks)

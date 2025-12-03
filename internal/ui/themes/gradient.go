@@ -31,6 +31,12 @@ func RenderGradient(text string, colors []lipgloss.Color) string {
 	textRunes := []rune(text)
 	textLen := len(textRunes)
 
+	// Handle single character case - just use first color
+	if textLen == 1 {
+		styled := lipgloss.NewStyle().Foreground(colors[0]).Render(text)
+		return styled
+	}
+
 	for i, char := range textRunes {
 		// Calculate position in gradient (0.0 to 1.0)
 		position := float64(i) / float64(textLen-1)
