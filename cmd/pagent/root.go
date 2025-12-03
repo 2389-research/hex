@@ -155,6 +155,19 @@ func runInteractive(prompt string) error {
 	defer func() { _ = db.Close() }()
 	logging.InfoWith("Database opened successfully", "path", dbPath)
 
+	// Show session picker if no flags specified
+	if !continueFlag && resumeID == "" {
+		selectedID, err := showSessionPicker(db)
+		if err != nil {
+			logging.WarnWith("Failed to show session picker, starting new session", "error", err.Error())
+		} else if selectedID != "" {
+			// User selected a conversation to resume
+			resumeID = selectedID
+			logging.InfoWith("User selected conversation from picker", "id", resumeID)
+		}
+		// If selectedID is empty, user chose new session - continue as normal
+	}
+
 	// Phase 6C: Load template if specified
 	var template *templates.Template
 	var systemPrompt string
@@ -488,4 +501,45 @@ func closeLogger() {
 			_, _ = fmt.Fprintf(os.Stderr, "Warning: Failed to close logger: %v\n", err)
 		}
 	}
+}
+
+// showSessionPicker displays an interactive picker for resuming conversations.
+// Returns the selected conversation ID, or empty string for new session.
+func showSessionPicker(db *sql.DB) (string, error) {
+	// Get recent conversations (limit 50)
+	conversations, err := storage.ListConversations(db, 50, 0)
+	if err != nil {
+		return "", fmt.Errorf("list conversations: %w", err)
+	}
+
+	// If no conversations, return empty (start new)
+	if len(conversations) == 0 {
+		logging.Debug("No conversations found, starting new session")
+		return "", nil
+	}
+
+	logging.DebugWith("Showing session picker", "count", len(conversations))
+
+	// Create and run session picker
+	picker := ui.NewSessionPicker(conversations)
+
+	// Run as modal tea.Program with alt screen
+	p := tea.NewProgram(picker, tea.WithAltScreen())
+	finalModel, err := p.Run()
+	if err != nil {
+		return "", fmt.Errorf("run session picker: %w", err)
+	}
+
+	// Extract result
+	if result, ok := finalModel.(ui.SessionPicker); ok {
+		if result.IsNewSession() {
+			logging.Debug("User chose new session from picker")
+			return "", nil // User chose new session
+		}
+		selectedID := result.SelectedID()
+		logging.DebugWith("User selected conversation", "id", selectedID)
+		return selectedID, nil
+	}
+
+	return "", fmt.Errorf("unexpected model type from session picker")
 }
