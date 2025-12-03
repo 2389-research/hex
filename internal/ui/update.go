@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -41,8 +40,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Task 12: Handle tool execution results
 	case toolExecutionMsg:
-		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_RECEIVED] tool_use_id=%s, err=%v\n", msg.toolUseID, msg.err)
-
 		m.executingTool = false
 		m.currentToolID = ""
 
@@ -52,22 +49,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if msg.err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_ERROR] tool_use_id=%s, error=%s\n", msg.toolUseID, msg.err.Error())
 			m.ErrorMessage = "Tool execution error: " + msg.err.Error()
 			m.AddMessage("tool", "Tool error: "+msg.err.Error())
 		} else {
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_SUCCESS] tool_use_id=%s, storing result\n", msg.toolUseID)
-
-			// Validate that tool_use exists in message history before storing result
-			m.validateToolUseExists(msg.toolUseID)
-
 			// Store result
 			m.toolResults = append(m.toolResults, ToolResult{
 				ToolUseID: msg.toolUseID,
 				Result:    msg.result,
 			})
-
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
 
 			// Display result in UI
 			resultMsg := formatToolResult(msg.result)
@@ -77,13 +66,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.UpdateViewport()
 
 		// Send tool results back to API and continue conversation
-		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
 	// Handle batch tool execution results
 	case toolBatchExecutionMsg:
-		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULT_RECEIVED] received results for %d tool(s)\n", len(msg.results))
-
 		m.executingTool = false
 		m.executingToolUses = nil // Clear executing tools
 
@@ -104,7 +90,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.UpdateViewport()
 
 		// Send ALL tool results back to API in one user message
-		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
 	case tea.KeyMsg:
@@ -539,8 +524,6 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Task 12: Handle tool_use content blocks
 	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
 		if chunk.ContentBlock.Type == "tool_use" {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
-
 			// DON'T commit streaming text yet - it will be included in the same
 			// assistant message as the tool_use blocks when the stream ends
 			// (see lines 584-603 which creates one message with both text and tool_use blocks)
@@ -572,17 +555,12 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			var input map[string]interface{}
 			if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
 				m.assemblingToolUse.Input = input
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
-			} else {
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
 			}
 		}
 
 		// Tool use is complete, append to pending tools list
 		// Don't handle yet - wait for message_stop to ensure full response is received
 		m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
-		fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
-			len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
 		m.assemblingToolUse = nil
 		m.toolInputJSONBuf = ""
 		// Continue streaming to get rest of response
@@ -616,31 +594,24 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle message completion
 	if chunk.Type == "message_stop" || chunk.Done {
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
-
 		// Commit streaming text, including tool_use blocks if present
 		if len(m.pendingToolUses) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
-
 			// Create assistant message with both text and ALL tool_use content blocks
 			blocks := []core.ContentBlock{}
 
 			// Add text block if there's any text content
 			if m.StreamingText != "" {
 				blocks = append(blocks, core.NewTextBlock(m.StreamingText))
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
 			}
 
 			// Add ALL tool_use blocks
-			for i, toolUse := range m.pendingToolUses {
+			for _, toolUse := range m.pendingToolUses {
 				blocks = append(blocks, core.ContentBlock{
 					Type:  "tool_use",
 					ID:    toolUse.ID,
 					Name:  toolUse.Name,
 					Input: toolUse.Input,
 				})
-				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
-					i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
 			}
 
 			// Add assistant message with content blocks
@@ -651,14 +622,8 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			m.Messages = append(m.Messages, assistantMsg)
 			m.StreamingText = ""
 
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
-
-			// Dump messages after adding assistant message with tool_use blocks
-			m.dumpMessages("AFTER stream completion with tool_use blocks")
-
 			// Show tool approval dialog
 			// Phase 2: Use Huh approval instead of plain bool
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
 			m.EnterHuhApprovalMode()
 		} else {
 			// No tool, just commit regular text
