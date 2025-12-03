@@ -5,7 +5,6 @@ package mcp
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -14,31 +13,24 @@ import (
 	"time"
 )
 
-// nopCloser wraps an io.Reader and adds a no-op Close method
-type nopReadCloser struct {
-	io.Reader
-}
-
-func (nopReadCloser) Close() error { return nil }
-
 // createTestClientAndServer creates a connected client-server pair for testing
 func createTestClientAndServer(serverVersion string, tools []Tool) (*Client, *MockMCPServer) {
 	serverName := "test-server"
 	// Create bidirectional pipes for client-server communication
 	clientToServerR, clientToServerW := io.Pipe()
 	serverToClientR, serverToClientW := io.Pipe()
-	mockStderr := &bytes.Buffer{}
+	stderrR, stderrW := io.Pipe() // Use pipe for stderr to avoid data races
 
 	// Create and start server
 	server := NewMockMCPServer(serverName, serverVersion, tools)
-	server.SetIOStreams(clientToServerR, serverToClientW, mockStderr)
+	server.SetIOStreams(clientToServerR, serverToClientW, stderrW)
 	go func() { _ = server.Run() }()
 
 	// Create client
 	client := &Client{
 		stdin:   clientToServerW, // Client writes here, server reads from clientToServerR
 		stdout:  serverToClientR, // Client reads here, server writes to serverToClientW
-		stderr:  nopReadCloser{mockStderr},
+		stderr:  stderrR,         // Client reads stderr from pipe
 		pending: make(map[int64]chan *jsonrpcResponse),
 		done:    make(chan struct{}),
 	}
