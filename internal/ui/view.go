@@ -8,76 +8,99 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/pagent/internal/ui/themes"
 )
 
-var (
-	titleStyle = lipgloss.NewStyle().
+// viewStyles holds all the lipgloss styles for the view, created from the theme
+type viewStyles struct {
+	title            lipgloss.Style
+	input            lipgloss.Style
+	statusBar        lipgloss.Style
+	statusIdle       lipgloss.Style
+	statusStreaming  lipgloss.Style
+	statusError      lipgloss.Style
+	viewMode         lipgloss.Style
+	tokenCounter     lipgloss.Style
+	searchMode       lipgloss.Style
+	toolApproval     lipgloss.Style
+	toolExecuting    lipgloss.Style
+	suggestionBox    lipgloss.Style
+	suggestionTool   lipgloss.Style
+	suggestionReason lipgloss.Style
+	suggestionHint   lipgloss.Style
+}
+
+// createViewStyles creates all view styles from the current theme
+func (m *Model) createViewStyles() viewStyles {
+	theme := m.theme
+
+	return viewStyles{
+		title: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("39"))
+			Foreground(theme.Primary()),
 
-	inputStyle = lipgloss.NewStyle().
+		input: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62")).
-			Padding(0, 1)
+			BorderForeground(theme.BorderFocus()).
+			Padding(0, 1),
 
-	statusBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
-			Background(lipgloss.Color("235"))
+		statusBar: lipgloss.NewStyle().
+			Foreground(theme.Subtle()).
+			Background(theme.Background()),
 
-	statusIdleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("35")).
-			Bold(true)
+		statusIdle: lipgloss.NewStyle().
+			Foreground(theme.Success()).
+			Bold(true),
 
-	statusStreamingStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("226")).
-				Bold(true)
+		statusStreaming: lipgloss.NewStyle().
+			Foreground(theme.Warning()).
+			Bold(true),
 
-	statusErrorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")).
-				Bold(true)
+		statusError: lipgloss.NewStyle().
+			Foreground(theme.Error()).
+			Bold(true),
 
-	viewModeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("99")).
-			Bold(true)
+		viewMode: lipgloss.NewStyle().
+			Foreground(theme.Secondary()).
+			Bold(true),
 
-	tokenCounterStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("243"))
+		tokenCounter: lipgloss.NewStyle().
+			Foreground(theme.Subtle()),
 
-	searchModeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("226")).
-			Background(lipgloss.Color("235")).
-			Padding(0, 1)
+		searchMode: lipgloss.NewStyle().
+			Foreground(theme.Warning()).
+			Background(theme.Background()).
+			Padding(0, 1),
 
-	// Task 12: Tool UI styles
-	toolApprovalStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("208")).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("208")).
-				Padding(1, 2)
+		toolApproval: lipgloss.NewStyle().
+			Bold(true).
+			Foreground(theme.Warning()).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(theme.Warning()).
+			Padding(1, 2),
 
-	toolExecutingStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("214"))
+		toolExecuting: lipgloss.NewStyle().
+			Foreground(theme.Primary()),
 
-	// Phase 6C Task 8: Suggestion UI styles
-	suggestionBoxStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("111")).
-				Background(lipgloss.Color("235")).
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("111")).
-				Padding(0, 1)
+		suggestionBox: lipgloss.NewStyle().
+			Foreground(theme.Primary()).
+			Background(theme.Background()).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(theme.Primary()).
+			Padding(0, 1),
 
-	suggestionToolStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("45")).
-				Bold(true)
+		suggestionTool: lipgloss.NewStyle().
+			Foreground(theme.Primary()).
+			Bold(true),
 
-	suggestionReasonStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("243")).
-				Italic(true)
+		suggestionReason: lipgloss.NewStyle().
+			Foreground(theme.Subtle()).
+			Italic(true),
 
-	suggestionHintStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("241"))
-)
+		suggestionHint: lipgloss.NewStyle().
+			Foreground(theme.Subtle()),
+	}
+}
 
 // View renders the UI
 func (m *Model) View() string {
@@ -85,15 +108,19 @@ func (m *Model) View() string {
 		return "\n  Initializing..."
 	}
 
+	// Create styles from theme
+	styles := m.createViewStyles()
+
 	var b strings.Builder
 
-	// Title with status indicator and favorite star
-	titleText := fmt.Sprintf("Clem • %s", m.Model)
+	// Title with status indicator and favorite star - use gradient!
+	titleText := fmt.Sprintf("Pagen • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
-	title := titleStyle.Render(titleText)
-	statusIndicator := m.renderStatusIndicator()
+	// Apply gradient to title using theme's title gradient
+	title := themes.RenderGradient(titleText, m.theme.TitleGradient())
+	statusIndicator := m.renderStatusIndicator(styles)
 	b.WriteString(title + " " + statusIndicator)
 
 	// Phase 6C: Add streaming indicator if streaming
@@ -120,35 +147,35 @@ func (m *Model) View() string {
 	case ViewModeChat:
 		b.WriteString(m.renderChatView())
 	case ViewModeHistory:
-		b.WriteString(m.renderHistoryView())
+		b.WriteString(m.renderHistoryView(styles))
 	case ViewModeTools:
-		b.WriteString(m.renderToolsView())
+		b.WriteString(m.renderToolsView(styles))
 	}
 
 	b.WriteString("\n")
 
 	// Phase 6C Task 6: Quick actions modal (takes precedence over everything except tool approval)
 	if m.quickActionsMode {
-		b.WriteString(m.renderQuickActionsModal() + "\n")
+		b.WriteString(m.renderQuickActionsModal(styles) + "\n")
 		// Skip input and other prompts
-		b.WriteString("\n" + m.renderStatusBarEnhanced())
+		b.WriteString("\n" + m.renderStatusBarEnhanced(styles))
 		return b.String()
 	}
 
 	// Phase 6C: Tool approval prompt (takes precedence over everything)
 	if m.toolApprovalMode {
-		b.WriteString(m.renderToolApprovalPromptEnhanced() + "\n")
+		b.WriteString(m.renderToolApprovalPromptEnhanced(styles) + "\n")
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator
-		b.WriteString(m.renderToolStatus() + "\n")
+		b.WriteString(m.renderToolStatus(styles) + "\n")
 	} else if m.SearchMode {
 		// Search mode indicator
-		searchPrompt := searchModeStyle.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
+		searchPrompt := styles.searchMode.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
 		b.WriteString(searchPrompt + "\n")
 	} else {
 		// Input (only in chat view)
 		if m.CurrentView == ViewModeChat {
-			b.WriteString(inputStyle.Render(m.Input.View()) + "\n")
+			b.WriteString(styles.input.Render(m.Input.View()) + "\n")
 
 			// Phase 6C Task 4: Render autocomplete dropdown
 			if m.autocomplete != nil && m.autocomplete.IsActive() {
@@ -157,28 +184,28 @@ func (m *Model) View() string {
 
 			// Phase 6C Task 8: Render smart suggestions
 			if m.showSuggestions && len(m.suggestions) > 0 {
-				b.WriteString(m.renderSuggestions() + "\n")
+				b.WriteString(m.renderSuggestions(styles) + "\n")
 			}
 		}
 	}
 
 	// Phase 6C: Enhanced status bar
-	b.WriteString("\n" + m.renderStatusBarEnhanced())
+	b.WriteString("\n" + m.renderStatusBarEnhanced(styles))
 
 	return b.String()
 }
 
 // renderStatusIndicator renders the current status icon
-func (m *Model) renderStatusIndicator() string {
+func (m *Model) renderStatusIndicator(styles viewStyles) string {
 	switch m.Status {
 	case StatusStreaming:
-		return statusStreamingStyle.Render("●")
+		return styles.statusStreaming.Render("●")
 	case StatusTyping:
-		return statusIdleStyle.Render("●")
+		return styles.statusIdle.Render("●")
 	case StatusError:
-		return statusErrorStyle.Render("●")
+		return styles.statusError.Render("●")
 	default:
-		return statusIdleStyle.Render("●")
+		return styles.statusIdle.Render("●")
 	}
 }
 
@@ -188,25 +215,25 @@ func (m *Model) renderChatView() string {
 }
 
 // renderHistoryView renders the conversation history browser
-func (m *Model) renderHistoryView() string {
+func (m *Model) renderHistoryView(styles viewStyles) string {
 	var b strings.Builder
-	b.WriteString(viewModeStyle.Render("📚 History Browser") + "\n\n")
+	b.WriteString(styles.viewMode.Render("📚 History Browser") + "\n\n")
 	b.WriteString("(History browser not yet implemented)\n")
 	b.WriteString("\nPress Tab to return to chat")
 	return b.String()
 }
 
 // renderToolsView renders the tool inspector
-func (m *Model) renderToolsView() string {
+func (m *Model) renderToolsView(styles viewStyles) string {
 	var b strings.Builder
-	b.WriteString(viewModeStyle.Render("🔧 Tool Inspector") + "\n\n")
+	b.WriteString(styles.viewMode.Render("🔧 Tool Inspector") + "\n\n")
 	b.WriteString("(Tool inspector not yet implemented)\n")
 	b.WriteString("\nPress Tab to return to chat")
 	return b.String()
 }
 
 // renderStatusBar renders the bottom status bar with token counter and help
-func (m *Model) renderStatusBar() string {
+func (m *Model) renderStatusBar(styles viewStyles) string {
 	// Token counter
 	tokenInfo := ""
 	if m.TokensInput > 0 || m.TokensOutput > 0 {
@@ -228,8 +255,8 @@ func (m *Model) renderStatusBar() string {
 	help := "ctrl+c: quit • enter: send • tab: switch view • /: search • j/k: scroll • gg/G: top/bottom"
 
 	// Compose status bar
-	leftPart := tokenCounterStyle.Render(tokenInfo)
-	middlePart := viewModeStyle.Render(fmt.Sprintf("[%s]", viewMode))
+	leftPart := styles.tokenCounter.Render(tokenInfo)
+	middlePart := styles.viewMode.Render(fmt.Sprintf("[%s]", viewMode))
 	rightPart := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
 
 	// Calculate spacing
@@ -253,13 +280,13 @@ func (m *Model) renderStatusBar() string {
 		rightPart,
 	)
 
-	return statusBarStyle.Render(statusBar)
+	return styles.statusBar.Render(statusBar)
 }
 
 // Task 12: Tool UI rendering functions
 
 // renderToolApprovalPrompt renders the tool approval UI
-func (m *Model) renderToolApprovalPrompt() string {
+func (m *Model) renderToolApprovalPrompt(styles viewStyles) string {
 	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
 		return ""
 	}
@@ -303,11 +330,11 @@ func (m *Model) renderToolApprovalPrompt() string {
 
 	prompt.WriteString("\nAllow these tool(s) to execute? (y/n): ")
 
-	return toolApprovalStyle.Render(prompt.String())
+	return styles.toolApproval.Render(prompt.String())
 }
 
 // renderToolStatus renders the tool execution status indicator
-func (m *Model) renderToolStatus() string {
+func (m *Model) renderToolStatus(styles viewStyles) string {
 	if !m.executingTool {
 		return ""
 	}
@@ -321,7 +348,7 @@ func (m *Model) renderToolStatus() string {
 		}
 	}
 
-	return toolExecutingStyle.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
+	return styles.toolExecuting.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
 }
 
 // Phase 6C: Enhanced rendering methods
@@ -342,9 +369,9 @@ func (m *Model) renderHelpPanel() string {
 }
 
 // renderToolApprovalPromptEnhanced renders enhanced tool approval UI
-func (m *Model) renderToolApprovalPromptEnhanced() string {
+func (m *Model) renderToolApprovalPromptEnhanced(styles viewStyles) string {
 	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
-		return m.renderToolApprovalPrompt() // Fallback to basic version
+		return m.renderToolApprovalPrompt(styles) // Fallback to basic version
 	}
 
 	// Use the new ApprovalPrompt component if available
@@ -358,13 +385,13 @@ func (m *Model) renderToolApprovalPromptEnhanced() string {
 	}
 
 	// For multiple tools, fall back to basic version which handles the list
-	return m.renderToolApprovalPrompt()
+	return m.renderToolApprovalPrompt(styles)
 }
 
 // renderStatusBarEnhanced renders the enhanced status bar
-func (m *Model) renderStatusBarEnhanced() string {
+func (m *Model) renderStatusBarEnhanced(styles viewStyles) string {
 	if m.statusBar == nil {
-		return m.renderStatusBar() // Fallback to basic version
+		return m.renderStatusBar(styles) // Fallback to basic version
 	}
 
 	// Update status bar state
@@ -398,7 +425,7 @@ func (m *Model) renderStatusBarEnhanced() string {
 // Phase 6C Task 6: Quick Actions Modal Rendering
 
 // renderQuickActionsModal renders the quick actions menu overlay
-func (m *Model) renderQuickActionsModal() string {
+func (m *Model) renderQuickActionsModal(styles viewStyles) string {
 	// Styles for the modal
 	modalStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -556,7 +583,7 @@ func (m *Model) renderAutocompleteDropdown() string {
 }
 
 // Phase 6C Task 8: renderSuggestions renders smart tool suggestions
-func (m *Model) renderSuggestions() string {
+func (m *Model) renderSuggestions(styles viewStyles) string {
 	if !m.showSuggestions || len(m.suggestions) == 0 {
 		return ""
 	}
@@ -564,26 +591,26 @@ func (m *Model) renderSuggestions() string {
 	var content strings.Builder
 
 	// Title
-	content.WriteString(suggestionToolStyle.Render("💡 Suggestions") + "\n\n")
+	content.WriteString(styles.suggestionTool.Render("💡 Suggestions") + "\n\n")
 
 	// Show top suggestion prominently
 	topSuggestion := m.suggestions[0]
-	content.WriteString(suggestionToolStyle.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
-	content.WriteString("  " + suggestionReasonStyle.Render(topSuggestion.Reason) + "\n")
-	content.WriteString("  " + suggestionHintStyle.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
+	content.WriteString(styles.suggestionTool.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
+	content.WriteString("  " + styles.suggestionReason.Render(topSuggestion.Reason) + "\n")
+	content.WriteString("  " + styles.suggestionHint.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
 
 	// Show additional suggestions if any
 	if len(m.suggestions) > 1 {
-		content.WriteString("\n" + suggestionReasonStyle.Render("Other suggestions:") + "\n")
+		content.WriteString("\n" + styles.suggestionReason.Render("Other suggestions:") + "\n")
 		for i := 1; i < len(m.suggestions) && i < 3; i++ {
 			s := m.suggestions[i]
 			content.WriteString(fmt.Sprintf("  • %s ", s.ToolName))
-			content.WriteString(suggestionReasonStyle.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
+			content.WriteString(styles.suggestionReason.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
 		}
 	}
 
 	// Help text
-	content.WriteString("\n" + suggestionHintStyle.Render("Tab: accept • Esc: dismiss"))
+	content.WriteString("\n" + styles.suggestionHint.Render("Tab: accept • Esc: dismiss"))
 
-	return suggestionBoxStyle.Render(content.String())
+	return styles.suggestionBox.Render(content.String())
 }
