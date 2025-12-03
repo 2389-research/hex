@@ -118,17 +118,34 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// Forward messages to embedded approval form if in approval mode
 		if m.toolApprovalMode && m.toolApprovalForm != nil {
+			// DEBUG: Log to file since stderr is redirected
+			if f, err := os.OpenFile("/tmp/clem-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+				_, _ = fmt.Fprintf(f, "[APPROVAL_KEY] received key: %v (type=%v, alt=%v, runes=%v)\n",
+					msg.String(), msg.Type, msg.Alt, msg.Runes)
+				_ = f.Close()
+			}
+
 			var formCmd tea.Cmd
 			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
 
 			// Check if form is complete
-			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
-				// Extract decision and convert to ApprovalResultMsg
-				result := approvalForm.GetDecision()
-				return m.handleApprovalResult(&forms.ApprovalResultMsg{
-					Result: result,
-					Error:  nil,
-				})
+			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
+				if f, err := os.OpenFile("/tmp/clem-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+					_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE_CHECK] isComplete=%v\n", approvalForm.IsComplete())
+					_ = f.Close()
+				}
+				if approvalForm.IsComplete() {
+					if f, err := os.OpenFile("/tmp/clem-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+						_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE] form completed, handling result\n")
+						_ = f.Close()
+					}
+					// Extract decision and convert to ApprovalResultMsg
+					result := approvalForm.GetDecision()
+					return m.handleApprovalResult(&forms.ApprovalResultMsg{
+						Result: result,
+						Error:  nil,
+					})
+				}
 			}
 
 			return m, formCmd
@@ -451,6 +468,35 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newValue := m.Input.Value()
 		if newValue != oldValue {
 			m.AnalyzeSuggestions()
+		}
+	}
+
+	// CRITICAL: Forward ALL messages to approval form when in approval mode
+	// The form's Init() command generates messages that must be processed
+	if m.toolApprovalMode && m.toolApprovalForm != nil {
+		// DEBUG: Log what messages the form receives
+		if f, err := os.OpenFile("/tmp/clem-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+			_, _ = fmt.Fprintf(f, "[APPROVAL_MSG] forwarding message type: %T\n", msg)
+			_ = f.Close()
+		}
+
+		var formCmd tea.Cmd
+		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
+		if formCmd != nil {
+			cmds = append(cmds, formCmd)
+		}
+
+		// Check if form completed after this message
+		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
+			if f, err := os.OpenFile("/tmp/clem-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+				_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE] form completed after receiving %T\n", msg)
+				_ = f.Close()
+			}
+			result := approvalForm.GetDecision()
+			return m.handleApprovalResult(&forms.ApprovalResultMsg{
+				Result: result,
+				Error:  nil,
+			})
 		}
 	}
 
