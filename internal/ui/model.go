@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/storage"
 	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/pagent/internal/ui/components"
 	"github.com/harper/pagent/internal/ui/themes"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -157,6 +159,10 @@ type Model struct {
 
 	// Phase 6C Task 5: Conversation Favorites
 	IsFavorite bool // Track if current conversation is favorite
+
+	// Phase 2: Huh Integration - New form-based components
+	huhApproval *components.HuhApproval
+	// huhQuickActions *components.HuhQuickActions // TODO: Phase 2 - implement quick actions with Huh
 }
 
 // ToolResult represents a tool execution result for the API
@@ -991,4 +997,52 @@ func (m *Model) GetPendingToolUses() []*core.ToolUse {
 // GetTheme returns the current theme
 func (m *Model) GetTheme() themes.Theme {
 	return m.theme
+}
+
+// Phase 2: Huh Integration Methods
+
+// EnterHuhApprovalMode creates and shows Huh approval dialog
+func (m *Model) EnterHuhApprovalMode() {
+	if len(m.pendingToolUses) == 0 {
+		return
+	}
+
+	m.toolApprovalMode = true
+
+	// Build description from pending tools
+	var description string
+	if len(m.pendingToolUses) == 1 {
+		tool := m.pendingToolUses[0]
+		inputJSON, _ := json.Marshal(tool.Input)
+		description = fmt.Sprintf("Tool: %s\nInput: %s", tool.Name, string(inputJSON))
+	} else {
+		description = fmt.Sprintf("%d tools waiting for approval", len(m.pendingToolUses))
+	}
+
+	toolName := m.pendingToolUses[0].Name
+	m.huhApproval = components.NewHuhApproval(m.theme, toolName, description)
+
+	// Initialize the form
+	m.huhApproval.Init()
+}
+
+// ExitHuhApprovalMode closes the approval dialog
+func (m *Model) ExitHuhApprovalMode() {
+	m.toolApprovalMode = false
+	m.huhApproval = nil
+}
+
+// IsToolApprovalMode returns whether tool approval mode is active
+func (m *Model) IsToolApprovalMode() bool {
+	return m.toolApprovalMode
+}
+
+// GetHuhApproval returns the current Huh approval component
+func (m *Model) GetHuhApproval() *components.HuhApproval {
+	return m.huhApproval
+}
+
+// AddPendingToolUse adds a tool use to the pending queue
+func (m *Model) AddPendingToolUse(toolUse *core.ToolUse) {
+	m.pendingToolUses = append(m.pendingToolUses, toolUse)
 }

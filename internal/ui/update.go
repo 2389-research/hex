@@ -14,6 +14,7 @@ import (
 	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/storage"
 	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/pagent/internal/ui/components"
 )
 
 // Update handles Bubbletea messages
@@ -113,6 +114,27 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Task 12: Handle tool approval keys
+		// Phase 2: Use Huh forms for approval
+		if m.toolApprovalMode && m.huhApproval != nil {
+			// Let Huh form handle all input
+			approvalModel, cmd := m.huhApproval.Update(msg)
+			if approval, ok := approvalModel.(*components.HuhApproval); ok {
+				m.huhApproval = approval
+
+				// Check if form is complete
+				if approval.IsComplete() {
+					if approval.IsApproved() {
+						m.ExitHuhApprovalMode()
+						return m, m.ApproveToolUse()
+					}
+					m.ExitHuhApprovalMode()
+					return m, m.DenyToolUse()
+				}
+			}
+			return m, cmd
+		}
+
+		// Fallback to old approval mode if Huh not available
 		if m.toolApprovalMode {
 			switch msg.Type {
 			case tea.KeyRunes:
@@ -619,8 +641,9 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			m.dumpMessages("AFTER stream completion with tool_use blocks")
 
 			// Show tool approval dialog
+			// Phase 2: Use Huh approval instead of plain bool
 			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] enabling tool approval mode\n")
-			m.toolApprovalMode = true
+			m.EnterHuhApprovalMode()
 		} else {
 			// No tool, just commit regular text
 			m.CommitStreamingText()

@@ -163,7 +163,12 @@ func (m *Model) View() string {
 	}
 
 	// Phase 6C: Tool approval prompt (takes precedence over everything)
-	if m.toolApprovalMode {
+	// Phase 2: Use Huh approval if available
+	if m.toolApprovalMode && m.huhApproval != nil {
+		approvalView := m.huhApproval.View()
+		b.WriteString(approvalView + "\n")
+	} else if m.toolApprovalMode {
+		// Fallback to old approval prompt
 		b.WriteString(m.renderToolApprovalPromptEnhanced(styles) + "\n")
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator

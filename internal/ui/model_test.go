@@ -5,6 +5,7 @@ package ui_test
 import (
 	"testing"
 
+	"github.com/harper/pagent/internal/core"
 	"github.com/harper/pagent/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
@@ -185,4 +186,48 @@ func TestThemeIntegration(t *testing.T) {
 		assert.NotNil(t, model.GetTheme())
 		assert.Equal(t, "Dracula", model.GetTheme().Name())
 	})
+}
+
+// Phase 2: Huh Integration Tests
+
+func TestModelHuhApprovalIntegration(t *testing.T) {
+	model := ui.NewModel("test-conv", "claude-sonnet-4", "dracula")
+
+	// Initially no approval in progress
+	assert.False(t, model.IsToolApprovalMode())
+	assert.Nil(t, model.GetHuhApproval())
+
+	// Add a pending tool
+	toolUse := &core.ToolUse{
+		ID:    "tool-123",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter approval mode
+	model.EnterHuhApprovalMode()
+
+	assert.True(t, model.IsToolApprovalMode())
+	assert.NotNil(t, model.GetHuhApproval())
+}
+
+func TestModelExitHuhApprovalMode(t *testing.T) {
+	model := ui.NewModel("test-conv", "claude-sonnet-4", "dracula")
+
+	// Add a pending tool
+	toolUse := &core.ToolUse{
+		ID:    "tool-123",
+		Name:  "bash",
+		Input: map[string]interface{}{"command": "echo test"},
+	}
+	model.AddPendingToolUse(toolUse)
+
+	// Enter and exit approval mode
+	model.EnterHuhApprovalMode()
+	assert.True(t, model.IsToolApprovalMode())
+
+	model.ExitHuhApprovalMode()
+	assert.False(t, model.IsToolApprovalMode())
+	assert.Nil(t, model.GetHuhApproval())
 }
