@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/harper/clem/internal/approval"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
 	"github.com/harper/clem/internal/tools"
@@ -712,6 +713,24 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 			// Dump messages after adding assistant message with tool_use blocks
 			m.dumpMessages("AFTER stream completion with tool_use blocks")
+
+			// Check approval rules BEFORE showing form
+			// If user has set "Always Allow" or "Never Allow" for this tool, apply it
+			if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
+				toolName := m.pendingToolUses[0].Name
+				rule := m.approvalRules.Check(toolName)
+
+				switch rule {
+				case approval.RuleAlwaysAllow:
+					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
+					m.updateViewport()
+					return m, m.ApproveToolUse()
+				case approval.RuleNeverAllow:
+					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
+					m.updateViewport()
+					return m, m.DenyToolUse()
+				}
+			}
 
 			// Show tool approval dialog using embedded huh form
 			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")

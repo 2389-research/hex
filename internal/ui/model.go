@@ -15,6 +15,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/clem/internal/approval"
 	ctxmgr "github.com/harper/clem/internal/context"
 	"github.com/harper/clem/internal/core"
 	"github.com/harper/clem/internal/storage"
@@ -125,6 +126,7 @@ type Model struct {
 	executingTool     bool            // Tool is running
 	currentToolID     string          // ID of currently executing tool
 	toolResults       []ToolResult    // Results to send back to API
+	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
 	// Phase 6C: Enhanced UI Components
 	spinner          *ToolSpinner
@@ -213,6 +215,14 @@ func NewModel(conversationID, model string) *Model {
 	suggestionDetector := NewSuggestionDetector()
 	suggestionLearner := NewSuggestionLearner()
 
+	// Tool approval: Initialize approval rules
+	approvalRules, err := approval.NewRules()
+	if err != nil {
+		// Log error but don't fail - we can still function without persistent rules
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to load approval rules: %v\n", err)
+		approvalRules = nil
+	}
+
 	// TUI Polish: Initialize Dracula theme
 	draculaTheme := theme.DraculaTheme()
 
@@ -243,6 +253,7 @@ func NewModel(conversationID, model string) *Model {
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
 		theme:                draculaTheme,
+		approvalRules:        approvalRules,
 	}
 }
 
@@ -1153,12 +1164,22 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 
 	case forms.DecisionAlwaysAllow:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User always allowed tool: %s\n", msg.Result.ToolUse.Name)
-		// TODO: Store in persistent approval list
+		// Store in persistent approval rules
+		if m.approvalRules != nil {
+			if err := m.approvalRules.SetAlwaysAllow(msg.Result.ToolUse.Name); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist always-allow rule: %v\n", err)
+			}
+		}
 		return m, m.ApproveToolUse()
 
 	case forms.DecisionNeverAllow:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User never allowed tool: %s\n", msg.Result.ToolUse.Name)
-		// TODO: Store in persistent deny list
+		// Store in persistent approval rules
+		if m.approvalRules != nil {
+			if err := m.approvalRules.SetNeverAllow(msg.Result.ToolUse.Name); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist never-allow rule: %v\n", err)
+			}
+		}
 		return m, m.DenyToolUse()
 
 	default:
