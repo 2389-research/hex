@@ -152,10 +152,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, formCmd
 		}
 
-		// Intro screen: Any key dismisses it
+		// Intro screen: Switch to chat mode
+		// For Tab key specifically, return early to avoid double-processing
+		// For other keys, continue processing to allow typing
 		if m.CurrentView == ViewModeIntro {
 			m.CurrentView = ViewModeChat
-			return m, nil
+			// Return early only for Tab to avoid hitting NextView() below
+			if msg.Type == tea.KeyTab {
+				return m, nil
+			}
+			// For other keys, continue processing below
 		}
 
 		// TUI Polish Task 4: Quick actions mode is now handled by huh forms
@@ -511,6 +517,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // updateViewport renders messages into viewport
 func (m *Model) updateViewport() {
 	var content strings.Builder
+
+	// Prepend intro screen if ShowIntro is true
+	if m.ShowIntro {
+		content.WriteString(m.renderIntroView())
+		content.WriteString("\n\n")
+		// Add separator between intro and messages
+		content.WriteString("─────────────────────────────────────────────────────────────────────────────────\n\n")
+	}
+
 	for _, msg := range m.Messages {
 		if msg.Role == "user" {
 			// Style user messages with cyan (Dracula theme) and > prefix
@@ -709,6 +724,11 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			m.Messages = append(m.Messages, assistantMsg)
 			m.StreamingText = ""
 
+			// Hide intro after first assistant response
+			if m.ShowIntro {
+				m.ShowIntro = false
+			}
+
 			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
 
 			// Dump messages after adding assistant message with tool_use blocks
@@ -760,6 +780,11 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		}
 		// No tool, just commit regular text
 		m.CommitStreamingText()
+
+		// Hide intro after first assistant response
+		if m.ShowIntro {
+			m.ShowIntro = false
+		}
 
 		m.SetStatus(StatusIdle)
 		m.streamChan = nil

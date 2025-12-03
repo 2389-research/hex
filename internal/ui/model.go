@@ -93,6 +93,7 @@ type Model struct {
 	Streaming      bool
 	StreamingText  string
 	Ready          bool
+	ShowIntro      bool // Show intro screen in viewport initially
 
 	// Task 5: Advanced UI Features
 	CurrentView  ViewMode
@@ -234,6 +235,7 @@ func NewModel(conversationID, model string) *Model {
 		Viewport:             vp,
 		Width:                80,
 		Height:               24,
+		ShowIntro:            true, // Show intro in viewport initially
 		CurrentView:          ViewModeIntro,
 		Status:               StatusIdle,
 		renderer:             renderer,
