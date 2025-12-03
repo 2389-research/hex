@@ -1,0 +1,43 @@
+---
+version: 1
+interactions:
+    - request:
+        body: '{"model":"claude-sonnet-4-5-20250929","messages":[{"content":[{"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}},{"type":"text","text":"What''s in this image?"}],"role":"user"}],"max_tokens":1024}'
+        form: {}
+        headers:
+            Anthropic-Version:
+                - "2023-06-01"
+            Content-Type:
+                - application/json
+            X-Api-Key:
+                - test-api-key
+        url: https://api.anthropic.com/v1/messages
+        method: POST
+      response:
+        body: '{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CVk2rTjQFbXfD9uuGEgdU"}'
+        headers:
+            Cf-Cache-Status:
+                - DYNAMIC
+            Cf-Ray:
+                - 9a844737ed6913a0-ORD
+            Content-Length:
+                - "130"
+            Content-Type:
+                - application/json
+            Date:
+                - Wed, 03 Dec 2025 16:00:39 GMT
+            Request-Id:
+                - req_011CVk2rTjQFbXfD9uuGEgdU
+            Server:
+                - cloudflare
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            X-Envoy-Upstream-Service-Time:
+                - "10"
+            X-Robots-Tag:
+                - none
+            X-Should-Retry:
+                - "false"
+        status: 401 Unauthorized
+        code: 401
+        duration: 65.683917ms
