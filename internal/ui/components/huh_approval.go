@@ -1,0 +1,125 @@
+// Package components provides reusable UI components for the Pagen TUI.
+// ABOUTME: Huh-based tool approval component using confirm form
+// ABOUTME: Provides themed approval dialogs for tool execution
+package components
+
+import (
+	"fmt"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
+	"github.com/harper/pagent/internal/ui/themes"
+)
+
+// HuhApproval is a Huh-based approval dialog for tool execution
+type HuhApproval struct {
+	theme       themes.Theme
+	toolName    string
+	description string
+	approved    bool
+	form        *huh.Form
+}
+
+// NewHuhApproval creates a new Huh approval dialog
+func NewHuhApproval(theme themes.Theme, toolName, description string) *HuhApproval {
+	var approved bool
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("approved").
+				Title(fmt.Sprintf("Execute %s?", toolName)).
+				Description(description).
+				Affirmative("Yes!").
+				Negative("No.").
+				Value(&approved),
+		),
+	).WithTheme(huhThemeFromPagenTheme(theme)).
+		WithWidth(80)
+
+	return &HuhApproval{
+		theme:       theme,
+		toolName:    toolName,
+		description: description,
+		approved:    false,
+		form:        form,
+	}
+}
+
+// Init implements tea.Model
+func (h *HuhApproval) Init() tea.Cmd {
+	return h.form.Init()
+}
+
+// Update implements tea.Model
+func (h *HuhApproval) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	// Handle form updates
+	form, formCmd := h.form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		h.form = f
+		cmd = formCmd
+	}
+
+	// Check if form is complete
+	if h.form.State == huh.StateCompleted {
+		// Extract the approved value from form
+		if val := h.form.GetString("approved"); val != "" {
+			h.approved = (val == "true" || val == "Yes!")
+		}
+	}
+
+	return h, cmd
+}
+
+// View implements tea.Model
+func (h *HuhApproval) View() string {
+	return h.form.View()
+}
+
+// IsApproved returns whether the tool was approved
+func (h *HuhApproval) IsApproved() bool {
+	return h.approved
+}
+
+// SetApproved sets the approval state (for testing)
+func (h *HuhApproval) SetApproved(approved bool) {
+	h.approved = approved
+}
+
+// IsComplete returns whether the form is complete
+func (h *HuhApproval) IsComplete() bool {
+	return h.form.State == huh.StateCompleted
+}
+
+// huhThemeFromPagenTheme converts Pagen theme to Huh theme
+func huhThemeFromPagenTheme(theme themes.Theme) *huh.Theme {
+	t := huh.ThemeBase()
+
+	// Customize focused field styles
+	t.Focused.Base = t.Focused.Base.Foreground(theme.Foreground())
+	t.Focused.Title = t.Focused.Title.Foreground(theme.Primary())
+	t.Focused.Description = t.Focused.Description.Foreground(theme.Subtle())
+	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(theme.Error())
+	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(theme.Error())
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(theme.Primary())
+	t.Focused.NextIndicator = t.Focused.NextIndicator.Foreground(theme.Success())
+	t.Focused.PrevIndicator = t.Focused.PrevIndicator.Foreground(theme.Warning())
+	t.Focused.Option = t.Focused.Option.Foreground(theme.Foreground())
+	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(theme.Primary())
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Foreground(theme.Background()).Background(theme.Primary())
+	t.Focused.BlurredButton = t.Focused.BlurredButton.Foreground(theme.Subtle())
+
+	// Customize blurred field styles
+	t.Blurred.Base = t.Blurred.Base.Foreground(theme.Subtle())
+	t.Blurred.Title = t.Blurred.Title.Foreground(theme.Subtle())
+	t.Blurred.Description = t.Blurred.Description.Foreground(theme.Subtle())
+	t.Blurred.SelectSelector = t.Blurred.SelectSelector.Foreground(theme.Subtle())
+	t.Blurred.NextIndicator = t.Blurred.NextIndicator.Foreground(theme.Subtle())
+	t.Blurred.PrevIndicator = t.Blurred.PrevIndicator.Foreground(theme.Subtle())
+	t.Blurred.Option = t.Blurred.Option.Foreground(theme.Subtle())
+	t.Blurred.SelectedOption = t.Blurred.SelectedOption.Foreground(theme.Subtle())
+
+	return t
+}
