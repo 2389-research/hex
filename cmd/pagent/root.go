@@ -54,6 +54,9 @@ var (
 	// Phase 6C: Template system flags
 	templateName string
 
+	// TUI theme flag
+	theme string
+
 	// Print mode tool flags (like Claude Code)
 	dangerouslySkipPermissions bool
 	enabledTools               []string
@@ -98,6 +101,9 @@ func init() {
 
 	// Phase 6C: Template system flags
 	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'pagent templates list')")
+
+	// TUI theme flag
+	rootCmd.PersistentFlags().StringVar(&theme, "theme", "", "TUI theme: dracula, gruvbox, nord (default: dracula)")
 
 	// Print mode tool support flags (like Claude Code)
 	rootCmd.PersistentFlags().BoolVar(&dangerouslySkipPermissions, "dangerously-skip-permissions", false, "Auto-approve all tool executions (use with caution)")
@@ -172,6 +178,12 @@ func runInteractive(prompt string) error {
 		}
 	}
 
+	// Determine theme: prioritize --theme flag, fall back to default
+	themeName := theme
+	if themeName == "" {
+		themeName = "dracula"
+	}
+
 	var conversationID string
 	var uiModel *ui.Model
 
@@ -189,7 +201,7 @@ func runInteractive(prompt string) error {
 			// Success - load the conversation
 			conversationID = conv.ID
 			modelName = conv.Model
-			uiModel = ui.NewModel(conversationID, modelName, "dracula")
+			uiModel = ui.NewModel(conversationID, modelName, themeName)
 			uiModel.SetDB(db)
 
 			// Load messages into UI
@@ -209,7 +221,7 @@ func runInteractive(prompt string) error {
 		}
 		conversationID = conv.ID
 		modelName = conv.Model
-		uiModel = ui.NewModel(conversationID, modelName, "dracula")
+		uiModel = ui.NewModel(conversationID, modelName, themeName)
 		uiModel.SetDB(db)
 
 		// Load favorite status
@@ -224,7 +236,7 @@ func runInteractive(prompt string) error {
 	// Create new conversation if not resuming
 	if uiModel == nil {
 		conversationID = fmt.Sprintf("conv-%d", time.Now().Unix())
-		uiModel = ui.NewModel(conversationID, modelName, "dracula")
+		uiModel = ui.NewModel(conversationID, modelName, themeName)
 		uiModel.SetDB(db)
 
 		// Phase 6C: Set system prompt from template if available
