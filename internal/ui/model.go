@@ -194,7 +194,7 @@ func NewModel(conversationID, model, themeName string) *Model {
 	// Phase 6C: Initialize new UI components
 	spinner := NewToolSpinner()
 	streamingDisplay := NewStreamingDisplay()
-	statusBar := NewStatusBar(model, 80)
+	statusBar := NewStatusBar(model, 80, theme)
 	quickActionsRegistry := NewQuickActionsRegistry()
 	autocomplete := NewAutocomplete()
 

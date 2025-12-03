@@ -14,7 +14,7 @@ import (
 
 // TestUIModelInitialization tests creating and initializing the UI model
 func TestUIModelInitialization(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.Equal(t, "conv-123", model.ConversationID)
 	assert.Equal(t, "claude-sonnet-4-5-20250929", model.Model)
@@ -26,7 +26,7 @@ func TestUIModelInitialization(t *testing.T) {
 
 // TestUIAddMessage tests adding messages to the model
 func TestUIAddMessage(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	model.AddMessage("user", "Hello")
 	model.AddMessage("assistant", "Hi there!")
@@ -41,7 +41,7 @@ func TestUIAddMessage(t *testing.T) {
 
 // TestUIStreamingFlow tests streaming message accumulation
 func TestUIStreamingFlow(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Initially not streaming
 	assert.False(t, model.Streaming)
@@ -75,7 +75,7 @@ func TestUIStreamingFlow(t *testing.T) {
 
 // TestUIWindowResize tests that model responds to window size changes
 func TestUIWindowResize(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Send window size message
 	msg := tea.WindowSizeMsg{Width: 120, Height: 40}
@@ -89,7 +89,7 @@ func TestUIWindowResize(t *testing.T) {
 
 // TestUISetAPIClient tests setting API client
 func TestUISetAPIClient(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	client := core.NewClient("test-api-key")
 	model.SetAPIClient(client)
@@ -100,7 +100,7 @@ func TestUISetAPIClient(t *testing.T) {
 
 // TestUISetDatabase tests setting database
 func TestUISetDatabase(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	db := SetupTestDB(t)
 
 	model.SetDB(db)
@@ -111,7 +111,7 @@ func TestUISetDatabase(t *testing.T) {
 
 // TestUIViewRendering tests that the view can be rendered
 func TestUIViewRendering(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// Initially not ready
 	view := model.View()
@@ -124,12 +124,12 @@ func TestUIViewRendering(t *testing.T) {
 
 	view = m.View()
 	assert.NotContains(t, view, "Initializing", "should not show initializing after ready")
-	assert.Contains(t, view, "Clem", "should show title")
+	assert.Contains(t, view, "Pagen", "should show title")
 }
 
 // TestUIStateTransitions tests various state transitions
 func TestUIStateTransitions(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	// State: Not Ready -> Ready
 	assert.False(t, model.Ready)
@@ -151,7 +151,7 @@ func TestUIStateTransitions(t *testing.T) {
 
 // TestUIClearStreamingText tests clearing streaming buffer
 func TestUIClearStreamingText(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	model.AppendStreamingText("Some partial response")
 	assert.NotEmpty(t, model.StreamingText)
@@ -162,7 +162,7 @@ func TestUIClearStreamingText(t *testing.T) {
 
 // TestUIUpdateTokens tests token counter updates
 func TestUIUpdateTokens(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.Equal(t, 0, model.TokensInput)
 	assert.Equal(t, 0, model.TokensOutput)
@@ -179,7 +179,7 @@ func TestUIUpdateTokens(t *testing.T) {
 
 // TestUISetStatus tests setting UI status
 func TestUISetStatus(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.Equal(t, ui.StatusIdle, model.Status)
 
@@ -193,7 +193,7 @@ func TestUISetStatus(t *testing.T) {
 
 // TestUIViewModes tests switching between view modes
 func TestUIViewModes(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 
@@ -209,7 +209,7 @@ func TestUIViewModes(t *testing.T) {
 
 // TestUISearchMode tests search mode functionality
 func TestUISearchMode(t *testing.T) {
-	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 
 	assert.False(t, model.SearchMode)
 

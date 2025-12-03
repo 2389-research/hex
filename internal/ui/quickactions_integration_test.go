@@ -84,8 +84,7 @@ func TestModelRenderQuickActionsModal(t *testing.T) {
 	model.EnterQuickActionsMode()
 
 	// Render the modal
-	styles := model.createViewStyles()
-	rendered := model.renderQuickActionsModal(styles)
+	rendered := model.renderQuickActionsModal()
 
 	// Should contain key elements
 	assert.Contains(t, rendered, "Quick Actions")

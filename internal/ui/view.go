@@ -156,7 +156,7 @@ func (m *Model) View() string {
 
 	// Phase 6C Task 6: Quick actions modal (takes precedence over everything except tool approval)
 	if m.quickActionsMode {
-		b.WriteString(m.renderQuickActionsModal(styles) + "\n")
+		b.WriteString(m.renderQuickActionsModal() + "\n")
 		// Skip input and other prompts
 		b.WriteString("\n" + m.renderStatusBarEnhanced(styles))
 		return b.String()
@@ -425,30 +425,30 @@ func (m *Model) renderStatusBarEnhanced(styles viewStyles) string {
 // Phase 6C Task 6: Quick Actions Modal Rendering
 
 // renderQuickActionsModal renders the quick actions menu overlay
-func (m *Model) renderQuickActionsModal(styles viewStyles) string {
-	// Styles for the modal
+func (m *Model) renderQuickActionsModal() string {
+	// Styles for the modal using theme colors
 	modalStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("99")).
+		BorderForeground(m.theme.Border()).
 		Padding(1, 2).
 		Width(60)
 
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("99"))
+		Foreground(m.theme.Primary())
 
 	inputStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("214"))
+		Foreground(m.theme.Warning())
 
 	actionStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("243"))
+		Foreground(m.theme.Subtle())
 
 	selectedActionStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("39")).
+		Foreground(m.theme.Success()).
 		Bold(true)
 
 	helpStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
+		Foreground(m.theme.Subtle()).
 		Italic(true)
 
 	// Build content

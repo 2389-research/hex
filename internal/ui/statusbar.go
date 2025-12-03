@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/harper/pagent/internal/ui/themes"
 )
 
 // ConnectionStatus represents API connection state
@@ -36,67 +37,78 @@ type StatusBar struct {
 	width         int
 	helpVisible   bool
 	customMessage string
+	theme         themes.Theme
 }
 
-var (
-	statusBarBgStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("235")).
-				Foreground(lipgloss.Color("252")).
-				Padding(0, 1)
+// statusBarStyles holds all dynamically generated styles for the status bar
+type statusBarStyles struct {
+	background             lipgloss.Style
+	modelName              lipgloss.Style
+	tokenUsage             lipgloss.Style
+	tokenHigh              lipgloss.Style
+	contextSize            lipgloss.Style
+	connectionConnected    lipgloss.Style
+	connectionStreaming    lipgloss.Style
+	connectionError        lipgloss.Style
+	connectionDisconnected lipgloss.Style
+	mode                   lipgloss.Style
+	helpKey                lipgloss.Style
+	helpDesc               lipgloss.Style
+	customMessage          lipgloss.Style
+}
 
-	modelNameStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("141")).
-			Bold(true)
-
-	tokenUsageStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("243"))
-
-	tokenHighStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("226")).
-			Bold(true)
-
-	contextSizeStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("99"))
-
-	connectionConnectedStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("35")).
-					Bold(true)
-
-	connectionStreamingStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("86")).
-					Bold(true)
-
-	connectionErrorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")).
-				Bold(true)
-
-	connectionDisconnectedStyle = lipgloss.NewStyle().
-					Foreground(lipgloss.Color("243"))
-
-	modeStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("212")).
-			Bold(true)
-
-	helpKeyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("170")).
-			Bold(true)
-
-	helpDescStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("243"))
-
-	customMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("214")).
-				Italic(true)
-)
+// createStatusBarStyles generates styles from the theme
+func (s *StatusBar) createStatusBarStyles() statusBarStyles {
+	theme := s.theme
+	return statusBarStyles{
+		background: lipgloss.NewStyle().
+			Background(theme.Background()).
+			Foreground(theme.Foreground()).
+			Padding(0, 1),
+		modelName: lipgloss.NewStyle().
+			Foreground(theme.Primary()).
+			Bold(true),
+		tokenUsage: lipgloss.NewStyle().
+			Foreground(theme.Subtle()),
+		tokenHigh: lipgloss.NewStyle().
+			Foreground(theme.Warning()).
+			Bold(true),
+		contextSize: lipgloss.NewStyle().
+			Foreground(theme.Secondary()),
+		connectionConnected: lipgloss.NewStyle().
+			Foreground(theme.Success()).
+			Bold(true),
+		connectionStreaming: lipgloss.NewStyle().
+			Foreground(theme.Primary()).
+			Bold(true),
+		connectionError: lipgloss.NewStyle().
+			Foreground(theme.Error()).
+			Bold(true),
+		connectionDisconnected: lipgloss.NewStyle().
+			Foreground(theme.Subtle()),
+		mode: lipgloss.NewStyle().
+			Foreground(theme.Secondary()).
+			Bold(true),
+		helpKey: lipgloss.NewStyle().
+			Foreground(theme.Primary()).
+			Bold(true),
+		helpDesc: lipgloss.NewStyle().
+			Foreground(theme.Subtle()),
+		customMessage: lipgloss.NewStyle().
+			Foreground(theme.Warning()).
+			Italic(true),
+	}
+}
 
 // NewStatusBar creates a new status bar
-func NewStatusBar(model string, width int) *StatusBar {
+func NewStatusBar(model string, width int, theme themes.Theme) *StatusBar {
 	return &StatusBar{
 		model:       model,
 		width:       width,
 		connection:  ConnectionDisconnected,
 		currentMode: "chat",
 		contextSize: 200000, // Default context size
+		theme:       theme,
 	}
 }
 
@@ -156,42 +168,44 @@ func (s *StatusBar) ClearCustomMessage() {
 
 // View renders the status bar
 func (s *StatusBar) View() string {
+	styles := s.createStatusBarStyles()
+
 	if s.width < 40 {
 		// Too narrow, show minimal info
-		return statusBarBgStyle.Render("Clem")
+		return styles.background.Render("Pagen")
 	}
 
 	var parts []string
 
 	// Left section: Model name
-	parts = append(parts, modelNameStyle.Render(s.model))
+	parts = append(parts, styles.modelName.Render(s.model))
 
 	// Connection indicator
-	parts = append(parts, s.renderConnection())
+	parts = append(parts, s.renderConnection(styles))
 
 	// Token usage
 	if s.tokensTotal > 0 {
-		parts = append(parts, s.renderTokenUsage())
+		parts = append(parts, s.renderTokenUsage(styles))
 	}
 
 	// Context size indicator (if tokens are getting high)
 	if s.tokensTotal > s.contextSize/2 {
-		parts = append(parts, s.renderContextIndicator())
+		parts = append(parts, s.renderContextIndicator(styles))
 	}
 
 	// Current mode
-	parts = append(parts, modeStyle.Render("["+s.currentMode+"]"))
+	parts = append(parts, styles.mode.Render("["+s.currentMode+"]"))
 
 	// Custom message (if any)
 	if s.customMessage != "" {
-		parts = append(parts, customMessageStyle.Render(s.customMessage))
+		parts = append(parts, styles.customMessage.Render(s.customMessage))
 	}
 
 	// Combine left parts
 	leftSection := strings.Join(parts, " ")
 
 	// Right section: Help text
-	rightSection := s.renderHelp()
+	rightSection := s.renderHelp(styles)
 
 	// Calculate spacing
 	usedWidth := lipgloss.Width(leftSection) + lipgloss.Width(rightSection)
@@ -203,40 +217,40 @@ func (s *StatusBar) View() string {
 	// Combine sections
 	bar := leftSection + strings.Repeat(" ", spacing) + rightSection
 
-	return statusBarBgStyle.Width(s.width).Render(bar)
+	return styles.background.Width(s.width).Render(bar)
 }
 
 // renderConnection renders the connection status indicator
-func (s *StatusBar) renderConnection() string {
+func (s *StatusBar) renderConnection(styles statusBarStyles) string {
 	switch s.connection {
 	case ConnectionConnected:
-		return connectionConnectedStyle.Render("●")
+		return styles.connectionConnected.Render("●")
 	case ConnectionStreaming:
-		return connectionStreamingStyle.Render("◉")
+		return styles.connectionStreaming.Render("◉")
 	case ConnectionError:
-		return connectionErrorStyle.Render("◉")
+		return styles.connectionError.Render("◉")
 	case ConnectionDisconnected:
-		return connectionDisconnectedStyle.Render("○")
+		return styles.connectionDisconnected.Render("○")
 	default:
-		return connectionDisconnectedStyle.Render("○")
+		return styles.connectionDisconnected.Render("○")
 	}
 }
 
 // renderTokenUsage renders token usage information
-func (s *StatusBar) renderTokenUsage() string {
+func (s *StatusBar) renderTokenUsage(styles statusBarStyles) string {
 	// Highlight if usage is getting high
 	usagePercent := float64(s.tokensTotal) / float64(s.contextSize) * 100
 
 	tokensText := fmt.Sprintf("%dk↓ %dk↑", s.tokensInput/1000, s.tokensOutput/1000)
 
 	if usagePercent > 80 {
-		return tokenHighStyle.Render(tokensText)
+		return styles.tokenHigh.Render(tokensText)
 	}
-	return tokenUsageStyle.Render(tokensText)
+	return styles.tokenUsage.Render(tokensText)
 }
 
 // renderContextIndicator renders context size indicator
-func (s *StatusBar) renderContextIndicator() string {
+func (s *StatusBar) renderContextIndicator(styles statusBarStyles) string {
 	usagePercent := float64(s.tokensTotal) / float64(s.contextSize) * 100
 	bars := int(usagePercent / 10)
 	if bars > 10 {
@@ -247,9 +261,9 @@ func (s *StatusBar) renderContextIndicator() string {
 	for i := 0; i < 10; i++ {
 		if i < bars {
 			if usagePercent > 80 {
-				indicator += tokenHighStyle.Render("█")
+				indicator += styles.tokenHigh.Render("█")
 			} else {
-				indicator += contextSizeStyle.Render("█")
+				indicator += styles.contextSize.Render("█")
 			}
 		} else {
 			indicator += "░"
@@ -261,39 +275,40 @@ func (s *StatusBar) renderContextIndicator() string {
 }
 
 // renderHelp renders the help text
-func (s *StatusBar) renderHelp() string {
+func (s *StatusBar) renderHelp(styles statusBarStyles) string {
 	if s.helpVisible {
-		return s.renderExpandedHelp()
+		return s.renderExpandedHelp(styles)
 	}
-	return s.renderCompactHelp()
+	return s.renderCompactHelp(styles)
 }
 
 // renderCompactHelp renders compact help text
-func (s *StatusBar) renderCompactHelp() string {
+func (s *StatusBar) renderCompactHelp(styles statusBarStyles) string {
 	shortcuts := []string{
-		helpKeyStyle.Render("?") + helpDescStyle.Render(":help"),
-		helpKeyStyle.Render("^C") + helpDescStyle.Render(":quit"),
+		styles.helpKey.Render("?") + styles.helpDesc.Render(":help"),
+		styles.helpKey.Render("^C") + styles.helpDesc.Render(":quit"),
 	}
 	return strings.Join(shortcuts, " ")
 }
 
 // renderExpandedHelp renders expanded help text (when help is toggled)
-func (s *StatusBar) renderExpandedHelp() string {
+func (s *StatusBar) renderExpandedHelp(styles statusBarStyles) string {
 	// This would be shown in a separate help panel, not in status bar
-	return helpDescStyle.Render("Press ? to toggle help")
+	return styles.helpDesc.Render("Press ? to toggle help")
 }
 
 // GetFullHelp returns full help text for display in a separate panel
 func (s *StatusBar) GetFullHelp() string {
+	styles := s.createStatusBarStyles()
 	var b strings.Builder
 
-	b.WriteString(lipgloss.NewStyle().Bold(true).Render("Keyboard Shortcuts") + "\n\n")
+	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(s.theme.Primary()).Render("Keyboard Shortcuts") + "\n\n")
 
 	shortcuts := []struct {
 		key  string
 		desc string
 	}{
-		{"Ctrl+C", "Quit Clem"},
+		{"Ctrl+C", "Quit Pagen"},
 		{"Ctrl+L", "Clear screen"},
 		{"Ctrl+K", "Clear conversation"},
 		{"Ctrl+S", "Save conversation"},
@@ -309,10 +324,10 @@ func (s *StatusBar) GetFullHelp() string {
 		{"Esc", "Exit current mode/quit"},
 	}
 
-	for _, s := range shortcuts {
-		b.WriteString(helpKeyStyle.Render(fmt.Sprintf("%-12s", s.key)))
+	for _, shortcut := range shortcuts {
+		b.WriteString(styles.helpKey.Render(fmt.Sprintf("%-12s", shortcut.key)))
 		b.WriteString("  ")
-		b.WriteString(helpDescStyle.Render(s.desc))
+		b.WriteString(styles.helpDesc.Render(shortcut.desc))
 		b.WriteString("\n")
 	}
 
