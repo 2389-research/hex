@@ -1120,9 +1120,7 @@ func (m *Model) EnterHuhApprovalMode() {
 
 	toolName := m.pendingToolUses[0].Name
 	m.huhApproval = components.NewHuhApproval(m.theme, toolName, description)
-
-	// Initialize the form
-	m.huhApproval.Init()
+	// Note: Init() cmd will be handled by the bubbletea Update loop when huhApproval.Update() is called
 }
 
 // ExitHuhApprovalMode closes the approval dialog

@@ -23,7 +23,7 @@ type Progress struct {
 // NewProgress creates a new progress bar
 func NewProgress(theme themes.Theme, label string) *Progress {
 	p := progress.New(
-		progress.WithDefaultGradient(),
+		progress.WithSolidFill(string(theme.Primary())),
 		progress.WithWidth(40),
 	)
 

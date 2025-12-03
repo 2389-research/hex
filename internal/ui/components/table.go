@@ -21,12 +21,30 @@ type Table struct {
 
 // NewTable creates a new table component
 func NewTable(theme themes.Theme, columns []string, rows [][]string) *Table {
-	// Create table columns
+	// Create table columns with dynamic widths
 	tableCols := make([]table.Column, len(columns))
 	for i, col := range columns {
+		// Calculate width: max of column title length and data in that column
+		width := len(col) + 2 // Add padding
+		for _, row := range rows {
+			if i < len(row) {
+				cellLen := len(row[i]) + 2
+				if cellLen > width {
+					width = cellLen
+				}
+			}
+		}
+		// Cap width at reasonable maximum
+		if width > 40 {
+			width = 40
+		}
+		if width < 10 {
+			width = 10
+		}
+
 		tableCols[i] = table.Column{
 			Title: col,
-			Width: 20,
+			Width: width,
 		}
 	}
 

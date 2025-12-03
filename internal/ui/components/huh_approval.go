@@ -65,8 +65,11 @@ func (h *HuhApproval) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Check if form is complete
 	if h.form.State == huh.StateCompleted {
 		// Extract the approved value from form
-		if val := h.form.GetString("approved"); val != "" {
-			h.approved = (val == "true" || val == "Yes!")
+		// Huh confirm stores boolean values, not strings
+		if val := h.form.GetBool("approved"); val {
+			h.approved = true
+		} else {
+			h.approved = false
 		}
 	}
 
