@@ -1,11 +1,11 @@
-// Pagen - Claude CLI Architecture
+// Jeff - Claude CLI Architecture
 // A comprehensive system architecture diagram showing all components,
-// data flows, and relationships in the Pagen project.
+// data flows, and relationships in the Jeff project.
 //
-// Generate with: dot -Tpng pagent-architecture.dot -o pagent-architecture.png
-// Or: dot -Tsvg pagent-architecture.dot -o pagent-architecture.svg
+// Generate with: dot -Tpng jeff-architecture.dot -o jeff-architecture.png
+// Or: dot -Tsvg jeff-architecture.dot -o jeff-architecture.svg
 
-digraph PagenArchitecture {
+digraph JeffArchitecture {
     // Graph settings for optimal layout
     rankdir=TB;
     compound=true;
@@ -41,14 +41,14 @@ digraph PagenArchitecture {
         user [label="User\n(Developer)", shape=ellipse, fillcolor=lightblue, style=filled];
         anthropic_api [label="Anthropic API\nmessages endpoint\n(streaming)", fillcolor=lightblue, style="filled,dashed"];
         mcp_servers [label="MCP Servers\n(filesystem, fetch,\ncustom)", fillcolor=lightblue, style="filled,dashed"];
-        filesystem [label="File System\n~/.pagent/\nproject files", fillcolor=lightblue, style="filled,dashed"];
+        filesystem [label="File System\n~/.jeff/\nproject files", fillcolor=lightblue, style="filled,dashed"];
     }
 
     // ========================================
     // CLUSTER: CLI Layer (Entry Point)
     // ========================================
     subgraph cluster_cli {
-        label="CLI Layer (cmd/pagent)";
+        label="CLI Layer (cmd/jeff)";
         style=filled;
         fillcolor=honeydew;
         fontsize=14;
@@ -157,7 +157,7 @@ digraph PagenArchitecture {
         messages [label="messages.go\nMessage CRUD\nJSON Tool Calls", fillcolor=lightgray, style=filled];
         migrations [label="migrations/\n001_initial.sql\n002_fts.sql\n003_tokens.sql\n004_favorites.sql", fillcolor=lightgray, style="filled,dashed"];
 
-        db_file [label="~/.pagent/pagent.db\nSQLite Database\nWAL Mode", shape=cylinder, fillcolor=gray, style=filled, fontcolor=white];
+        db_file [label="~/.jeff/jeff.db\nSQLite Database\nWAL Mode", shape=cylinder, fillcolor=gray, style=filled, fontcolor=white];
     }
 
     // ========================================
@@ -218,7 +218,7 @@ digraph PagenArchitecture {
 
         mcp_registry [label="registry.go\nServer Configs\n.mcp.json", fillcolor=lightsteelblue, style=filled];
         mcp_client [label="client.go\nJSON-RPC Client\nstdio Transport", fillcolor=lightsteelblue, style=filled];
-        tool_adapter [label="tool_adapter.go\nMCP→Pagen Bridge\nTool Wrapper", fillcolor=lightsteelblue, style=filled];
+        tool_adapter [label="tool_adapter.go\nMCP→Jeff Bridge\nTool Wrapper", fillcolor=lightsteelblue, style=filled];
         tool_manager [label="tool_manager.go\nMCP Tool Registry\nMulti-server", fillcolor=lightsteelblue, style=filled];
 
         mcp_config_file [label=".mcp.json\nServer Definitions\nstdio config", shape=note, fillcolor=lightsteelblue, style="filled,dashed"];
@@ -237,7 +237,7 @@ digraph PagenArchitecture {
         // Templates
         template_types [label="templates/types.go\nTemplate Structs\nYAML Schema", fillcolor=lavender, style=filled];
         template_loader [label="templates/loader.go\nYAML Loader\nValidation", fillcolor=lavender, style=filled];
-        template_files [label="~/.pagent/templates/\ncode-review.yaml\ndebug-session.yaml\nrefactor.yaml", shape=folder, fillcolor=lavender, style="filled,dashed"];
+        template_files [label="~/.jeff/templates/\ncode-review.yaml\ndebug-session.yaml\nrefactor.yaml", shape=folder, fillcolor=lavender, style="filled,dashed"];
 
         // Export
         exporter [label="export/exporter.go\nExporter Interface\nFormat Dispatch", fillcolor=lavender, style=filled];
@@ -265,7 +265,7 @@ digraph PagenArchitecture {
     // ========================================
 
     // User interactions
-    user -> main [label="Run pagent", style=bold, color=blue];
+    user -> main [label="Run jeff", style=bold, color=blue];
     user -> filesystem [label="Read/Write", style=dashed];
 
     // CLI routing

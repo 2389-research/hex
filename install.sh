@@ -1,5 +1,5 @@
 #!/bin/bash
-# ABOUTME: Installation script for Pagen CLI
+# ABOUTME: Installation script for Jeff CLI
 # ABOUTME: Downloads latest release and installs to system or user bin directory
 
 set -e
@@ -12,8 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="harper/pagent"
-BINARY_NAME="pagent"
+REPO="harper/jeff"
+BINARY_NAME="jeff"
 INSTALL_DIR=""
 USE_SUDO=false
 
@@ -231,7 +231,7 @@ check_path() {
 # Main installation flow
 main() {
     echo ""
-    info "Pagen CLI Installer"
+    info "Jeff CLI Installer"
     echo ""
 
     # Detect system
@@ -275,7 +275,7 @@ main() {
     echo "  2. Verify configuration:"
     echo "     ${BINARY_NAME} doctor"
     echo ""
-    echo "  3. Start using Pagen:"
+    echo "  3. Start using Jeff:"
     echo "     ${BINARY_NAME}"
     echo ""
     info "Documentation: https://github.com/${REPO}/blob/main/docs/USER_GUIDE.md"
