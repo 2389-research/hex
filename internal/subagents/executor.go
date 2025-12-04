@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -138,6 +139,16 @@ func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest,
 	// Inherit environment variables
 	cmd.Env = os.Environ()
 
+	// Ensure API key is available to subagent
+	// Load config to get API key if not already in environment
+	if os.Getenv("HEX_API_KEY") == "" {
+		// Try to load from config file
+		cfg, err := e.loadConfigForSubagent()
+		if err == nil && cfg.APIKey != "" {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_API_KEY=%s", cfg.APIKey))
+		}
+	}
+
 	// Add subagent-specific environment variables
 	cmd.Env = append(cmd.Env,
 		fmt.Sprintf("HEX_SUBAGENT_TYPE=%s", req.Type),
@@ -258,4 +269,47 @@ func (e *Executor) ExecuteWithHooks(ctx context.Context, req *ExecutionRequest, 
 	}
 
 	return result, err
+}
+
+// loadConfigForSubagent loads the config to extract API key for subagents
+// This avoids importing core package by using basic config loading
+func (e *Executor) loadConfigForSubagent() (*subagentConfig, error) {
+	// Try reading HEX_API_KEY from environment first
+	if apiKey := os.Getenv("HEX_API_KEY"); apiKey != "" {
+		return &subagentConfig{APIKey: apiKey}, nil
+	}
+
+	// Try reading from ~/.hex/config.yaml
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(home, ".hex", "config.yaml")
+	data, err := os.ReadFile(configPath) //nolint:gosec // G304: Path is constructed from UserHomeDir, not user input
+	if err != nil {
+		return nil, err
+	}
+
+	// Very simple YAML parsing for api_key
+	// This avoids circular dependency on core package
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "api_key:") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				apiKey := strings.TrimSpace(parts[1])
+				apiKey = strings.Trim(apiKey, "\"'") // Remove quotes if present
+				return &subagentConfig{APIKey: apiKey}, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("api_key not found in config")
+}
+
+// subagentConfig is a minimal config structure for subagent needs
+type subagentConfig struct {
+	APIKey string
 }
