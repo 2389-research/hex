@@ -36,3 +36,4 @@ config.yaml
 test-react/
 hex
 reacttest/
+.worktrees/
