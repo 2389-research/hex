@@ -455,7 +455,13 @@ func runInteractive(prompt string) error {
 var globalLogger *logging.Logger
 
 func initializeLogging() error {
+	// If --debug is specified, force debug level and enable stderr output
 	level := logging.LevelFromString(logLevel)
+	if debug != "" {
+		level = logging.LevelDebug
+		// Set environment variable so other packages know we're in debug mode
+		_ = os.Setenv("HEX_DEBUG", debug) // Ignore error - not critical if env var fails to set
+	}
 
 	var format logging.Format
 	switch logFormat {
@@ -466,14 +472,29 @@ func initializeLogging() error {
 	}
 
 	config := logging.Config{
-		Level:  level,
-		Format: format,
+		Level:     level,
+		Format:    format,
+		AddSource: level == logging.LevelDebug, // Add source file/line in debug mode
 	}
 
 	var logger *logging.Logger
 	var err error
 
-	if logFile != "" {
+	// In debug mode, always write to stderr/file even in TUI mode
+	if debug != "" || level == logging.LevelDebug {
+		debugFile := logFile
+		if debugFile == "" {
+			// Default debug log file
+			debugFile = "/tmp/hex-debug.log"
+		}
+		config.LogFile = debugFile
+		config.Writer = os.Stderr // Also write to stderr
+		logger, err = logging.NewLoggerWithFile(config)
+		if err != nil {
+			return fmt.Errorf("failed to create debug logger with file %s: %w", debugFile, err)
+		}
+		fmt.Fprintf(os.Stderr, "Debug mode enabled. Logs writing to: %s\n", debugFile)
+	} else if logFile != "" {
 		// Log to file (and optionally stderr in debug mode)
 		config.LogFile = logFile
 		if level == logging.LevelDebug {
@@ -492,6 +513,7 @@ func initializeLogging() error {
 
 	globalLogger = logger
 	logging.SetGlobalLogger(logger)
+
 	return nil
 }
 

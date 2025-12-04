@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/2389-research/hex/internal/logging"
 )
 
 const (
@@ -67,6 +70,17 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
+	// Debug logging: Log the full request
+	if os.Getenv("HEX_DEBUG") != "" {
+		// Pretty-print the request for readability
+		var prettyReq bytes.Buffer
+		if err := json.Indent(&prettyReq, body, "", "  "); err == nil {
+			logging.Debug("API Request to /messages", "body", prettyReq.String())
+		} else {
+			logging.Debug("API Request to /messages", "body", string(body))
+		}
+	}
+
 	// Create HTTP request
 	httpReq, err := http.NewRequestWithContext(
 		ctx,
@@ -96,6 +110,17 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
+	// Debug logging: Log the full response
+	if os.Getenv("HEX_DEBUG") != "" {
+		// Pretty-print the response for readability
+		var prettyResp bytes.Buffer
+		if err := json.Indent(&prettyResp, respBody, "", "  "); err == nil {
+			logging.Debug("API Response from /messages", "status", httpResp.StatusCode, "body", prettyResp.String())
+		} else {
+			logging.Debug("API Response from /messages", "status", httpResp.StatusCode, "body", string(respBody))
+		}
+	}
+
 	// Check status code
 	if httpResp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error %d: %s", httpResp.StatusCode, string(respBody))
@@ -105,6 +130,15 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	var resp MessageResponse
 	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
+	}
+
+	// Debug logging: Log token usage
+	if os.Getenv("HEX_DEBUG") != "" {
+		logging.Debug("API Usage",
+			"input_tokens", resp.Usage.InputTokens,
+			"output_tokens", resp.Usage.OutputTokens,
+			"stop_reason", resp.StopReason,
+		)
 	}
 
 	return &resp, nil

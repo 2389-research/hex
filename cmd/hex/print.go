@@ -103,7 +103,7 @@ func runPrintMode(prompt string) error {
 			return fmt.Errorf("API error: %w", err)
 		}
 
-		logging.DebugWith("Response received", "stop_reason", resp.StopReason, "content_blocks", len(resp.Content))
+		logging.Debug("Response received", "stop_reason", resp.StopReason, "content_blocks", len(resp.Content))
 
 		// Check stop reason
 		if resp.StopReason == "end_turn" || resp.StopReason == "max_tokens" {

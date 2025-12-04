@@ -280,6 +280,11 @@ func levelToSlog(level Level) slog.Level {
 
 // Default returns the global logger instance
 func Default() *Logger {
+	// If globalLogger is already set (by SetGlobalLogger), use it directly
+	if globalLogger != nil {
+		return globalLogger
+	}
+	// Otherwise, initialize default logger once
 	once.Do(func() {
 		globalLogger = NewLogger(Config{
 			Level:  LevelInfo,
