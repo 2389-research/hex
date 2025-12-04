@@ -1061,14 +1061,19 @@ func (m *Model) EnterHuhApprovalMode() tea.Cmd {
 	toolName := m.pendingToolUses[0].Name
 	m.huhApproval = components.NewHuhApproval(m.theme, toolName, description)
 
+	// CRITICAL: Must call Init() on the Huh form to initialize it
+	// Without this, the form won't respond to key presses
+	initCmd := m.huhApproval.Init()
+
 	// Phase 2: Send initial WindowSizeMsg for tmux compatibility
 	// This ensures the form renders correctly on first display
-	// We MUST capture and return the command from Update()
-	_, cmd := m.huhApproval.Update(tea.WindowSizeMsg{
+	_, sizeCmd := m.huhApproval.Update(tea.WindowSizeMsg{
 		Width:  m.Width,
 		Height: m.Height,
 	})
-	return cmd
+
+	// Return batch of both commands
+	return tea.Batch(initCmd, sizeCmd)
 }
 
 // ExitHuhApprovalMode closes the approval dialog

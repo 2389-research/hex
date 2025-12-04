@@ -102,7 +102,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Phase 2: Use Huh forms for approval
 		// Forward KeyMsg to approval form if active
 		if m.toolApprovalMode && m.huhApproval != nil {
-			// Let Huh form handle all input
+			// BUGFIX: Handle escape specially - Huh Confirm doesn't support escape to cancel
+			// Escape should always deny the tool
+			if msg.Type == tea.KeyEsc {
+				m.ExitHuhApprovalMode()
+				return m, m.DenyToolUse()
+			}
+
+			// Let Huh form handle all other input
 			approvalModel, cmd := m.huhApproval.Update(msg)
 			if approval, ok := approvalModel.(*components.HuhApproval); ok {
 				m.huhApproval = approval
