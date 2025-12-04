@@ -467,7 +467,7 @@ func setupTestDBForTools(t *testing.T) (*sql.DB, func()) {
 	_, err = db.Exec("PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	err = storage.InitializeSchema(db)
+	err = storage.RunMigrations(db)
 	require.NoError(t, err)
 
 	cleanup := func() {

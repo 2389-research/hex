@@ -5,7 +5,7 @@ ALTER TABLE conversations ADD COLUMN total_cost REAL DEFAULT 0.0;
 
 -- Add summary tracking
 ALTER TABLE messages ADD COLUMN is_summary BOOLEAN DEFAULT 0;
-ALTER TABLE conversations ADD COLUMN summary_message_id INTEGER REFERENCES messages(id);
+ALTER TABLE conversations ADD COLUMN summary_message_id TEXT REFERENCES messages(id);
 
 -- Add provider tracking to messages
 ALTER TABLE messages ADD COLUMN provider TEXT;

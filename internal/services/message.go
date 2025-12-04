@@ -17,8 +17,8 @@ type MessageService interface {
 	Add(ctx context.Context, msg *Message) error
 
 	// GetByConversation returns all messages for a conversation
-	GetByConversation(ctx context.Context, convID int64) ([]*Message, error)
+	GetByConversation(ctx context.Context, convID string) ([]*Message, error)
 
 	// GetSummaries returns only summary messages for a conversation
-	GetSummaries(ctx context.Context, convID int64) ([]*Message, error)
+	GetSummaries(ctx context.Context, convID string) ([]*Message, error)
 }

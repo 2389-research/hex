@@ -14,11 +14,11 @@ type AgentService interface {
 	Stream(ctx context.Context, call AgentCall) (<-chan StreamEvent, error)
 
 	// IsConversationBusy returns true if conversation has active request
-	IsConversationBusy(convID int64) bool
+	IsConversationBusy(convID string) bool
 
 	// QueuedPrompts returns number of queued messages for conversation
-	QueuedPrompts(convID int64) int
+	QueuedPrompts(convID string) int
 
 	// CancelConversation cancels active request and clears queue
-	CancelConversation(convID int64)
+	CancelConversation(convID string)
 }

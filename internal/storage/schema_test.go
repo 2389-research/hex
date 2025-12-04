@@ -19,7 +19,7 @@ func TestInitializeSchema(t *testing.T) {
 	defer func() { _ = db.Close() }()
 
 	// Initialize schema
-	err = storage.InitializeSchema(db)
+	err = storage.RunMigrations(db)
 	require.NoError(t, err)
 
 	// Verify conversations table exists
@@ -39,7 +39,7 @@ func TestSchemaIndexes(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	err = storage.InitializeSchema(db)
+	err = storage.RunMigrations(db)
 	require.NoError(t, err)
 
 	// Verify index on messages(conversation_id)

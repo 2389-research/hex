@@ -17,7 +17,7 @@ type ConversationService interface {
 	Create(ctx context.Context, title string) (*Conversation, error)
 
 	// Get retrieves a conversation by ID
-	Get(ctx context.Context, id int64) (*Conversation, error)
+	Get(ctx context.Context, id string) (*Conversation, error)
 
 	// List returns all conversations ordered by updated_at DESC
 	List(ctx context.Context) ([]*Conversation, error)
@@ -26,8 +26,8 @@ type ConversationService interface {
 	Update(ctx context.Context, conv *Conversation) error
 
 	// Delete removes a conversation and its messages
-	Delete(ctx context.Context, id int64) error
+	Delete(ctx context.Context, id string) error
 
 	// UpdateTokenUsage updates token counts and calculates cost
-	UpdateTokenUsage(ctx context.Context, id int64, promptTokens, completionTokens int64) error
+	UpdateTokenUsage(ctx context.Context, id string, promptTokens, completionTokens int64) error
 }

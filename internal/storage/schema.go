@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -39,38 +38,6 @@ func RunMigrations(db *sql.DB) error {
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("migration failed: %w", err)
-	}
-
-	return nil
-}
-
-// InitializeSchema creates tables and indexes
-func InitializeSchema(db *sql.DB) error {
-	// List of migrations to run in order
-	migrationFiles := []string{
-		"migrations/001_initial.sql",
-		"migrations/002_todos.sql",
-		"migrations/003_history.sql",
-		"migrations/004_favorites.sql",
-	}
-
-	// Execute each migration
-	for _, filename := range migrationFiles {
-		migrationSQL, err := migrations.ReadFile(filename)
-		if err != nil {
-			return fmt.Errorf("read migration %s: %w", filename, err)
-		}
-
-		if _, err := db.Exec(string(migrationSQL)); err != nil {
-			// Ignore "duplicate column" errors (happens when migrations run multiple times)
-			// This is a workaround until proper migration tracking is implemented
-			errStr := err.Error()
-			isDuplicateColumn := strings.Contains(errStr, "duplicate column")
-			if !isDuplicateColumn {
-				return fmt.Errorf("execute migration %s: %w", filename, err)
-			}
-			// Silently ignore duplicate column errors
-		}
 	}
 
 	return nil

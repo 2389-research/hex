@@ -8,20 +8,20 @@ import "time"
 
 // Conversation represents a chat session
 type Conversation struct {
-	ID               int64
+	ID               string
 	Title            string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	PromptTokens     int64
 	CompletionTokens int64
 	TotalCost        float64
-	SummaryMessageID *int64
+	SummaryMessageID *string
 }
 
 // Message represents a single message in a conversation
 type Message struct {
-	ID             int64
-	ConversationID int64
+	ID             string
+	ConversationID string
 	Role           string
 	Content        string
 	Provider       string
@@ -32,7 +32,7 @@ type Message struct {
 
 // AgentCall represents a request to the agent
 type AgentCall struct {
-	ConversationID int64
+	ConversationID string
 	Prompt         string
 	Attachments    []string
 	MaxTokens      int
