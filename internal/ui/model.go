@@ -51,6 +51,8 @@ const (
 	StatusTyping
 	// StatusStreaming indicates the assistant is streaming a response
 	StatusStreaming
+	// StatusQueued indicates a message is queued while agent is busy
+	StatusQueued
 	// StatusError indicates an error occurred
 	StatusError
 )

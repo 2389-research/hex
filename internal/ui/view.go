@@ -131,6 +131,8 @@ func (m *Model) renderStatusIndicator() string {
 	switch m.Status {
 	case StatusStreaming:
 		return m.theme.Warning.Render("●")
+	case StatusQueued:
+		return m.theme.Info.Render("●")
 	case StatusTyping:
 		return m.theme.Success.Render("●")
 	case StatusError:
@@ -435,6 +437,30 @@ func (m *Model) renderStatusBarEnhanced() string {
 		mode = "tools"
 	}
 	m.statusBar.SetMode(mode)
+
+	// Check for queued messages and display queue status
+	if m.agentSvc != nil && m.ConversationID != "" {
+		queuedCount := m.agentSvc.QueuedPrompts(m.ConversationID)
+		if queuedCount > 0 {
+			var queueMsg string
+			switch m.Status {
+			case StatusStreaming:
+				queueMsg = fmt.Sprintf("Agent working... (%d queued)", queuedCount)
+			case StatusQueued:
+				if queuedCount == 1 {
+					queueMsg = "Queued (processing...)"
+				} else {
+					queueMsg = fmt.Sprintf("Queued (%d ahead)", queuedCount-1)
+				}
+			}
+			if queueMsg != "" {
+				m.statusBar.SetCustomMessage(queueMsg)
+			}
+		} else if m.Status == StatusQueued {
+			// If status is queued but no queue items, reset to idle
+			m.Status = StatusIdle
+		}
+	}
 
 	return m.statusBar.View()
 }

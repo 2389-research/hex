@@ -364,6 +364,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						_ = m.updateConversationTitle(title)
 					}
 
+					// Phase 4 Task 4: Check if agent is busy before triggering streaming
+					if m.agentSvc != nil && m.agentSvc.IsConversationBusy(m.ConversationID) {
+						// Message will be queued by AgentService
+						m.SetStatus(StatusQueued)
+						m.updateViewport()
+						// Note: AgentService will handle the actual queuing and execution
+						// For now, still fall through to streamMessage which will queue via service layer
+					}
+
 					// Task 6: Trigger streaming
 					if m.apiClient != nil {
 						return m, m.streamMessage(input)
