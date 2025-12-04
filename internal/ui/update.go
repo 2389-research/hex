@@ -18,7 +18,7 @@ import (
 
 // Update handles Bubbletea messages with panic recovery
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var result tea.Model
+	var result tea.Model = m // Initialize to stable state before panic recovery
 	var cmd tea.Cmd
 
 	RecoverPanic("Model.Update", func() {
@@ -26,7 +26,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	})
 
 	if result == nil {
-		return m, cmd // Panic occurred, return stable state
+		// Panic occurred and result got set to nil somehow, return stable state
+		return m, cmd
 	}
 	return result, cmd
 }
