@@ -16,8 +16,23 @@ import (
 	"github.com/harper/pagent/internal/ui/components"
 )
 
-// Update handles Bubbletea messages
+// Update handles Bubbletea messages with panic recovery
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var result tea.Model
+	var cmd tea.Cmd
+
+	RecoverPanic("Model.Update", func() {
+		result, cmd = m.update(msg)
+	})
+
+	if result == nil {
+		return m, cmd // Panic occurred, return stable state
+	}
+	return result, cmd
+}
+
+// update is the internal implementation of Update
+func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 

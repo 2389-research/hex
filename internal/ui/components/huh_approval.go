@@ -5,6 +5,8 @@ package components
 
 import (
 	"fmt"
+	"log/slog"
+	"runtime/debug"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -53,29 +55,47 @@ func (h *HuhApproval) Init() tea.Cmd {
 	return h.form.Init()
 }
 
-// Update implements tea.Model
+// Update implements tea.Model with panic recovery
 func (h *HuhApproval) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var result tea.Model = h
 	var cmd tea.Cmd
 
-	// Handle form updates
-	form, formCmd := h.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		h.form = f
-		cmd = formCmd
-	}
-
-	// Check if form is complete
-	if h.form.State == huh.StateCompleted {
-		// Extract the approved value from form
-		// Huh confirm stores boolean values, not strings
-		if val := h.form.GetBool("approved"); val {
-			h.approved = true
-		} else {
-			h.approved = false
+	recoverPanic("HuhApproval.Update", func() {
+		// Handle form updates
+		form, formCmd := h.form.Update(msg)
+		if f, ok := form.(*huh.Form); ok {
+			h.form = f
+			cmd = formCmd
 		}
-	}
 
-	return h, cmd
+		// Check if form is complete
+		if h.form.State == huh.StateCompleted {
+			// Extract the approved value from form
+			// Huh confirm stores boolean values, not strings
+			if val := h.form.GetBool("approved"); val {
+				h.approved = true
+			} else {
+				h.approved = false
+			}
+		}
+
+		result = h
+	})
+
+	return result, cmd
+}
+
+// recoverPanic wraps a function with panic recovery for components
+func recoverPanic(component string, fn func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Component panic recovered",
+				"component", component,
+				"panic", r,
+				"stack", string(debug.Stack()))
+		}
+	}()
+	fn()
 }
 
 // View implements tea.Model
