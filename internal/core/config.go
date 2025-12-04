@@ -27,7 +27,7 @@ type Config struct {
 // Priority (highest to lowest):
 // 1. Environment variables (PAGEN_*)
 // 2. .env file (current directory)
-// 3. ~/.pagen/config.yaml
+// 3. ~/.jeff/config.yaml
 // 4. Defaults
 func LoadConfig() (*Config, error) {
 	// Load .env file if it exists (don't error if missing)
@@ -63,7 +63,7 @@ func LoadConfig() (*Config, error) {
 		v.AddConfigPath(".") // Current directory
 		home, err := os.UserHomeDir()
 		if err == nil {
-			clemDir := filepath.Join(home, ".pagen")
+			clemDir := filepath.Join(home, ".jeff")
 			v.AddConfigPath(clemDir)
 		}
 	}

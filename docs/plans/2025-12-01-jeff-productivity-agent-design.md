@@ -255,7 +255,7 @@ func (p *GmailProvider) Authenticate() error {
 ### Configuration Structure
 
 ```yaml
-# ~/.pagen/config.yaml
+# ~/.jeff/config.yaml
 active_provider: gmail
 
 providers:
@@ -263,18 +263,18 @@ providers:
     type: gmail
     client_id: your-client-id.apps.googleusercontent.com
     client_secret: your-secret
-    token_file: ~/.pagen/tokens/gmail.json
+    token_file: ~/.jeff/tokens/gmail.json
 
   outlook:
     type: outlook
     client_id: your-app-id
     client_secret: your-secret
-    token_file: ~/.pagen/tokens/outlook.json
+    token_file: ~/.jeff/tokens/outlook.json
 ```
 
 ### Token Storage
 
-- Tokens stored in `~/.pagen/tokens/`
+- Tokens stored in `~/.jeff/tokens/`
 - One file per provider: `gmail.json`, `outlook.json`, etc.
 - Token refresh handled transparently by OAuth2 client
 - Consider encryption at rest for production
@@ -283,7 +283,7 @@ providers:
 
 ```bash
 # Initial setup
-pagen init                              # creates ~/.pagen/ directory structure
+pagen init                              # creates ~/.jeff/ directory structure
 
 # Add a provider
 pagen provider add gmail                # interactive OAuth setup

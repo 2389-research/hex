@@ -121,7 +121,7 @@ type Theme struct {
 
 ### Theme Configuration
 
-**Config file (~/.pagen/config.yaml):**
+**Config file (~/.jeff/config.yaml):**
 ```yaml
 theme: dracula  # or "gruvbox", "nord"
 ```

@@ -229,7 +229,7 @@ func TestGetTemplatesDir(t *testing.T) {
 	dir, err := GetTemplatesDir()
 	require.NoError(t, err)
 	assert.NotEmpty(t, dir)
-	assert.Contains(t, dir, ".pagen")
+	assert.Contains(t, dir, ".jeff")
 	assert.Contains(t, dir, "templates")
 }
 

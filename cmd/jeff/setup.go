@@ -16,7 +16,7 @@ var setupCmd = &cobra.Command{
 
 Get your API key from: https://console.anthropic.com/
 
-This command will save your API key to ~/.pagent/config.yaml`,
+This command will save your API key to ~/.jeff/config.yaml`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runSetup,
 }
@@ -43,13 +43,13 @@ func runSetup(_ *cobra.Command, args []string) error {
 	}
 
 	// Create .jeff directory
-	pagentDir := filepath.Join(home, ".jeff")
-	if err := os.MkdirAll(pagentDir, 0750); err != nil {
+	jeffDir := filepath.Join(home, ".jeff")
+	if err := os.MkdirAll(jeffDir, 0750); err != nil {
 		return fmt.Errorf("create .jeff dir: %w", err)
 	}
 
 	// Write config
-	configPath := filepath.Join(pagentDir, "config.yaml")
+	configPath := filepath.Join(jeffDir, "config.yaml")
 	config := map[string]string{
 		"api_key": apiKey,
 	}

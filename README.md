@@ -152,7 +152,7 @@ After 6 phases of development, Pagen v1.0 is production-ready with:
 - 🎯 **Multiple views** (Chat, History, Tools)
 
 **Conversation Persistence**
-- 💾 SQLite storage (`~/.pagent/pagent.db`)
+- 💾 SQLite storage (`~/.jeff/pagent.db`)
 - 🔄 Resume with `--continue` or `--resume <id>`
 - 🏷️ Automatic conversation titles
 - 📅 Full message history
@@ -211,7 +211,7 @@ Type `y` to approve, `n` (or Enter) to deny.
 
 Three ways to configure:
 
-**1. Config file** (`~/.pagent/config.yaml`):
+**1. Config file** (`~/.jeff/config.yaml`):
 ```yaml
 api_key: sk-ant-api03-...
 model: claude-sonnet-4-5-20250929
@@ -472,7 +472,7 @@ pagent doctor
 **Database locked**:
 ```bash
 # Close other Pagen instances
-lsof ~/.pagent/pagent.db
+lsof ~/.jeff/pagent.db
 ```
 
 **Tool timeout**:

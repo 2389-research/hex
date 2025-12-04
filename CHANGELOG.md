@@ -503,7 +503,7 @@ Three new tools complete Pagen's core tool suite:
 - Token usage tracking with real-time counters
 
 #### Storage System
-- SQLite-based conversation persistence at `~/.pagent/pagent.db`
+- SQLite-based conversation persistence at `~/.jeff/pagent.db`
 - Hybrid schema design: normalized tables + JSON for complex data
 - Automatic schema migrations with embedded SQL files
 - WAL mode enabled for better concurrency

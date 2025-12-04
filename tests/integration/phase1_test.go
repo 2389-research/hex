@@ -47,7 +47,7 @@ func TestPhase1Integration(t *testing.T) {
 		assert.Contains(t, string(output), "✓", "should show success checkmark")
 
 		// Verify file was created
-		configPath := filepath.Join(tmpHome, ".pagen", "config.yaml")
+		configPath := filepath.Join(tmpHome, ".jeff", "config.yaml")
 		assert.FileExists(t, configPath, "config.yaml should be created")
 	})
 

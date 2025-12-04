@@ -12,7 +12,7 @@ import (
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Check installation health",
-	Long:  "Verify that Pagen is correctly installed and configured",
+	Long:  "Verify that Jeff is correctly installed and configured",
 	RunE:  runDoctor,
 }
 
@@ -21,8 +21,8 @@ func init() {
 }
 
 func runDoctor(_ *cobra.Command, _ []string) error {
-	fmt.Println("Pagen Health Check")
-	fmt.Println("=================")
+	fmt.Println("Jeff Health Check")
+	fmt.Println("==================")
 	fmt.Println()
 
 	checks := []check{
@@ -57,14 +57,14 @@ func checkHomeDirectory() bool {
 		return false
 	}
 
-	pagentDir := filepath.Join(home, ".jeff")
-	if _, err := os.Stat(pagentDir); os.IsNotExist(err) {
+	jeffDir := filepath.Join(home, ".jeff")
+	if _, err := os.Stat(jeffDir); os.IsNotExist(err) {
 		printCheck(".jeff directory", false, "not found")
-		fmt.Printf("  Run: mkdir -p %s\n", pagentDir)
+		fmt.Printf("  Run: mkdir -p %s\n", jeffDir)
 		return false
 	}
 
-	printCheck(".jeff directory", true, pagentDir)
+	printCheck(".jeff directory", true, jeffDir)
 	return true
 }
 

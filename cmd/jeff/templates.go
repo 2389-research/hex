@@ -18,7 +18,7 @@ var templatesCmd = &cobra.Command{
 	Short: "Manage session templates",
 	Long: `Manage YAML-based session templates.
 
-Templates are loaded from ~/.pagent/templates/ and can define:
+Templates are loaded from ~/.jeff/templates/ and can define:
 - System prompts
 - Initial messages
 - Enabled tools
@@ -32,7 +32,7 @@ Use --template flag with root command to start a session with a template.`,
 var templatesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available templates",
-	Long:  `List all available session templates from ~/.pagent/templates/.`,
+	Long:  `List all available session templates from ~/.jeff/templates/.`,
 	RunE:  runTemplatesList,
 }
 

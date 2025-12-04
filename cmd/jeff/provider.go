@@ -289,7 +289,7 @@ func runProviderReauth(_ *cobra.Command, args []string) error {
 // Helper functions
 
 func getProviderConfig(providerName string) (map[string]string, error) {
-	// TODO: Load from ~/.pagen/config.yaml
+	// TODO: Load from ~/.jeff/config.yaml
 	// For now, return minimal config with defaults
 
 	homeDir, err := os.UserHomeDir()
@@ -300,7 +300,7 @@ func getProviderConfig(providerName string) (map[string]string, error) {
 	// For Gmail, we need client_id and client_secret
 	// These should come from user's config file
 	config := map[string]string{
-		"token_file": fmt.Sprintf("%s/.pagen/tokens/%s.json", homeDir, providerName),
+		"token_file": fmt.Sprintf("%s/.jeff/tokens/%s.json", homeDir, providerName),
 	}
 
 	// Check for environment variables (for testing)
@@ -314,10 +314,10 @@ func getProviderConfig(providerName string) (map[string]string, error) {
 	// Validate required fields
 	if providerName == "gmail" {
 		if _, ok := config["client_id"]; !ok {
-			return nil, fmt.Errorf("missing client_id for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_ID=your-client-id\n\nOr add to ~/.pagen/config.yaml")
+			return nil, fmt.Errorf("missing client_id for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_ID=your-client-id\n\nOr add to ~/.jeff/config.yaml")
 		}
 		if _, ok := config["client_secret"]; !ok {
-			return nil, fmt.Errorf("missing client_secret for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_SECRET=your-secret\n\nOr add to ~/.pagen/config.yaml")
+			return nil, fmt.Errorf("missing client_secret for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_SECRET=your-secret\n\nOr add to ~/.jeff/config.yaml")
 		}
 	}
 
@@ -338,7 +338,7 @@ func loadProviderRegistry() (*providers.Registry, error) {
 	}
 
 	gmailConfig := map[string]string{
-		"token_file":    fmt.Sprintf("%s/.pagen/tokens/gmail.json", homeDir),
+		"token_file":    fmt.Sprintf("%s/.jeff/tokens/gmail.json", homeDir),
 		"client_id":     os.Getenv("PAGEN_GMAIL_CLIENT_ID"),
 		"client_secret": os.Getenv("PAGEN_GMAIL_CLIENT_SECRET"),
 	}
@@ -354,19 +354,19 @@ func loadProviderRegistry() (*providers.Registry, error) {
 }
 
 func saveActiveProvider(_ string) error {
-	// TODO: Save to ~/.pagen/config.yaml
+	// TODO: Save to ~/.jeff/config.yaml
 	// For now, just create the directory structure
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	pagenDir := fmt.Sprintf("%s/.pagen", homeDir)
-	if err := os.MkdirAll(pagenDir, 0700); err != nil {
+	jeffDir := fmt.Sprintf("%s/.jeff", homeDir)
+	if err := os.MkdirAll(jeffDir, 0700); err != nil {
 		return err
 	}
 
-	tokensDir := fmt.Sprintf("%s/tokens", pagenDir)
+	tokensDir := fmt.Sprintf("%s/tokens", jeffDir)
 	if err := os.MkdirAll(tokensDir, 0700); err != nil {
 		return err
 	}

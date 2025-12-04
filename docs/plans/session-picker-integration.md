@@ -134,7 +134,7 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 ### Manual Testing
 1. **No conversations exist**:
    ```bash
-   rm ~/.pagent/pagent.db
+   rm ~/.jeff/pagent.db
    ./pagent
    # Should start new session (current behavior)
    ```
