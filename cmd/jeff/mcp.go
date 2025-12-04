@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/pagent/internal/mcp"
+	"github.com/harper/jeff/internal/mcp"
 	"github.com/spf13/cobra"
 )
 

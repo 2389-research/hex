@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // TestBorderSets verifies that all border character sets are defined correctly

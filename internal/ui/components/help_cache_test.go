@@ -6,7 +6,7 @@ package components
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // TestHelpOverlayCacheInitialization verifies cache starts empty

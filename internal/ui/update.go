@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/pagent/internal/core"
-	"github.com/harper/pagent/internal/storage"
-	"github.com/harper/pagent/internal/tools"
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jeff/internal/core"
+	"github.com/harper/jeff/internal/storage"
+	"github.com/harper/jeff/internal/tools"
+	"github.com/harper/jeff/internal/ui/components"
 )
 
 // Update handles Bubbletea messages with panic recovery

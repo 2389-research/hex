@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // ConnectionStatus represents API connection state

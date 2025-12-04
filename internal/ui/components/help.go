@@ -6,8 +6,8 @@ package components
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/layout"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/layout"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // HelpOverlay displays keyboard shortcuts

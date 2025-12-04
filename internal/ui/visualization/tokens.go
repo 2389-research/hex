@@ -8,7 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // TokenUsage tracks token counts for a conversation

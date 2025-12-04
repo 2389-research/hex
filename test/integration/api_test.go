@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

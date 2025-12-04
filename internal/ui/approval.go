@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/core"
 )
 
 // RiskLevel represents the risk level of a tool operation

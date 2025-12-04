@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/pagent/internal/mcp"
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/mcp"
+	"github.com/harper/jeff/internal/tools"
 )
 
 func TestMCPToolsRegistration_NoConfig(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/harper/pagent/internal/storage"
+	"github.com/harper/jeff/internal/storage"
 )
 
 // defaultDBPath returns the default database path (~/.pagen/pagent.db)

@@ -5,8 +5,8 @@ package context_test
 import (
 	"fmt"
 
-	"github.com/harper/pagent/internal/context"
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/context"
+	"github.com/harper/jeff/internal/core"
 )
 
 // ExampleManager_tokenSavings demonstrates the token savings from context pruning

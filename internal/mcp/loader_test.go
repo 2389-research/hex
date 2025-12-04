@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/tools"
 )
 
 func TestLoadMCPTools_NoConfigFile(t *testing.T) {

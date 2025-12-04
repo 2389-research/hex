@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/core"
 )
 
 // Summarizer creates summaries of conversation history

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/pagent/internal/storage"
+	"github.com/harper/jeff/internal/storage"
 )
 
 func TestSessionItem_Title(t *testing.T) {

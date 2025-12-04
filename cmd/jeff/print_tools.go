@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/pagent/internal/logging"
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/logging"
+	"github.com/harper/jeff/internal/tools"
 )
 
 // setupPrintModeTools creates and configures tool registry and executor for print mode

@@ -6,7 +6,7 @@ package tools
 import (
 	"context"
 
-	"github.com/harper/pagent/internal/providers"
+	"github.com/harper/jeff/internal/providers"
 )
 
 // CreateEventTool creates calendar events

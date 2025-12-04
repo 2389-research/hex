@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 func TestNewStatusBar(t *testing.T) {

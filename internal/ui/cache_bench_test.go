@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/components"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/components"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // BenchmarkMarkdownRenderNoCaching benchmarks markdown rendering without cache

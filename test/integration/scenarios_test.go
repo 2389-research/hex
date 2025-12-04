@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/harper/pagent/internal/storage"
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/storage"
+	"github.com/harper/jeff/internal/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

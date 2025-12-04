@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/harper/pagent/internal/providers"
-	"github.com/harper/pagent/internal/providers/oauth"
+	"github.com/harper/jeff/internal/providers"
+	"github.com/harper/jeff/internal/providers/oauth"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"

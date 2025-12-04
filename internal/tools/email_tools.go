@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/harper/pagent/internal/providers"
+	"github.com/harper/jeff/internal/providers"
 )
 
 // SendEmailTool sends email messages

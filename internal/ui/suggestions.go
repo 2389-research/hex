@@ -4,7 +4,7 @@
 package ui
 
 import (
-	"github.com/harper/pagent/internal/suggestions"
+	"github.com/harper/jeff/internal/suggestions"
 )
 
 // Suggestion is an alias for suggestions.Suggestion

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/tools"
 )
 
 // LoadMCPTools loads MCP server configurations from .mcp.json and registers their tools

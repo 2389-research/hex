@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/core"
 )
 
 // BenchmarkClientCreation measures client initialization overhead

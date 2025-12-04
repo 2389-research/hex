@@ -5,8 +5,8 @@ package visual
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui"
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jeff/internal/ui"
+	"github.com/harper/jeff/internal/ui/components"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harper/pagent/internal/providers"
+	"github.com/harper/jeff/internal/providers"
 	"golang.org/x/oauth2"
 )
 

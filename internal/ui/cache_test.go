@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/pagent/internal/ui/components"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jeff/internal/ui/components"
+	"github.com/harper/jeff/internal/ui/themes"
 )
 
 // TestMarkdownCacheHit verifies cache is used when rendering same message twice

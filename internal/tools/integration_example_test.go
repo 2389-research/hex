@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/tools"
 )
 
 // Example_completeWorkflow demonstrates a complete tool system workflow

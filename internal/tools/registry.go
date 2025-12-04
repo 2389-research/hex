@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/harper/pagent/internal/core"
+	"github.com/harper/jeff/internal/core"
 )
 
 // Registry manages available tools

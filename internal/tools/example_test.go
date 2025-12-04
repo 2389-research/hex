@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/tools"
 )
 
 // Example demonstrates the complete tool system workflow

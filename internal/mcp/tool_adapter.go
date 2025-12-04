@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/harper/pagent/internal/core"
-	"github.com/harper/pagent/internal/tools"
+	"github.com/harper/jeff/internal/core"
+	"github.com/harper/jeff/internal/tools"
 )
 
 // MCPToolAdapter wraps an MCP tool to implement Clem's Tool interface

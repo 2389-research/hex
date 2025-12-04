@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/storage"
+	"github.com/harper/jeff/internal/storage"
 )
 
 // SessionPicker is a TUI for selecting a conversation to resume
