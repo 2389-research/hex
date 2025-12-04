@@ -64,7 +64,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "pagent [prompt]",
+	Use:   "jeff [prompt]",
 	Short: "Pagen - Productivity AI Agent",
 	Long: `Pagen is a productivity AI agent for your terminal.
 
@@ -100,7 +100,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&contextStrategy, "context-strategy", "prune", "Context management strategy: keep-all, prune, summarize")
 
 	// Phase 6C: Template system flags
-	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'pagent templates list')")
+	rootCmd.PersistentFlags().StringVar(&templateName, "template", "", "Use a session template (see 'jeff templates list')")
 
 	// TUI theme flag
 	rootCmd.PersistentFlags().StringVar(&theme, "theme", "", "TUI theme: dracula, gruvbox, nord (default: dracula)")
@@ -325,7 +325,7 @@ func runInteractive(prompt string) error {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
 	} else {
-		return fmt.Errorf("API key not configured. Run 'pagent setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+		return fmt.Errorf("API key not configured. Run 'jeff setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Task 12: Create tool registry and executor

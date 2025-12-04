@@ -18,7 +18,7 @@ func TestRootCommand(t *testing.T) {
 func TestVersionFlag(t *testing.T) {
 	// Create a fresh command instance to avoid state pollution
 	cmd := &cobra.Command{
-		Use:     "pagent [prompt]",
+		Use:     "jeff [prompt]",
 		Version: version,
 	}
 

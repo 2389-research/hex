@@ -67,7 +67,7 @@ var favoritesCmd = &cobra.Command{
 		// Print results
 		if len(favorites) == 0 {
 			fmt.Println("No favorite conversations yet.")
-			fmt.Println("Use 'pagent favorite <conv-id>' to mark a conversation as favorite.")
+			fmt.Println("Use 'jeff favorite <conv-id>' to mark a conversation as favorite.")
 			return nil
 		}
 

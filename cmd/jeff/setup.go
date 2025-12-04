@@ -31,7 +31,7 @@ func runSetup(_ *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		apiKey = args[0]
 	} else {
-		fmt.Println("Usage: pagent setup-token <your-api-key>")
+		fmt.Println("Usage: jeff setup-token <your-api-key>")
 		fmt.Println("\nGet your API key from: https://console.anthropic.com/")
 		return nil
 	}
@@ -42,10 +42,10 @@ func runSetup(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("get home dir: %w", err)
 	}
 
-	// Create .pagent directory
-	pagentDir := filepath.Join(home, ".pagent")
+	// Create .jeff directory
+	pagentDir := filepath.Join(home, ".jeff")
 	if err := os.MkdirAll(pagentDir, 0750); err != nil {
-		return fmt.Errorf("create .pagent dir: %w", err)
+		return fmt.Errorf("create .jeff dir: %w", err)
 	}
 
 	// Write config

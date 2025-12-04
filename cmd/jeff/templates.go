@@ -1,5 +1,5 @@
 // ABOUTME: Commands for managing and using session templates
-// ABOUTME: Provides 'pagent templates list' and --template flag integration
+// ABOUTME: Provides 'jeff templates list' and --template flag integration
 
 package main
 
@@ -115,7 +115,7 @@ func runTemplatesList(_ *cobra.Command, _ []string) error {
 		fmt.Println()
 	}
 
-	fmt.Printf("Use with: pagent --template <name>\n")
+	fmt.Printf("Use with: jeff --template <name>\n")
 
 	return nil
 }

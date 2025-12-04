@@ -40,13 +40,13 @@ Formats:
 
 Examples:
   # Export as Markdown to stdout
-  pagent export abc123
+  jeff export abc123
 
   # Export as JSON to file
-  pagent export abc123 --format json --output conversation.json
+  jeff export abc123 --format json --output conversation.json
 
   # Export as HTML
-  pagent export abc123 --format html --output conversation.html`,
+  jeff export abc123 --format html --output conversation.html`,
 	Args: cobra.ExactArgs(1),
 	RunE: runExport,
 }

@@ -57,14 +57,14 @@ func checkHomeDirectory() bool {
 		return false
 	}
 
-	pagentDir := filepath.Join(home, ".pagent")
+	pagentDir := filepath.Join(home, ".jeff")
 	if _, err := os.Stat(pagentDir); os.IsNotExist(err) {
-		printCheck(".pagent directory", false, "not found")
+		printCheck(".jeff directory", false, "not found")
 		fmt.Printf("  Run: mkdir -p %s\n", pagentDir)
 		return false
 	}
 
-	printCheck(".pagent directory", true, pagentDir)
+	printCheck(".jeff directory", true, pagentDir)
 	return true
 }
 
@@ -75,10 +75,10 @@ func checkConfigFile() bool {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".pagent", "config.yaml")
+	configPath := filepath.Join(home, ".jeff", "config.yaml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		printCheck("Config file", false, "not found")
-		fmt.Println("  Run: pagent setup-token <your-api-key>")
+		fmt.Println("  Run: jeff setup-token <your-api-key>")
 		return false
 	}
 
@@ -95,7 +95,7 @@ func checkAPIKey() bool {
 
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
-		fmt.Println("  Run: pagent setup-token <your-api-key>")
+		fmt.Println("  Run: jeff setup-token <your-api-key>")
 		fmt.Println("  Or set: export PAGEN_API_KEY=<your-key>")
 		return false
 	}
