@@ -606,6 +606,8 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle message completion
 	if chunk.Type == "message_stop" || chunk.Done {
+		var cmds []tea.Cmd
+
 		// Commit streaming text, including tool_use blocks if present
 		if len(m.pendingToolUses) > 0 {
 			// Create assistant message with both text and ALL tool_use content blocks
@@ -636,7 +638,10 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 			// Show tool approval dialog
 			// Phase 2: Use Huh approval instead of plain bool
-			m.EnterHuhApprovalMode()
+			cmd := m.EnterHuhApprovalMode()
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
 		} else {
 			// No tool, just commit regular text
 			m.CommitStreamingText()
@@ -648,7 +653,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		m.streamCtx = nil
 
 		m.UpdateViewport()
-		return m, nil
+		return m, tea.Batch(cmds...)
 	}
 
 	// For other chunk types, continue reading

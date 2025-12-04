@@ -329,7 +329,7 @@ func TestWindowSizeMsgForwardedToApprovalForm(t *testing.T) {
 	model.AddPendingToolUse(toolUse)
 
 	// Enter Huh approval mode
-	model.EnterHuhApprovalMode()
+	_ = model.EnterHuhApprovalMode() // Discard initialization cmd in test
 
 	// Verify approval form was created
 	assert.NotNil(t, model.GetHuhApproval())
@@ -370,7 +370,7 @@ func TestInitialWindowSizeMsgSentOnApprovalMode(t *testing.T) {
 	model.AddPendingToolUse(toolUse)
 
 	// Enter Huh approval mode - should send initial WindowSizeMsg
-	model.EnterHuhApprovalMode()
+	_ = model.EnterHuhApprovalMode()
 
 	// Verify approval form was created
 	approval := model.GetHuhApproval()
@@ -396,7 +396,7 @@ func TestWindowSizeResizeInApprovalMode(t *testing.T) {
 	model.AddPendingToolUse(toolUse)
 
 	// Enter approval mode
-	model.EnterHuhApprovalMode()
+	_ = model.EnterHuhApprovalMode()
 
 	// Send first resize
 	msg1 := tea.WindowSizeMsg{Width: 80, Height: 24}
@@ -433,7 +433,7 @@ func TestAllMessageTypesForwardedToApprovalForm(t *testing.T) {
 	model.AddPendingToolUse(toolUse)
 
 	// Enter approval mode
-	model.EnterHuhApprovalMode()
+	_ = model.EnterHuhApprovalMode()
 
 	// Test KeyMsg forwarding (already tested above, but verify it doesn't break)
 	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}}
@@ -479,7 +479,7 @@ func TestApprovalFormWorksInDifferentTerminalSizes(t *testing.T) {
 			model.AddPendingToolUse(toolUse)
 
 			// Enter approval mode
-			model.EnterHuhApprovalMode()
+			_ = model.EnterHuhApprovalMode()
 
 			// Verify approval form renders
 			approval := model.GetHuhApproval()
