@@ -498,6 +498,9 @@ func (m *Model) ClearContext() {
 	if m.streamCancel != nil {
 		m.streamCancel()
 	}
+	m.streamCtx = nil
+	m.streamCancel = nil
+	m.streamChan = nil
 
 	// Clear all messages and streaming state
 	m.Messages = []Message{}
@@ -515,9 +518,15 @@ func (m *Model) ClearContext() {
 	m.TokensInput = 0
 	m.TokensOutput = 0
 
+	// Reset view mode to chat
+	m.CurrentView = ViewModeChat
+
 	// Exit search mode if active
 	m.SearchMode = false
 	m.SearchQuery = ""
+
+	// Reset vim navigation state
+	m.lastKeyWasG = false
 
 	// Clear tool execution state
 	m.pendingToolUses = nil
@@ -534,6 +543,28 @@ func (m *Model) ClearContext() {
 	if m.streamingDisplay != nil {
 		m.streamingDisplay.Reset()
 	}
+
+	// Reset help and UI modes
+	m.helpVisible = false
+	m.typewriterMode = false
+
+	// Clear quick actions state
+	m.quickActionsMode = false
+	m.quickActionsInput = ""
+	m.quickActionsFiltered = nil
+
+	// Clear suggestions state
+	m.showSuggestions = false
+	m.suggestions = nil
+	m.lastAnalyzedInput = ""
+
+	// Hide autocomplete if active
+	if m.autocomplete != nil {
+		m.autocomplete.Hide()
+	}
+
+	// Reset context usage tracking
+	m.contextUsage = ctxmgr.ContextUsage{}
 
 	// Show intro screen
 	m.ShowIntro = true

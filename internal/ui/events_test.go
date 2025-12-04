@@ -444,9 +444,17 @@ func TestClearCommand(t *testing.T) {
 	model.ErrorMessage = "some error"
 	model.TokensInput = 100
 	model.TokensOutput = 200
+	model.CurrentView = ViewModeHistory
 	model.SearchMode = true
 	model.SearchQuery = "test query"
 	model.ShowIntro = false
+	model.lastKeyWasG = true
+	model.helpVisible = true
+	model.typewriterMode = true
+	model.quickActionsMode = true
+	model.quickActionsInput = "test"
+	model.showSuggestions = true
+	model.lastAnalyzedInput = "input"
 
 	// Verify state before clear
 	if len(model.Messages) != 2 {
@@ -457,6 +465,9 @@ func TestClearCommand(t *testing.T) {
 	}
 	if !model.Streaming {
 		t.Error("Expected Streaming to be true")
+	}
+	if model.CurrentView != ViewModeHistory {
+		t.Error("Expected CurrentView to be ViewModeHistory")
 	}
 
 	// Execute clear command
@@ -492,6 +503,30 @@ func TestClearCommand(t *testing.T) {
 	}
 	if !model.ShowIntro {
 		t.Error("Expected ShowIntro to be true after clear")
+	}
+	if model.CurrentView != ViewModeChat {
+		t.Errorf("Expected CurrentView to be ViewModeChat after clear, got %v", model.CurrentView)
+	}
+	if model.lastKeyWasG {
+		t.Error("Expected lastKeyWasG to be false")
+	}
+	if model.helpVisible {
+		t.Error("Expected helpVisible to be false")
+	}
+	if model.typewriterMode {
+		t.Error("Expected typewriterMode to be false")
+	}
+	if model.quickActionsMode {
+		t.Error("Expected quickActionsMode to be false")
+	}
+	if model.quickActionsInput != "" {
+		t.Errorf("Expected empty quickActionsInput, got %q", model.quickActionsInput)
+	}
+	if model.showSuggestions {
+		t.Error("Expected showSuggestions to be false")
+	}
+	if model.lastAnalyzedInput != "" {
+		t.Errorf("Expected empty lastAnalyzedInput, got %q", model.lastAnalyzedInput)
 	}
 }
 
