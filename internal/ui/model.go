@@ -173,6 +173,11 @@ type Model struct {
 
 	// Phase 2 Task 3: Intro Screen
 	showIntro bool // Show intro screen on first launch
+
+	// Phase 1 Task 6: Size Propagation
+	helpComponent  *components.HelpOverlay
+	errorComponent *components.ErrorDisplay
+	showTokenViz   bool // Whether to show token visualization
 }
 
 // ToolResult represents a tool execution result for the API
@@ -1095,4 +1100,74 @@ func (m *Model) GetHuhApproval() *components.HuhApproval {
 // AddPendingToolUse adds a tool use to the pending queue
 func (m *Model) AddPendingToolUse(toolUse *core.ToolUse) {
 	m.pendingToolUses = append(m.pendingToolUses, toolUse)
+}
+
+// Phase 1 Task 6: Size Propagation Methods
+
+// getReservedHeight calculates the total height reserved for UI chrome
+// This includes the input area, status bar, and optional token visualization
+func (m *Model) getReservedHeight() int {
+	reserved := 0
+	reserved += 3 // Input area (textarea with padding)
+	reserved++    // Status bar
+	if m.tokenViz != nil && m.showTokenViz {
+		reserved += 3 // Token visualization
+	}
+	return reserved
+}
+
+// handleWindowSizeMsg propagates window size changes to all child components
+// This ensures all components render correctly at the new terminal size
+func (m *Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
+	m.Width = msg.Width
+	m.Height = msg.Height
+
+	var cmds []tea.Cmd
+
+	// Propagate to viewport (adjust for reserved height)
+	reservedHeight := m.getReservedHeight()
+	m.Viewport.Width = msg.Width - 4
+	m.Viewport.Height = msg.Height - reservedHeight - 5 // Additional margin
+
+	// Propagate to input (with padding)
+	m.Input.SetWidth(msg.Width - 4)
+
+	// Propagate to components that implement Sizeable interface
+	if m.helpComponent != nil {
+		cmd := m.helpComponent.SetSize(msg.Width, msg.Height)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	if m.errorComponent != nil {
+		cmd := m.errorComponent.SetSize(msg.Width, msg.Height)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	if m.huhApproval != nil {
+		cmd := m.huhApproval.SetSize(msg.Width, msg.Height)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	// Propagate to token visualization
+	if m.tokenViz != nil {
+		m.tokenViz.SetWidth(msg.Width)
+	}
+
+	// Update status bar width
+	if m.statusBar != nil {
+		m.statusBar.SetWidth(msg.Width)
+	}
+
+	// Update approval prompt width
+	if m.approvalPrompt != nil {
+		m.approvalPrompt.SetWidth(msg.Width)
+	}
+
+	return tea.Batch(cmds...)
 }

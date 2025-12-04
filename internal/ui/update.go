@@ -408,29 +408,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.Width = msg.Width
-		m.Height = msg.Height
-		m.Input.SetWidth(msg.Width - 4)
-		m.Viewport.Width = msg.Width - 4
-		m.Viewport.Height = msg.Height - 8
+		// Phase 1 Task 6: Use centralized size propagation
+		cmd = m.handleWindowSizeMsg(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
 		if !m.Ready {
 			m.Ready = true
 			m.UpdateViewport()
 		}
-		// Phase 6C: Update component widths
-		if m.statusBar != nil {
-			m.statusBar.SetWidth(msg.Width)
-		}
-		if m.approvalPrompt != nil {
-			m.approvalPrompt.SetWidth(msg.Width)
-		}
+
 		// Phase 2: Forward WindowSizeMsg to Huh approval form for tmux compatibility
 		if m.toolApprovalMode && m.huhApproval != nil {
-			approvalModel, cmd := m.huhApproval.Update(msg)
+			approvalModel, approvalCmd := m.huhApproval.Update(msg)
 			if approval, ok := approvalModel.(*components.HuhApproval); ok {
 				m.huhApproval = approval
 			}
-			cmds = append(cmds, cmd)
+			cmds = append(cmds, approvalCmd)
 		}
 	}
 
