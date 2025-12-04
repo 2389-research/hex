@@ -427,3 +427,111 @@ func TestQuitHandlersCleanupEvents(t *testing.T) {
 		})
 	}
 }
+
+// TestClearCommand verifies that /clear command resets all context and UI state
+func TestClearCommand(t *testing.T) {
+	// Create model
+	model := NewModel("test-conv", "test-model")
+
+	// Add some messages
+	model.AddMessage("user", "Hello")
+	model.AddMessage("assistant", "Hi there!")
+
+	// Set some state
+	model.StreamingText = "streaming..."
+	model.Streaming = true
+	model.Status = StatusStreaming
+	model.ErrorMessage = "some error"
+	model.TokensInput = 100
+	model.TokensOutput = 200
+	model.SearchMode = true
+	model.SearchQuery = "test query"
+	model.ShowIntro = false
+
+	// Verify state before clear
+	if len(model.Messages) != 2 {
+		t.Errorf("Expected 2 messages, got %d", len(model.Messages))
+	}
+	if model.StreamingText != "streaming..." {
+		t.Error("Expected streaming text to be set")
+	}
+	if !model.Streaming {
+		t.Error("Expected Streaming to be true")
+	}
+
+	// Execute clear command
+	model.ClearContext()
+
+	// Verify all state was reset
+	if len(model.Messages) != 0 {
+		t.Errorf("Expected 0 messages after clear, got %d", len(model.Messages))
+	}
+	if model.StreamingText != "" {
+		t.Errorf("Expected empty streaming text, got %q", model.StreamingText)
+	}
+	if model.Streaming {
+		t.Error("Expected Streaming to be false")
+	}
+	if model.Status != StatusIdle {
+		t.Errorf("Expected StatusIdle, got %v", model.Status)
+	}
+	if model.ErrorMessage != "" {
+		t.Errorf("Expected empty error message, got %q", model.ErrorMessage)
+	}
+	if model.TokensInput != 0 {
+		t.Errorf("Expected 0 input tokens, got %d", model.TokensInput)
+	}
+	if model.TokensOutput != 0 {
+		t.Errorf("Expected 0 output tokens, got %d", model.TokensOutput)
+	}
+	if model.SearchMode {
+		t.Error("Expected SearchMode to be false")
+	}
+	if model.SearchQuery != "" {
+		t.Errorf("Expected empty search query, got %q", model.SearchQuery)
+	}
+	if !model.ShowIntro {
+		t.Error("Expected ShowIntro to be true after clear")
+	}
+}
+
+// TestClearCommandInput verifies that typing /clear triggers the clear
+func TestClearCommandInput(t *testing.T) {
+	// Create model
+	model := NewModel("test-conv", "test-model")
+
+	// Add some messages
+	model.AddMessage("user", "First message")
+	model.AddMessage("assistant", "Response")
+
+	// Verify we have messages
+	if len(model.Messages) != 2 {
+		t.Fatalf("Expected 2 messages, got %d", len(model.Messages))
+	}
+
+	// Set input to /clear
+	model.Input.SetValue("/clear")
+
+	// Send Enter key to trigger the command
+	keyMsg := tea.KeyMsg{Type: tea.KeyEnter}
+	updatedModel, cmd := model.Update(keyMsg)
+
+	// Verify model was updated
+	m, ok := updatedModel.(*Model)
+	if !ok {
+		t.Fatal("Update should return *Model")
+	}
+
+	// Verify messages were cleared
+	if len(m.Messages) != 0 {
+		t.Errorf("Expected 0 messages after /clear, got %d", len(m.Messages))
+	}
+
+	// Verify intro is shown
+	if !m.ShowIntro {
+		t.Error("Expected ShowIntro to be true after /clear")
+	}
+
+	// Verify command was returned (nil is ok for /clear)
+	_ = cmd
+}

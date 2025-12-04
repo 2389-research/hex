@@ -354,6 +354,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 
+				// Check for clear command
+				if input == "/clear" {
+					m.ClearContext()
+					return m, nil
+				}
+
 				if input != "" {
 					m.AddMessage("user", input)
 					m.Input.Reset()

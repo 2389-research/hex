@@ -492,6 +492,56 @@ func (m *Model) ClearStreamingText() {
 	m.StreamingText = ""
 }
 
+// ClearContext resets the conversation context and UI state (for /clear command)
+func (m *Model) ClearContext() {
+	// Cancel any active stream
+	if m.streamCancel != nil {
+		m.streamCancel()
+	}
+
+	// Clear all messages and streaming state
+	m.Messages = []Message{}
+	m.StreamingText = ""
+	m.Streaming = false
+
+	// Reset input
+	m.Input.Reset()
+
+	// Reset status and errors
+	m.Status = StatusIdle
+	m.ErrorMessage = ""
+
+	// Reset token counters
+	m.TokensInput = 0
+	m.TokensOutput = 0
+
+	// Exit search mode if active
+	m.SearchMode = false
+	m.SearchQuery = ""
+
+	// Clear tool execution state
+	m.pendingToolUses = nil
+	m.executingToolUses = nil
+	m.assemblingToolUse = nil
+	m.toolInputJSONBuf = ""
+	m.toolApprovalMode = false
+	m.toolApprovalForm = nil
+	m.executingTool = false
+	m.currentToolID = ""
+	m.toolResults = nil
+
+	// Clear streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.Reset()
+	}
+
+	// Show intro screen
+	m.ShowIntro = true
+
+	// Update viewport to show cleared state
+	m.updateViewport()
+}
+
 // SetAPIClient sets the API client for streaming
 func (m *Model) SetAPIClient(client *core.Client) {
 	m.apiClient = client
