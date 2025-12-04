@@ -1,12 +1,12 @@
-# Pagen - Personal Productivity Agent Design
+# Jeff - Personal Productivity Agent Design
 
 **Date**: 2025-12-01
 **Status**: Design Complete - Ready for Implementation
-**Authors**: Harper, Claude (pagen_architect)
+**Authors**: Harper, Claude (jeff_architect)
 
 ## Executive Summary
 
-Pagen is a personal productivity agent forked from Clem (Claude Code CLI). Instead of code manipulation tools, Pagen provides productivity-focused tools (email, calendar, tasks) routed through pluggable provider implementations. The agent uses domain-specific tool primitives and subagent composition to build emergent productivity workflows.
+Jeff is a personal productivity agent forked from Clem (Claude Code CLI). Instead of code manipulation tools, Jeff provides productivity-focused tools (email, calendar, tasks) routed through pluggable provider implementations. The agent uses domain-specific tool primitives and subagent composition to build emergent productivity workflows.
 
 ## Design Decisions
 
@@ -283,25 +283,25 @@ providers:
 
 ```bash
 # Initial setup
-pagen init                              # creates ~/.jeff/ directory structure
+jeff init                              # creates ~/.jeff/ directory structure
 
 # Add a provider
-pagen provider add gmail                # interactive OAuth setup
+jeff provider add gmail                # interactive OAuth setup
 
 # Set active provider
-pagen provider use gmail
+jeff provider use gmail
 
 # List providers
-pagen provider list
+jeff provider list
 # Output:
 # * gmail (active) - authenticated
 #   outlook - not authenticated
 
 # Test provider connectivity
-pagen provider test gmail               # verify auth + API access
+jeff provider test gmail               # verify auth + API access
 
 # Re-authenticate
-pagen provider reauth gmail             # refresh OAuth flow
+jeff provider reauth gmail             # refresh OAuth flow
 ```
 
 ## Error Handling
@@ -342,7 +342,7 @@ When tools fail, agent can:
 
 ## Skill Development
 
-### How Pagen Learns Workflows
+### How Jeff Learns Workflows
 
 **1. Primitives in System Prompt**
 - All 19 tools documented with descriptions, parameters, examples
@@ -368,7 +368,7 @@ When tools fail, agent can:
 ```
 User: "Help me prepare for tomorrow's 2pm meeting with Alice"
 
-Pagen main agent:
+Jeff main agent:
   1. [uses list_events(tomorrow)]
      → finds "Project Review with Alice, 2pm"
 
@@ -394,7 +394,7 @@ Pagen main agent:
 ### System Prompt Addition
 
 ```
-You are Pagen, a personal productivity agent with access to:
+You are Jeff, a personal productivity agent with access to:
 
 Email Tools:
 - send_email, reply_email, search_emails, read_email
@@ -427,14 +427,14 @@ Best practices:
 
 **Goal**: Provider infrastructure + Gmail read-only
 
-- [ ] Fork Clem codebase, rename to Pagen
+- [ ] Fork Clem codebase, rename to Jeff
 - [ ] Implement Provider interface and registry
 - [ ] Remove code-focused tools (Read, Write, Edit, Bash, Grep, Glob)
 - [ ] Keep: Task, AskUserQuestion, TodoWrite, WebFetch, WebSearch
 - [ ] Implement Gmail provider scaffold
 - [ ] OAuth flow with local callback server
 - [ ] Read-only email tools: search_emails, read_email
-- [ ] CLI commands: `pagen provider add/use/list/test`
+- [ ] CLI commands: `jeff provider add/use/list/test`
 - [ ] Basic error handling and logging
 
 **Success Criteria**: Can authenticate with Gmail and search/read emails
@@ -483,7 +483,7 @@ Best practices:
   - Daily briefing
 - [ ] System prompt refinement
 - [ ] Workflow documentation and examples
-- [ ] User guide: How to use Pagen effectively
+- [ ] User guide: How to use Jeff effectively
 
 **Success Criteria**: Can demonstrate complex multi-tool workflows via subagents
 
@@ -531,7 +531,7 @@ Agent can:
 
 - Migrate to HashiCorp go-plugin (gRPC over stdio)
 - Providers can be written in Python, Node.js, etc.
-- Hot reload providers without restarting Pagen
+- Hot reload providers without restarting Jeff
 - Better security isolation
 
 ### Skill Persistence
@@ -540,17 +540,17 @@ Agent can:
 
 ```bash
 # Save a workflow
-pagen skill save "weekly-cleanup" --last-conversation
+jeff skill save "weekly-cleanup" --last-conversation
 
 # List saved skills
-pagen skill list
+jeff skill list
 
 # Run saved skill
-pagen skill run weekly-cleanup
+jeff skill run weekly-cleanup
 
 # Export/import skills
-pagen skill export weekly-cleanup > skill.yaml
-pagen skill import < skill.yaml
+jeff skill export weekly-cleanup > skill.yaml
+jeff skill import < skill.yaml
 ```
 
 Skills are templatized subagent workflows:
@@ -587,7 +587,7 @@ steps:
 
 ## Open Questions
 
-1. **Rate limiting strategy**: Should Pagen implement its own rate limiting layer or rely on provider errors?
+1. **Rate limiting strategy**: Should Jeff implement its own rate limiting layer or rely on provider errors?
    - Leaning toward: Provider errors + metadata for transparency
 
 2. **Attachment handling**: Local files vs cloud storage for email attachments?
@@ -601,7 +601,7 @@ steps:
    - v1: Google Tasks (same OAuth as Gmail)
    - v2: Todoist provider option
 
-5. **Offline mode**: Should Pagen cache data for offline operation?
+5. **Offline mode**: Should Jeff cache data for offline operation?
    - v1: Online-only, fail gracefully
    - v2: Consider caching frequently accessed data
 
@@ -629,7 +629,7 @@ steps:
 
 ## Conclusion
 
-Pagen represents a novel approach to AI-powered productivity: instead of hardcoding workflows, provide domain-specific tool primitives and let the agent compose them via subagents. The provider plugin architecture ensures extensibility while keeping the agent focused on orchestration.
+Jeff represents a novel approach to AI-powered productivity: instead of hardcoding workflows, provide domain-specific tool primitives and let the agent compose them via subagents. The provider plugin architecture ensures extensibility while keeping the agent focused on orchestration.
 
 **Next Steps**:
 1. Review and approve this design document

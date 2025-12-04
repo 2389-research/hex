@@ -17,7 +17,7 @@ func TestViewRendersChatMode(t *testing.T) {
 	model.AddMessage("user", "test") // Add a message to get past intro
 
 	view := model.View()
-	assert.Contains(t, view, "Pagen")  // Changed from "Clem" to "Pagen"
+	assert.Contains(t, view, "Jeff")   // Changed from "Clem" to "Jeff"
 	assert.Contains(t, view, "[chat]") // Phase 6C: lowercase in status bar
 }
 
@@ -167,5 +167,5 @@ func TestViewMarkdownRendering(t *testing.T) {
 	view := model.View()
 	assert.True(t, len(view) > 0)
 	// View should contain the app name at minimum
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 }

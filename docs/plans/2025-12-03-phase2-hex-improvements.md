@@ -1,7 +1,7 @@
 # Phase 2: Hex UI Improvements Implementation Plan
 
 Date: 2025-12-03
-Target: Pagen Agent
+Target: Jeff Agent
 Source: Hex UI/TUI audit (docs/hex-ui-audit.md)
 
 ## Overview
@@ -88,7 +88,7 @@ package layout
 
 import (
     "github.com/charmbracelet/lipgloss"
-    "github.com/harper/pagent/internal/ui/themes"
+    "github.com/harper/jefft/internal/ui/themes"
 )
 
 // BorderStyle defines different border types
@@ -315,4 +315,4 @@ Phase 2 focuses on **quality of life** improvements:
 - Professional visual consistency
 - Welcoming first-run experience
 
-These are polish features that make pagen-agent feel production-ready.
+These are polish features that make jeff-agent feel production-ready.

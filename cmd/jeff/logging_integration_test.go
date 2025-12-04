@@ -106,7 +106,7 @@ func TestLoggingFormats(t *testing.T) {
 
 func TestLoggingFileCreation(t *testing.T) {
 	tmpDir := t.TempDir()
-	testLogFile := filepath.Join(tmpDir, "pagent.log")
+	testLogFile := filepath.Join(tmpDir, "jefft.log")
 
 	originalLogFile := logFile
 	defer func() { logFile = originalLogFile }()

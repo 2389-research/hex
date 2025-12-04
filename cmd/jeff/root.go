@@ -65,8 +65,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "jeff [prompt]",
-	Short: "Pagen - Productivity AI Agent",
-	Long: `Pagen is a productivity AI agent for your terminal.
+	Short: "Jeff - Productivity AI Agent",
+	Long: `Jeff is a productivity AI agent for your terminal.
 
 Start an interactive session or use --print for one-off queries.`,
 	Version: version,
@@ -118,7 +118,7 @@ func runRoot(_ *cobra.Command, args []string) error {
 	}
 	defer closeLogger()
 
-	logging.InfoWith("Pagen starting", "version", version)
+	logging.InfoWith("Jeff starting", "version", version)
 
 	prompt := ""
 	if len(args) > 0 {
@@ -377,7 +377,7 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("register kill_shell tool: %w", err)
 	}
 
-	// Pagen: Register productivity tools (email, calendar, tasks)
+	// Jeff: Register productivity tools (email, calendar, tasks)
 	// TODO: Initialize provider registry and load configured providers
 	providerRegistry := providers.NewRegistry()
 	// For now, tools will fail with "no active provider" until providers are configured
@@ -449,7 +449,7 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("run UI: %w", err)
 	}
 
-	logging.Info("Pagen shutting down")
+	logging.Info("Jeff shutting down")
 	return nil
 }
 

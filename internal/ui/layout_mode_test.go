@@ -287,7 +287,7 @@ func TestLayoutModeRendering(t *testing.T) {
 		}
 
 		// Check that it contains essential elements
-		if !strings.Contains(output, "Pagen") {
+		if !strings.Contains(output, "Jeff") {
 			t.Error("Expected compact layout to contain title")
 		}
 	})
@@ -307,7 +307,7 @@ func TestLayoutModeRendering(t *testing.T) {
 		}
 
 		// Check that it contains essential elements
-		if !strings.Contains(output, "Pagen") {
+		if !strings.Contains(output, "Jeff") {
 			t.Error("Expected wide layout to contain title")
 		}
 	})

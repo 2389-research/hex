@@ -27,7 +27,7 @@ func TestIntroRendersOnStartup(t *testing.T) {
 	// Note: lipgloss adds ANSI escape codes for styling, so we can't do exact string matches
 	// We'll check for key content that should be visible even with styling
 	if !strings.Contains(view, "|  _ \\") || !strings.Contains(view, "| |_)") {
-		t.Errorf("Expected intro to contain Pagen ASCII logo, got: %s", view)
+		t.Errorf("Expected intro to contain Jeff ASCII logo, got: %s", view)
 	}
 	if !strings.Contains(view, "Productivity AI Agent") {
 		t.Error("Expected intro to contain 'Productivity AI Agent' tagline")

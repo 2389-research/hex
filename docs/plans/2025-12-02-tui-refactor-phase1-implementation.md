@@ -38,7 +38,7 @@ package themes_test
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -85,7 +85,7 @@ Expected: FAIL - package does not exist
 Create `internal/ui/themes/theme.go`:
 
 ```go
-// Package themes provides color schemes for the Pagen TUI.
+// Package themes provides color schemes for the Jeff TUI.
 // ABOUTME: Theme system with Dracula, Gruvbox, Nord color schemes
 // ABOUTME: Provides semantic colors and gradient support for UI elements
 package themes
@@ -174,7 +174,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -312,7 +312,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -447,7 +447,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -658,7 +658,7 @@ git commit -m "feat(config): add theme configuration support"
 
 **Files:**
 - Modify: `internal/ui/model.go`
-- Modify: `cmd/pagent/root.go`
+- Modify: `cmd/jefft/root.go`
 
 **Step 1: Add theme field to Model**
 
@@ -667,7 +667,7 @@ In `internal/ui/model.go`, add import and field:
 ```go
 import (
 	// ... existing imports
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 type Model struct {
@@ -707,7 +707,7 @@ func NewModel(conversationID, model string, theme themes.Theme) *Model {
 
 **Step 3: Update root.go to pass theme**
 
-In `cmd/pagent/root.go`, update where NewModel is called (around line 227):
+In `cmd/jefft/root.go`, update where NewModel is called (around line 227):
 
 ```go
 // Load theme
@@ -730,7 +730,7 @@ Also add import:
 ```go
 import (
 	// ... existing imports
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 ```
 
@@ -747,7 +747,7 @@ Update each to pass `themes.NewDraculaTheme()` as the third argument.
 **Step 5: Build to verify no compile errors**
 
 ```bash
-go build ./cmd/pagent
+go build ./cmd/jefft
 ```
 
 Expected: Success
@@ -755,7 +755,7 @@ Expected: Success
 **Step 6: Commit theme integration**
 
 ```bash
-git add internal/ui/model.go cmd/pagent/root.go
+git add internal/ui/model.go cmd/jefft/root.go
 git commit -m "feat(ui): integrate theme system into UI model"
 ```
 
@@ -778,7 +778,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -891,7 +891,7 @@ In `internal/ui/view.go`, find the title rendering section and update it:
 ```go
 // Find and replace the title rendering code with:
 func (m Model) renderTitle() string {
-	title := "Pagen - Productivity AI Agent"
+	title := "Jeff - Productivity AI Agent"
 	gradientTitle := themes.RenderGradient(title, m.theme.TitleGradient())
 
 	titleStyle := lipgloss.NewStyle().
@@ -940,8 +940,8 @@ Find all color references and update to use theme methods:
 **Step 5: Build and visually test**
 
 ```bash
-go build ./cmd/pagent
-./pagent --help
+go build ./cmd/jefft
+./jefft --help
 ```
 
 Check that help text appears (UI not broken).
@@ -994,7 +994,7 @@ statusBar := m.statusBar.Render(m.theme)
 **Step 3: Build to verify**
 
 ```bash
-go build ./cmd/pagent
+go build ./cmd/jefft
 ```
 
 Expected: Success
@@ -1011,11 +1011,11 @@ git commit -m "feat(ui): apply theme colors to status bar"
 ## Task 10: Add CLI Flag for Theme Selection
 
 **Files:**
-- Modify: `cmd/pagent/root.go`
+- Modify: `cmd/jefft/root.go`
 
 **Step 1: Add theme flag**
 
-In `cmd/pagent/root.go` init() function, add flag:
+In `cmd/jefft/root.go` init() function, add flag:
 
 ```go
 var themeFlag string
@@ -1045,10 +1045,10 @@ theme := themes.GetTheme(themeName)
 **Step 3: Test CLI flag**
 
 ```bash
-go build ./cmd/pagent
-./pagent --theme nord --help
-./pagent --theme gruvbox --help
-./pagent --theme dracula --help
+go build ./cmd/jefft
+./jefft --theme nord --help
+./jefft --theme gruvbox --help
+./jefft --theme dracula --help
 ```
 
 Expected: Each should work without errors
@@ -1056,7 +1056,7 @@ Expected: Each should work without errors
 **Step 4: Commit theme flag**
 
 ```bash
-git add cmd/pagent/root.go
+git add cmd/jefft/root.go
 git commit -m "feat(cli): add --theme flag for runtime theme selection"
 ```
 
@@ -1069,7 +1069,7 @@ All tests should pass:
 ```bash
 go test ./internal/ui/themes -v
 go test ./internal/core -v -run Theme
-go build ./cmd/pagent
+go build ./cmd/jefft
 ```
 
 Expected output:
@@ -1081,9 +1081,9 @@ Expected output:
 **Final verification:**
 
 ```bash
-./pagent --theme dracula
-./pagent --theme gruvbox
-./pagent --theme nord
+./jefft --theme dracula
+./jefft --theme gruvbox
+./jefft --theme nord
 ```
 
 Each should launch with appropriate color scheme.

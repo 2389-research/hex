@@ -11,7 +11,7 @@ import (
 
 // RenderIntro returns the intro screen content
 func (m *Model) RenderIntro() string {
-	// ASCII art logo for "Pagen"
+	// ASCII art logo for "Jeff"
 	logo := `
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃  ____                          ┃

@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Transform Pagen from a productivity agent into a full-featured Claude Code-aligned agent framework with hooks, skills, slash commands, permissions, subagents, and plugins.
+**Goal:** Transform Jeff from a productivity agent into a full-featured Claude Code-aligned agent framework with hooks, skills, slash commands, permissions, subagents, and plugins.
 
 **Architecture:** Modular implementation of six core systems following Claude Code's architecture: lifecycle hooks for automation, skills for domain knowledge, enhanced permissions for tool control, slash commands for workflows, subagent framework for parallel execution, and plugin system for extensibility. Each phase builds on previous ones with clear interfaces and comprehensive testing.
 

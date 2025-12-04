@@ -18,7 +18,7 @@ var providerCmd = &cobra.Command{
 	Short: "Manage productivity providers",
 	Long: `Manage productivity providers (Gmail, Outlook, etc.)
 
-Providers give Pagen access to your email, calendar, and tasks.
+Providers give Jeff access to your email, calendar, and tasks.
 You must authenticate a provider before using it.`,
 }
 
@@ -31,7 +31,7 @@ Supported providers:
   - gmail: Google Gmail, Calendar, and Tasks
 
 Example:
-  pagen provider add gmail`,
+  jeff provider add gmail`,
 	Args: cobra.ExactArgs(1),
 	RunE: runProviderAdd,
 }
@@ -44,7 +44,7 @@ var providerUseCmd = &cobra.Command{
 Only one provider can be active at a time (in v1).
 
 Example:
-  pagen provider use gmail`,
+  jeff provider use gmail`,
 	Args: cobra.ExactArgs(1),
 	RunE: runProviderUse,
 }
@@ -57,7 +57,7 @@ var providerListCmd = &cobra.Command{
 Shows which provider is active and whether each is authenticated.
 
 Example:
-  pagen provider list`,
+  jeff provider list`,
 	Args: cobra.NoArgs,
 	RunE: runProviderList,
 }
@@ -71,7 +71,7 @@ Verifies that the provider is properly authenticated and can
 communicate with its backend API.
 
 Example:
-  pagen provider test gmail`,
+  jeff provider test gmail`,
 	Args: cobra.ExactArgs(1),
 	RunE: runProviderTest,
 }
@@ -84,7 +84,7 @@ var providerReauthCmd = &cobra.Command{
 Use this if authentication expires or you need to grant new permissions.
 
 Example:
-  pagen provider reauth gmail`,
+  jeff provider reauth gmail`,
 	Args: cobra.ExactArgs(1),
 	RunE: runProviderReauth,
 }
@@ -116,7 +116,7 @@ func runProviderAdd(_ *cobra.Command, args []string) error {
 	// Get configuration for this provider
 	config, err := getProviderConfig(providerName)
 	if err != nil {
-		return fmt.Errorf("failed to get provider config: %w\n\nRun 'pagen init' to create configuration", err)
+		return fmt.Errorf("failed to get provider config: %w\n\nRun 'jeff init' to create configuration", err)
 	}
 
 	// Initialize provider
@@ -141,8 +141,8 @@ func runProviderAdd(_ *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("✅ Provider '%s' added and set as active\n", providerName)
-	fmt.Printf("\nYou can now use Pagen with %s!\n", providerName)
-	fmt.Printf("Try: pagen \"what's on my calendar today?\"\n\n")
+	fmt.Printf("\nYou can now use Jeff with %s!\n", providerName)
+	fmt.Printf("Try: jeff \"what's on my calendar today?\"\n\n")
 
 	return nil
 }
@@ -158,7 +158,7 @@ func runProviderUse(_ *cobra.Command, args []string) error {
 
 	// Check if provider exists
 	if !registry.HasProvider(providerName) {
-		return fmt.Errorf("provider '%s' not found\n\nRun 'pagen provider list' to see available providers\nRun 'pagen provider add %s' to add it", providerName, providerName)
+		return fmt.Errorf("provider '%s' not found\n\nRun 'jeff provider list' to see available providers\nRun 'jeff provider add %s' to add it", providerName, providerName)
 	}
 
 	// Set as active
@@ -187,7 +187,7 @@ func runProviderList(_ *cobra.Command, _ []string) error {
 	if len(providerInfos) == 0 {
 		fmt.Println("No providers configured.")
 		fmt.Println("\nTo add a provider:")
-		fmt.Println("  pagen provider add gmail")
+		fmt.Println("  jeff provider add gmail")
 		return nil
 	}
 
@@ -232,7 +232,7 @@ func runProviderTest(_ *cobra.Command, args []string) error {
 	// Get provider
 	provider, err := registry.Get(providerName)
 	if err != nil {
-		return fmt.Errorf("provider not found: %w\n\nRun 'pagen provider add %s' to add it", err, providerName)
+		return fmt.Errorf("provider not found: %w\n\nRun 'jeff provider add %s' to add it", err, providerName)
 	}
 
 	fmt.Printf("Testing provider: %s\n\n", providerName)
@@ -242,7 +242,7 @@ func runProviderTest(_ *cobra.Command, args []string) error {
 	if !status.Healthy {
 		fmt.Printf("❌ Provider unhealthy: %s\n", status.Message)
 		fmt.Printf("\nTry re-authenticating:\n")
-		fmt.Printf("  pagen provider reauth %s\n", providerName)
+		fmt.Printf("  jeff provider reauth %s\n", providerName)
 		return fmt.Errorf("provider unhealthy")
 	}
 
@@ -272,7 +272,7 @@ func runProviderReauth(_ *cobra.Command, args []string) error {
 	// Get provider
 	provider, err := registry.Get(providerName)
 	if err != nil {
-		return fmt.Errorf("provider not found: %w\n\nRun 'pagen provider add %s' to add it", err, providerName)
+		return fmt.Errorf("provider not found: %w\n\nRun 'jeff provider add %s' to add it", err, providerName)
 	}
 
 	fmt.Printf("Re-authenticating provider: %s\n\n", providerName)

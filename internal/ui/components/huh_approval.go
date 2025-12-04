@@ -1,4 +1,4 @@
-// Package components provides reusable UI components for the Pagen TUI.
+// Package components provides reusable UI components for the Jeff TUI.
 // ABOUTME: Huh-based tool approval component using confirm form
 // ABOUTME: Provides themed approval dialogs for tool execution
 package components
@@ -38,7 +38,7 @@ func NewHuhApproval(theme themes.Theme, toolName, description string) *HuhApprov
 				Negative("No.").
 				Value(&approved),
 		),
-	).WithTheme(huhThemeFromPagenTheme(theme)).
+	).WithTheme(huhThemeFromJeffTheme(theme)).
 		WithWidth(80)
 
 	return &HuhApproval{
@@ -133,8 +133,8 @@ func (h *HuhApproval) GetSize() (int, int) {
 	return h.width, h.height
 }
 
-// huhThemeFromPagenTheme converts Pagen theme to Huh theme
-func huhThemeFromPagenTheme(theme themes.Theme) *huh.Theme {
+// huhThemeFromJeffTheme converts Jeff theme to Huh theme
+func huhThemeFromJeffTheme(theme themes.Theme) *huh.Theme {
 	t := huh.ThemeBase()
 
 	// Customize focused field styles

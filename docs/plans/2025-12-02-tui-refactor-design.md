@@ -1,8 +1,8 @@
-# Pagen TUI Refactor Design
+# Jeff TUI Refactor Design
 
 **Date:** 2025-12-02
 **Status:** Approved
-**Goal:** Transform Pagen into "Claude Code for Productivity" with rich inline components
+**Goal:** Transform Jeff into "Claude Code for Productivity" with rich inline components
 
 ## Vision
 
@@ -128,7 +128,7 @@ theme: dracula  # or "gruvbox", "nord"
 
 **CLI flag:**
 ```bash
-pagent --theme nord
+jefft --theme nord
 ```
 
 ## Rich Components

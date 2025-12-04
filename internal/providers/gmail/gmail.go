@@ -1,7 +1,7 @@
 // ABOUTME: Gmail provider implementation for email, calendar, and tasks
 // ABOUTME: Integrates with Google APIs via OAuth2 for productivity operations
 
-// Package gmail implements the Gmail productivity provider for Pagen
+// Package gmail implements the Gmail productivity provider for Jeff
 package gmail
 
 import (

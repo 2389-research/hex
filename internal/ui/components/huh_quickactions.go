@@ -1,4 +1,4 @@
-// Package components provides reusable UI components for the Pagen TUI.
+// Package components provides reusable UI components for the Jeff TUI.
 // ABOUTME: Huh-based quick actions selector using select form
 // ABOUTME: Provides themed action selection menu for common operations
 package components
@@ -41,7 +41,7 @@ func NewHuhQuickActions(theme themes.Theme, options []QuickActionOption) *HuhQui
 				Options(huhOptions...).
 				Value(&selected),
 		),
-	).WithTheme(huhThemeFromPagenTheme(theme)).
+	).WithTheme(huhThemeFromJeffTheme(theme)).
 		WithWidth(80)
 
 	return &HuhQuickActions{

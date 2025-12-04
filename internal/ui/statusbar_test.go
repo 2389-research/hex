@@ -227,7 +227,7 @@ func TestRenderNarrowWidth(t *testing.T) {
 	}
 
 	// Should show minimal info
-	if !strings.Contains(output, "Pagen") {
+	if !strings.Contains(output, "Jeff") {
 		t.Error("Narrow width should show app name")
 	}
 }

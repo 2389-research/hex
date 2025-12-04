@@ -177,7 +177,7 @@ func (s *StatusBar) View() string {
 
 	if s.width < 40 {
 		// Too narrow, show minimal info
-		return styles.background.Render("Pagen")
+		return styles.background.Render("Jeff")
 	}
 
 	var parts []string
@@ -313,7 +313,7 @@ func (s *StatusBar) GetFullHelp() string {
 		key  string
 		desc string
 	}{
-		{"Ctrl+C", "Quit Pagen"},
+		{"Ctrl+C", "Quit Jeff"},
 		{"Ctrl+L", "Clear screen"},
 		{"Ctrl+K", "Clear conversation"},
 		{"Ctrl+S", "Save conversation"},

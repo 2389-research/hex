@@ -16,7 +16,7 @@ import (
 
 func setupFavoritesTestDB(t *testing.T) (*sql.DB, string) {
 	// Create temp directory for test database
-	tmpDir, err := os.MkdirTemp("", "pagent-favorites-test-*")
+	tmpDir, err := os.MkdirTemp("", "jefft-favorites-test-*")
 	require.NoError(t, err)
 
 	dbPath := filepath.Join(tmpDir, "test.db")

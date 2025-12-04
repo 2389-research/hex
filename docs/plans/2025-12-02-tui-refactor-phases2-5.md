@@ -1,4 +1,4 @@
-# Pagen TUI Refactor - Phases 2-5 Implementation Plan
+# Jeff TUI Refactor - Phases 2-5 Implementation Plan
 
 **Date:** 2025-12-02
 **Engineer:** Doctor Biz
@@ -33,7 +33,7 @@ go run -c 'package main; import "github.com/charmbracelet/huh"' 2>&1 | grep "no 
 
 **Implementation:**
 ```bash
-cd /Users/harper/Public/src/2389/pagen-agent
+cd /Users/harper/Public/src/2389/jeff-agent
 go get github.com/charmbracelet/huh@latest
 go mod tidy
 ```
@@ -61,7 +61,7 @@ package components
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -129,7 +129,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // HuhApproval is a Huh-based approval dialog for tool execution
@@ -155,7 +155,7 @@ func NewHuhApproval(theme themes.Theme, toolName, description string) *HuhApprov
 				Negative("No.").
 				Value(&approved),
 		),
-	).WithTheme(huhThemeFromPagenTheme(theme))
+	).WithTheme(huhThemeFromJeffTheme(theme))
 
 	return &HuhApproval{
 		theme:       theme,
@@ -213,8 +213,8 @@ func (h *HuhApproval) IsComplete() bool {
 	return h.form.State == huh.StateCompleted
 }
 
-// huhThemeFromPagenTheme converts Pagen theme to Huh theme
-func huhThemeFromPagenTheme(theme themes.Theme) *huh.Theme {
+// huhThemeFromJeffTheme converts Jeff theme to Huh theme
+func huhThemeFromJeffTheme(theme themes.Theme) *huh.Theme {
 	return &huh.Theme{
 		Focused: huh.FieldStyles{
 			Base:          theme.Foreground(),
@@ -272,7 +272,7 @@ package components
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -342,7 +342,7 @@ package components
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // QuickActionOption represents a quick action option
@@ -377,7 +377,7 @@ func NewHuhQuickActions(theme themes.Theme, options []QuickActionOption) *HuhQui
 				Options(huhOptions...).
 				Value(&selected),
 		),
-	).WithTheme(huhThemeFromPagenTheme(theme))
+	).WithTheme(huhThemeFromJeffTheme(theme))
 
 	return &HuhQuickActions{
 		theme:    theme,
@@ -485,7 +485,7 @@ go test ./internal/ui/... -v -run TestModelHuhApprovalIntegration
 ```go
 import (
 	// ... existing imports
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jefft/internal/ui/components"
 )
 ```
 
@@ -616,8 +616,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/harper/pagent/internal/core"
-	"github.com/harper/pagent/internal/ui"
+	"github.com/harper/jefft/internal/core"
+	"github.com/harper/jefft/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -724,7 +724,7 @@ package components
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -798,7 +798,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // Table is a themed table component
@@ -926,7 +926,7 @@ package components
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -987,7 +987,7 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // Progress is a themed progress bar component
@@ -1148,8 +1148,8 @@ package scenarios
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui"
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jefft/internal/ui"
+	"github.com/harper/jefft/internal/ui/components"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1259,7 +1259,7 @@ go test ./test/scenarios/... -v -run TestMultipleComponents
 **Current title rendering uses gradient. Enhance it:**
 ```go
 // Enhanced title with better gradient and spacing
-titleText := fmt.Sprintf("Pagen • %s", m.Model)
+titleText := fmt.Sprintf("Jeff • %s", m.Model)
 titleGradient := themes.RenderGradient(titleText, m.theme.TitleGradient())
 
 // Add decorative border
@@ -1519,8 +1519,8 @@ package visual
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui"
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jefft/internal/ui"
+	"github.com/harper/jefft/internal/ui/components"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1532,7 +1532,7 @@ func TestDraculaTheme_VisualOutput(t *testing.T) {
 	view := model.View()
 
 	// Should contain ANSI color codes for Dracula purple (#bd93f9)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 	assert.NotEmpty(t, view)
 
 	// Verify gradient in title
@@ -1547,7 +1547,7 @@ func TestGruvboxTheme_VisualOutput(t *testing.T) {
 
 	// Gruvbox should look different from Dracula
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 }
 
 func TestNordTheme_VisualOutput(t *testing.T) {
@@ -1558,7 +1558,7 @@ func TestNordTheme_VisualOutput(t *testing.T) {
 
 	// Nord should have distinct appearance
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 }
 
 func TestTableComponent_VisualPolish(t *testing.T) {
@@ -1607,7 +1607,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // HelpOverlay displays keyboard shortcuts
@@ -1689,7 +1689,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/harper/pagent/internal/ui/themes"
+	"github.com/harper/jefft/internal/ui/themes"
 )
 
 // ErrorDisplay shows formatted errors
@@ -1768,8 +1768,8 @@ package integration
 import (
 	"testing"
 
-	"github.com/harper/pagent/internal/ui"
-	"github.com/harper/pagent/internal/ui/components"
+	"github.com/harper/jefft/internal/ui"
+	"github.com/harper/jefft/internal/ui/components"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1804,7 +1804,7 @@ func TestFullTUI_AllPhasesIntegrated(t *testing.T) {
 	view := model.View()
 
 	// Verify all elements render
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 	assert.Contains(t, view, "Show me my emails")
 	assert.Contains(t, view, "From")
 	assert.Contains(t, view, "alice@example.com")
@@ -1881,12 +1881,12 @@ go test ./test/scenarios/... -v
 go test ./test/integration/... -v
 
 # Build the application
-go build ./cmd/pagent/...
+go build ./cmd/jefft/...
 
 # Test with each theme
-./pagent --theme dracula
-./pagent --theme gruvbox
-./pagent --theme nord
+./jefft --theme dracula
+./jefft --theme gruvbox
+./jefft --theme nord
 ```
 
 ---

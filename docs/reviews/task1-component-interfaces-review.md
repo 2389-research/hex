@@ -240,7 +240,7 @@ Interface definitions pose no security risks. The actual implementations (Task 2
 ## Files Changed
 
 **Created:**
-- `/Users/harper/Public/src/2389/pagen-agent/internal/ui/components/interfaces.go` (213 lines)
+- `/Users/harper/Public/src/2389/jeff-agent/internal/ui/components/interfaces.go` (213 lines)
 
 **Modified:**
 - None

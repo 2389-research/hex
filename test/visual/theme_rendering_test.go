@@ -21,7 +21,7 @@ func TestDraculaTheme_VisualOutput(t *testing.T) {
 	view := model.View()
 
 	// Should contain Dracula theme elements
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 	assert.NotEmpty(t, view)
 
 	// Verify decorative border is present
@@ -40,7 +40,7 @@ func TestGruvboxTheme_VisualOutput(t *testing.T) {
 
 	// Gruvbox should look different from Dracula
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 }
 
 func TestNordTheme_VisualOutput(t *testing.T) {
@@ -54,7 +54,7 @@ func TestNordTheme_VisualOutput(t *testing.T) {
 
 	// Nord should have distinct appearance
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 }
 
 func TestTableComponent_VisualPolish(t *testing.T) {
@@ -146,7 +146,7 @@ func TestSpacing_ConsistentLayout(t *testing.T) {
 
 	// View should be properly formatted with spacing
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 
 	// Should have proper line breaks (multiple newlines for spacing)
 	assert.Contains(t, view, "\n")

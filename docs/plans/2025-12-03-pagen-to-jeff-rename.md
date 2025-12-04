@@ -1,17 +1,17 @@
-# Pagen to Jeff Rename - Full Refactor
+# Jeff to Jeff Rename - Full Refactor
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Completely rename the project from "pagen"/"pagent" to "jeff" with zero remaining references
+**Goal:** Completely rename the project from "jeff"/"jefft" to "jeff" with zero remaining references
 
 **Architecture:** Systematic file, directory, and content replacement across 383 occurrences
 
 **Tech Stack:** Go 1.24, sed, git mv
 
 **Scope:**
-- Module path: `github.com/harper/pagent` → `github.com/harper/jeff`
-- Binary name: `pagent` → `jeff`
-- Directory: `cmd/pagent` → `cmd/jeff`
+- Module path: `github.com/harper/jefft` → `github.com/harper/jeff`
+- Binary name: `jefft` → `jeff`
+- Directory: `cmd/jefft` → `cmd/jeff`
 - Config directory: `~/.jeff` → `~/.jeff`
 - Environment variables: `JEFF_*` → `JEFF_*`
 - All code, docs, comments, user-facing strings
@@ -21,32 +21,32 @@
 ## Task 1: Rename Directory Structure
 
 **Files:**
-- Rename: `cmd/pagent` → `cmd/jeff`
-- Rename: `pagent` (binary) → `jeff`
-- Rename: `pagent-architecture.dot` → `jeff-architecture.dot`
-- Rename: `pagent-architecture.png` → `jeff-architecture.png`
-- Rename: `pagent-architecture.svg` → `jeff-architecture.svg`
-- Rename: `docs/plans/2025-12-01-pagen-productivity-agent-design.md` → `docs/plans/2025-12-01-jeff-productivity-agent-design.md`
+- Rename: `cmd/jefft` → `cmd/jeff`
+- Rename: `jefft` (binary) → `jeff`
+- Rename: `jefft-architecture.dot` → `jeff-architecture.dot`
+- Rename: `jefft-architecture.png` → `jeff-architecture.png`
+- Rename: `jefft-architecture.svg` → `jeff-architecture.svg`
+- Rename: `docs/plans/2025-12-01-jeff-productivity-agent-design.md` → `docs/plans/2025-12-01-jeff-productivity-agent-design.md`
 
 **Step 1: Rename cmd directory**
 
 ```bash
-git mv cmd/pagent cmd/jeff
+git mv cmd/jefft cmd/jeff
 ```
 
 **Step 2: Rename binary and architecture files**
 
 ```bash
-git mv pagent jeff 2>/dev/null || true
-git mv pagent-architecture.dot jeff-architecture.dot
-git mv pagent-architecture.png jeff-architecture.png
-git mv pagent-architecture.svg jeff-architecture.svg
+git mv jefft jeff 2>/dev/null || true
+git mv jefft-architecture.dot jeff-architecture.dot
+git mv jefft-architecture.png jeff-architecture.png
+git mv jefft-architecture.svg jeff-architecture.svg
 ```
 
 **Step 3: Rename design doc**
 
 ```bash
-git mv docs/plans/2025-12-01-pagen-productivity-agent-design.md docs/plans/2025-12-01-jeff-productivity-agent-design.md
+git mv docs/plans/2025-12-01-jeff-productivity-agent-design.md docs/plans/2025-12-01-jeff-productivity-agent-design.md
 ```
 
 **Step 4: Verify renames**
@@ -57,7 +57,7 @@ Expected: Shows renamed files, no deletions
 **Step 5: Commit directory renames**
 
 ```bash
-git commit -m "refactor: rename directories and files from pagen/pagent to jeff"
+git commit -m "refactor: rename directories and files from jeff/jefft to jeff"
 ```
 
 ---
@@ -72,7 +72,7 @@ git commit -m "refactor: rename directories and files from pagen/pagent to jeff"
 
 Replace in `go.mod`:
 ```go
-module github.com/harper/pagent
+module github.com/harper/jefft
 ```
 
 With:
@@ -84,12 +84,12 @@ module github.com/harper/jeff
 
 Run:
 ```bash
-find . -name "*.go" -type f -exec sed -i '' 's|github.com/harper/pagent|github.com/harper/jeff|g' {} +
+find . -name "*.go" -type f -exec sed -i '' 's|github.com/harper/jefft|github.com/harper/jeff|g' {} +
 ```
 
 **Step 3: Verify no old imports remain**
 
-Run: `grep -r "github.com/harper/pagent" --include="*.go" .`
+Run: `grep -r "github.com/harper/jefft" --include="*.go" .`
 Expected: No output (all imports updated)
 
 **Step 4: Run go mod tidy**
@@ -107,7 +107,7 @@ Expected: Successful compilation with no errors
 ```bash
 git add go.mod go.sum
 find . -name "*.go" -exec git add {} +
-git commit -m "refactor: update module path from pagent to jeff"
+git commit -m "refactor: update module path from jefft to jeff"
 ```
 
 ---
@@ -116,13 +116,13 @@ git commit -m "refactor: update module path from pagent to jeff"
 
 **Files:**
 - Modify: `cmd/jeff/root.go`
-- Modify: All files in `cmd/jeff/*.go` with "pagent" in strings
+- Modify: All files in `cmd/jeff/*.go` with "jefft" in strings
 
 **Step 1: Update root command Use field**
 
 Find and replace in `cmd/jeff/root.go`:
 ```go
-Use:     "pagent [prompt]",
+Use:     "jefft [prompt]",
 ```
 
 With:
@@ -134,14 +134,14 @@ Use:     "jeff [prompt]",
 
 Run:
 ```bash
-find cmd/jeff -name "*.go" -exec sed -i '' 's/pagent /jeff /g' {} +
-find cmd/jeff -name "*.go" -exec sed -i '' "s/pagent'/jeff'/g" {} +
-find cmd/jeff -name "*.go" -exec sed -i '' 's/pagent"/jeff"/g' {} +
+find cmd/jeff -name "*.go" -exec sed -i '' 's/jefft /jeff /g' {} +
+find cmd/jeff -name "*.go" -exec sed -i '' "s/jefft'/jeff'/g" {} +
+find cmd/jeff -name "*.go" -exec sed -i '' 's/jefft"/jeff"/g' {} +
 ```
 
 **Step 3: Verify changes**
 
-Run: `grep -r "pagent" cmd/jeff/`
+Run: `grep -r "jefft" cmd/jeff/`
 Expected: No matches (all updated to "jeff")
 
 **Step 4: Verify compilation**
@@ -153,7 +153,7 @@ Expected: Successful build, creates `jeff` binary
 
 ```bash
 git add cmd/jeff/
-git commit -m "refactor: update binary name from pagent to jeff in code"
+git commit -m "refactor: update binary name from jefft to jeff in code"
 ```
 
 ---
@@ -171,7 +171,7 @@ Run:
 ```bash
 find . -name "*.go" -exec sed -i '' 's|~/.jeff|~/.jeff|g' {} +
 find . -name "*.go" -exec sed -i '' 's|\.jeff|.jeff|g' {} +
-find . -name "*.go" -exec sed -i '' 's|/pagen/|/jeff/|g' {} +
+find . -name "*.go" -exec sed -i '' 's|/jeff/|/jeff/|g' {} +
 ```
 
 **Step 2: Update .jeff directory references in other file types**
@@ -242,29 +242,29 @@ git commit -m "refactor: update environment variables from JEFF_ to JEFF_"
 - Modify: All ABOUTME comments in `*.go` files
 - Modify: All other comments and strings
 
-**Step 1: Update "Pagen" to "Jeff" in markdown files (case-sensitive)**
+**Step 1: Update "Jeff" to "Jeff" in markdown files (case-sensitive)**
 
 Run:
 ```bash
-find docs -name "*.md" -exec sed -i '' 's/Pagen/Jeff/g' {} +
-find docs -name "*.md" -exec sed -i '' 's/pagen/jeff/g' {} +
-find . -name "README.md" -exec sed -i '' 's/Pagen/Jeff/g' {} +
-find . -name "README.md" -exec sed -i '' 's/pagen/jeff/g' {} +
+find docs -name "*.md" -exec sed -i '' 's/Jeff/Jeff/g' {} +
+find docs -name "*.md" -exec sed -i '' 's/jeff/jeff/g' {} +
+find . -name "README.md" -exec sed -i '' 's/Jeff/Jeff/g' {} +
+find . -name "README.md" -exec sed -i '' 's/jeff/jeff/g' {} +
 ```
 
-**Step 2: Update "pagen" and "pagent" in all Go comments**
+**Step 2: Update "jeff" and "jefft" in all Go comments**
 
 Run:
 ```bash
-find . -name "*.go" -exec sed -i '' 's/pagen/jeff/g' {} +
-find . -name "*.go" -exec sed -i '' 's/Pagen/Jeff/g' {} +
+find . -name "*.go" -exec sed -i '' 's/jeff/jeff/g' {} +
+find . -name "*.go" -exec sed -i '' 's/Jeff/Jeff/g' {} +
 ```
 
-Note: "pagent" → "jeff" already done in previous tasks
+Note: "jefft" → "jeff" already done in previous tasks
 
-**Step 3: Verify no pagen/pagent references remain**
+**Step 3: Verify no jeff/jefft references remain**
 
-Run: `grep -ri "pagen\|pagent" --include="*.go" --include="*.md" . | grep -v "Phase 1\|Task [0-9]"`
+Run: `grep -ri "jeff\|jefft" --include="*.go" --include="*.md" . | grep -v "Phase 1\|Task [0-9]"`
 Expected: No matches except in this plan file and git history
 
 **Step 4: Verify compilation and tests**
@@ -281,7 +281,7 @@ Expected: All builds and tests pass
 
 ```bash
 git add .
-git commit -m "docs: update all references from pagen/pagent to jeff"
+git commit -m "docs: update all references from jeff/jefft to jeff"
 ```
 
 ---
@@ -289,18 +289,18 @@ git commit -m "docs: update all references from pagen/pagent to jeff"
 ## Task 7: Update This Plan File
 
 **Files:**
-- Modify: `docs/plans/2025-12-03-pagen-to-jeff-rename.md` (this file)
+- Modify: `docs/plans/2025-12-03-jeff-to-jeff-rename.md` (this file)
 
 **Step 1: Update header and content to use past tense**
 
-Replace header "Pagen to Jeff Rename" with "Jeff Rename Complete"
+Replace header "Jeff to Jeff Rename" with "Jeff Rename Complete"
 
-Update goal to: "Completed full rename from pagen/pagent to jeff with zero remaining references"
+Update goal to: "Completed full rename from jeff/jefft to jeff with zero remaining references"
 
 **Step 2: Commit plan update**
 
 ```bash
-git add docs/plans/2025-12-03-pagen-to-jeff-rename.md
+git add docs/plans/2025-12-03-jeff-to-jeff-rename.md
 git commit -m "docs: mark rename plan as complete"
 ```
 
@@ -337,11 +337,11 @@ Expected: Shows version information
 **Step 4: Test basic functionality**
 
 Run: `./jeff --help`
-Expected: Shows help with "jeff" in usage, not "pagent"
+Expected: Shows help with "jeff" in usage, not "jefft"
 
 **Step 5: Search for any remaining references**
 
-Run: `grep -ri "pagen\|pagent" --include="*.go" --include="*.md" --include="*.yaml" . | grep -v ".git" | grep -v "docs/plans/2025-12-03"`
+Run: `grep -ri "jeff\|jefft" --include="*.go" --include="*.md" --include="*.yaml" . | grep -v ".git" | grep -v "docs/plans/2025-12-03"`
 Expected: No matches (clean!)
 
 **Step 6: Commit any final changes**
@@ -360,7 +360,7 @@ git commit -m "build: final verification and build of jeff binary"
 **Step 1: Add tag for the rename**
 
 ```bash
-git tag -a v0.1.0-jeff -m "Complete rename from pagen to jeff"
+git tag -a v0.1.0-jeff -m "Complete rename from jeff to jeff"
 ```
 
 **Step 2: Push all changes**
@@ -374,21 +374,21 @@ git push origin --tags
 
 If you want to rename the GitHub repository:
 1. Go to repository Settings
-2. Rename from `pagen-agent` to `jeff`
+2. Rename from `jeff-agent` to `jeff`
 3. Update local remote: `git remote set-url origin git@github.com:harper/jeff.git`
 
 ---
 
 ## Success Criteria
 
-- ✅ Zero occurrences of "pagen" or "pagent" in code/docs (except this plan and git history)
+- ✅ Zero occurrences of "jeff" or "jefft" in code/docs (except this plan and git history)
 - ✅ Module path is `github.com/harper/jeff`
 - ✅ Binary is named `jeff`
 - ✅ Config directory is `~/.jeff`
 - ✅ Environment variables use `JEFF_` prefix
 - ✅ All tests pass
 - ✅ Binary builds and runs successfully
-- ✅ Help text shows "jeff" not "pagent"
+- ✅ Help text shows "jeff" not "jefft"
 
 ---
 

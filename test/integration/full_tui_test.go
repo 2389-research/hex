@@ -59,7 +59,7 @@ func TestFullTUI_AllPhasesIntegrated(t *testing.T) {
 
 	// Verify basic UI elements are present
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "Pagen")
+	assert.Contains(t, view, "Jeff")
 	assert.Contains(t, view, "claude-sonnet-4")
 }
 
@@ -90,9 +90,9 @@ func TestFullTUI_ThemeSwitching(t *testing.T) {
 	assert.NotEmpty(t, nordView)
 
 	// All should contain the title
-	assert.Contains(t, draculaView, "Pagen")
-	assert.Contains(t, gruvboxView, "Pagen")
-	assert.Contains(t, nordView, "Pagen")
+	assert.Contains(t, draculaView, "Jeff")
+	assert.Contains(t, gruvboxView, "Jeff")
+	assert.Contains(t, nordView, "Jeff")
 }
 
 func TestFullTUI_ComponentInteraction(t *testing.T) {

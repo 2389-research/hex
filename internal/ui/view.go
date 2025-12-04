@@ -139,7 +139,7 @@ func (m *Model) renderWideLayout() string {
 	var b strings.Builder
 
 	// Title with status indicator and favorite star - use gradient with decorative border!
-	titleText := fmt.Sprintf("Pagen • %s", m.Model)
+	titleText := fmt.Sprintf("Jeff • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
@@ -252,7 +252,7 @@ func (m *Model) renderCompactLayout() string {
 	var b strings.Builder
 
 	// Simplified title - no decorative border, just text with status
-	titleText := fmt.Sprintf("Pagen • %s", m.Model)
+	titleText := fmt.Sprintf("Jeff • %s", m.Model)
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}

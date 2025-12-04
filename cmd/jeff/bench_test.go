@@ -11,16 +11,16 @@ import (
 // BenchmarkStartupHelp measures time to display help
 func BenchmarkStartupHelp(b *testing.B) {
 	// Build the binary first
-	buildCmd := exec.Command("go", "build", "-o", "pagent_bench", ".")
+	buildCmd := exec.Command("go", "build", "-o", "jefft_bench", ".")
 	if err := buildCmd.Run(); err != nil {
 		b.Skipf("failed to build: %v", err)
 		return
 	}
-	defer func() { _ = os.Remove("pagent_bench") }()
+	defer func() { _ = os.Remove("jefft_bench") }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cmd := exec.Command("./pagent_bench", "--help")
+		cmd := exec.Command("./jefft_bench", "--help")
 		if err := cmd.Run(); err != nil {
 			b.Fatalf("failed to run: %v", err)
 		}
@@ -29,16 +29,16 @@ func BenchmarkStartupHelp(b *testing.B) {
 
 // BenchmarkStartupVersion measures time to display version
 func BenchmarkStartupVersion(b *testing.B) {
-	buildCmd := exec.Command("go", "build", "-o", "pagent_bench", ".")
+	buildCmd := exec.Command("go", "build", "-o", "jefft_bench", ".")
 	if err := buildCmd.Run(); err != nil {
 		b.Skipf("failed to build: %v", err)
 		return
 	}
-	defer func() { _ = os.Remove("pagent_bench") }()
+	defer func() { _ = os.Remove("jefft_bench") }()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cmd := exec.Command("./pagent_bench", "version")
+		cmd := exec.Command("./jefft_bench", "version")
 		if err := cmd.Run(); err != nil {
 			b.Fatalf("failed to run: %v", err)
 		}

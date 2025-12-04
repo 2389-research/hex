@@ -16,7 +16,7 @@ var mcpCmd = &cobra.Command{
 	Short: "Manage MCP (Model Context Protocol) servers",
 	Long: `Manage MCP servers that provide external tools and resources.
 
-MCP servers extend Pagen's capabilities by providing additional tools
+MCP servers extend Jeff's capabilities by providing additional tools
 that can be used during conversations with Claude.`,
 }
 

@@ -1,8 +1,8 @@
-# Pagen - Productivity AI Agent CLI
+# Jeff - Productivity AI Agent CLI
 
-[![Test](https://github.com/harper/pagent/workflows/Test/badge.svg)](https://github.com/harper/pagent/actions/workflows/test.yml)
-[![Release](https://github.com/harper/pagent/workflows/Release/badge.svg)](https://github.com/harper/pagent/actions/workflows/release.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/harper/pagent)](https://goreportcard.com/report/github.com/harper/pagent)
+[![Test](https://github.com/harper/jefft/workflows/Test/badge.svg)](https://github.com/harper/jefft/actions/workflows/test.yml)
+[![Release](https://github.com/harper/jefft/workflows/Release/badge.svg)](https://github.com/harper/jefft/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/harper/jefft)](https://goreportcard.com/report/github.com/harper/jefft)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
@@ -11,7 +11,7 @@ A Go implementation of Claude Code CLI with interactive mode and tool execution 
 
 ## Features
 
-Pagen v1.0 is a production-ready Claude CLI with comprehensive tool support, interactive TUI, and MCP integration.
+Jeff v1.0 is a production-ready Claude CLI with comprehensive tool support, interactive TUI, and MCP integration.
 
 ### Core Features
 - ✅ **Print Mode** - Non-interactive command-line queries
@@ -44,66 +44,66 @@ Pagen v1.0 is a production-ready Claude CLI with comprehensive tool support, int
 
 ```bash
 # macOS and Linux
-curl -sSL https://raw.githubusercontent.com/harper/pagent/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/harper/jefft/main/install.sh | bash
 
 # Windows (PowerShell as Administrator)
-iwr -useb https://raw.githubusercontent.com/harper/pagent/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/harper/jefft/main/install.ps1 | iex
 
 # Verify installation
-pagent --version
+jefft --version
 ```
 
 **Method 2: Homebrew (macOS/Linux)**
 
 ```bash
 # Add tap and install
-brew install harper/tap/pagent
+brew install harper/tap/jefft
 
 # Verify installation
-pagent --version
+jefft --version
 ```
 
 **Method 3: Go Install**
 
 ```bash
 # Requires Go 1.24+
-go install github.com/harper/pagent/cmd/pagent@latest
+go install github.com/harper/jefft/cmd/jefft@latest
 
 # Verify installation
-pagent --version
+jefft --version
 ```
 
 **Method 4: Download Binary**
 
-Download pre-built binaries from the [releases page](https://github.com/harper/pagent/releases):
+Download pre-built binaries from the [releases page](https://github.com/harper/jefft/releases):
 
 1. Download the archive for your platform
 2. Extract the binary
 3. Move to a directory in your PATH (e.g., `/usr/local/bin`)
-4. Run `pagent --version` to verify
+4. Run `jefft --version` to verify
 
 **Method 5: Build from Source**
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/pagent.git
-cd pagent
+git clone https://github.com/harper/jefft.git
+cd jefft
 
 # Build and install
 make install
 
 # Verify installation
-pagent --version
+jefft --version
 ```
 
 ### Setup
 
 ```bash
 # Configure API key
-pagent setup-token sk-ant-api03-...
+jefft setup-token sk-ant-api03-...
 
 # Verify configuration
-pagent doctor
+jefft doctor
 ```
 
 ### Usage
@@ -111,31 +111,31 @@ pagent doctor
 **Interactive Mode** (full TUI):
 ```bash
 # Start new conversation
-pagent
+jefft
 
 # Start with initial prompt
-pagent "Help me debug this code"
+jefft "Help me debug this code"
 
 # Resume last conversation
-pagent --continue
+jefft --continue
 
 # Resume specific conversation
-pagent --resume conv-1234567890
+jefft --resume conv-1234567890
 ```
 
 **Print Mode** (quick one-off):
 ```bash
 # Simple query
-pagent --print "What is the capital of France?"
+jefft --print "What is the capital of France?"
 
 # With JSON output
-pagent --print --output-format json "List 3 programming languages"
+jefft --print --output-format json "List 3 programming languages"
 ```
 
 ## What's New in v1.0.0
 
 ### Production-Ready Release
-After 6 phases of development, Pagen v1.0 is production-ready with:
+After 6 phases of development, Jeff v1.0 is production-ready with:
 - ✅ **94.7% project completion** (Grade A)
 - ✅ **73.8% test coverage** across 115+ test files
 - ✅ **29,000+ lines of code** with comprehensive documentation
@@ -152,7 +152,7 @@ After 6 phases of development, Pagen v1.0 is production-ready with:
 - 🎯 **Multiple views** (Chat, History, Tools)
 
 **Conversation Persistence**
-- 💾 SQLite storage (`~/.jeff/pagent.db`)
+- 💾 SQLite storage (`~/.jeff/jefft.db`)
 - 🔄 Resume with `--continue` or `--resume <id>`
 - 🏷️ Automatic conversation titles
 - 📅 Full message history
@@ -252,17 +252,17 @@ JEFF_MODEL=claude-sonnet-4-5-20250929
 
 ### MCP Integration
 
-**Extend Pagen with MCP servers** - Use external tools from the Model Context Protocol ecosystem:
+**Extend Jeff with MCP servers** - Use external tools from the Model Context Protocol ecosystem:
 
 ```bash
 # Add an MCP server
-pagent mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
+jefft mcp add filesystem npx -y @modelcontextprotocol/server-filesystem ~/Documents
 
 # List configured servers
-pagent mcp list
+jefft mcp list
 
 # MCP tools are automatically available in conversations
-pagent
+jefft
 > "List all markdown files in my Documents directory"
 ```
 
@@ -334,8 +334,8 @@ pre-commit --version
 
 ```bash
 # Clone repository
-git clone https://github.com/harper/pagent.git
-cd pagent
+git clone https://github.com/harper/jefft.git
+cd jefft
 
 # Install pre-commit hooks
 pre-commit install
@@ -397,8 +397,8 @@ git commit --no-verify
 ### Project Structure
 
 ```
-pagent/
-├── cmd/pagent/           # CLI entry point
+jefft/
+├── cmd/jefft/           # CLI entry point
 ├── internal/           # Private implementation
 │   ├── core/          # API client, types, config
 │   ├── ui/            # Bubbletea TUI
@@ -465,14 +465,14 @@ Contributions welcome! Please:
 
 **API key not found**:
 ```bash
-pagent setup-token sk-ant-api03-...
-pagent doctor
+jefft setup-token sk-ant-api03-...
+jefft doctor
 ```
 
 **Database locked**:
 ```bash
-# Close other Pagen instances
-lsof ~/.jeff/pagent.db
+# Close other Jeff instances
+lsof ~/.jeff/jefft.db
 ```
 
 **Tool timeout**:
@@ -537,7 +537,7 @@ MIT
 
 ---
 
-**Download**: `go install github.com/harper/pagent/cmd/pagent@latest`
+**Download**: `go install github.com/harper/jefft/cmd/jefft@latest`
 
 **Documentation**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 

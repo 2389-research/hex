@@ -1,12 +1,12 @@
 # Hex UI/TUI Audit - Improvements to Incorporate
 
 Date: 2025-12-03
-Project: Pagen Agent (Productivity-focused AI assistant)
+Project: Jeff Agent (Productivity-focused AI assistant)
 Source: Hex (Code-focused AI assistant at ../clem)
 
 ## Executive Summary
 
-Audited 40+ commits from Hex focusing on UI/TUI improvements. Identified 10 key enhancements that would significantly improve pagen-agent's user experience, particularly for productivity workflows.
+Audited 40+ commits from Hex focusing on UI/TUI improvements. Identified 10 key enhancements that would significantly improve jeff-agent's user experience, particularly for productivity workflows.
 
 ## High Priority Improvements
 
@@ -303,7 +303,7 @@ After implementation, measure:
 
 ## Notes
 
-- Hex is for code, pagen-agent is for productivity
+- Hex is for code, jeff-agent is for productivity
 - Not all hex features make sense (e.g., code-specific tooling)
 - Focus on what helps productivity workflows:
   - Quick context switching (session picker)
@@ -315,11 +315,11 @@ After implementation, measure:
 
 ## Conclusion
 
-Hex has implemented a mature, polished TUI with excellent UX. The most valuable improvements for pagen-agent are:
+Hex has implemented a mature, polished TUI with excellent UX. The most valuable improvements for jeff-agent are:
 
 1. **Session Picker** - Game changer for productivity
 2. **Token Visualization** - Essential for context management
 3. **StatusBar** - Professional status display
 4. **Message Formatting** - Better readability
 
-These 4 features alone would significantly elevate pagen-agent's user experience and make it feel like a professional, production-ready tool.
+These 4 features alone would significantly elevate jeff-agent's user experience and make it feel like a professional, production-ready tool.

@@ -1,7 +1,7 @@
 # Phase 1: Hex UI Improvements Implementation Plan
 
 Date: 2025-12-03
-Target: Pagen Agent
+Target: Jeff Agent
 Source: Hex UI/TUI audit
 
 ## Overview
@@ -152,7 +152,7 @@ type sessionItem struct {
 
 **Flow:**
 ```
-1. pagent starts
+1. jefft starts
 2. Check for existing conversations
 3. If none, start new session
 4. If any, show SessionPicker

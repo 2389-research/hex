@@ -134,20 +134,20 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 ### Manual Testing
 1. **No conversations exist**:
    ```bash
-   rm ~/.jeff/pagent.db
-   ./pagent
+   rm ~/.jeff/jefft.db
+   ./jefft
    # Should start new session (current behavior)
    ```
 
 2. **Conversations exist**:
    ```bash
    # Start and quit a conversation
-   ./pagent
+   ./jefft
    > Hello
    > ctrl+c
 
    # Start again
-   ./pagent
+   ./jefft
    # Should show session picker with list
    ```
 
@@ -163,8 +163,8 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 
 5. **With flags** (should bypass picker):
    ```bash
-   ./pagent --continue   # No picker, resume latest
-   ./pagent --resume conv-123  # No picker, resume specific
+   ./jefft --continue   # No picker, resume latest
+   ./jefft --resume conv-123  # No picker, resume specific
    ```
 
 ### Edge Cases

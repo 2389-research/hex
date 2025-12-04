@@ -155,7 +155,7 @@ func (cs *CallbackServer) writeSuccessPage(w http.ResponseWriter) {
         <h1>Authentication Successful!</h1>
         <p>You can now close this window and return to your terminal.</p>
         <p style="font-size: 0.9em; color: #718096; margin-top: 2rem;">
-            Pagen is now authorized to access your account.
+            Jeff is now authorized to access your account.
         </p>
     </div>
 </body>

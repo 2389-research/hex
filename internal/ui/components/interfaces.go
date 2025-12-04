@@ -1,4 +1,4 @@
-// Package components provides reusable UI components for the Pagen TUI.
+// Package components provides reusable UI components for the Jeff TUI.
 // ABOUTME: Core component interfaces defining standard behaviors for all UI components
 // ABOUTME: Provides Sizeable, Focusable, Helpable, and Component interfaces for standardization
 package components
