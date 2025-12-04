@@ -44,7 +44,7 @@ func (m *Model) View() string {
 	var b strings.Builder
 
 	// Title with status indicator and favorite star (with gradient)
-	titleText := fmt.Sprintf("Hex • %s", m.Model)
+	titleText := "Hex"
 	if m.IsFavorite {
 		titleText = "⭐ " + titleText
 	}
@@ -198,10 +198,6 @@ func (m *Model) renderIntroView() string {
 	}
 
 	b.WriteString("\n\n")
-
-	// Press any key to continue
-	prompt := m.theme.Warning.Render("Press any key to start chatting...")
-	b.WriteString(padding + prompt + "\n")
 
 	return b.String()
 }

@@ -586,6 +586,14 @@ func (m *Model) updateViewport() {
 		}
 	}
 
+	// Show work display if streaming and display is available
+	if m.Streaming && m.streamingDisplay != nil {
+		workDisplay := m.streamingDisplay.GetWorkDisplay()
+		if workDisplay != "" {
+			content.WriteString("\n" + workDisplay + "\n")
+		}
+	}
+
 	m.Viewport.SetContent(content.String())
 	m.Viewport.GotoBottom()
 }
@@ -652,6 +660,13 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 				Input: make(map[string]interface{}), // Will be populated when JSON is complete
 			}
 			m.toolInputJSONBuf = "" // Reset JSON buffer
+
+			// Update streaming display to show tool call in progress
+			if m.streamingDisplay != nil {
+				m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+			}
+			m.updateViewport()
+
 			// Continue processing stream to get input_json_delta events
 		}
 	}
@@ -676,6 +691,12 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
 			}
 		}
+
+		// Mark tool call as complete in streaming display
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.CompleteToolCall(m.assemblingToolUse.ID)
+		}
+		m.updateViewport()
 
 		// Tool use is complete, append to pending tools list
 		// Don't handle yet - wait for message_stop to ensure full response is received
@@ -755,6 +776,11 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 				m.ShowIntro = false
 			}
 
+			// Reset streaming display (work is done, now waiting for approval)
+			if m.streamingDisplay != nil {
+				m.streamingDisplay.Reset()
+			}
+
 			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
 
 			// Dump messages after adding assistant message with tool_use blocks
@@ -810,6 +836,11 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		// Hide intro after first assistant response
 		if m.ShowIntro {
 			m.ShowIntro = false
+		}
+
+		// Reset streaming display
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.Reset()
 		}
 
 		m.SetStatus(StatusIdle)
