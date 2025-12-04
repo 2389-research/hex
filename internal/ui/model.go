@@ -14,7 +14,6 @@ import (
 	ctxmgr "github.com/2389-research/hex/internal/context"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/services"
-	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
 	"github.com/2389-research/hex/internal/ui/theme"
@@ -480,13 +479,13 @@ func (m *Model) saveMessageInternal(role, content string) error {
 		return nil
 	}
 
-	msg := &storage.Message{
+	msg := &services.Message{
 		ConversationID: m.ConversationID,
 		Role:           role,
 		Content:        content,
 	}
 
-	return storage.CreateMessage(m.db, msg)
+	return m.msgSvc.Add(context.Background(), msg)
 }
 
 // ClearStreamingText discards streaming buffer (e.g., on error)
@@ -818,8 +817,17 @@ func (m *Model) ToggleFavorite() error {
 	// Toggle the local state
 	m.IsFavorite = !m.IsFavorite
 
-	// Update in database
-	err := storage.SetFavorite(m.db, m.ConversationID, m.IsFavorite)
+	// Get current conversation
+	conv, err := m.convSvc.Get(context.Background(), m.ConversationID)
+	if err != nil {
+		// Revert local state on error
+		m.IsFavorite = !m.IsFavorite
+		return fmt.Errorf("get conversation: %w", err)
+	}
+
+	// Update favorite status
+	conv.IsFavorite = m.IsFavorite
+	err = m.convSvc.Update(context.Background(), conv)
 	if err != nil {
 		// Revert local state on error
 		m.IsFavorite = !m.IsFavorite

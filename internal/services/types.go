@@ -16,6 +16,7 @@ type Conversation struct {
 	CompletionTokens int64
 	TotalCost        float64
 	SummaryMessageID *string
+	IsFavorite       bool
 }
 
 // Message represents a single message in a conversation

@@ -3,11 +3,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -130,14 +132,22 @@ func runResume(_ *cobra.Command, args []string) error {
 
 // showConversationPicker displays an interactive TUI for selecting a conversation
 func showConversationPicker(db *sql.DB) (string, error) {
+	// Create conversation service
+	convSvc := services.NewConversationService(db)
+
 	// Load recent conversations
-	conversations, err := storage.ListConversations(db, 20, 0)
+	conversations, err := convSvc.List(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("failed to list conversations: %w", err)
 	}
 
 	if len(conversations) == 0 {
 		return "", fmt.Errorf("no conversations found")
+	}
+
+	// Limit to 20 most recent
+	if len(conversations) > 20 {
+		conversations = conversations[:20]
 	}
 
 	// Create picker model

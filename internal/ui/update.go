@@ -12,7 +12,7 @@ import (
 
 	"github.com/2389-research/hex/internal/approval"
 	"github.com/2389-research/hex/internal/core"
-	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
 	tea "github.com/charmbracelet/bubbletea"
@@ -887,13 +887,13 @@ func (m *Model) saveMessage(role, content string) error {
 		return nil // No database, skip saving
 	}
 
-	msg := &storage.Message{
+	msg := &services.Message{
 		ConversationID: m.ConversationID,
 		Role:           role,
 		Content:        content,
 	}
 
-	return storage.CreateMessage(m.db, msg)
+	return m.msgSvc.Add(context.Background(), msg)
 }
 
 // generateConversationTitle generates a title from the first user message
@@ -914,7 +914,16 @@ func (m *Model) updateConversationTitle(title string) error {
 	if m.db == nil {
 		return nil
 	}
-	return storage.UpdateConversationTitle(m.db, m.ConversationID, title)
+
+	// Get current conversation
+	conv, err := m.convSvc.Get(context.Background(), m.ConversationID)
+	if err != nil {
+		return fmt.Errorf("get conversation: %w", err)
+	}
+
+	// Update title
+	conv.Title = title
+	return m.convSvc.Update(context.Background(), conv)
 }
 
 // Task 12: Tool result formatting

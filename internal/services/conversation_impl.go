@@ -103,6 +103,7 @@ func (s *conversationService) Get(_ context.Context, id string) (*Conversation, 
 		CompletionTokens: completionTokens,
 		TotalCost:        totalCost,
 		SummaryMessageID: nil,
+		IsFavorite:       storageConv.IsFavorite,
 	}
 
 	if summaryMessageID.Valid {
@@ -150,6 +151,7 @@ func (s *conversationService) List(_ context.Context) ([]*Conversation, error) {
 			CompletionTokens: completionTokens,
 			TotalCost:        totalCost,
 			SummaryMessageID: nil,
+			IsFavorite:       sc.IsFavorite,
 		}
 
 		if summaryMessageID.Valid {
@@ -164,9 +166,14 @@ func (s *conversationService) List(_ context.Context) ([]*Conversation, error) {
 
 // Update saves conversation changes and publishes an Updated event
 func (s *conversationService) Update(ctx context.Context, conv *Conversation) error {
-	// Update basic fields
+	// Update title
 	if err := storage.UpdateConversationTitle(s.db, conv.ID, conv.Title); err != nil {
 		return fmt.Errorf("update conversation: %w", err)
+	}
+
+	// Update favorite status
+	if err := storage.SetFavorite(s.db, conv.ID, conv.IsFavorite); err != nil {
+		return fmt.Errorf("update favorite: %w", err)
 	}
 
 	// Get updated conversation to publish
