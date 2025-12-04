@@ -611,8 +611,8 @@ model: claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 
 	// Set config path
-	os.Setenv("PAGEN_CONFIG_PATH", configPath)
-	defer os.Unsetenv("PAGEN_CONFIG_PATH")
+	os.Setenv("JEFF_CONFIG_PATH", configPath)
+	defer os.Unsetenv("JEFF_CONFIG_PATH")
 
 	// Load config
 	cfg, err := core.LoadConfig()
@@ -622,10 +622,10 @@ model: claude-sonnet-4-5-20250929
 }
 
 func TestConfigFromEnv(t *testing.T) {
-	os.Setenv("PAGEN_API_KEY", "env-key-456")
-	os.Setenv("PAGEN_MODEL", "claude-opus-4-5-20250929")
-	defer os.Unsetenv("PAGEN_API_KEY")
-	defer os.Unsetenv("PAGEN_MODEL")
+	os.Setenv("JEFF_API_KEY", "env-key-456")
+	os.Setenv("JEFF_MODEL", "claude-opus-4-5-20250929")
+	defer os.Unsetenv("JEFF_API_KEY")
+	defer os.Unsetenv("JEFF_MODEL")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -642,10 +642,10 @@ func TestConfigPrecedence(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0644)
 	require.NoError(t, err)
 
-	os.Setenv("PAGEN_CONFIG_PATH", configPath)
-	os.Setenv("PAGEN_API_KEY", "env-key")
-	defer os.Unsetenv("PAGEN_CONFIG_PATH")
-	defer os.Unsetenv("PAGEN_API_KEY")
+	os.Setenv("JEFF_CONFIG_PATH", configPath)
+	os.Setenv("JEFF_API_KEY", "env-key")
+	defer os.Unsetenv("JEFF_CONFIG_PATH")
+	defer os.Unsetenv("JEFF_API_KEY")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -686,7 +686,7 @@ type Config struct {
 
 // LoadConfig loads configuration from multiple sources
 // Priority (highest to lowest):
-// 1. Environment variables (PAGEN_*)
+// 1. Environment variables (JEFF_*)
 // 2. .env file (current directory)
 // 3. ~/.clem/config.yaml
 // 4. Defaults
@@ -710,7 +710,7 @@ func LoadConfig() (*Config, error) {
 	v.SetConfigType("yaml")
 
 	// Check for custom config path
-	if configPath := os.Getenv("PAGEN_CONFIG_PATH"); configPath != "" {
+	if configPath := os.Getenv("JEFF_CONFIG_PATH"); configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
 		// Add search paths
@@ -740,7 +740,7 @@ func LoadConfig() (*Config, error) {
 // GetAPIKey returns the API key from config or environment
 func (c *Config) GetAPIKey() (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set PAGEN_API_KEY or run 'clem setup-token'")
+		return "", fmt.Errorf("API key not configured. Set JEFF_API_KEY or run 'clem setup-token'")
 	}
 	return c.APIKey, nil
 }
@@ -760,13 +760,13 @@ Create `.env.example`:
 ```bash
 # Anthropic API Key
 # Get yours at: https://console.anthropic.com/
-PAGEN_API_KEY=sk-ant-api03-...
+JEFF_API_KEY=sk-ant-api03-...
 
 # Optional: Model to use
-PAGEN_MODEL=claude-sonnet-4-5-20250929
+JEFF_MODEL=claude-sonnet-4-5-20250929
 
 # Optional: Permission mode (ask, allow, deny, plan)
-PAGEN_PERMISSION_MODE=ask
+JEFF_PERMISSION_MODE=ask
 ```
 
 **Step 7: Update .gitignore to exclude config**
@@ -1011,7 +1011,7 @@ Expected: First run will record API call (needs real API key), subsequent runs r
 
 To run with real API:
 ```bash
-export PAGEN_API_KEY=your-key-here
+export JEFF_API_KEY=your-key-here
 go test ./internal/core/... -v -run TestCreateMessage
 ```
 
@@ -1116,7 +1116,7 @@ Modify `cmd/clem/root.go` - replace stub `runPrintMode`:
 make build
 
 # Test with environment variable
-export PAGEN_API_KEY=your-key-here
+export JEFF_API_KEY=your-key-here
 ./clem --print "Say hello in one sentence"
 ```
 
@@ -1133,7 +1133,7 @@ Expected: JSON formatted response
 **Step 5: Test error handling**
 
 ```bash
-unset PAGEN_API_KEY
+unset JEFF_API_KEY
 ./clem --print "test"
 ```
 
@@ -1384,7 +1384,7 @@ func checkAPIKey() bool {
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
 		fmt.Println("  Run: clem setup-token <your-api-key>")
-		fmt.Println("  Or set: export PAGEN_API_KEY=<your-key>")
+		fmt.Println("  Or set: export JEFF_API_KEY=<your-key>")
 		return false
 	}
 
@@ -1526,9 +1526,9 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 		t.Skip("Skipping real API test")
 	}
 
-	apiKey := os.Getenv("PAGEN_API_KEY")
+	apiKey := os.Getenv("JEFF_API_KEY")
 	if apiKey == "" {
-		t.Skip("PAGEN_API_KEY not set")
+		t.Skip("JEFF_API_KEY not set")
 	}
 
 	// Build binary
@@ -1542,7 +1542,7 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 
 	// Test print mode with real API
 	cmd := exec.Command(clemBin, "--print", "Say hello in exactly 3 words")
-	cmd.Env = append(os.Environ(), "PAGEN_API_KEY="+apiKey)
+	cmd.Env = append(os.Environ(), "JEFF_API_KEY="+apiKey)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 
@@ -1559,7 +1559,7 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 go test -tags=integration ./tests/integration/... -v
 
 # With real API
-export PAGEN_API_KEY=your-key-here
+export JEFF_API_KEY=your-key-here
 go test -tags=integration ./tests/integration/... -v
 ```
 
@@ -1646,8 +1646,8 @@ model: claude-sonnet-4-5-20250929
 
 Or use environment variables:
 ```bash
-export PAGEN_API_KEY=sk-ant-api03-...
-export PAGEN_MODEL=claude-sonnet-4-5-20250929
+export JEFF_API_KEY=sk-ant-api03-...
+export JEFF_MODEL=claude-sonnet-4-5-20250929
 ```
 
 Or use `.env` file in current directory.
@@ -1687,7 +1687,7 @@ go test ./...
 go test -tags=integration ./tests/integration/...
 
 # With real API
-PAGEN_API_KEY=your-key go test ./...
+JEFF_API_KEY=your-key go test ./...
 ```
 
 ## Architecture
@@ -1736,7 +1736,7 @@ Phase 1 establishes the foundation for Clem CLI.
 - Viper for multi-source config
 - Priority: flags > env > .env > config file > defaults
 - Support for ~/.clem/config.yaml
-- Environment variable support (PAGEN_*)
+- Environment variable support (JEFF_*)
 
 ### 4. API Client
 - HTTP client for Anthropic API

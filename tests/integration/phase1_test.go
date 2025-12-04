@@ -83,9 +83,9 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 		t.Skip("Skipping real API test in short mode")
 	}
 
-	apiKey := os.Getenv("PAGEN_API_KEY")
+	apiKey := os.Getenv("JEFF_API_KEY")
 	if apiKey == "" {
-		t.Skip("PAGEN_API_KEY not set, skipping real API test")
+		t.Skip("JEFF_API_KEY not set, skipping real API test")
 	}
 
 	// Build binary
@@ -99,7 +99,7 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 
 	// Test print mode with real API
 	cmd := exec.Command(clemBin, "--print", "Say hello in exactly 3 words")
-	cmd.Env = append(os.Environ(), "PAGEN_API_KEY="+apiKey)
+	cmd.Env = append(os.Environ(), "JEFF_API_KEY="+apiKey)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "print mode with real API should succeed")
 

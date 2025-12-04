@@ -25,7 +25,7 @@ type Config struct {
 
 // LoadConfig loads configuration from multiple sources
 // Priority (highest to lowest):
-// 1. Environment variables (PAGEN_*)
+// 1. Environment variables (JEFF_*)
 // 2. .env file (current directory)
 // 3. ~/.jeff/config.yaml
 // 4. Defaults
@@ -42,7 +42,7 @@ func LoadConfig() (*Config, error) {
 	v.SetDefault("theme", "dracula")
 
 	// Environment variables
-	v.SetEnvPrefix("PAGEN")
+	v.SetEnvPrefix("JEFF")
 	v.AutomaticEnv()
 	// Bind specific keys to handle underscore conversion
 	_ = v.BindEnv("api_key")
@@ -56,7 +56,7 @@ func LoadConfig() (*Config, error) {
 	v.SetConfigType("yaml")
 
 	// Check for custom config path
-	if configPath := os.Getenv("PAGEN_CONFIG_PATH"); configPath != "" {
+	if configPath := os.Getenv("JEFF_CONFIG_PATH"); configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
 		// Add search paths
@@ -145,7 +145,7 @@ func LoadConfig() (*Config, error) {
 // GetAPIKey returns the API key from config or environment
 func (c *Config) GetAPIKey() (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set PAGEN_API_KEY or run 'clem setup-token'")
+		return "", fmt.Errorf("API key not configured. Set JEFF_API_KEY or run 'clem setup-token'")
 	}
 	return c.APIKey, nil
 }

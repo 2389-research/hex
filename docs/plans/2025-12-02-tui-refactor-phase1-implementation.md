@@ -584,8 +584,8 @@ func TestConfigTheme(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0600)
 	require.NoError(t, err)
 
-	_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
-	defer func() { _ = os.Unsetenv("PAGEN_CONFIG_PATH") }()
+	_ = os.Setenv("JEFF_CONFIG_PATH", configPath)
+	defer func() { _ = os.Unsetenv("JEFF_CONFIG_PATH") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -593,8 +593,8 @@ func TestConfigTheme(t *testing.T) {
 }
 
 func TestConfigThemeDefault(t *testing.T) {
-	_ = os.Unsetenv("PAGEN_CONFIG_PATH")
-	_ = os.Unsetenv("PAGEN_THEME")
+	_ = os.Unsetenv("JEFF_CONFIG_PATH")
+	_ = os.Unsetenv("JEFF_THEME")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)

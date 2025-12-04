@@ -304,20 +304,20 @@ func getProviderConfig(providerName string) (map[string]string, error) {
 	}
 
 	// Check for environment variables (for testing)
-	if clientID := os.Getenv("PAGEN_GMAIL_CLIENT_ID"); clientID != "" {
+	if clientID := os.Getenv("JEFF_GMAIL_CLIENT_ID"); clientID != "" {
 		config["client_id"] = clientID
 	}
-	if clientSecret := os.Getenv("PAGEN_GMAIL_CLIENT_SECRET"); clientSecret != "" {
+	if clientSecret := os.Getenv("JEFF_GMAIL_CLIENT_SECRET"); clientSecret != "" {
 		config["client_secret"] = clientSecret
 	}
 
 	// Validate required fields
 	if providerName == "gmail" {
 		if _, ok := config["client_id"]; !ok {
-			return nil, fmt.Errorf("missing client_id for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_ID=your-client-id\n\nOr add to ~/.jeff/config.yaml")
+			return nil, fmt.Errorf("missing client_id for Gmail\n\nSet via environment variable:\n  export JEFF_GMAIL_CLIENT_ID=your-client-id\n\nOr add to ~/.jeff/config.yaml")
 		}
 		if _, ok := config["client_secret"]; !ok {
-			return nil, fmt.Errorf("missing client_secret for Gmail\n\nSet via environment variable:\n  export PAGEN_GMAIL_CLIENT_SECRET=your-secret\n\nOr add to ~/.jeff/config.yaml")
+			return nil, fmt.Errorf("missing client_secret for Gmail\n\nSet via environment variable:\n  export JEFF_GMAIL_CLIENT_SECRET=your-secret\n\nOr add to ~/.jeff/config.yaml")
 		}
 	}
 
@@ -339,8 +339,8 @@ func loadProviderRegistry() (*providers.Registry, error) {
 
 	gmailConfig := map[string]string{
 		"token_file":    fmt.Sprintf("%s/.jeff/tokens/gmail.json", homeDir),
-		"client_id":     os.Getenv("PAGEN_GMAIL_CLIENT_ID"),
-		"client_secret": os.Getenv("PAGEN_GMAIL_CLIENT_SECRET"),
+		"client_id":     os.Getenv("JEFF_GMAIL_CLIENT_ID"),
+		"client_secret": os.Getenv("JEFF_GMAIL_CLIENT_SECRET"),
 	}
 
 	// Only register if we have credentials

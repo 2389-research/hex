@@ -20,7 +20,7 @@ Phase 1 establishes the foundation for Clem CLI.
 - Viper for multi-source config
 - Priority: flags > env > .env > config file > defaults
 - Support for ~/.clem/config.yaml
-- Environment variable support (PAGEN_*)
+- Environment variable support (JEFF_*)
 
 ### 4. API Client
 - HTTP client for Anthropic API

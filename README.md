@@ -220,13 +220,13 @@ model: claude-sonnet-4-5-20250929
 **2. Environment variables**:
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-api03-...
-export PAGEN_MODEL=claude-sonnet-4-5-20250929
+export JEFF_MODEL=claude-sonnet-4-5-20250929
 ```
 
 **3. `.env` file** (in project directory):
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
-PAGEN_MODEL=claude-sonnet-4-5-20250929
+JEFF_MODEL=claude-sonnet-4-5-20250929
 ```
 
 ## Tools

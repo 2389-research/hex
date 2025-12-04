@@ -13,7 +13,7 @@
 - Binary name: `pagent` → `jeff`
 - Directory: `cmd/pagent` → `cmd/jeff`
 - Config directory: `~/.jeff` → `~/.jeff`
-- Environment variables: `PAGEN_*` → `JEFF_*`
+- Environment variables: `JEFF_*` → `JEFF_*`
 - All code, docs, comments, user-facing strings
 
 ---
@@ -205,20 +205,20 @@ git commit -m "refactor: update config paths from ~/.jeff to ~/.jeff"
 ## Task 5: Update Environment Variable Names
 
 **Files:**
-- Modify: `cmd/jeff/provider.go` (PAGEN_GMAIL_CLIENT_ID, PAGEN_GMAIL_CLIENT_SECRET)
-- Modify: Any other files with PAGEN_ prefix
+- Modify: `cmd/jeff/provider.go` (JEFF_GMAIL_CLIENT_ID, JEFF_GMAIL_CLIENT_SECRET)
+- Modify: Any other files with JEFF_ prefix
 
-**Step 1: Update PAGEN_ to JEFF_ in all files**
+**Step 1: Update JEFF_ to JEFF_ in all files**
 
 Run:
 ```bash
-find . -name "*.go" -exec sed -i '' 's/PAGEN_/JEFF_/g' {} +
-find . -name "*.md" -exec sed -i '' 's/PAGEN_/JEFF_/g' {} +
+find . -name "*.go" -exec sed -i '' 's/JEFF_/JEFF_/g' {} +
+find . -name "*.md" -exec sed -i '' 's/JEFF_/JEFF_/g' {} +
 ```
 
-**Step 2: Verify no PAGEN_ references remain**
+**Step 2: Verify no JEFF_ references remain**
 
-Run: `grep -r "PAGEN_" --include="*.go" --include="*.md" .`
+Run: `grep -r "JEFF_" --include="*.go" --include="*.md" .`
 Expected: No matches (all updated to JEFF_)
 
 **Step 3: Verify compilation**
@@ -230,7 +230,7 @@ Expected: Successful compilation
 
 ```bash
 git add .
-git commit -m "refactor: update environment variables from PAGEN_ to JEFF_"
+git commit -m "refactor: update environment variables from JEFF_ to JEFF_"
 ```
 
 ---

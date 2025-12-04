@@ -96,7 +96,7 @@ func checkAPIKey() bool {
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
 		fmt.Println("  Run: jeff setup-token <your-api-key>")
-		fmt.Println("  Or set: export PAGEN_API_KEY=<your-key>")
+		fmt.Println("  Or set: export JEFF_API_KEY=<your-key>")
 		return false
 	}
 

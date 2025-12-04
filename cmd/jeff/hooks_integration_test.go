@@ -31,7 +31,7 @@ func TestHooksIntegration_ConfigLoading(t *testing.T) {
 	}
 
 	// Set config path
-	t.Setenv("PAGEN_CONFIG_PATH", configPath)
+	t.Setenv("JEFF_CONFIG_PATH", configPath)
 
 	// Load config
 	cfg, err := core.LoadConfig()

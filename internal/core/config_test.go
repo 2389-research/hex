@@ -22,8 +22,8 @@ model: claude-sonnet-4-5-20250929
 	require.NoError(t, err)
 
 	// Set config path
-	_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
-	defer func() { _ = os.Unsetenv("PAGEN_CONFIG_PATH") }()
+	_ = os.Setenv("JEFF_CONFIG_PATH", configPath)
+	defer func() { _ = os.Unsetenv("JEFF_CONFIG_PATH") }()
 
 	// Load config
 	cfg, err := core.LoadConfig()
@@ -34,12 +34,12 @@ model: claude-sonnet-4-5-20250929
 
 func TestConfigFromEnv(t *testing.T) {
 	// Clean up any existing config path
-	_ = os.Unsetenv("PAGEN_CONFIG_PATH")
+	_ = os.Unsetenv("JEFF_CONFIG_PATH")
 
-	_ = os.Setenv("PAGEN_API_KEY", "env-key-456")
-	_ = os.Setenv("PAGEN_MODEL", "claude-opus-4-5-20250929")
-	defer func() { _ = os.Unsetenv("PAGEN_API_KEY") }()
-	defer func() { _ = os.Unsetenv("PAGEN_MODEL") }()
+	_ = os.Setenv("JEFF_API_KEY", "env-key-456")
+	_ = os.Setenv("JEFF_MODEL", "claude-opus-4-5-20250929")
+	defer func() { _ = os.Unsetenv("JEFF_API_KEY") }()
+	defer func() { _ = os.Unsetenv("JEFF_MODEL") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -56,10 +56,10 @@ func TestConfigPrecedence(t *testing.T) {
 	err := os.WriteFile(configPath, []byte(configYAML), 0600)
 	require.NoError(t, err)
 
-	_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
-	_ = os.Setenv("PAGEN_API_KEY", "env-key")
-	defer func() { _ = os.Unsetenv("PAGEN_CONFIG_PATH") }()
-	defer func() { _ = os.Unsetenv("PAGEN_API_KEY") }()
+	_ = os.Setenv("JEFF_CONFIG_PATH", configPath)
+	_ = os.Setenv("JEFF_API_KEY", "env-key")
+	defer func() { _ = os.Unsetenv("JEFF_CONFIG_PATH") }()
+	defer func() { _ = os.Unsetenv("JEFF_API_KEY") }()
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -68,12 +68,12 @@ func TestConfigPrecedence(t *testing.T) {
 
 func TestConfigDefaults(t *testing.T) {
 	// Clean all env vars that might affect the test
-	_ = os.Unsetenv("PAGEN_CONFIG_PATH")
-	_ = os.Unsetenv("PAGEN_API_KEY")
-	_ = os.Unsetenv("PAGEN_MODEL")
-	_ = os.Unsetenv("PAGEN_PERMISSION_MODE")
-	_ = os.Unsetenv("PAGEN_DEFAULT_TOOLS")
-	_ = os.Unsetenv("PAGEN_THEME")
+	_ = os.Unsetenv("JEFF_CONFIG_PATH")
+	_ = os.Unsetenv("JEFF_API_KEY")
+	_ = os.Unsetenv("JEFF_MODEL")
+	_ = os.Unsetenv("JEFF_PERMISSION_MODE")
+	_ = os.Unsetenv("JEFF_DEFAULT_TOOLS")
+	_ = os.Unsetenv("JEFF_THEME")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -112,8 +112,8 @@ func TestConfigFromDotEnv(t *testing.T) {
 	tmpDir := t.TempDir()
 	dotEnvPath := filepath.Join(tmpDir, ".env")
 
-	dotEnvContent := `PAGEN_API_KEY=dotenv-key-789
-PAGEN_MODEL=claude-sonnet-4-5-20250929
+	dotEnvContent := `JEFF_API_KEY=dotenv-key-789
+JEFF_MODEL=claude-sonnet-4-5-20250929
 `
 	err := os.WriteFile(dotEnvPath, []byte(dotEnvContent), 0600)
 	require.NoError(t, err)
@@ -124,9 +124,9 @@ PAGEN_MODEL=claude-sonnet-4-5-20250929
 	_ = os.Chdir(tmpDir)
 
 	// Clean env vars
-	_ = os.Unsetenv("PAGEN_API_KEY")
-	_ = os.Unsetenv("PAGEN_MODEL")
-	_ = os.Unsetenv("PAGEN_CONFIG_PATH")
+	_ = os.Unsetenv("JEFF_API_KEY")
+	_ = os.Unsetenv("JEFF_MODEL")
+	_ = os.Unsetenv("JEFF_CONFIG_PATH")
 
 	cfg, err := core.LoadConfig()
 	require.NoError(t, err)
@@ -136,8 +136,8 @@ PAGEN_MODEL=claude-sonnet-4-5-20250929
 
 func TestConfigTheme(t *testing.T) {
 	t.Run("defaults to dracula", func(t *testing.T) {
-		_ = os.Unsetenv("PAGEN_CONFIG_PATH")
-		_ = os.Unsetenv("PAGEN_THEME")
+		_ = os.Unsetenv("JEFF_CONFIG_PATH")
+		_ = os.Unsetenv("JEFF_THEME")
 
 		cfg, err := core.LoadConfig()
 		require.NoError(t, err)
@@ -152,8 +152,8 @@ func TestConfigTheme(t *testing.T) {
 		err := os.WriteFile(configPath, []byte(configYAML), 0600)
 		require.NoError(t, err)
 
-		_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
-		defer func() { _ = os.Unsetenv("PAGEN_CONFIG_PATH") }()
+		_ = os.Setenv("JEFF_CONFIG_PATH", configPath)
+		defer func() { _ = os.Unsetenv("JEFF_CONFIG_PATH") }()
 
 		cfg, err := core.LoadConfig()
 		require.NoError(t, err)
@@ -168,11 +168,11 @@ func TestConfigTheme(t *testing.T) {
 		err := os.WriteFile(configPath, []byte(configYAML), 0600)
 		require.NoError(t, err)
 
-		_ = os.Setenv("PAGEN_CONFIG_PATH", configPath)
-		_ = os.Setenv("PAGEN_THEME", "gruvbox")
+		_ = os.Setenv("JEFF_CONFIG_PATH", configPath)
+		_ = os.Setenv("JEFF_THEME", "gruvbox")
 		defer func() {
-			_ = os.Unsetenv("PAGEN_CONFIG_PATH")
-			_ = os.Unsetenv("PAGEN_THEME")
+			_ = os.Unsetenv("JEFF_CONFIG_PATH")
+			_ = os.Unsetenv("JEFF_THEME")
 		}()
 
 		cfg, err := core.LoadConfig()
