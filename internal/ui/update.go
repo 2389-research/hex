@@ -12,6 +12,7 @@ import (
 
 	"github.com/2389-research/hex/internal/approval"
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/pubsub"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
@@ -29,6 +30,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	// Phase 4 Task 3: Handle conversation events
+	case conversationEventMsg:
+		return m.handleConversationEvent(msg)
+
+	// Phase 4 Task 3: Handle message events
+	case messageEventMsg:
+		return m.handleMessageEvent(msg)
+
 	// Task 6: Handle streaming chunks
 	case *StreamChunkMsg:
 		return m.handleStreamChunk(msg)
@@ -252,6 +261,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.streamCancel != nil {
 				m.streamCancel()
 			}
+			// Cancel event subscriptions before quitting
+			if m.eventCancel != nil {
+				m.eventCancel()
+			}
 			return m, tea.Quit
 		}
 
@@ -260,6 +273,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Cancel any active stream before quitting
 			if m.streamCancel != nil {
 				m.streamCancel()
+			}
+			// Cancel event subscriptions before quitting
+			if m.eventCancel != nil {
+				m.eventCancel()
 			}
 			return m, tea.Quit
 		}
@@ -959,3 +976,72 @@ func formatToolResult(result *tools.Result) string {
 // 	// Quick actions are now handled by huh forms in LaunchQuickActionsForm()
 // 	return m, nil
 // }
+
+// Phase 4 Task 3: Event Handlers
+
+// handleConversationEvent processes conversation events from the service layer
+func (m *Model) handleConversationEvent(msg conversationEventMsg) (tea.Model, tea.Cmd) {
+	_, _ = fmt.Fprintf(os.Stderr, "[CONV_EVENT] type=%d, id=%s\n", msg.event.Type, msg.event.Payload.ID)
+
+	// Update UI state based on event type
+	switch msg.event.Type {
+	case pubsub.Created:
+		// New conversation created
+		_, _ = fmt.Fprintf(os.Stderr, "[CONV_EVENT] conversation created: %s\n", msg.event.Payload.ID)
+
+	case pubsub.Updated:
+		// Conversation updated - refresh if it's the current conversation
+		if msg.event.Payload.ID == m.ConversationID {
+			_, _ = fmt.Fprintf(os.Stderr, "[CONV_EVENT] current conversation updated\n")
+			// Update favorite status
+			m.IsFavorite = msg.event.Payload.IsFavorite
+			m.updateViewport()
+		}
+
+	case pubsub.Deleted:
+		// Conversation deleted
+		_, _ = fmt.Fprintf(os.Stderr, "[CONV_EVENT] conversation deleted: %s\n", msg.event.Payload.ID)
+	}
+
+	// Continue listening for events
+	if m.convSvc != nil && m.eventCtx != nil {
+		convEvents := m.convSvc.Subscribe(m.eventCtx)
+		return m, waitForConversationEvent(convEvents)
+	}
+
+	return m, nil
+}
+
+// handleMessageEvent processes message events from the service layer
+func (m *Model) handleMessageEvent(msg messageEventMsg) (tea.Model, tea.Cmd) {
+	_, _ = fmt.Fprintf(os.Stderr, "[MSG_EVENT] type=%d, convID=%s, role=%s\n",
+		msg.event.Type, msg.event.Payload.ConversationID, msg.event.Payload.Role)
+
+	// Update UI state based on event type
+	switch msg.event.Type {
+	case pubsub.Created:
+		// New message created - refresh if it's for the current conversation
+		if msg.event.Payload.ConversationID == m.ConversationID {
+			_, _ = fmt.Fprintf(os.Stderr, "[MSG_EVENT] message added to current conversation\n")
+			// Note: We don't add the message here because it's already added
+			// during normal flow. This event is mainly for other consumers
+			// or for syncing state across multiple UI instances
+		}
+
+	case pubsub.Updated:
+		// Message updated (less common)
+		_, _ = fmt.Fprintf(os.Stderr, "[MSG_EVENT] message updated\n")
+
+	case pubsub.Deleted:
+		// Message deleted (less common)
+		_, _ = fmt.Fprintf(os.Stderr, "[MSG_EVENT] message deleted\n")
+	}
+
+	// Continue listening for events
+	if m.msgSvc != nil && m.eventCtx != nil {
+		msgEvents := m.msgSvc.Subscribe(m.eventCtx)
+		return m, waitForMessageEvent(msgEvents)
+	}
+
+	return m, nil
+}

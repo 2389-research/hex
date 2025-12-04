@@ -13,6 +13,7 @@ import (
 	"github.com/2389-research/hex/internal/approval"
 	ctxmgr "github.com/2389-research/hex/internal/context"
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/pubsub"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
@@ -79,6 +80,16 @@ type StreamChunkMsg struct {
 // streamStartMsg is sent when a stream is initialized
 type streamStartMsg struct {
 	channel <-chan *core.StreamChunk
+}
+
+// conversationEventMsg wraps a conversation event
+type conversationEventMsg struct {
+	event pubsub.Event[services.Conversation]
+}
+
+// messageEventMsg wraps a message event
+type messageEventMsg struct {
+	event pubsub.Event[services.Message]
 }
 
 // Model is the Bubbletea model for interactive mode
@@ -170,6 +181,10 @@ type Model struct {
 
 	// TUI Polish: Theme
 	theme *theme.Theme
+
+	// Phase 4 Task 3: Event subscriptions
+	eventCtx    context.Context
+	eventCancel context.CancelFunc
 }
 
 // ToolResult represents a tool execution result for the API
@@ -266,6 +281,13 @@ func NewModel(conversationID, model string) *Model {
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
+	// Phase 4 Task 3: Start event subscriptions if services are available
+	if m.convSvc != nil && m.msgSvc != nil {
+		return tea.Batch(
+			textarea.Blink,
+			m.StartEventSubscriptions(),
+		)
+	}
 	return textarea.Blink
 }
 
@@ -508,6 +530,46 @@ func (m *Model) SetServices(convSvc services.ConversationService, msgSvc service
 	m.convSvc = convSvc
 	m.msgSvc = msgSvc
 	m.agentSvc = agentSvc
+}
+
+// StartEventSubscriptions initializes event subscriptions and returns commands to listen for events
+func (m *Model) StartEventSubscriptions() tea.Cmd {
+	// Create context for subscriptions
+	m.eventCtx, m.eventCancel = context.WithCancel(context.Background())
+
+	// Subscribe to conversation events
+	convEvents := m.convSvc.Subscribe(m.eventCtx)
+
+	// Subscribe to message events
+	msgEvents := m.msgSvc.Subscribe(m.eventCtx)
+
+	// Return Bubbletea commands that listen to both channels
+	return tea.Batch(
+		waitForConversationEvent(convEvents),
+		waitForMessageEvent(msgEvents),
+	)
+}
+
+// waitForConversationEvent waits for the next conversation event and converts it to a tea.Msg
+func waitForConversationEvent(ch <-chan pubsub.Event[services.Conversation]) tea.Cmd {
+	return func() tea.Msg {
+		event, ok := <-ch
+		if !ok {
+			return nil
+		}
+		return conversationEventMsg{event: event}
+	}
+}
+
+// waitForMessageEvent waits for the next message event and converts it to a tea.Msg
+func waitForMessageEvent(ch <-chan pubsub.Event[services.Message]) tea.Cmd {
+	return func() tea.Msg {
+		event, ok := <-ch
+		if !ok {
+			return nil
+		}
+		return messageEventMsg{event: event}
+	}
 }
 
 // Task 12: Tool System Methods
