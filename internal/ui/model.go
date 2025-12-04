@@ -253,8 +253,8 @@ func NewModel(conversationID, model string) *Model {
 		Viewport:             vp,
 		Width:                80,
 		Height:               24,
-		ShowIntro:            true, // Show intro in viewport initially
-		CurrentView:          ViewModeIntro,
+		ShowIntro:            true,         // Show intro in viewport initially
+		CurrentView:          ViewModeChat, // Start in chat mode - no key press needed
 		Status:               StatusIdle,
 		renderer:             renderer,
 		spinner:              spinner,

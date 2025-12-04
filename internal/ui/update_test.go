@@ -14,17 +14,12 @@ import (
 
 func TestUpdateTabKeySwitchesViews(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
-	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
+	assert.Equal(t, ui.ViewModeChat, model.CurrentView) // Now starts in Chat mode
 
-	// Press Tab to switch to Chat
+	// Press Tab to switch to History
 	msg := tea.KeyMsg{Type: tea.KeyTab}
 	updatedModel, _ := model.Update(msg)
 	m := updatedModel.(*ui.Model)
-	assert.Equal(t, ui.ViewModeChat, m.CurrentView)
-
-	// Press Tab again to switch to History
-	updatedModel, _ = m.Update(msg)
-	m = updatedModel.(*ui.Model)
 	assert.Equal(t, ui.ViewModeHistory, m.CurrentView)
 
 	// Press Tab again to switch to Tools
@@ -32,10 +27,15 @@ func TestUpdateTabKeySwitchesViews(t *testing.T) {
 	m = updatedModel.(*ui.Model)
 	assert.Equal(t, ui.ViewModeTools, m.CurrentView)
 
-	// Press Tab again to cycle back to Intro
+	// Press Tab again to cycle to Intro
 	updatedModel, _ = m.Update(msg)
 	m = updatedModel.(*ui.Model)
 	assert.Equal(t, ui.ViewModeIntro, m.CurrentView)
+
+	// Press Tab again to cycle back to Chat
+	updatedModel, _ = m.Update(msg)
+	m = updatedModel.(*ui.Model)
+	assert.Equal(t, ui.ViewModeChat, m.CurrentView)
 }
 
 func TestUpdateVimNavigation(t *testing.T) {

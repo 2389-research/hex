@@ -202,9 +202,7 @@ func TestUISetStatus(t *testing.T) {
 func TestUIViewModes(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 
-	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
-
-	model.NextView()
+	// Now starts in Chat mode for immediate interaction
 	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 
 	model.NextView()
@@ -215,6 +213,9 @@ func TestUIViewModes(t *testing.T) {
 
 	model.NextView()
 	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
+
+	model.NextView()
+	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 }
 
 // TestUISearchMode tests search mode functionality
