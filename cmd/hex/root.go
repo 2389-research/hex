@@ -34,7 +34,7 @@ var (
 	outputFormat string
 	model        string
 	verbose      bool
-	debug        string
+	debug        bool
 
 	// Task 7: Storage integration flags
 	continueFlag bool
@@ -84,7 +84,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "output-format", "text", "Output format: text, json, stream-json")
 	rootCmd.PersistentFlags().StringVarP(&model, "model", "m", "", "Model to use")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
-	rootCmd.PersistentFlags().StringVar(&debug, "debug", "", "Debug categories")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging to /tmp/hex-debug.log")
 
 	// Task 7: Storage flags
 	rootCmd.PersistentFlags().BoolVar(&continueFlag, "continue", false, "Continue the most recent conversation")
@@ -457,10 +457,10 @@ var globalLogger *logging.Logger
 func initializeLogging() error {
 	// If --debug is specified, force debug level and enable stderr output
 	level := logging.LevelFromString(logLevel)
-	if debug != "" {
+	if debug {
 		level = logging.LevelDebug
 		// Set environment variable so other packages know we're in debug mode
-		_ = os.Setenv("HEX_DEBUG", debug) // Ignore error - not critical if env var fails to set
+		_ = os.Setenv("HEX_DEBUG", "1") // Ignore error - not critical if env var fails to set
 	}
 
 	var format logging.Format
@@ -481,7 +481,7 @@ func initializeLogging() error {
 	var err error
 
 	// In debug mode, always write to stderr/file even in TUI mode
-	if debug != "" || level == logging.LevelDebug {
+	if debug || level == logging.LevelDebug {
 		debugFile := logFile
 		if debugFile == "" {
 			// Default debug log file
