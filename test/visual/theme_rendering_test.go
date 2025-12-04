@@ -89,12 +89,12 @@ func TestTitleGradient_EnhancedVisuals(t *testing.T) {
 	model.Height = 24
 	view := model.View()
 
-	// Title should have decorative border (rounded border characters)
-	assert.Contains(t, view, "Pagen")
+	// Intro screen should have box-drawing border characters
+	assert.Contains(t, view, "Productivity AI Agent")
 	// View should be non-empty and contain border decorations
 	assert.NotEmpty(t, view)
-	assert.Contains(t, view, "╭") // Top left corner of border
-	assert.Contains(t, view, "╰") // Bottom left corner of border
+	assert.Contains(t, view, "┏") // Top left corner of intro border
+	assert.Contains(t, view, "┗") // Bottom left corner of intro border
 }
 
 func TestThemeComparison_DistinctVisuals(t *testing.T) {
@@ -130,9 +130,9 @@ func TestThemeComparison_DistinctVisuals(t *testing.T) {
 	gruvboxView := gruvbox.View()
 	nordView := nord.View()
 
-	assert.Contains(t, draculaView, "Pagen")
-	assert.Contains(t, gruvboxView, "Pagen")
-	assert.Contains(t, nordView, "Pagen")
+	assert.Contains(t, draculaView, "Productivity AI Agent")
+	assert.Contains(t, gruvboxView, "Productivity AI Agent")
+	assert.Contains(t, nordView, "Productivity AI Agent")
 }
 
 func TestSpacing_ConsistentLayout(t *testing.T) {

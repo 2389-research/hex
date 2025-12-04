@@ -13,9 +13,11 @@ func TestViewRendersChatMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeChat
+	// Phase 2 Task 3: Disable intro to test normal chat view
+	model.AddMessage("user", "test") // Add a message to get past intro
 
 	view := model.View()
-	assert.Contains(t, view, "Clem")
+	assert.Contains(t, view, "Pagen")  // Changed from "Clem" to "Pagen"
 	assert.Contains(t, view, "[chat]") // Phase 6C: lowercase in status bar
 }
 
@@ -23,6 +25,8 @@ func TestViewRendersHistoryMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeHistory
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 
 	view := model.View()
 	assert.Contains(t, view, "History Browser")
@@ -33,6 +37,8 @@ func TestViewRendersToolsMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeTools
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 
 	view := model.View()
 	assert.Contains(t, view, "Tool Inspector")
@@ -42,6 +48,8 @@ func TestViewRendersToolsMode(t *testing.T) {
 func TestViewShowsTokenCounter(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 	model.UpdateTokens(100, 250)
 
 	view := model.View()
@@ -53,6 +61,8 @@ func TestViewShowsTokenCounter(t *testing.T) {
 func TestViewShowsSearchMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 	model.EnterSearchMode()
 	model.UpdateSearchQuery("test")
 
@@ -64,6 +74,8 @@ func TestViewShowsSearchMode(t *testing.T) {
 func TestViewShowsHelpText(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 
 	view := model.View()
 	// Phase 6C: New compact help text in status bar
@@ -74,6 +86,8 @@ func TestViewShowsHelpText(t *testing.T) {
 func TestViewStatusIndicatorChanges(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 2 Task 3: Add message to bypass intro screen
+	model.AddMessage("user", "test")
 
 	// Test idle status
 	view := model.View()

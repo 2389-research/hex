@@ -119,6 +119,11 @@ func (m *Model) View() string {
 		return "\n  Initializing..."
 	}
 
+	// Phase 2 Task 3: Show intro if enabled and no messages yet
+	if m.showIntro && len(m.Messages) == 0 {
+		return m.RenderIntro()
+	}
+
 	// Create styles from theme
 	styles := m.createViewStyles()
 

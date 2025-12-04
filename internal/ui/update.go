@@ -305,6 +305,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Send message
 				input := strings.TrimSpace(m.Input.Value())
 				if input != "" {
+					// Phase 2 Task 3: Hide intro on first user message
+					m.showIntro = false
+
 					m.AddMessage("user", input)
 					m.Input.Reset()
 					m.UpdateViewport()

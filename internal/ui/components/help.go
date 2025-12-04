@@ -41,7 +41,7 @@ func (h *HelpOverlay) View() string {
 	}{
 		{"ctrl+c", "Quit"},
 		{"enter", "Send message"},
-		{"ctrl+p", "Quick actions"},
+		{":", "Quick actions"},
 		{"ctrl+l", "Clear screen"},
 		{"esc", "Cancel/close"},
 		{"↑↓", "Navigate tables"},

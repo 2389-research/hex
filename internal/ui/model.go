@@ -170,6 +170,9 @@ type Model struct {
 	// huhQuickActions *components.HuhQuickActions // TODO: Phase 2 - implement quick actions with Huh
 
 	tokenViz *visualization.TokenVisualization
+
+	// Phase 2 Task 3: Intro Screen
+	showIntro bool // Show intro screen on first launch
 }
 
 // ToolResult represents a tool execution result for the API
@@ -246,6 +249,7 @@ func NewModel(conversationID, model, themeName string) *Model {
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
 		tokenViz:             tokenViz,
+		showIntro:            true, // Phase 2 Task 3: Show intro on first launch
 	}
 }
 

@@ -124,7 +124,7 @@ func TestUIViewRendering(t *testing.T) {
 
 	view = m.View()
 	assert.NotContains(t, view, "Initializing", "should not show initializing after ready")
-	assert.Contains(t, view, "Pagen", "should show title")
+	assert.Contains(t, view, "Productivity AI Agent", "should show title in intro screen")
 }
 
 // TestUIStateTransitions tests various state transitions
