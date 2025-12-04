@@ -5,7 +5,6 @@ package ui
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"strings"
@@ -124,9 +123,6 @@ type Model struct {
 	streamChan   <-chan *core.StreamChunk
 	streamCtx    context.Context
 	streamCancel context.CancelFunc
-
-	// Task 7: Storage Integration
-	db *sql.DB
 
 	// Phase 4: Service layer integration
 	convSvc  services.ConversationService
@@ -487,29 +483,8 @@ func (m *Model) AppendStreamingText(chunk string) {
 func (m *Model) CommitStreamingText() {
 	if m.StreamingText != "" {
 		m.AddMessage("assistant", m.StreamingText)
-
-		// Task 7: Save assistant message to database
-		if m.db != nil {
-			_ = m.saveMessageInternal("assistant", m.StreamingText)
-		}
-
 		m.StreamingText = ""
 	}
-}
-
-// saveMessageInternal is a helper method to save messages (called from model.go)
-func (m *Model) saveMessageInternal(role, content string) error {
-	if m.db == nil {
-		return nil
-	}
-
-	msg := &services.Message{
-		ConversationID: m.ConversationID,
-		Role:           role,
-		Content:        content,
-	}
-
-	return m.msgSvc.Add(context.Background(), msg)
 }
 
 // ClearStreamingText discards streaming buffer (e.g., on error)
@@ -520,11 +495,6 @@ func (m *Model) ClearStreamingText() {
 // SetAPIClient sets the API client for streaming
 func (m *Model) SetAPIClient(client *core.Client) {
 	m.apiClient = client
-}
-
-// SetDB sets the database connection for storage
-func (m *Model) SetDB(db *sql.DB) {
-	m.db = db
 }
 
 // SetServices sets the service layer dependencies
@@ -863,19 +833,14 @@ func (m *Model) ExportConversation() string {
 
 // SaveConversation saves the conversation (placeholder for future implementation)
 func (m *Model) SaveConversation() error {
-	// This would save to database or file
-	// For now, it's a placeholder
-	if m.db != nil {
-		// Conversation is already being saved incrementally
-		return nil
-	}
+	// Conversation is already being saved incrementally via service layer
 	return nil
 }
 
 // ToggleFavorite toggles the favorite status of the current conversation
 func (m *Model) ToggleFavorite() error {
-	if m.db == nil {
-		return fmt.Errorf("database not available")
+	if m.convSvc == nil {
+		return fmt.Errorf("conversation service not available")
 	}
 
 	// Toggle the local state

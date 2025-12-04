@@ -216,7 +216,6 @@ func runInteractive(prompt string) error {
 			conversationID = conv.ID
 			modelName = conv.Model
 			uiModel = ui.NewModel(conversationID, modelName)
-			uiModel.SetDB(db)
 
 			// Load messages into UI
 			msgs, err := storage.ListMessages(db, conversationID)
@@ -236,7 +235,6 @@ func runInteractive(prompt string) error {
 		conversationID = conv.ID
 		modelName = conv.Model
 		uiModel = ui.NewModel(conversationID, modelName)
-		uiModel.SetDB(db)
 
 		// Load favorite status
 		uiModel.IsFavorite = conv.IsFavorite
@@ -251,7 +249,6 @@ func runInteractive(prompt string) error {
 	if uiModel == nil {
 		conversationID = fmt.Sprintf("conv-%d", time.Now().Unix())
 		uiModel = ui.NewModel(conversationID, modelName)
-		uiModel.SetDB(db)
 
 		// Phase 6C: Set system prompt from template if available
 		if systemPrompt != "" {

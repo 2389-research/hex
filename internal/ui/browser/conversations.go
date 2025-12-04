@@ -5,7 +5,6 @@ package browser
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -30,7 +29,6 @@ const (
 
 // ConversationBrowser manages the conversation browsing interface
 type ConversationBrowser struct {
-	db             *sql.DB
 	convSvc        services.ConversationService
 	theme          *theme.Theme
 	conversations  []*services.Conversation
@@ -87,7 +85,7 @@ func (ci conversationItem) Description() string {
 }
 
 // NewConversationBrowser creates a new conversation browser
-func NewConversationBrowser(db *sql.DB, convSvc services.ConversationService, t *theme.Theme) *ConversationBrowser {
+func NewConversationBrowser(convSvc services.ConversationService, t *theme.Theme) *ConversationBrowser {
 	// Create list delegate with Dracula styling
 	delegate := list.NewDefaultDelegate()
 
@@ -122,7 +120,6 @@ func NewConversationBrowser(db *sql.DB, convSvc services.ConversationService, t 
 		Background(t.Colors.CurrentLine)
 
 	return &ConversationBrowser{
-		db:            db,
 		convSvc:       convSvc,
 		theme:         t,
 		list:          l,

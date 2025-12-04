@@ -112,7 +112,6 @@ func runResume(_ *cobra.Command, args []string) error {
 	// Create UI model with loaded conversation
 	modelName := conv.Model
 	uiModel := ui.NewModel(conversationID, modelName)
-	uiModel.SetDB(db)
 	uiModel.IsFavorite = conv.IsFavorite
 
 	// Load messages into UI

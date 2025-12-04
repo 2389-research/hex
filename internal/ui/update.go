@@ -907,10 +907,10 @@ func (m *Model) readStreamChunks(streamChan <-chan *core.StreamChunk) tea.Cmd {
 
 // Task 7: Storage Integration Functions
 
-// saveMessage saves a message to the database if DB is available
+// saveMessage saves a message to the database via service layer
 func (m *Model) saveMessage(role, content string) error {
-	if m.db == nil {
-		return nil // No database, skip saving
+	if m.msgSvc == nil {
+		return nil // No message service, skip saving
 	}
 
 	msg := &services.Message{
@@ -935,9 +935,9 @@ func generateConversationTitle(content string) string {
 	return title
 }
 
-// updateConversationTitle updates the conversation title in the database
+// updateConversationTitle updates the conversation title via service layer
 func (m *Model) updateConversationTitle(title string) error {
-	if m.db == nil {
+	if m.convSvc == nil {
 		return nil
 	}
 
