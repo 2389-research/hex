@@ -279,6 +279,11 @@ func (e *Executor) loadConfigForSubagent() (*subagentConfig, error) {
 		return &subagentConfig{APIKey: apiKey}, nil
 	}
 
+	// Also check for ANTHROPIC_API_KEY (standard Anthropic env var)
+	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+		return &subagentConfig{APIKey: apiKey}, nil
+	}
+
 	// Try reading from ~/.hex/config.yaml
 	home, err := os.UserHomeDir()
 	if err != nil {

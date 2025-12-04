@@ -42,6 +42,7 @@ func LoadConfig() (*Config, error) {
 	v.AutomaticEnv()
 	// Bind specific keys to handle underscore conversion
 	_ = v.BindEnv("api_key")
+	_ = v.BindEnv("api_key", "ANTHROPIC_API_KEY") // Also check standard Anthropic env var
 	_ = v.BindEnv("model")
 	_ = v.BindEnv("permission_mode")
 	_ = v.BindEnv("default_tools")
@@ -81,7 +82,7 @@ func LoadConfig() (*Config, error) {
 // GetAPIKey returns the API key from config or environment
 func (c *Config) GetAPIKey() (string, error) {
 	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set HEX_API_KEY or run 'hex setup-token'")
+		return "", fmt.Errorf("API key not configured. Set HEX_API_KEY/ANTHROPIC_API_KEY or run 'hex setup-token'")
 	}
 	return c.APIKey, nil
 }
