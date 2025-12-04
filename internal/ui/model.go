@@ -286,9 +286,13 @@ func (m *Model) Init() tea.Cmd {
 		return tea.Batch(
 			textarea.Blink,
 			m.StartEventSubscriptions(),
+			tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
 		)
 	}
-	return textarea.Blink
+	return tea.Batch(
+		textarea.Blink,
+		tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
+	)
 }
 
 // AddMessage adds a message to the conversation

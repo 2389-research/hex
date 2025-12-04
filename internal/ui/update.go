@@ -31,6 +31,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	// Handle mouse wheel scrolling
+	case tea.MouseMsg:
+		switch msg.Button {
+		case tea.MouseButtonWheelUp:
+			m.Viewport.ScrollUp(3)
+			return m, nil
+		case tea.MouseButtonWheelDown:
+			m.Viewport.ScrollDown(3)
+			return m, nil
+		}
+
 	// Phase 4 Task 3: Handle conversation events
 	case conversationEventMsg:
 		return m.handleConversationEvent(msg)
