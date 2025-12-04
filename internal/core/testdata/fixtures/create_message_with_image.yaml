@@ -2,7 +2,7 @@
 version: 1
 interactions:
     - request:
-        body: '{"model":"claude-sonnet-4-5-20250929","messages":[{"content":"Say hello","role":"user"}],"max_tokens":1024}'
+        body: '{"model":"claude-sonnet-4-5-20250929","messages":[{"content":[{"type":"image","source":{"type":"base64","media_type":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}},{"type":"text","text":"What''s in this image?"}],"role":"user"}],"max_tokens":1024}'
         form: {}
         headers:
             Anthropic-Version:
@@ -14,7 +14,7 @@ interactions:
         url: https://api.anthropic.com/v1/messages
         method: POST
       response:
-        body: '{"model":"claude-sonnet-4-5-20250929","id":"msg_0179Bv3NHAmm7MwVns3NkjXx","type":"message","role":"assistant","content":[{"type":"text","text":"Hello! How can I help you today?"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":9,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":12,"service_tier":"standard"}}'
+        body: '{"model":"claude-sonnet-4-5-20250929","id":"msg_011AkqiXAJ7nexwDfuRZjV3p","type":"message","role":"assistant","content":[{"type":"text","text":"This appears to be an almost entirely blank or white image. There doesn''t seem to be any visible text, objects, or distinguishable content in the image. It''s essentially a plain white or very light colored background with no discernible features."}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":18,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":54,"service_tier":"standard"}}'
         headers:
             Anthropic-Organization-Id:
                 - 82a12da9-4765-4033-8373-606812298aac
@@ -23,39 +23,39 @@ interactions:
             Anthropic-Ratelimit-Input-Tokens-Remaining:
                 - "2000000"
             Anthropic-Ratelimit-Input-Tokens-Reset:
-                - "2025-12-04T01:26:35Z"
+                - "2025-12-04T01:26:48Z"
             Anthropic-Ratelimit-Output-Tokens-Limit:
                 - "400000"
             Anthropic-Ratelimit-Output-Tokens-Remaining:
                 - "400000"
             Anthropic-Ratelimit-Output-Tokens-Reset:
-                - "2025-12-04T01:26:36Z"
+                - "2025-12-04T01:26:50Z"
             Anthropic-Ratelimit-Tokens-Limit:
                 - "2400000"
             Anthropic-Ratelimit-Tokens-Remaining:
                 - "2400000"
             Anthropic-Ratelimit-Tokens-Reset:
-                - "2025-12-04T01:26:35Z"
+                - "2025-12-04T01:26:48Z"
             Cf-Cache-Status:
                 - DYNAMIC
             Cf-Ray:
-                - 9a87842a88f7f85e-ORD
+                - 9a87847db90f003b-ORD
             Content-Type:
                 - application/json
             Date:
-                - Thu, 04 Dec 2025 01:26:36 GMT
+                - Thu, 04 Dec 2025 01:26:50 GMT
             Request-Id:
-                - req_011CVkn1LSN6RMDBaPSQJEAQ
+                - req_011CVkn2KHwGRKydQb9V87Pn
             Retry-After:
-                - "26"
+                - "12"
             Server:
                 - cloudflare
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             X-Envoy-Upstream-Service-Time:
-                - "3090"
+                - "3847"
             X-Robots-Tag:
                 - none
         status: 200 OK
         code: 200
-        duration: 3.167166125s
+        duration: 3.927362292s

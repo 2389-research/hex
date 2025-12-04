@@ -4,6 +4,7 @@ package core_test
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/harper/pagent/internal/core"
@@ -63,7 +64,13 @@ func TestCreateMessageStream(t *testing.T) {
 		t.Skip("Skipping streaming test in short mode")
 	}
 
-	client := core.NewClient("test-api-key")
+	// Use real API key from environment when available
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		t.Skip("Skipping streaming test - ANTHROPIC_API_KEY not set")
+	}
+
+	client := core.NewClient(apiKey)
 	req := core.MessageRequest{
 		Model:     "claude-sonnet-4-5-20250929",
 		MaxTokens: 100,

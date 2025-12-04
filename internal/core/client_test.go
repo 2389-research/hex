@@ -5,6 +5,7 @@ package core_test
 import (
 	"context"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/harper/pagent/internal/core"
@@ -20,14 +21,14 @@ func TestCreateMessage(t *testing.T) {
 	}
 
 	// Create VCR recorder
-	// First run with real API key will record, subsequent runs replay from cassette
-	// To record: export PAGEN_API_KEY=your-key && go test -run TestCreateMessage
-	// To replay: go test -run TestCreateMessage
+	// Will record if cassette doesn't exist or in recording mode
+	// Otherwise replays from cassette
 	r, err := recorder.New("testdata/fixtures/create_message")
 	require.NoError(t, err)
 	defer func() { _ = r.Stop() }()
 
-	// Add a custom matcher that ignores timestamp differences in request body
+	// Add a custom matcher that ignores request body differences
+	// This allows the cassette to match even if the request body varies slightly
 	r.SetMatcher(func(r *http.Request, i cassette.Request) bool {
 		// Match URL and method (body can vary due to timestamps)
 		return r.URL.String() == i.URL && r.Method == i.Method
@@ -37,7 +38,12 @@ func TestCreateMessage(t *testing.T) {
 	httpClient := &http.Client{Transport: r}
 
 	// Create API client
-	client := core.NewClient("test-api-key", core.WithHTTPClient(httpClient))
+	// Use real API key from environment when recording, otherwise use test key
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		apiKey = "test-api-key"
+	}
+	client := core.NewClient(apiKey, core.WithHTTPClient(httpClient))
 
 	// Test request
 	req := core.MessageRequest{
@@ -89,7 +95,7 @@ func TestCreateMessageWithImage(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = r.Stop() }()
 
-	// Add custom matcher
+	// Add custom matcher that ignores request body differences
 	r.SetMatcher(func(r *http.Request, i cassette.Request) bool {
 		return r.URL.String() == i.URL && r.Method == i.Method
 	})
@@ -98,7 +104,12 @@ func TestCreateMessageWithImage(t *testing.T) {
 	httpClient := &http.Client{Transport: r}
 
 	// Create API client
-	client := core.NewClient("test-api-key", core.WithHTTPClient(httpClient))
+	// Use real API key from environment when recording, otherwise use test key
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		apiKey = "test-api-key"
+	}
+	client := core.NewClient(apiKey, core.WithHTTPClient(httpClient))
 
 	// Create a message with image content
 	req := core.MessageRequest{
