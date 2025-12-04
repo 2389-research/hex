@@ -60,6 +60,9 @@ func TestClearScenario_DuringActiveStream(t *testing.T) {
 	if model.streamCancel != nil {
 		t.Error("streamCancel should be nil after clear")
 	}
+	if model.streamChan != nil {
+		t.Error("streamChan should be nil after clear")
+	}
 	if len(model.Messages) != 0 {
 		t.Errorf("Messages should be cleared, got %d", len(model.Messages))
 	}
@@ -488,6 +491,7 @@ func TestClearScenario_PreservesConfiguration(t *testing.T) {
 	// Setup
 	model := NewModel("test-conv", "claude-3-5-sonnet")
 	model.systemPrompt = "You are a helpful assistant"
+	model.IsFavorite = true // Conversation metadata
 
 	// Add messages and change state
 	model.AddMessage("user", "Hello")
@@ -499,6 +503,7 @@ func TestClearScenario_PreservesConfiguration(t *testing.T) {
 	originalConvID := model.ConversationID
 	originalModel := model.Model
 	originalSystemPrompt := model.systemPrompt
+	originalIsFavorite := model.IsFavorite
 
 	// Execute /clear
 	model.ClearContext()
@@ -513,6 +518,9 @@ func TestClearScenario_PreservesConfiguration(t *testing.T) {
 	if model.systemPrompt != originalSystemPrompt {
 		t.Errorf("systemPrompt should be preserved, got %q want %q", model.systemPrompt, originalSystemPrompt)
 	}
+	if model.IsFavorite != originalIsFavorite {
+		t.Errorf("IsFavorite should be preserved, got %v want %v", model.IsFavorite, originalIsFavorite)
+	}
 
 	// Verify UI state cleared
 	if len(model.Messages) != 0 {
@@ -520,5 +528,33 @@ func TestClearScenario_PreservesConfiguration(t *testing.T) {
 	}
 	if model.TokensInput != 0 {
 		t.Error("TokensInput should be reset")
+	}
+}
+
+// TestClearScenario_InputFieldCleared verifies input field is reset
+func TestClearScenario_InputFieldCleared(t *testing.T) {
+	// Setup
+	model := NewModel("test-conv", "test-model")
+	model.AddMessage("user", "Previous message")
+
+	// Set input with some text
+	model.Input.SetValue("partially typed message that will be cleared")
+
+	// Verify input has text
+	if model.Input.Value() == "" {
+		t.Fatal("Input should have text before clear")
+	}
+
+	// Execute /clear
+	model.ClearContext()
+
+	// Verify input field cleared
+	if model.Input.Value() != "" {
+		t.Errorf("Input field should be empty after clear, got %q", model.Input.Value())
+	}
+
+	// Verify messages cleared too
+	if len(model.Messages) != 0 {
+		t.Error("Messages should be cleared")
 	}
 }

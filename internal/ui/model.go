@@ -544,6 +544,11 @@ func (m *Model) ClearContext() {
 		m.streamingDisplay.Reset()
 	}
 
+	// Stop spinner if active
+	if m.spinner != nil {
+		m.spinner.Stop()
+	}
+
 	// Reset help and UI modes
 	m.helpVisible = false
 	m.typewriterMode = false
