@@ -13,6 +13,7 @@ import (
 	"github.com/2389-research/hex/internal/approval"
 	ctxmgr "github.com/2389-research/hex/internal/context"
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
@@ -114,6 +115,11 @@ type Model struct {
 
 	// Task 7: Storage Integration
 	db *sql.DB
+
+	// Phase 4: Service layer integration
+	convSvc  services.ConversationService
+	msgSvc   services.MessageService
+	agentSvc services.AgentService
 
 	// Task 12: Tool Execution UI
 	toolRegistry      *tools.Registry
@@ -496,6 +502,13 @@ func (m *Model) SetAPIClient(client *core.Client) {
 // SetDB sets the database connection for storage
 func (m *Model) SetDB(db *sql.DB) {
 	m.db = db
+}
+
+// SetServices sets the service layer dependencies
+func (m *Model) SetServices(convSvc services.ConversationService, msgSvc services.MessageService, agentSvc services.AgentService) {
+	m.convSvc = convSvc
+	m.msgSvc = msgSvc
+	m.agentSvc = agentSvc
 }
 
 // Task 12: Tool System Methods
