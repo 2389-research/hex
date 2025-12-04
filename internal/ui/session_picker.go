@@ -4,10 +4,9 @@ package ui
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -21,9 +20,9 @@ type SessionPicker struct {
 	quitting bool
 }
 
-// sessionItem wraps a storage.Conversation for the list
+// sessionItem wraps a services.Conversation for the list
 type sessionItem struct {
-	conv *storage.Conversation
+	conv *services.Conversation
 }
 
 func (i sessionItem) FilterValue() string {
@@ -39,14 +38,13 @@ func (i sessionItem) Title() string {
 }
 
 func (i sessionItem) Description() string {
-	// Format: "Updated: 2h ago • Model: claude-sonnet-4"
+	// Format: "Updated: 2h ago • ID: 550e8400..."
 	timeAgo := formatTimeAgo(i.conv.UpdatedAt)
-	model := truncateModel(i.conv.Model)
-	return fmt.Sprintf("Updated: %s • Model: %s • ID: %s", timeAgo, model, truncateID(i.conv.ID))
+	return fmt.Sprintf("Updated: %s • ID: %s", timeAgo, truncateID(i.conv.ID))
 }
 
 // NewSessionPicker creates a new session picker with conversations
-func NewSessionPicker(conversations []*storage.Conversation) SessionPicker {
+func NewSessionPicker(conversations []*services.Conversation) SessionPicker {
 	// Convert conversations to list items
 	items := make([]list.Item, len(conversations))
 	for i, conv := range conversations {
@@ -168,15 +166,6 @@ func formatTimeAgo(t time.Time) string {
 	default:
 		return t.Format("Jan 2")
 	}
-}
-
-func truncateModel(model string) string {
-	// "claude-sonnet-4-5-20250929" -> "claude-sonnet-4-5"
-	parts := strings.Split(model, "-")
-	if len(parts) > 4 {
-		return strings.Join(parts[:4], "-")
-	}
-	return model
 }
 
 func truncateID(id string) string {

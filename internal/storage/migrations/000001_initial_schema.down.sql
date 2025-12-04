@@ -1,0 +1,16 @@
+DROP INDEX IF EXISTS idx_history_created;
+DROP INDEX IF EXISTS idx_history_conversation;
+DROP INDEX IF EXISTS idx_todos_created;
+DROP INDEX IF EXISTS idx_todos_conversation;
+DROP INDEX IF EXISTS idx_todos_status;
+DROP INDEX IF EXISTS idx_conversations_favorite;
+DROP INDEX IF EXISTS idx_conversations_updated;
+DROP INDEX IF EXISTS idx_messages_conversation;
+DROP TRIGGER IF EXISTS history_fts_update;
+DROP TRIGGER IF EXISTS history_fts_delete;
+DROP TRIGGER IF EXISTS history_fts_insert;
+DROP TABLE IF EXISTS history_fts;
+DROP TABLE IF EXISTS history;
+DROP TABLE IF EXISTS todos;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS conversations;

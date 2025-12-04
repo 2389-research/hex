@@ -21,6 +21,10 @@ type StreamingDisplay struct {
 	typewriterSpeed  time.Duration
 	waitingForTokens bool
 	startTime        time.Time
+	// Phase: Streaming work display
+	currentToolCalls []ToolCallProgress
+	thinkingActive   bool
+	thinkingText     string
 }
 
 var (
@@ -38,7 +42,23 @@ var (
 	typewriterCursorStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("86")).
 				Bold(true)
+
+	toolCallStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("141")). // Purple
+			Bold(false)
+
+	thinkingStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("117")). // Cyan
+			Italic(true)
 )
+
+// ToolCallProgress tracks a tool call in progress
+type ToolCallProgress struct {
+	Name       string
+	ID         string
+	InProgress bool
+	Complete   bool
+}
 
 // NewStreamingDisplay creates a new streaming display manager
 func NewStreamingDisplay() *StreamingDisplay {
@@ -64,6 +84,9 @@ func (s *StreamingDisplay) Reset() {
 	s.typewriterPos = 0
 	s.waitingForTokens = true
 	s.startTime = time.Now()
+	s.currentToolCalls = []ToolCallProgress{}
+	s.thinkingActive = false
+	s.thinkingText = ""
 }
 
 // AppendText adds new text to the streaming buffer
@@ -304,4 +327,59 @@ func (r *ProgressiveMarkdownRenderer) UpdateRendered(textLength int) {
 func (r *ProgressiveMarkdownRenderer) Reset() {
 	r.lastRenderedLength = 0
 	r.incompleteBuffer = ""
+}
+
+// StartToolCall marks a tool call as started
+func (s *StreamingDisplay) StartToolCall(id, name string) {
+	s.currentToolCalls = append(s.currentToolCalls, ToolCallProgress{
+		Name:       name,
+		ID:         id,
+		InProgress: true,
+		Complete:   false,
+	})
+}
+
+// CompleteToolCall marks a tool call as complete
+func (s *StreamingDisplay) CompleteToolCall(id string) {
+	for i := range s.currentToolCalls {
+		if s.currentToolCalls[i].ID == id {
+			s.currentToolCalls[i].InProgress = false
+			s.currentToolCalls[i].Complete = true
+			break
+		}
+	}
+}
+
+// SetThinking sets the thinking state and text
+func (s *StreamingDisplay) SetThinking(active bool, text string) {
+	s.thinkingActive = active
+	s.thinkingText = text
+}
+
+// GetWorkDisplay returns the current work display (tool calls, thinking)
+func (s *StreamingDisplay) GetWorkDisplay() string {
+	var parts []string
+
+	// Show thinking if active
+	if s.thinkingActive {
+		display := "▍ Thinking"
+		if s.thinkingText != "" {
+			display += "..."
+		}
+		parts = append(parts, thinkingStyle.Render(display))
+	}
+
+	// Show active tool calls
+	for _, tool := range s.currentToolCalls {
+		if tool.InProgress {
+			display := "▍ Using tool: " + tool.Name
+			parts = append(parts, toolCallStyle.Render(display))
+		}
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return strings.Join(parts, "\n")
 }

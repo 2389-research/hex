@@ -14,6 +14,7 @@ import (
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
 	"github.com/2389-research/hex/internal/permissions"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/templates"
 	"github.com/2389-research/hex/internal/tools"
@@ -215,7 +216,6 @@ func runInteractive(prompt string) error {
 			conversationID = conv.ID
 			modelName = conv.Model
 			uiModel = ui.NewModel(conversationID, modelName)
-			uiModel.SetDB(db)
 
 			// Load messages into UI
 			msgs, err := storage.ListMessages(db, conversationID)
@@ -235,7 +235,6 @@ func runInteractive(prompt string) error {
 		conversationID = conv.ID
 		modelName = conv.Model
 		uiModel = ui.NewModel(conversationID, modelName)
-		uiModel.SetDB(db)
 
 		// Load favorite status
 		uiModel.IsFavorite = conv.IsFavorite
@@ -250,7 +249,6 @@ func runInteractive(prompt string) error {
 	if uiModel == nil {
 		conversationID = fmt.Sprintf("conv-%d", time.Now().Unix())
 		uiModel = ui.NewModel(conversationID, modelName)
-		uiModel.SetDB(db)
 
 		// Phase 6C: Set system prompt from template if available
 		if systemPrompt != "" {
@@ -279,6 +277,11 @@ func runInteractive(prompt string) error {
 		}
 	}
 
+	// Phase 4: Initialize service layer
+	// Services provide an abstraction over direct storage calls
+	convSvc := services.NewConversationService(db)
+	msgSvc := services.NewMessageService(db)
+
 	// Task 6: Create and set API client
 	// Load config to get API key
 	cfg, err := core.LoadConfig()
@@ -295,6 +298,12 @@ func runInteractive(prompt string) error {
 	if apiKey != "" {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
+
+		// Phase 4: Initialize AgentService (requires client)
+		agentSvc := services.NewAgentService(client, convSvc, msgSvc)
+
+		// Phase 4: Set all services on UI model
+		uiModel.SetServices(convSvc, msgSvc, agentSvc)
 	} else {
 		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}

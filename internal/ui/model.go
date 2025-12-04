@@ -5,15 +5,16 @@ package ui
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/2389-research/hex/internal/approval"
 	ctxmgr "github.com/2389-research/hex/internal/context"
 	"github.com/2389-research/hex/internal/core"
-	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/pubsub"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui/forms"
 	"github.com/2389-research/hex/internal/ui/theme"
@@ -50,6 +51,8 @@ const (
 	StatusTyping
 	// StatusStreaming indicates the assistant is streaming a response
 	StatusStreaming
+	// StatusQueued indicates a message is queued while agent is busy
+	StatusQueued
 	// StatusError indicates an error occurred
 	StatusError
 )
@@ -59,6 +62,7 @@ type Message struct {
 	Role         string
 	Content      string
 	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
+	Timestamp    time.Time           // When the message was created
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -79,6 +83,16 @@ type StreamChunkMsg struct {
 // streamStartMsg is sent when a stream is initialized
 type streamStartMsg struct {
 	channel <-chan *core.StreamChunk
+}
+
+// conversationEventMsg wraps a conversation event
+type conversationEventMsg struct {
+	event pubsub.Event[services.Conversation]
+}
+
+// messageEventMsg wraps a message event
+type messageEventMsg struct {
+	event pubsub.Event[services.Message]
 }
 
 // Model is the Bubbletea model for interactive mode
@@ -112,8 +126,10 @@ type Model struct {
 	streamCtx    context.Context
 	streamCancel context.CancelFunc
 
-	// Task 7: Storage Integration
-	db *sql.DB
+	// Phase 4: Service layer integration
+	convSvc  services.ConversationService
+	msgSvc   services.MessageService
+	agentSvc services.AgentService
 
 	// Task 12: Tool Execution UI
 	toolRegistry      *tools.Registry
@@ -165,6 +181,10 @@ type Model struct {
 
 	// TUI Polish: Theme
 	theme *theme.Theme
+
+	// Phase 4 Task 3: Event subscriptions
+	eventCtx    context.Context
+	eventCancel context.CancelFunc
 }
 
 // ToolResult represents a tool execution result for the API
@@ -184,14 +204,14 @@ func NewModel(conversationID, model string) *Model {
 	ta.SetHeight(3)
 	ta.ShowLineNumbers = false
 
-	// Apply Dracula theme colors for better contrast
-	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.CurrentLine))
-	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Purple))
-	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
-	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
-	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
-	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
-	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
+	// Apply Neo-Terminal theme colors for sophisticated aesthetics
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.Ghost))
+	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.AccentSky))
+	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
+	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
+	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
+	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
+	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
 
 	vp := viewport.New(80, 20)
 	vp.SetContent("Welcome to Hex! Type your message below.")
@@ -224,8 +244,8 @@ func NewModel(conversationID, model string) *Model {
 		approvalRules = nil
 	}
 
-	// TUI Polish: Initialize Dracula theme
-	draculaTheme := theme.DraculaTheme()
+	// TUI Polish: Initialize Neo-Terminal theme
+	neoTerminalTheme := theme.NeoTerminalTheme()
 
 	return &Model{
 		ConversationID:       conversationID,
@@ -235,8 +255,8 @@ func NewModel(conversationID, model string) *Model {
 		Viewport:             vp,
 		Width:                80,
 		Height:               24,
-		ShowIntro:            true, // Show intro in viewport initially
-		CurrentView:          ViewModeIntro,
+		ShowIntro:            true,         // Show intro in viewport initially
+		CurrentView:          ViewModeChat, // Start in chat mode - no key press needed
 		Status:               StatusIdle,
 		renderer:             renderer,
 		spinner:              spinner,
@@ -254,21 +274,38 @@ func NewModel(conversationID, model string) *Model {
 		suggestions:          []*Suggestion{},
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
-		theme:                draculaTheme,
+		theme:                neoTerminalTheme,
 		approvalRules:        approvalRules,
 	}
 }
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
-	return textarea.Blink
+	// Phase 4 Task 3: Start event subscriptions if services are available
+	if m.convSvc != nil && m.msgSvc != nil {
+		return tea.Batch(
+			textarea.Blink,
+			m.StartEventSubscriptions(),
+			tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
+		)
+	}
+	return tea.Batch(
+		textarea.Blink,
+		tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
+	)
 }
 
 // AddMessage adds a message to the conversation
 func (m *Model) AddMessage(role, content string) {
+	// Never add messages with empty content
+	if strings.TrimSpace(content) == "" {
+		return
+	}
+
 	m.Messages = append(m.Messages, Message{
-		Role:    role,
-		Content: content,
+		Role:      role,
+		Content:   content,
+		Timestamp: time.Now(),
 	})
 	// Update context usage after adding message
 	m.updateContextUsage()
@@ -456,31 +493,12 @@ func (m *Model) AppendStreamingText(chunk string) {
 
 // CommitStreamingText converts streaming text into a permanent assistant message
 func (m *Model) CommitStreamingText() {
-	if m.StreamingText != "" {
+	// Only commit if there's actual content (AddMessage will also check this)
+	trimmed := strings.TrimSpace(m.StreamingText)
+	if trimmed != "" {
 		m.AddMessage("assistant", m.StreamingText)
-
-		// Task 7: Save assistant message to database
-		if m.db != nil {
-			_ = m.saveMessageInternal("assistant", m.StreamingText)
-		}
-
-		m.StreamingText = ""
 	}
-}
-
-// saveMessageInternal is a helper method to save messages (called from model.go)
-func (m *Model) saveMessageInternal(role, content string) error {
-	if m.db == nil {
-		return nil
-	}
-
-	msg := &storage.Message{
-		ConversationID: m.ConversationID,
-		Role:           role,
-		Content:        content,
-	}
-
-	return storage.CreateMessage(m.db, msg)
+	m.StreamingText = ""
 }
 
 // ClearStreamingText discards streaming buffer (e.g., on error)
@@ -488,14 +506,142 @@ func (m *Model) ClearStreamingText() {
 	m.StreamingText = ""
 }
 
+// ClearContext resets the conversation context and UI state (for /clear command)
+func (m *Model) ClearContext() {
+	// Cancel any active stream
+	if m.streamCancel != nil {
+		m.streamCancel()
+	}
+	m.streamCtx = nil
+	m.streamCancel = nil
+	m.streamChan = nil
+
+	// Clear all messages and streaming state
+	m.Messages = []Message{}
+	m.StreamingText = ""
+	m.Streaming = false
+
+	// Reset input
+	m.Input.Reset()
+
+	// Reset status and errors
+	m.Status = StatusIdle
+	m.ErrorMessage = ""
+
+	// Reset token counters
+	m.TokensInput = 0
+	m.TokensOutput = 0
+
+	// Reset view mode to chat
+	m.CurrentView = ViewModeChat
+
+	// Exit search mode if active
+	m.SearchMode = false
+	m.SearchQuery = ""
+
+	// Reset vim navigation state
+	m.lastKeyWasG = false
+
+	// Clear tool execution state
+	m.pendingToolUses = nil
+	m.executingToolUses = nil
+	m.assemblingToolUse = nil
+	m.toolInputJSONBuf = ""
+	m.toolApprovalMode = false
+	m.toolApprovalForm = nil
+	m.executingTool = false
+	m.currentToolID = ""
+	m.toolResults = nil
+
+	// Clear streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.Reset()
+	}
+
+	// Stop spinner if active
+	if m.spinner != nil {
+		m.spinner.Stop()
+	}
+
+	// Reset help and UI modes
+	m.helpVisible = false
+	m.typewriterMode = false
+
+	// Clear quick actions state
+	m.quickActionsMode = false
+	m.quickActionsInput = ""
+	m.quickActionsFiltered = nil
+
+	// Clear suggestions state
+	m.showSuggestions = false
+	m.suggestions = nil
+	m.lastAnalyzedInput = ""
+
+	// Hide autocomplete if active
+	if m.autocomplete != nil {
+		m.autocomplete.Hide()
+	}
+
+	// Reset context usage tracking
+	m.contextUsage = ctxmgr.ContextUsage{}
+
+	// Show intro screen
+	m.ShowIntro = true
+
+	// Update viewport to show cleared state
+	m.updateViewport()
+}
+
 // SetAPIClient sets the API client for streaming
 func (m *Model) SetAPIClient(client *core.Client) {
 	m.apiClient = client
 }
 
-// SetDB sets the database connection for storage
-func (m *Model) SetDB(db *sql.DB) {
-	m.db = db
+// SetServices sets the service layer dependencies
+func (m *Model) SetServices(convSvc services.ConversationService, msgSvc services.MessageService, agentSvc services.AgentService) {
+	m.convSvc = convSvc
+	m.msgSvc = msgSvc
+	m.agentSvc = agentSvc
+}
+
+// StartEventSubscriptions initializes event subscriptions and returns commands to listen for events
+func (m *Model) StartEventSubscriptions() tea.Cmd {
+	// Create context for subscriptions
+	m.eventCtx, m.eventCancel = context.WithCancel(context.Background())
+
+	// Subscribe to conversation events
+	convEvents := m.convSvc.Subscribe(m.eventCtx)
+
+	// Subscribe to message events
+	msgEvents := m.msgSvc.Subscribe(m.eventCtx)
+
+	// Return Bubbletea commands that listen to both channels
+	return tea.Batch(
+		waitForConversationEvent(convEvents),
+		waitForMessageEvent(msgEvents),
+	)
+}
+
+// waitForConversationEvent waits for the next conversation event and converts it to a tea.Msg
+func waitForConversationEvent(ch <-chan pubsub.Event[services.Conversation]) tea.Cmd {
+	return func() tea.Msg {
+		event, ok := <-ch
+		if !ok {
+			return nil
+		}
+		return conversationEventMsg{event: event}
+	}
+}
+
+// waitForMessageEvent waits for the next message event and converts it to a tea.Msg
+func waitForMessageEvent(ch <-chan pubsub.Event[services.Message]) tea.Cmd {
+	return func() tea.Msg {
+		event, ok := <-ch
+		if !ok {
+			return nil
+		}
+		return messageEventMsg{event: event}
+	}
 }
 
 // Task 12: Tool System Methods
@@ -787,26 +933,30 @@ func (m *Model) ExportConversation() string {
 
 // SaveConversation saves the conversation (placeholder for future implementation)
 func (m *Model) SaveConversation() error {
-	// This would save to database or file
-	// For now, it's a placeholder
-	if m.db != nil {
-		// Conversation is already being saved incrementally
-		return nil
-	}
+	// Conversation is already being saved incrementally via service layer
 	return nil
 }
 
 // ToggleFavorite toggles the favorite status of the current conversation
 func (m *Model) ToggleFavorite() error {
-	if m.db == nil {
-		return fmt.Errorf("database not available")
+	if m.convSvc == nil {
+		return fmt.Errorf("conversation service not available")
 	}
 
 	// Toggle the local state
 	m.IsFavorite = !m.IsFavorite
 
-	// Update in database
-	err := storage.SetFavorite(m.db, m.ConversationID, m.IsFavorite)
+	// Get current conversation
+	conv, err := m.convSvc.Get(context.Background(), m.ConversationID)
+	if err != nil {
+		// Revert local state on error
+		m.IsFavorite = !m.IsFavorite
+		return fmt.Errorf("get conversation: %w", err)
+	}
+
+	// Update favorite status
+	conv.IsFavorite = m.IsFavorite
+	err = m.convSvc.Update(context.Background(), conv)
 	if err != nil {
 		// Revert local state on error
 		m.IsFavorite = !m.IsFavorite

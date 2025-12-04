@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
@@ -98,12 +99,18 @@ func TestUISetAPIClient(t *testing.T) {
 	assert.NotNil(t, model)
 }
 
-// TestUISetDatabase tests setting database
-func TestUISetDatabase(t *testing.T) {
+// TestUISetServices tests setting service layer dependencies
+func TestUISetServices(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	db := SetupTestDB(t)
 
-	model.SetDB(db)
+	// Create services
+	convSvc := services.NewConversationService(db)
+	msgSvc := services.NewMessageService(db)
+	apiClient := core.NewClient("test-key")
+	agentSvc := services.NewAgentService(apiClient, convSvc, msgSvc)
+
+	model.SetServices(convSvc, msgSvc, agentSvc)
 
 	// Verify no panic
 	assert.NotNil(t, model)
@@ -124,7 +131,7 @@ func TestUIViewRendering(t *testing.T) {
 
 	view = m.View()
 	assert.NotContains(t, view, "Initializing", "should not show initializing after ready")
-	assert.Contains(t, view, "Hex", "should show title")
+	assert.Contains(t, view, "HEX", "should show HEX in status bar")
 }
 
 // TestUIStateTransitions tests various state transitions
@@ -195,9 +202,7 @@ func TestUISetStatus(t *testing.T) {
 func TestUIViewModes(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 
-	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
-
-	model.NextView()
+	// Now starts in Chat mode for immediate interaction
 	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 
 	model.NextView()
@@ -208,6 +213,9 @@ func TestUIViewModes(t *testing.T) {
 
 	model.NextView()
 	assert.Equal(t, ui.ViewModeIntro, model.CurrentView)
+
+	model.NextView()
+	assert.Equal(t, ui.ViewModeChat, model.CurrentView)
 }
 
 // TestUISearchMode tests search mode functionality

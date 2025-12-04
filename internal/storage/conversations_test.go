@@ -20,7 +20,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	_, err = db.Exec("PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	err = storage.InitializeSchema(db)
+	err = storage.RunMigrations(db)
 	require.NoError(t, err)
 
 	return db

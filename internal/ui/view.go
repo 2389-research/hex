@@ -7,33 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/lipgloss"
 )
-
-// Gradient helper function for title bars
-// Creates a horizontal gradient from Purple to Pink (Dracula colors)
-func makeGradient(text string, t *theme.Theme) string {
-	if len(text) == 0 {
-		return ""
-	}
-
-	// Simple gradient: alternate between purple and pink for visual interest
-	// This creates a subtle color variation across the title
-	runes := []rune(text)
-	var result strings.Builder
-
-	for i, r := range runes {
-		// Alternate between purple (Title) and pink (Subtitle) styles
-		if i%2 == 0 {
-			result.WriteString(t.Title.Render(string(r)))
-		} else {
-			result.WriteString(t.Subtitle.Render(string(r)))
-		}
-	}
-
-	return result.String()
-}
 
 // View renders the UI
 func (m *Model) View() string {
@@ -43,28 +18,9 @@ func (m *Model) View() string {
 
 	var b strings.Builder
 
-	// Title with status indicator and favorite star (with gradient)
-	titleText := fmt.Sprintf("Hex • %s", m.Model)
-	if m.IsFavorite {
-		titleText = "⭐ " + titleText
-	}
-	title := makeGradient(titleText, m.theme)
-	statusIndicator := m.renderStatusIndicator()
-	b.WriteString(title + " " + statusIndicator)
-
-	// Phase 6C: Add streaming indicator if streaming
-	if m.Streaming && m.streamingDisplay != nil {
-		b.WriteString("  ")
-		b.WriteString(m.streamingDisplay.RenderStreamingIndicator())
-	}
-
-	// Phase 6C: Add spinner if active
-	if m.spinner != nil && m.spinner.IsActive() {
-		b.WriteString("  ")
-		b.WriteString(m.spinner.View())
-	}
-
-	b.WriteString("\n\n")
+	// Neo-Terminal top status bar
+	b.WriteString(m.renderNeoTerminalStatusBar())
+	b.WriteString("\n")
 
 	// Phase 6C: Show help if toggled
 	if m.helpVisible {
@@ -89,7 +45,7 @@ func (m *Model) View() string {
 	if m.quickActionsMode {
 		b.WriteString(m.renderQuickActionsModal() + "\n")
 		// Skip input and other prompts
-		b.WriteString("\n" + m.renderStatusBarEnhanced())
+		b.WriteString("\n" + m.renderNeoTerminalBottomBar())
 		return b.String()
 	}
 
@@ -120,24 +76,10 @@ func (m *Model) View() string {
 		}
 	}
 
-	// Phase 6C: Enhanced status bar
-	b.WriteString("\n" + m.renderStatusBarEnhanced())
+	// Neo-Terminal bottom status bar
+	b.WriteString("\n" + m.renderNeoTerminalBottomBar())
 
 	return b.String()
-}
-
-// renderStatusIndicator renders the current status icon
-func (m *Model) renderStatusIndicator() string {
-	switch m.Status {
-	case StatusStreaming:
-		return m.theme.Warning.Render("●")
-	case StatusTyping:
-		return m.theme.Success.Render("●")
-	case StatusError:
-		return m.theme.Error.Render("●")
-	default:
-		return m.theme.Success.Render("●")
-	}
 }
 
 // renderIntroView renders the startup welcome screen
@@ -196,10 +138,6 @@ func (m *Model) renderIntroView() string {
 	}
 
 	b.WriteString("\n\n")
-
-	// Press any key to continue
-	prompt := m.theme.Warning.Render("Press any key to start chatting...")
-	b.WriteString(padding + prompt + "\n")
 
 	return b.String()
 }
@@ -435,6 +373,30 @@ func (m *Model) renderStatusBarEnhanced() string {
 		mode = "tools"
 	}
 	m.statusBar.SetMode(mode)
+
+	// Check for queued messages and display queue status
+	if m.agentSvc != nil && m.ConversationID != "" {
+		queuedCount := m.agentSvc.QueuedPrompts(m.ConversationID)
+		if queuedCount > 0 {
+			var queueMsg string
+			switch m.Status {
+			case StatusStreaming:
+				queueMsg = fmt.Sprintf("Agent working... (%d queued)", queuedCount)
+			case StatusQueued:
+				if queuedCount == 1 {
+					queueMsg = "Queued (processing...)"
+				} else {
+					queueMsg = fmt.Sprintf("Queued (%d ahead)", queuedCount-1)
+				}
+			}
+			if queueMsg != "" {
+				m.statusBar.SetCustomMessage(queueMsg)
+			}
+		} else if m.Status == StatusQueued {
+			// If status is queued but no queue items, reset to idle
+			m.Status = StatusIdle
+		}
+	}
 
 	return m.statusBar.View()
 }

@@ -15,8 +15,7 @@ func TestViewRendersChatMode(t *testing.T) {
 	model.CurrentView = ui.ViewModeChat
 
 	view := model.View()
-	assert.Contains(t, view, "Hex")
-	assert.Contains(t, view, "[chat]") // Phase 6C: lowercase in status bar
+	assert.Contains(t, view, "HEX") // Neo-Terminal shows uppercase HEX
 }
 
 func TestViewRendersHistoryMode(t *testing.T) {
@@ -26,7 +25,7 @@ func TestViewRendersHistoryMode(t *testing.T) {
 
 	view := model.View()
 	assert.Contains(t, view, "History Browser")
-	assert.Contains(t, view, "[history]") // Phase 6C: lowercase in status bar
+	assert.Contains(t, view, "HEX › HISTORY") // Neo-Terminal shows mode in status bar
 }
 
 func TestViewRendersToolsMode(t *testing.T) {
@@ -36,7 +35,7 @@ func TestViewRendersToolsMode(t *testing.T) {
 
 	view := model.View()
 	assert.Contains(t, view, "Tool Inspector")
-	assert.Contains(t, view, "[tools]") // Phase 6C: lowercase in status bar
+	assert.Contains(t, view, "HEX › TOOLS") // Neo-Terminal shows mode in status bar
 }
 
 func TestViewShowsTokenCounter(t *testing.T) {
@@ -45,9 +44,9 @@ func TestViewShowsTokenCounter(t *testing.T) {
 	model.UpdateTokens(100, 250)
 
 	view := model.View()
-	// Phase 6C: New compact token format with k suffix
-	assert.Contains(t, view, "0k↓") // 100 rounds down to 0k
-	assert.Contains(t, view, "0k↑") // 250 rounds down to 0k
+	// Neo-Terminal shows token format as "tokens: N in · M out"
+	assert.Contains(t, view, "tokens: 100 in")
+	assert.Contains(t, view, "250 out")
 }
 
 func TestViewShowsSearchMode(t *testing.T) {
@@ -66,9 +65,9 @@ func TestViewShowsHelpText(t *testing.T) {
 	model.Ready = true
 
 	view := model.View()
-	// Phase 6C: New compact help text in status bar
-	assert.Contains(t, view, "?:help")
-	assert.Contains(t, view, "^C:quit")
+	// Neo-Terminal shows help text with Unicode control symbols
+	assert.Contains(t, view, "/help")
+	assert.Contains(t, view, "⌃C quit") // Unicode control symbol
 }
 
 func TestViewStatusIndicatorChanges(t *testing.T) {
@@ -144,6 +143,6 @@ func TestViewMarkdownRendering(t *testing.T) {
 	// The view should exist and contain content
 	view := model.View()
 	assert.True(t, len(view) > 0)
-	// View should contain the model name at minimum
-	assert.Contains(t, view, "Hex")
+	// View should contain HEX in the status bar
+	assert.Contains(t, view, "HEX")
 }

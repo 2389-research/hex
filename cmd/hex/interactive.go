@@ -12,6 +12,7 @@ import (
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,7 +20,7 @@ import (
 
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model
 // This is used by both normal interactive mode and the resume command
-func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt string) error {
+func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt string) error {
 	// Load AGENTS.md context from directory hierarchy (repo root → CWD)
 	agentsContext, err := agentsmd.LoadContext()
 	if err != nil {
@@ -31,6 +32,10 @@ func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt st
 		uiModel.SetSystemPrompt(agentsContext)
 		logging.InfoWith("Loaded AGENTS.md context", "length", len(agentsContext))
 	}
+
+	// Phase 4: Initialize service layer
+	convSvc := services.NewConversationService(db)
+	msgSvc := services.NewMessageService(db)
 
 	// Load config to get API key
 	cfg, err := core.LoadConfig()
@@ -47,6 +52,12 @@ func continueInteractiveWithModel(_ *sql.DB, uiModel *ui.Model, initialPrompt st
 	if apiKey != "" {
 		client := core.NewClient(apiKey)
 		uiModel.SetAPIClient(client)
+
+		// Phase 4: Initialize AgentService (requires client)
+		agentSvc := services.NewAgentService(client, convSvc, msgSvc)
+
+		// Phase 4: Set all services on UI model
+		uiModel.SetServices(convSvc, msgSvc, agentSvc)
 	} else {
 		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
 	}

@@ -4,12 +4,12 @@
 package browser
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/2389-research/hex/internal/storage"
+	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/ui/theme"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,23 +29,23 @@ const (
 
 // ConversationBrowser manages the conversation browsing interface
 type ConversationBrowser struct {
-	db             *sql.DB
+	convSvc        services.ConversationService
 	theme          *theme.Theme
-	conversations  []*storage.Conversation
+	conversations  []*services.Conversation
 	filteredItems  []list.Item
 	list           list.Model
 	searchQuery    string
 	sortMode       SortMode
 	width          int
 	height         int
-	selectedConv   *storage.Conversation
+	selectedConv   *services.Conversation
 	previewContent string
 	err            error
 }
 
 // conversationItem wraps a conversation for list display
 type conversationItem struct {
-	conv  *storage.Conversation
+	conv  *services.Conversation
 	theme *theme.Theme
 }
 
@@ -72,22 +72,20 @@ func (ci conversationItem) Title() string {
 
 // Description returns the formatted description
 func (ci conversationItem) Description() string {
-	// Format: Model | Created: date | Updated: date
+	// Format: Created: date | Updated: date
 	created := ci.conv.CreatedAt.Format("Jan 2, 2006")
 	updated := ci.conv.UpdatedAt.Format("Jan 2, 15:04")
 
-	modelStyle := lipgloss.NewStyle().Foreground(ci.theme.Colors.Cyan)
 	dateStyle := lipgloss.NewStyle().Foreground(ci.theme.Colors.Comment)
 
-	return fmt.Sprintf("%s │ %s │ %s",
-		modelStyle.Render(ci.conv.Model),
+	return fmt.Sprintf("%s │ %s",
 		dateStyle.Render("Created: "+created),
 		dateStyle.Render("Updated: "+updated),
 	)
 }
 
 // NewConversationBrowser creates a new conversation browser
-func NewConversationBrowser(db *sql.DB, t *theme.Theme) *ConversationBrowser {
+func NewConversationBrowser(convSvc services.ConversationService, t *theme.Theme) *ConversationBrowser {
 	// Create list delegate with Dracula styling
 	delegate := list.NewDefaultDelegate()
 
@@ -122,11 +120,11 @@ func NewConversationBrowser(db *sql.DB, t *theme.Theme) *ConversationBrowser {
 		Background(t.Colors.CurrentLine)
 
 	return &ConversationBrowser{
-		db:            db,
+		convSvc:       convSvc,
 		theme:         t,
 		list:          l,
 		sortMode:      SortByDate,
-		conversations: []*storage.Conversation{},
+		conversations: []*services.Conversation{},
 		filteredItems: []list.Item{},
 	}
 }
@@ -282,25 +280,16 @@ func (cb *ConversationBrowser) renderPreview(width, height int) string {
 
 	preview.WriteString(metaStyle.Render(fmt.Sprintf("ID: %s", cb.selectedConv.ID)))
 	preview.WriteString("\n")
-	preview.WriteString(metaStyle.Render(fmt.Sprintf("Model: %s", cb.selectedConv.Model)))
-	preview.WriteString("\n")
 	preview.WriteString(metaStyle.Render(fmt.Sprintf("Created: %s", cb.selectedConv.CreatedAt.Format(time.RFC1123))))
 	preview.WriteString("\n")
 	preview.WriteString(metaStyle.Render(fmt.Sprintf("Updated: %s", cb.selectedConv.UpdatedAt.Format(time.RFC1123))))
 	preview.WriteString("\n")
 	preview.WriteString(metaStyle.Render(fmt.Sprintf("Favorite: %v", cb.selectedConv.IsFavorite)))
+	preview.WriteString("\n")
+	preview.WriteString(metaStyle.Render(fmt.Sprintf("Tokens: %d prompt / %d completion", cb.selectedConv.PromptTokens, cb.selectedConv.CompletionTokens)))
+	preview.WriteString("\n")
+	preview.WriteString(metaStyle.Render(fmt.Sprintf("Cost: $%.4f", cb.selectedConv.TotalCost)))
 	preview.WriteString("\n\n")
-
-	// System prompt (if any)
-	if cb.selectedConv.SystemPrompt != "" {
-		promptStyle := lipgloss.NewStyle().
-			Foreground(cb.theme.Colors.Yellow).
-			Width(width)
-		preview.WriteString(promptStyle.Render("System Prompt:"))
-		preview.WriteString("\n")
-		preview.WriteString(metaStyle.Render(cb.selectedConv.SystemPrompt))
-		preview.WriteString("\n\n")
-	}
 
 	// Content preview
 	if cb.previewContent != "" {
@@ -349,9 +338,9 @@ func (cb *ConversationBrowser) updateFilteredItems() {
 }
 
 // sortConversations sorts conversations based on the current sort mode
-func (cb *ConversationBrowser) sortConversations(convs []*storage.Conversation) []*storage.Conversation {
+func (cb *ConversationBrowser) sortConversations(convs []*services.Conversation) []*services.Conversation {
 	// Make a copy to avoid modifying the original
-	sorted := make([]*storage.Conversation, len(convs))
+	sorted := make([]*services.Conversation, len(convs))
 	copy(sorted, convs)
 
 	// Sorting is already handled by the database query (by date)
@@ -359,7 +348,7 @@ func (cb *ConversationBrowser) sortConversations(convs []*storage.Conversation) 
 	switch cb.sortMode {
 	case SortByFavorite:
 		// Move favorites to the top
-		var favorites, others []*storage.Conversation
+		var favorites, others []*services.Conversation
 		for _, c := range sorted {
 			if c.IsFavorite {
 				favorites = append(favorites, c)
@@ -383,18 +372,18 @@ func (cb *ConversationBrowser) sortConversations(convs []*storage.Conversation) 
 }
 
 // fuzzySearch performs fuzzy search on conversations
-func (cb *ConversationBrowser) fuzzySearch(convs []*storage.Conversation, query string) []*storage.Conversation {
+func (cb *ConversationBrowser) fuzzySearch(convs []*services.Conversation, query string) []*services.Conversation {
 	// Build searchable strings
 	searchTargets := make([]string, len(convs))
 	for i, conv := range convs {
-		searchTargets[i] = conv.Title + " " + conv.Model
+		searchTargets[i] = conv.Title
 	}
 
 	// Perform fuzzy search
 	matches := fuzzy.Find(query, searchTargets)
 
 	// Extract matched conversations
-	result := make([]*storage.Conversation, 0, len(matches))
+	result := make([]*services.Conversation, 0, len(matches))
 	for _, match := range matches {
 		result = append(result, convs[match.Index])
 	}
@@ -405,7 +394,7 @@ func (cb *ConversationBrowser) fuzzySearch(convs []*storage.Conversation, query 
 // Messages
 
 type conversationsLoadedMsg struct {
-	conversations []*storage.Conversation
+	conversations []*services.Conversation
 	err           error
 }
 
@@ -420,7 +409,7 @@ type errorMsg struct {
 // Commands
 
 func (cb *ConversationBrowser) loadConversations() tea.Msg {
-	convs, err := storage.ListConversations(cb.db, 100, 0)
+	convs, err := cb.convSvc.List(context.Background())
 	return conversationsLoadedMsg{conversations: convs, err: err}
 }
 
@@ -438,29 +427,38 @@ func (cb *ConversationBrowser) loadConversationContent() tea.Msg {
 
 func (cb *ConversationBrowser) toggleFavorite(id string, isFavorite bool) tea.Cmd {
 	return func() tea.Msg {
-		err := storage.SetFavorite(cb.db, id, isFavorite)
+		// Get conversation
+		conv, err := cb.convSvc.Get(context.Background(), id)
 		if err != nil {
 			return errorMsg{err: err}
 		}
+
+		// Update favorite status
+		conv.IsFavorite = isFavorite
+		err = cb.convSvc.Update(context.Background(), conv)
+		if err != nil {
+			return errorMsg{err: err}
+		}
+
 		// Reload conversations
-		convs, err := storage.ListConversations(cb.db, 100, 0)
+		convs, err := cb.convSvc.List(context.Background())
 		return conversationsLoadedMsg{conversations: convs, err: err}
 	}
 }
 
 func (cb *ConversationBrowser) deleteConversation(id string) tea.Cmd {
 	return func() tea.Msg {
-		err := storage.DeleteConversation(cb.db, id)
+		err := cb.convSvc.Delete(context.Background(), id)
 		if err != nil {
 			return errorMsg{err: err}
 		}
 		// Reload conversations
-		convs, err := storage.ListConversations(cb.db, 100, 0)
+		convs, err := cb.convSvc.List(context.Background())
 		return conversationsLoadedMsg{conversations: convs, err: err}
 	}
 }
 
 // GetSelectedConversation returns the currently selected conversation
-func (cb *ConversationBrowser) GetSelectedConversation() *storage.Conversation {
+func (cb *ConversationBrowser) GetSelectedConversation() *services.Conversation {
 	return cb.selectedConv
 }
