@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/2389-research/hex/internal/approval"
 	"github.com/2389-research/hex/internal/core"
@@ -402,6 +403,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		// Handle j/k scrolling BEFORE textarea input handling
+		// This allows scrolling even when input is focused
+		if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 {
+			r := msg.Runes[0]
+			if r == 'j' && !m.SearchMode && m.Input.Value() == "" {
+				// Scroll down when input is empty
+				m.Viewport.ScrollDown(1)
+				return m, nil
+			}
+			if r == 'k' && !m.SearchMode && m.Input.Value() == "" {
+				// Scroll up when input is empty
+				m.Viewport.ScrollUp(1)
+				return m, nil
+			}
+		}
+
 		// Handle rune keys for vim-like navigation and help
 		// ONLY activate vim navigation when textarea is NOT focused
 		if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && !m.Input.Focused() {
@@ -561,81 +578,73 @@ func (m *Model) updateViewport() {
 	if m.ShowIntro {
 		content.WriteString(m.renderIntroView())
 		content.WriteString("\n\n")
-		// Add separator between intro and messages
-		content.WriteString("─────────────────────────────────────────────────────────────────────────────────\n\n")
 	}
 
-	for _, msg := range m.Messages {
-		if msg.Role == "user" {
-			// Style user messages with cyan (Dracula theme) and > prefix
-			styledContent := m.theme.UserMessage.Render("> " + msg.Content)
-			content.WriteString(styledContent + "\n\n")
-		} else {
-			// Use glamour for assistant messages (no label, just content) with ● prefix
-			// Note: glamour.Render() adds "\n" at start and "\n\n" at end
-			// We strip the leading "\n" to maintain consistent "\n\n" spacing between messages
+	// Render messages with Neo-Terminal style
+	for i, msg := range m.Messages {
+		// Skip messages with empty Content but non-empty ContentBlock (tool result messages)
+		// These are internal API messages that shouldn't be displayed
+		if msg.Content == "" && len(msg.ContentBlock) > 0 {
+			continue
+		}
+
+		// Get timestamp (use current time if not set for backward compatibility)
+		timestamp := msg.Timestamp
+		if timestamp.IsZero() {
+			timestamp = time.Now()
+		}
+
+		// Render message content
+		messageContent := msg.Content
+		if msg.Role == "assistant" {
+			// Use glamour for assistant messages
 			rendered, err := m.RenderMessage(msg)
 			if err == nil {
-				content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
-			} else {
-				content.WriteString("● " + msg.Content + "\n\n")
+				// Strip extra newlines from glamour output
+				messageContent = strings.TrimSpace(rendered)
 			}
+		}
+
+		// Render with Neo-Terminal style
+		neoMessage := m.renderNeoTerminalMessage(msg.Role, messageContent, timestamp)
+		content.WriteString(neoMessage)
+
+		// Add spacing between messages (message already has trailing newline)
+		if i < len(m.Messages)-1 {
+			content.WriteString("\n")
 		}
 	}
 
 	// Append streaming text if present
 	if m.StreamingText != "" {
-		// Render streaming text with glamour if available with ● prefix
-		// Note: glamour.Render() adds "\n" at start and "\n\n" at end
-		// We strip the leading "\n" to maintain consistent "\n\n" spacing
+		if len(m.Messages) > 0 {
+			content.WriteString("\n")
+		}
+
+		// Render streaming text
+		streamContent := m.StreamingText
 		rendered, err := m.RenderMessage(Message{
 			Role:    "assistant",
 			Content: m.StreamingText,
 		})
 		if err == nil {
-			content.WriteString(formatAssistantMessage(strings.TrimPrefix(rendered, "\n")))
-		} else {
-			content.WriteString("● " + m.StreamingText + "\n\n")
+			streamContent = strings.TrimSpace(rendered)
 		}
+
+		neoMessage := m.renderNeoTerminalMessage("assistant", streamContent, time.Now())
+		content.WriteString(neoMessage)
 	}
 
 	// Show work display if streaming and display is available
 	if m.Streaming && m.streamingDisplay != nil {
 		workDisplay := m.streamingDisplay.GetWorkDisplay()
 		if workDisplay != "" {
-			content.WriteString("\n" + workDisplay + "\n")
+			content.WriteString("\n\n" + workDisplay)
 		}
 	}
 
 	m.Viewport.SetContent(content.String())
 	m.Viewport.GotoBottom()
-}
-
-// formatAssistantMessage adds a bullet to the first line and properly indents subsequent lines
-func formatAssistantMessage(text string) string {
-	// Strip trailing newlines first to avoid indenting empty lines
-	text = strings.TrimRight(text, "\n")
-
-	lines := strings.Split(text, "\n")
-	if len(lines) == 0 {
-		return "● " + text
-	}
-
-	var result strings.Builder
-	for i, line := range lines {
-		if i == 0 {
-			// First line gets the bullet
-			result.WriteString("● " + line)
-		} else {
-			// Subsequent lines get 2-space indent to align with first line text
-			result.WriteString("  " + line)
-		}
-		if i < len(lines)-1 {
-			result.WriteString("\n")
-		}
-	}
-	// Add back the trailing newlines for consistent spacing
-	return result.String() + "\n\n"
 }
 
 // Task 6: Streaming Integration Functions

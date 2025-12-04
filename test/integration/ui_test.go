@@ -131,7 +131,7 @@ func TestUIViewRendering(t *testing.T) {
 
 	view = m.View()
 	assert.NotContains(t, view, "Initializing", "should not show initializing after ready")
-	assert.Contains(t, view, "Hex", "should show title")
+	assert.Contains(t, view, "HEX", "should show HEX in status bar")
 }
 
 // TestUIStateTransitions tests various state transitions

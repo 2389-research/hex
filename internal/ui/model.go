@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/2389-research/hex/internal/approval"
 	ctxmgr "github.com/2389-research/hex/internal/context"
@@ -61,6 +62,7 @@ type Message struct {
 	Role         string
 	Content      string
 	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
+	Timestamp    time.Time           // When the message was created
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -202,14 +204,14 @@ func NewModel(conversationID, model string) *Model {
 	ta.SetHeight(3)
 	ta.ShowLineNumbers = false
 
-	// Apply Dracula theme colors for better contrast
-	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.CurrentLine))
-	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Purple))
-	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
-	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
-	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
-	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Foreground))
-	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Comment))
+	// Apply Neo-Terminal theme colors for sophisticated aesthetics
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.Ghost))
+	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.AccentSky))
+	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
+	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
+	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
+	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
+	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
 
 	vp := viewport.New(80, 20)
 	vp.SetContent("Welcome to Hex! Type your message below.")
@@ -242,8 +244,8 @@ func NewModel(conversationID, model string) *Model {
 		approvalRules = nil
 	}
 
-	// TUI Polish: Initialize Dracula theme
-	draculaTheme := theme.DraculaTheme()
+	// TUI Polish: Initialize Neo-Terminal theme
+	neoTerminalTheme := theme.NeoTerminalTheme()
 
 	return &Model{
 		ConversationID:       conversationID,
@@ -272,7 +274,7 @@ func NewModel(conversationID, model string) *Model {
 		suggestions:          []*Suggestion{},
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
-		theme:                draculaTheme,
+		theme:                neoTerminalTheme,
 		approvalRules:        approvalRules,
 	}
 }
@@ -291,9 +293,15 @@ func (m *Model) Init() tea.Cmd {
 
 // AddMessage adds a message to the conversation
 func (m *Model) AddMessage(role, content string) {
+	// Never add messages with empty content
+	if strings.TrimSpace(content) == "" {
+		return
+	}
+
 	m.Messages = append(m.Messages, Message{
-		Role:    role,
-		Content: content,
+		Role:      role,
+		Content:   content,
+		Timestamp: time.Now(),
 	})
 	// Update context usage after adding message
 	m.updateContextUsage()
@@ -481,10 +489,12 @@ func (m *Model) AppendStreamingText(chunk string) {
 
 // CommitStreamingText converts streaming text into a permanent assistant message
 func (m *Model) CommitStreamingText() {
-	if m.StreamingText != "" {
+	// Only commit if there's actual content (AddMessage will also check this)
+	trimmed := strings.TrimSpace(m.StreamingText)
+	if trimmed != "" {
 		m.AddMessage("assistant", m.StreamingText)
-		m.StreamingText = ""
 	}
+	m.StreamingText = ""
 }
 
 // ClearStreamingText discards streaming buffer (e.g., on error)
