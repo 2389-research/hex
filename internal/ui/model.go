@@ -184,6 +184,10 @@ type Model struct {
 	// Phase 1 Task 3: Content Caching
 	markdownCache      map[string]string // messageID -> rendered markdown
 	markdownCacheDirty bool              // Flag to invalidate cache on theme/width change
+
+	// Phase 1 Task 4: Adaptive Layout System
+	layoutMode      LayoutMode // Current layout mode (wide or compact)
+	forceLayoutMode bool       // User override to prevent automatic layout mode switching
 }
 
 // ToolResult represents a tool execution result for the API
@@ -260,7 +264,9 @@ func NewModel(conversationID, model, themeName string) *Model {
 		showSuggestions:      false,
 		lastAnalyzedInput:    "",
 		tokenViz:             tokenViz,
-		showIntro:            true, // Phase 2 Task 3: Show intro on first launch
+		showIntro:            true,                        // Phase 2 Task 3: Show intro on first launch
+		layoutMode:           DetermineLayoutMode(80, 24), // Phase 1 Task 4: Initialize layout mode
+		forceLayoutMode:      false,
 	}
 }
 
@@ -1070,6 +1076,38 @@ func (m *Model) GetTheme() themes.Theme {
 	return m.theme
 }
 
+// Phase 1 Task 4: Layout Mode Methods
+
+// UpdateLayoutMode updates the layout mode based on terminal dimensions
+// If forceLayoutMode is true, this function does nothing (user override)
+// Otherwise, determines layout mode from width and height
+func (m *Model) UpdateLayoutMode(width, height int) {
+	if m.forceLayoutMode {
+		return
+	}
+
+	newMode := DetermineLayoutMode(width, height)
+	if newMode != m.layoutMode {
+		m.layoutMode = newMode
+		// Invalidate markdown cache since layout change may affect rendering
+		m.InvalidateMarkdownCache()
+	}
+}
+
+// SetForceLayoutMode allows the user to override automatic layout mode detection
+func (m *Model) SetForceLayoutMode(force bool, mode LayoutMode) {
+	m.forceLayoutMode = force
+	if force {
+		m.layoutMode = mode
+		m.InvalidateMarkdownCache()
+	}
+}
+
+// GetLayoutMode returns the current layout mode
+func (m *Model) GetLayoutMode() LayoutMode {
+	return m.layoutMode
+}
+
 // Phase 1 Task 3: Cache Management Methods
 
 // InvalidateMarkdownCache marks the markdown cache as dirty
@@ -1164,6 +1202,9 @@ func (m *Model) getReservedHeight() int {
 func (m *Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
 	m.Width = msg.Width
 	m.Height = msg.Height
+
+	// Phase 1 Task 4: Update layout mode based on new size
+	m.UpdateLayoutMode(msg.Width, msg.Height)
 
 	// Phase 1 Task 3: Invalidate markdown cache on resize (width affects rendering)
 	m.InvalidateMarkdownCache()

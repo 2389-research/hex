@@ -113,7 +113,7 @@ func (m *Model) createViewStyles() viewStyles {
 	}
 }
 
-// View renders the UI
+// View renders the UI based on the current layout mode
 func (m *Model) View() string {
 	if !m.Ready {
 		return "\n  Initializing..."
@@ -124,6 +124,15 @@ func (m *Model) View() string {
 		return m.RenderIntro()
 	}
 
+	// Phase 1 Task 4: Render based on layout mode
+	if m.layoutMode == LayoutModeCompact {
+		return m.renderCompactLayout()
+	}
+	return m.renderWideLayout()
+}
+
+// renderWideLayout renders the full-featured layout for terminals with sufficient space
+func (m *Model) renderWideLayout() string {
 	// Create styles from theme
 	styles := m.createViewStyles()
 
@@ -228,6 +237,136 @@ func (m *Model) View() string {
 	b.WriteString("\n" + m.renderStatusBarEnhanced(styles))
 
 	return b.String()
+}
+
+// renderCompactLayout renders a simplified layout for small terminals
+// Features:
+// - Single column layout
+// - No token visualization
+// - Simplified status bar
+// - Essential features only
+func (m *Model) renderCompactLayout() string {
+	// Create styles from theme
+	styles := m.createViewStyles()
+
+	var b strings.Builder
+
+	// Simplified title - no decorative border, just text with status
+	titleText := fmt.Sprintf("Pagen • %s", m.Model)
+	if m.IsFavorite {
+		titleText = "⭐ " + titleText
+	}
+	statusIndicator := m.renderStatusIndicator(styles)
+	b.WriteString(titleText + " " + statusIndicator)
+
+	// Add streaming/spinner indicator inline to save space
+	if m.Streaming && m.streamingDisplay != nil {
+		b.WriteString(" ")
+		b.WriteString(m.streamingDisplay.RenderStreamingIndicator())
+	}
+	if m.spinner != nil && m.spinner.IsActive() {
+		b.WriteString(" ")
+		b.WriteString(m.spinner.View())
+	}
+
+	b.WriteString("\n\n")
+
+	// Skip help panel in compact mode to save space
+
+	// Render main content based on current view
+	switch m.CurrentView {
+	case ViewModeChat:
+		b.WriteString(m.renderChatView())
+	case ViewModeHistory:
+		b.WriteString(m.renderHistoryView(styles))
+	case ViewModeTools:
+		b.WriteString(m.renderToolsView(styles))
+	}
+
+	b.WriteString("\n")
+
+	// Quick actions modal (if active)
+	if m.quickActionsMode {
+		b.WriteString(m.renderQuickActionsModal() + "\n")
+		// In compact mode, show minimal status bar
+		b.WriteString("\n" + m.renderCompactStatusBar(styles))
+		return b.String()
+	}
+
+	// Tool approval prompt (takes precedence)
+	if m.toolApprovalMode && m.huhApproval != nil {
+		approvalView := m.huhApproval.View()
+		b.WriteString(approvalView + "\n")
+	} else if m.toolApprovalMode {
+		b.WriteString(m.renderToolApprovalPromptEnhanced(styles) + "\n")
+	} else if m.executingTool {
+		b.WriteString(m.renderToolStatus(styles) + "\n")
+	} else if m.SearchMode {
+		searchPrompt := styles.searchMode.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
+		b.WriteString(searchPrompt + "\n")
+	} else {
+		// Input (only in chat view)
+		if m.CurrentView == ViewModeChat {
+			b.WriteString(styles.input.Render(m.Input.View()) + "\n")
+
+			// Show autocomplete in compact mode (essential feature)
+			if m.autocomplete != nil && m.autocomplete.IsActive() {
+				b.WriteString(m.renderAutocompleteDropdown() + "\n")
+			}
+
+			// Show suggestions in compact mode (essential feature)
+			if m.showSuggestions && len(m.suggestions) > 0 {
+				b.WriteString(m.renderSuggestions(styles) + "\n")
+			}
+		}
+	}
+
+	// Skip token visualization in compact mode to save space
+
+	// Simplified status bar for compact mode
+	b.WriteString("\n" + m.renderCompactStatusBar(styles))
+
+	return b.String()
+}
+
+// renderCompactStatusBar renders a simplified status bar for compact layout
+func (m *Model) renderCompactStatusBar(styles viewStyles) string {
+	// Just show view mode and basic help (lowercase to match enhanced status bar)
+	viewMode := ""
+	switch m.CurrentView {
+	case ViewModeChat:
+		viewMode = "chat"
+	case ViewModeHistory:
+		viewMode = "history"
+	case ViewModeTools:
+		viewMode = "tools"
+	}
+
+	// Minimal help text
+	help := "^C:quit • ↵:send • Tab:view"
+
+	leftPart := styles.viewMode.Render(fmt.Sprintf("[%s]", viewMode))
+	rightPart := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render(help)
+
+	// Calculate spacing
+	width := m.Width
+	if width < 40 {
+		width = 40
+	}
+
+	spacingWidth := width - lipgloss.Width(leftPart) - lipgloss.Width(rightPart) - 4
+	if spacingWidth < 0 {
+		spacingWidth = 0
+	}
+
+	statusBar := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		leftPart,
+		strings.Repeat(" ", spacingWidth),
+		rightPart,
+	)
+
+	return styles.statusBar.Render(statusBar)
 }
 
 // renderStatusIndicator renders the current status icon

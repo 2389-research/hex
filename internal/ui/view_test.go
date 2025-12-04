@@ -48,6 +48,10 @@ func TestViewRendersToolsMode(t *testing.T) {
 func TestViewShowsTokenCounter(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 1 Task 4: Set wide layout mode to show full status bar features
+	model.Width = 120
+	model.Height = 30
+	model.UpdateLayoutMode(120, 30)
 	// Phase 2 Task 3: Add message to bypass intro screen
 	model.AddMessage("user", "test")
 	model.UpdateTokens(100, 250)
@@ -74,6 +78,10 @@ func TestViewShowsSearchMode(t *testing.T) {
 func TestViewShowsHelpText(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929", "dracula")
 	model.Ready = true
+	// Phase 1 Task 4: Set wide layout mode to show full status bar features
+	model.Width = 120
+	model.Height = 30
+	model.UpdateLayoutMode(120, 30)
 	// Phase 2 Task 3: Add message to bypass intro screen
 	model.AddMessage("user", "test")
 
