@@ -369,16 +369,13 @@ func TestUpdateHandlesMessageEvent(t *testing.T) {
 	close(msgEvents)
 }
 
-// TestQuitHandlersCleanupEvents verifies that Esc and Ctrl+C clean up event subscriptions
+// TestQuitHandlersCleanupEvents verifies that Ctrl+C cleans up event subscriptions
+// Note: Esc no longer quits, only Ctrl+C and exit commands do
 func TestQuitHandlersCleanupEvents(t *testing.T) {
 	tests := []struct {
 		name   string
 		keyMsg tea.KeyMsg
 	}{
-		{
-			name:   "Esc key",
-			keyMsg: tea.KeyMsg{Type: tea.KeyEsc},
-		},
 		{
 			name:   "Ctrl+C",
 			keyMsg: tea.KeyMsg{Type: tea.KeyCtrlC},

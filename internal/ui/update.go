@@ -242,7 +242,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Esc key - dismiss suggestions, quit, or exit search mode
+		// Handle Esc key - dismiss suggestions or exit modes (does NOT quit)
 		if msg.Type == tea.KeyEsc {
 			// Phase 6C Task 8: Dismiss suggestions first
 			if m.showSuggestions {
@@ -257,15 +257,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ToggleHelp()
 				return m, nil
 			}
-			// Cancel any active stream before quitting
-			if m.streamCancel != nil {
-				m.streamCancel()
-			}
-			// Cancel event subscriptions before quitting
-			if m.eventCancel != nil {
-				m.eventCancel()
-			}
-			return m, tea.Quit
+			// Escape no longer quits - use "exit" or "/exit" commands or Ctrl+C
+			return m, nil
 		}
 
 		// Handle Ctrl+C to quit
@@ -347,6 +340,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !msg.Alt {
 				// Send message
 				input := strings.TrimSpace(m.Input.Value())
+
+				// Check for exit commands
+				if input == "exit" || input == "/exit" {
+					// Cancel any active stream before quitting
+					if m.streamCancel != nil {
+						m.streamCancel()
+					}
+					// Cancel event subscriptions before quitting
+					if m.eventCancel != nil {
+						m.eventCancel()
+					}
+					return m, tea.Quit
+				}
+
 				if input != "" {
 					m.AddMessage("user", input)
 					m.Input.Reset()
