@@ -18,6 +18,8 @@ type HuhApproval struct {
 	description string
 	approved    bool
 	form        *huh.Form
+	width       int
+	height      int
 }
 
 // NewHuhApproval creates a new Huh approval dialog
@@ -94,6 +96,21 @@ func (h *HuhApproval) SetApproved(approved bool) {
 // IsComplete returns whether the form is complete
 func (h *HuhApproval) IsComplete() bool {
 	return h.form.State == huh.StateCompleted
+}
+
+// SetSize implements the Sizeable interface
+func (h *HuhApproval) SetSize(width, height int) tea.Cmd {
+	h.width = width
+	h.height = height
+	if h.form != nil {
+		h.form = h.form.WithWidth(width)
+	}
+	return nil
+}
+
+// GetSize implements the Sizeable interface
+func (h *HuhApproval) GetSize() (int, int) {
+	return h.width, h.height
 }
 
 // huhThemeFromPagenTheme converts Pagen theme to Huh theme

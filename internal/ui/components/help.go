@@ -4,6 +4,7 @@
 package components
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/harper/pagent/internal/ui/layout"
 	"github.com/harper/pagent/internal/ui/themes"
@@ -11,7 +12,9 @@ import (
 
 // HelpOverlay displays keyboard shortcuts
 type HelpOverlay struct {
-	theme themes.Theme
+	theme  themes.Theme
+	width  int
+	height int
 }
 
 // NewHelpOverlay creates a new help overlay
@@ -19,7 +22,17 @@ func NewHelpOverlay(theme themes.Theme) *HelpOverlay {
 	return &HelpOverlay{theme: theme}
 }
 
-// View renders the help overlay
+// Init implements tea.Model
+func (h *HelpOverlay) Init() tea.Cmd {
+	return nil
+}
+
+// Update implements tea.Model
+func (h *HelpOverlay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
+	return h, nil
+}
+
+// View implements tea.Model and renders the help overlay
 func (h *HelpOverlay) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Foreground(h.theme.Primary()).
@@ -61,8 +74,27 @@ func (h *HelpOverlay) View() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return layout.NewBorderStyle(h.theme).
+
+	box := layout.NewBorderStyle(h.theme).
 		WithFocus(true).
-		WithSpacing(layout.NewPadding(1, 2, 1, 2)).
-		Render(content)
+		WithSpacing(layout.NewPadding(1, 2, 1, 2))
+
+	// Apply size constraints if set
+	if h.width > 0 || h.height > 0 {
+		box = box.WithSize(h.width, h.height)
+	}
+
+	return box.Render(content)
+}
+
+// SetSize implements the Sizeable interface
+func (h *HelpOverlay) SetSize(width, height int) tea.Cmd {
+	h.width = width
+	h.height = height
+	return nil
+}
+
+// GetSize implements the Sizeable interface
+func (h *HelpOverlay) GetSize() (int, int) {
+	return h.width, h.height
 }

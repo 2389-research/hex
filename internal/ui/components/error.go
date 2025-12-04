@@ -4,6 +4,7 @@
 package components
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/harper/pagent/internal/ui/layout"
 	"github.com/harper/pagent/internal/ui/themes"
@@ -15,6 +16,8 @@ type ErrorDisplay struct {
 	title   string
 	message string
 	details string
+	width   int
+	height  int
 }
 
 // NewErrorDisplay creates a new error display
@@ -27,7 +30,17 @@ func NewErrorDisplay(theme themes.Theme, title, message, details string) *ErrorD
 	}
 }
 
-// View renders the error display
+// Init implements tea.Model
+func (e *ErrorDisplay) Init() tea.Cmd {
+	return nil
+}
+
+// Update implements tea.Model
+func (e *ErrorDisplay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
+	return e, nil
+}
+
+// View implements tea.Model and renders the error display
 func (e *ErrorDisplay) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Foreground(e.theme.Error()).
@@ -60,8 +73,26 @@ func (e *ErrorDisplay) View() string {
 	spacing := layout.NewPadding(1, 2, 1, 2)
 	spacing.MarginTop = 1
 
-	return layout.NewBorderStyle(e.theme).
+	box := layout.NewBorderStyle(e.theme).
 		WithColor(e.theme.Error()).
-		WithSpacing(spacing).
-		Render(content)
+		WithSpacing(spacing)
+
+	// Apply size constraints if set
+	if e.width > 0 || e.height > 0 {
+		box = box.WithSize(e.width, e.height)
+	}
+
+	return box.Render(content)
+}
+
+// SetSize implements the Sizeable interface
+func (e *ErrorDisplay) SetSize(width, height int) tea.Cmd {
+	e.width = width
+	e.height = height
+	return nil
+}
+
+// GetSize implements the Sizeable interface
+func (e *ErrorDisplay) GetSize() (int, int) {
+	return e.width, e.height
 }

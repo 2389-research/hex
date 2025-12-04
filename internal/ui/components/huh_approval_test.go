@@ -49,3 +49,44 @@ func TestHuhApprovalApprove(t *testing.T) {
 	approval.SetApproved(true)
 	assert.True(t, approval.IsApproved())
 }
+
+func TestHuhApprovalImplementsComponent(_ *testing.T) {
+	theme := themes.NewDracula()
+	approval := NewHuhApproval(theme, "bash", "Run: echo test")
+
+	// Verify it implements Component interface
+	var _ Component = approval
+}
+
+func TestHuhApprovalSetSize(t *testing.T) {
+	theme := themes.NewDracula()
+	approval := NewHuhApproval(theme, "bash", "Run: echo test")
+
+	// Initially zero
+	w, h := approval.GetSize()
+	assert.Equal(t, 0, w)
+	assert.Equal(t, 0, h)
+
+	// Set size
+	cmd := approval.SetSize(100, 40)
+	assert.Nil(t, cmd) // Should not return a command
+
+	// Verify size is stored
+	w, h = approval.GetSize()
+	assert.Equal(t, 100, w)
+	assert.Equal(t, 40, h)
+
+	// Verify form width is updated
+	assert.NotNil(t, approval.form)
+}
+
+func TestHuhApprovalGetSize(t *testing.T) {
+	theme := themes.NewDracula()
+	approval := NewHuhApproval(theme, "bash", "Run: echo test")
+
+	// Set size and verify GetSize returns correct values
+	approval.SetSize(120, 50)
+	w, h := approval.GetSize()
+	assert.Equal(t, 120, w)
+	assert.Equal(t, 50, h)
+}
