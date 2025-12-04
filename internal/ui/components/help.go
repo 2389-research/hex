@@ -15,6 +15,10 @@ type HelpOverlay struct {
 	theme  themes.Theme
 	width  int
 	height int
+
+	// Phase 1 Task 3: Content caching
+	cachedContent string // Cached rendered help text
+	contentDirty  bool   // Flag to invalidate cache on size change
 }
 
 // NewHelpOverlay creates a new help overlay
@@ -33,7 +37,25 @@ func (h *HelpOverlay) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View implements tea.Model and renders the help overlay
+// Phase 1 Task 3: Uses caching to avoid expensive re-renders
 func (h *HelpOverlay) View() string {
+	// Check cache first (if not dirty and cached content exists)
+	if !h.contentDirty && h.cachedContent != "" {
+		return h.cachedContent
+	}
+
+	// Generate help text (expensive operation)
+	content := h.generateHelpText()
+
+	// Cache the result
+	h.cachedContent = content
+	h.contentDirty = false
+
+	return content
+}
+
+// generateHelpText creates the help overlay content
+func (h *HelpOverlay) generateHelpText() string {
 	titleStyle := lipgloss.NewStyle().
 		Foreground(h.theme.Primary()).
 		Bold(true).
@@ -88,7 +110,12 @@ func (h *HelpOverlay) View() string {
 }
 
 // SetSize implements the Sizeable interface
+// Phase 1 Task 3: Invalidates cache when size changes
 func (h *HelpOverlay) SetSize(width, height int) tea.Cmd {
+	// Invalidate cache if size changed
+	if width != h.width || height != h.height {
+		h.contentDirty = true
+	}
 	h.width = width
 	h.height = height
 	return nil

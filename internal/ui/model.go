@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -54,6 +55,7 @@ const (
 
 // Message represents a chat message in the UI
 type Message struct {
+	ID           string // Unique identifier for cache keying
 	Role         string
 	Content      string
 	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
@@ -178,6 +180,10 @@ type Model struct {
 	helpComponent  *components.HelpOverlay
 	errorComponent *components.ErrorDisplay
 	showTokenViz   bool // Whether to show token visualization
+
+	// Phase 1 Task 3: Content Caching
+	markdownCache      map[string]string // messageID -> rendered markdown
+	markdownCacheDirty bool              // Flag to invalidate cache on theme/width change
 }
 
 // ToolResult represents a tool execution result for the API
@@ -265,7 +271,10 @@ func (m *Model) Init() tea.Cmd {
 
 // AddMessage adds a message to the conversation
 func (m *Model) AddMessage(role, content string) {
+	// Phase 1 Task 3: Generate unique ID for cache keying
+	msgID := fmt.Sprintf("msg-%d-%d", len(m.Messages), time.Now().UnixNano())
 	m.Messages = append(m.Messages, Message{
+		ID:      msgID,
 		Role:    role,
 		Content: content,
 	})
@@ -276,7 +285,9 @@ func (m *Model) AddMessage(role, content string) {
 // AddMessageWithComponent adds a message with an embedded component
 func (m *Model) AddMessageWithComponent(role, content string, component interface{}) {
 	componentID := fmt.Sprintf("comp-%d", len(m.Messages))
+	msgID := fmt.Sprintf("msg-%d-%d", len(m.Messages), time.Now().UnixNano())
 	m.Messages = append(m.Messages, Message{
+		ID:          msgID,
 		Role:        role,
 		Content:     content,
 		Component:   component,
@@ -324,8 +335,16 @@ func (m *Model) SetStatus(status Status) {
 }
 
 // RenderMessage renders a message using glamour for assistant messages with theme colors
+// Phase 1 Task 3: Uses caching to avoid expensive re-renders
 func (m *Model) RenderMessage(msg Message) (string, error) {
 	if msg.Role == "assistant" {
+		// Check cache first (if message has ID and cache is not dirty)
+		if msg.ID != "" && !m.markdownCacheDirty {
+			if cached, ok := m.markdownCache[msg.ID]; ok {
+				return cached, nil
+			}
+		}
+
 		// Create themed renderer if we don't have one or need to update width
 		if m.renderer == nil {
 			renderer, err := m.createThemedRenderer()
@@ -339,6 +358,15 @@ func (m *Model) RenderMessage(msg Message) (string, error) {
 			if err != nil {
 				return msg.Content, err
 			}
+
+			// Cache the result if message has an ID
+			if msg.ID != "" {
+				if m.markdownCache == nil {
+					m.markdownCache = make(map[string]string)
+				}
+				m.markdownCache[msg.ID] = rendered
+			}
+
 			return rendered, nil
 		}
 	}
@@ -1042,6 +1070,21 @@ func (m *Model) GetTheme() themes.Theme {
 	return m.theme
 }
 
+// Phase 1 Task 3: Cache Management Methods
+
+// InvalidateMarkdownCache marks the markdown cache as dirty
+// This should be called when terminal width or theme changes
+func (m *Model) InvalidateMarkdownCache() {
+	m.markdownCacheDirty = true
+}
+
+// ClearMarkdownCache clears all cached markdown renderings
+// This resets both the cache contents and the dirty flag
+func (m *Model) ClearMarkdownCache() {
+	m.markdownCache = make(map[string]string)
+	m.markdownCacheDirty = false
+}
+
 // Phase 2: Huh Integration Methods
 
 // EnterHuhApprovalMode creates and shows Huh approval dialog
@@ -1121,6 +1164,9 @@ func (m *Model) getReservedHeight() int {
 func (m *Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) tea.Cmd {
 	m.Width = msg.Width
 	m.Height = msg.Height
+
+	// Phase 1 Task 3: Invalidate markdown cache on resize (width affects rendering)
+	m.InvalidateMarkdownCache()
 
 	var cmds []tea.Cmd
 
