@@ -1,11 +1,11 @@
 // ABOUTME: Example demonstrating token savings with context management
 // ABOUTME: Shows real-world impact of pruning on token usage and costs
-package context_test
+package convcontext_test
 
 import (
 	"fmt"
 
-	"github.com/2389-research/hex/internal/context"
+	"github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 )
 
@@ -34,12 +34,12 @@ func ExampleManager_tokenSavings() {
 	}
 
 	// Without context management
-	tokensWithoutPruning := context.EstimateMessagesTokens(messages)
+	tokensWithoutPruning := convcontext.EstimateMessagesTokens(messages)
 
 	// With context management (1000 token limit for demonstration)
-	manager := context.NewManager(1000)
+	manager := convcontext.NewManager(1000)
 	prunedMessages := manager.Prune(messages)
-	tokensWithPruning := context.EstimateMessagesTokens(prunedMessages)
+	tokensWithPruning := convcontext.EstimateMessagesTokens(prunedMessages)
 
 	// Calculate savings
 	tokensSaved := tokensWithoutPruning - tokensWithPruning
@@ -78,7 +78,7 @@ func ExamplePruneContext() {
 		{Role: "assistant", Content: "Recent response"},
 	}
 
-	pruned := context.PruneContext(messages, 100)
+	pruned := convcontext.PruneContext(messages, 100)
 
 	fmt.Printf("Original: %d messages\n", len(messages))
 	fmt.Printf("Pruned: %d messages\n", len(pruned))

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/2389-research/hex/internal/agentsmd"
-	ctxmgr "github.com/2389-research/hex/internal/context"
+	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"

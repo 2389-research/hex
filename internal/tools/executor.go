@@ -5,9 +5,7 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/2389-research/hex/internal/hooks"
 	"github.com/2389-research/hex/internal/logging"
@@ -69,17 +67,12 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 	}
 
 	// Debug logging: Log tool execution start
-	if os.Getenv("HEX_DEBUG") != "" {
-		paramsJSON, _ := json.Marshal(params)
-		logging.Debug("Tool execution starting", "tool", toolName, "params", string(paramsJSON))
-	}
+	logging.DebugJSON("Tool execution starting", "params", params, "tool", toolName)
 
 	// Get tool from registry
 	tool, err := e.registry.Get(toolName)
 	if err != nil {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Tool not found in registry", "tool", toolName, "error", err)
-		}
+		logging.DebugIf("Tool not found in registry", "tool", toolName, "error", err)
 		return nil, fmt.Errorf("get tool: %w", err)
 	}
 
@@ -88,14 +81,12 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 		checkResult := e.permissionChecker.Check(toolName, params)
 
 		// Debug logging: Log permission check result
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Permission check result",
-				"tool", toolName,
-				"allowed", checkResult.Allowed,
-				"requires_prompt", checkResult.RequiresPrompt,
-				"reason", checkResult.Reason,
-			)
-		}
+		logging.DebugIf("Permission check result",
+			"tool", toolName,
+			"allowed", checkResult.Allowed,
+			"requires_prompt", checkResult.RequiresPrompt,
+			"reason", checkResult.Reason,
+		)
 
 		// Fire permission hook if set
 		if e.permissionHook != nil {
@@ -104,9 +95,7 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 
 		// If tool is blocked by rules, deny immediately
 		if !checkResult.Allowed && !checkResult.RequiresPrompt {
-			if os.Getenv("HEX_DEBUG") != "" {
-				logging.Debug("Tool execution denied by permission rules", "tool", toolName, "reason", checkResult.Reason)
-			}
+			logging.DebugIf("Tool execution denied by permission rules", "tool", toolName, "reason", checkResult.Reason)
 			return &Result{
 				ToolName: toolName,
 				Success:  false,
@@ -116,9 +105,7 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 
 		// If mode is auto, allow immediately
 		if checkResult.Allowed && !checkResult.RequiresPrompt {
-			if os.Getenv("HEX_DEBUG") != "" {
-				logging.Debug("Tool execution auto-approved", "tool", toolName)
-			}
+			logging.DebugIf("Tool execution auto-approved", "tool", toolName)
 			// Fire PreToolUse hook if engine is set
 			filePath := extractFilePath(params)
 			if e.hookEngine != nil {
@@ -129,13 +116,10 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 			result, err := tool.Execute(ctx, params)
 
 			// Debug logging: Log execution result
-			if os.Getenv("HEX_DEBUG") != "" {
-				if err != nil {
-					logging.Debug("Tool execution failed", "tool", toolName, "error", err)
-				} else if result != nil {
-					resultJSON, _ := json.Marshal(result)
-					logging.Debug("Tool execution completed", "tool", toolName, "success", result.Success, "result", string(resultJSON))
-				}
+			if err != nil {
+				logging.DebugIf("Tool execution failed", "tool", toolName, "error", err)
+			} else if result != nil {
+				logging.DebugJSON("Tool execution completed", "result", result, "tool", toolName, "success", result.Success)
 			}
 
 			// Fire PostToolUse hook if engine is set
@@ -164,22 +148,16 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 
 	// Check if approval needed (legacy path or when mode is "ask")
 	if tool.RequiresApproval(params) {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Tool requires user approval", "tool", toolName)
-		}
+		logging.DebugIf("Tool requires user approval", "tool", toolName)
 		if e.approvalFunc != nil && !e.approvalFunc(toolName, params) {
-			if os.Getenv("HEX_DEBUG") != "" {
-				logging.Debug("User denied tool approval", "tool", toolName)
-			}
+			logging.DebugIf("User denied tool approval", "tool", toolName)
 			return &Result{
 				ToolName: toolName,
 				Success:  false,
 				Error:    "user denied permission",
 			}, nil
 		}
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("User approved tool execution", "tool", toolName)
-		}
+		logging.DebugIf("User approved tool execution", "tool", toolName)
 	}
 
 	// Fire PreToolUse hook if engine is set
@@ -192,13 +170,10 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 	result, err := tool.Execute(ctx, params)
 
 	// Debug logging: Log execution result
-	if os.Getenv("HEX_DEBUG") != "" {
-		if err != nil {
-			logging.Debug("Tool execution failed", "tool", toolName, "error", err)
-		} else if result != nil {
-			resultJSON, _ := json.Marshal(result)
-			logging.Debug("Tool execution completed", "tool", toolName, "success", result.Success, "result", string(resultJSON))
-		}
+	if err != nil {
+		logging.DebugIf("Tool execution failed", "tool", toolName, "error", err)
+	} else if result != nil {
+		logging.DebugJSON("Tool execution completed", "result", result, "tool", toolName, "success", result.Success)
 	}
 
 	// Fire PostToolUse hook if engine is set

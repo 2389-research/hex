@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/2389-research/hex/internal/logging"
@@ -71,7 +70,7 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	}
 
 	// Debug logging: Log the full request
-	if os.Getenv("HEX_DEBUG") != "" {
+	if logging.IsDebugEnabled() {
 		// Pretty-print the request for readability
 		var prettyReq bytes.Buffer
 		if err := json.Indent(&prettyReq, body, "", "  "); err == nil {
@@ -111,7 +110,7 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	}
 
 	// Debug logging: Log the full response
-	if os.Getenv("HEX_DEBUG") != "" {
+	if logging.IsDebugEnabled() {
 		// Pretty-print the response for readability
 		var prettyResp bytes.Buffer
 		if err := json.Indent(&prettyResp, respBody, "", "  "); err == nil {
@@ -133,13 +132,11 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	}
 
 	// Debug logging: Log token usage
-	if os.Getenv("HEX_DEBUG") != "" {
-		logging.Debug("API Usage",
-			"input_tokens", resp.Usage.InputTokens,
-			"output_tokens", resp.Usage.OutputTokens,
-			"stop_reason", resp.StopReason,
-		)
-	}
+	logging.DebugIf("API Usage",
+		"input_tokens", resp.Usage.InputTokens,
+		"output_tokens", resp.Usage.OutputTokens,
+		"stop_reason", resp.StopReason,
+	)
 
 	return &resp, nil
 }

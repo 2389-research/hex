@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/2389-research/hex/internal/approval"
-	ctxmgr "github.com/2389-research/hex/internal/context"
+	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/pubsub"
 	"github.com/2389-research/hex/internal/services"

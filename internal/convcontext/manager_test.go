@@ -1,6 +1,6 @@
 // ABOUTME: Tests for context pruning and token management
 // ABOUTME: Ensures context stays within token limits while preserving important messages
-package context
+package convcontext
 
 import (
 	"testing"

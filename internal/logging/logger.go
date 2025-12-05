@@ -6,12 +6,14 @@ package logging
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // Level represents log severity levels
@@ -343,4 +345,52 @@ func ErrorWith(msg string, args ...any) {
 // ErrorWithErr logs an error with an error object using the global logger
 func ErrorWithErr(msg string, err error, args ...any) {
 	Default().ErrorWithErr(msg, err, args...)
+}
+
+// Debug mode helpers
+
+var (
+	debugModeChecked atomic.Bool
+	debugModeEnabled atomic.Bool
+)
+
+// IsDebugEnabled returns true if HEX_DEBUG environment variable is set.
+// Result is cached after first check for performance.
+func IsDebugEnabled() bool {
+	if debugModeChecked.Load() {
+		return debugModeEnabled.Load()
+	}
+
+	// First check - cache the result
+	enabled := os.Getenv("HEX_DEBUG") != ""
+	debugModeEnabled.Store(enabled)
+	debugModeChecked.Store(true)
+	return enabled
+}
+
+// DebugJSON logs a debug message with JSON-marshaled data.
+// If JSON marshaling fails, logs the error and falls back to fmt.Sprintf.
+func DebugJSON(msg string, jsonKey string, data interface{}, extraArgs ...any) {
+	if !IsDebugEnabled() {
+		return
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		// JSON marshaling failed - log the error and use fmt.Sprintf as fallback
+		args := append([]any{jsonKey, fmt.Sprintf("%+v", data), "json_marshal_error", err}, extraArgs...)
+		Default().Debug(msg, args...)
+		return
+	}
+
+	args := append([]any{jsonKey, string(jsonBytes)}, extraArgs...)
+	Default().Debug(msg, args...)
+}
+
+// DebugIf logs a debug message only if debug mode is enabled.
+// This is more efficient than checking os.Getenv on every call.
+func DebugIf(msg string, args ...any) {
+	if IsDebugEnabled() {
+		Default().Debug(msg, args...)
+	}
 }

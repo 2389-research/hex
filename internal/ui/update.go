@@ -665,9 +665,7 @@ func (m *Model) updateViewport() {
 func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Handle errors
 	if msg.Error != nil {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Stream error", "error", msg.Error)
-		}
+		logging.DebugIf("Stream error", "error", msg.Error)
 		m.ClearStreamingText()
 		m.SetStatus(StatusError)
 		m.ErrorMessage = msg.Error.Error()
@@ -681,10 +679,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	chunk := msg.Chunk
 
 	// Debug logging: Log chunk type
-	if os.Getenv("HEX_DEBUG") != "" {
-		chunkJSON, _ := json.Marshal(chunk)
-		logging.Debug("Stream chunk received", "type", chunk.Type, "chunk", string(chunkJSON))
-	}
+	logging.DebugJSON("Stream chunk received", "chunk", chunk, "type", chunk.Type)
 
 	// Task 12: Handle tool_use content blocks
 	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
@@ -753,9 +748,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle content deltas
 	if chunk.Delta != nil && chunk.Delta.Text != "" {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
-		}
+		logging.DebugIf("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
 		m.AppendStreamingText(chunk.Delta.Text)
 		// Phase 6C: Update streaming display
 		if m.streamingDisplay != nil {
@@ -784,17 +777,13 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	if chunk.Type == "message_stop" || chunk.Done {
 		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
 
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
-		}
+		logging.DebugIf("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
 
 		// Commit streaming text, including tool_use blocks if present
 		if len(m.pendingToolUses) > 0 {
 			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
 
-			if os.Getenv("HEX_DEBUG") != "" {
-				logging.Debug("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
-			}
+			logging.DebugIf("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
 
 			// Create assistant message with both text and ALL tool_use content blocks
 			blocks := []core.ContentBlock{}
@@ -816,10 +805,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
 					i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
 
-				if os.Getenv("HEX_DEBUG") != "" {
-					inputJSON, _ := json.Marshal(toolUse.Input)
-					logging.Debug("Adding tool use to message", "tool_id", toolUse.ID, "tool_name", toolUse.Name, "input", string(inputJSON))
-				}
+				logging.DebugJSON("Adding tool use to message", "input", toolUse.Input, "tool_id", toolUse.ID, "tool_name", toolUse.Name)
 			}
 
 			// Add assistant message with content blocks
@@ -829,10 +815,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 			}
 			m.Messages = append(m.Messages, assistantMsg)
 
-			if os.Getenv("HEX_DEBUG") != "" {
-				msgJSON, _ := json.Marshal(assistantMsg)
-				logging.Debug("Assistant message added to history", "message", string(msgJSON))
-			}
+			logging.DebugJSON("Assistant message added to history", "message", assistantMsg)
 			m.StreamingText = ""
 
 			// Hide intro after first assistant response

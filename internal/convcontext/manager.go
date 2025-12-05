@@ -1,8 +1,8 @@
 // ABOUTME: Context pruning and token management for conversations
 // ABOUTME: Keeps conversations within token limits while preserving important context
 
-// Package context provides context window management and message pruning for conversations.
-package context
+// Package convcontext provides context window management and message pruning for conversations.
+package convcontext
 
 import (
 	"github.com/2389-research/hex/internal/core"
