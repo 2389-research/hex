@@ -1,5 +1,9 @@
 # Hex - Claude CLI
 
+<p align="center">
+  <img src="docs/hex.png" alt="Hex Logo" width="400"/>
+</p>
+
 [![Test](https://github.com/2389-research/hex/workflows/Test/badge.svg)](https://github.com/2389-research/hex/actions/workflows/test.yml)
 [![Release](https://github.com/2389-research/hex/workflows/Release/badge.svg)](https://github.com/2389-research/hex/actions/workflows/release.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/2389-research/hex)](https://goreportcard.com/report/github.com/2389-research/hex)
