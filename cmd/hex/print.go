@@ -19,6 +19,9 @@ func runPrintMode(prompt string) error {
 		return fmt.Errorf("prompt or image required in print mode")
 	}
 
+	// Create context for the entire print mode execution
+	ctx := context.Background()
+
 	// Load config
 	cfg, err := core.LoadConfig()
 	if err != nil {
@@ -101,7 +104,7 @@ func runPrintMode(prompt string) error {
 		}
 
 		// Send request
-		resp, err := client.CreateMessage(context.Background(), req)
+		resp, err := client.CreateMessage(ctx, req)
 		if err != nil {
 			return fmt.Errorf("API error: %w", err)
 		}
@@ -197,9 +200,24 @@ func runPrintMode(prompt string) error {
 				go func() {
 					defer wg.Done()
 
+					// Check context cancellation before executing
+					select {
+					case <-ctx.Done():
+						resultChan <- toolResult{
+							block: core.ContentBlock{
+								Type:      "tool_result",
+								ToolUseID: tu.ID,
+								Content:   fmt.Sprintf("Error: %v", ctx.Err()),
+							},
+							index: idx,
+						}
+						return
+					default:
+					}
+
 					logging.InfoWith("Executing tool", "name", tu.Name, "id", tu.ID)
 
-					result, err := executor.Execute(context.Background(), tu.Name, tu.Input)
+					result, err := executor.Execute(ctx, tu.Name, tu.Input)
 					if err != nil {
 						resultChan <- toolResult{
 							block: core.ContentBlock{
@@ -229,16 +247,26 @@ func runPrintMode(prompt string) error {
 				close(resultChan)
 			}()
 
-			// Collect results in original order
-			results := make([]toolResult, len(toolUses))
+			// Collect results in a map to avoid zero-value issues
+			resultsMap := make(map[int]toolResult, len(toolUses))
 			for tr := range resultChan {
-				results[tr.index] = tr
+				resultsMap[tr.index] = tr
 			}
 
 			// Build toolResults array in original order
-			var toolResults []core.ContentBlock
-			for _, tr := range results {
-				toolResults = append(toolResults, tr.block)
+			toolResults := make([]core.ContentBlock, 0, len(toolUses))
+			for i := 0; i < len(toolUses); i++ {
+				if tr, ok := resultsMap[i]; ok {
+					toolResults = append(toolResults, tr.block)
+				} else {
+					// Handle missing result - this indicates a serious problem
+					logging.WarnWith("Tool execution did not complete", "index", i, "tool_use_id", toolUses[i].ID)
+					toolResults = append(toolResults, core.ContentBlock{
+						Type:      "tool_result",
+						ToolUseID: toolUses[i].ID,
+						Content:   "Error: tool execution did not complete",
+					})
+				}
 			}
 
 			// Add tool results as user message

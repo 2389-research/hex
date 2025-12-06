@@ -119,6 +119,10 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 				errorChunk := &StreamChunk{
 					Type: "error",
 					Done: true,
+					Delta: &Delta{
+						Type: "error",
+						Text: fmt.Sprintf("SSE parse error: %v", err),
+					},
 				}
 				select {
 				case chunks <- errorChunk:
@@ -147,6 +151,10 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 			errorChunk := &StreamChunk{
 				Type: "error",
 				Done: true,
+				Delta: &Delta{
+					Type: "error",
+					Text: fmt.Sprintf("Stream scanner error: %v", err),
+				},
 			}
 			select {
 			case chunks <- errorChunk:

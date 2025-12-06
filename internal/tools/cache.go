@@ -52,8 +52,19 @@ func NewResultCache(capacity int, ttl time.Duration) *ResultCache {
 
 // generateKey creates a cache key from tool name and parameters
 func (c *ResultCache) generateKey(toolName string, params map[string]interface{}) string {
+	// Ensure params is not nil
+	if params == nil {
+		params = make(map[string]interface{})
+	}
+
 	// Create deterministic key from tool name + params
-	paramsJSON, _ := json.Marshal(params)
+	paramsJSON, err := json.Marshal(params)
+	if err != nil {
+		// If marshaling fails, create a key from tool name only
+		// This prevents cache hits for unmarshalable params but doesn't break execution
+		hash := sha256.Sum256([]byte(fmt.Sprintf("%s:ERROR_UNMARSHALLABLE_%d", toolName, time.Now().UnixNano())))
+		return fmt.Sprintf("%x", hash)
+	}
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", toolName, paramsJSON)))
 	return fmt.Sprintf("%x", hash)
 }
@@ -85,7 +96,21 @@ func (c *ResultCache) Get(toolName string, params map[string]interface{}) (*Resu
 	// Move to front (most recently used)
 	c.evictList.MoveToFront(elem)
 	c.hits++
-	return item.entry.Result, true
+
+	// Deep copy to prevent aliasing and data corruption
+	cached := item.entry.Result
+	resultCopy := &Result{
+		ToolName: cached.ToolName,
+		Success:  cached.Success,
+		Output:   cached.Output,
+		Error:    cached.Error,
+		Metadata: make(map[string]interface{}),
+	}
+	for k, v := range cached.Metadata {
+		resultCopy.Metadata[k] = v
+	}
+
+	return resultCopy, true
 }
 
 // Set stores a result in the cache
@@ -95,12 +120,24 @@ func (c *ResultCache) Set(toolName string, params map[string]interface{}, result
 
 	key := c.generateKey(toolName, params)
 
+	// Deep copy the result to prevent external modifications
+	resultCopy := &Result{
+		ToolName: result.ToolName,
+		Success:  result.Success,
+		Output:   result.Output,
+		Error:    result.Error,
+		Metadata: make(map[string]interface{}),
+	}
+	for k, v := range result.Metadata {
+		resultCopy.Metadata[k] = v
+	}
+
 	// Check if already exists
 	if elem, ok := c.cache[key]; ok {
 		// Update existing entry
 		item := elem.Value.(*cacheItem)
 		item.entry = &CacheEntry{
-			Result:    result,
+			Result:    resultCopy,
 			ExpiresAt: time.Now().Add(c.ttl),
 		}
 		c.evictList.MoveToFront(elem)
@@ -109,7 +146,7 @@ func (c *ResultCache) Set(toolName string, params map[string]interface{}, result
 
 	// Add new entry
 	entry := &CacheEntry{
-		Result:    result,
+		Result:    resultCopy,
 		ExpiresAt: time.Now().Add(c.ttl),
 	}
 
