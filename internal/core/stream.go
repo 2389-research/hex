@@ -98,8 +98,8 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 		return nil, fmt.Errorf("API error %d: %s", httpResp.StatusCode, string(body))
 	}
 
-	// Create channel for chunks
-	chunks := make(chan *StreamChunk, 10)
+	// Create channel for chunks with configurable buffer size
+	chunks := make(chan *StreamChunk, c.streamBufferSize)
 
 	// Start goroutine to read SSE stream
 	go func() {
@@ -115,8 +115,17 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 
 			chunk, err := ParseSSEChunk(line)
 			if err != nil {
-				// TODO: Send error chunk
-				continue
+				// Send error chunk so consumer can handle parsing errors
+				errorChunk := &StreamChunk{
+					Type: "error",
+					Done: true,
+				}
+				select {
+				case chunks <- errorChunk:
+				case <-ctx.Done():
+					return
+				}
+				return
 			}
 			if chunk == nil {
 				continue // Ignore non-data lines
@@ -130,6 +139,18 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 
 			if chunk.Done {
 				return
+			}
+		}
+
+		// Check for scanner errors
+		if err := scanner.Err(); err != nil {
+			errorChunk := &StreamChunk{
+				Type: "error",
+				Done: true,
+			}
+			select {
+			case chunks <- errorChunk:
+			case <-ctx.Done():
 			}
 		}
 	}()

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
@@ -77,8 +78,10 @@ func runPrintMode(prompt string) error {
 	// Build conversation history
 	messages := []core.Message{msg}
 
-	// Multi-turn tool execution loop
+	// Multi-turn tool execution loop with token tracking
 	maxTurns := 20
+	var totalInputTokens, totalOutputTokens int
+
 	for turn := 0; turn < maxTurns; turn++ {
 		logging.DebugWith("Print mode turn", "turn", turn+1, "messages", len(messages))
 
@@ -103,10 +106,31 @@ func runPrintMode(prompt string) error {
 			return fmt.Errorf("API error: %w", err)
 		}
 
+		// Track token usage
+		if resp.Usage.InputTokens > 0 || resp.Usage.OutputTokens > 0 {
+			totalInputTokens += resp.Usage.InputTokens
+			totalOutputTokens += resp.Usage.OutputTokens
+			logging.DebugWith("Turn token usage",
+				"turn", turn+1,
+				"input_tokens", resp.Usage.InputTokens,
+				"output_tokens", resp.Usage.OutputTokens,
+				"total_input", totalInputTokens,
+				"total_output", totalOutputTokens,
+			)
+		}
+
 		logging.Debug("Response received", "stop_reason", resp.StopReason, "content_blocks", len(resp.Content))
 
 		// Check stop reason
 		if resp.StopReason == "end_turn" || resp.StopReason == "max_tokens" {
+			// Print token usage summary if we have metrics
+			if totalInputTokens > 0 || totalOutputTokens > 0 {
+				logging.InfoWith("Total token usage",
+					"input_tokens", totalInputTokens,
+					"output_tokens", totalOutputTokens,
+					"total_tokens", totalInputTokens+totalOutputTokens,
+				)
+			}
 			return formatOutput(resp, outputFormat)
 		}
 
@@ -151,26 +175,70 @@ func runPrintMode(prompt string) error {
 			assistantMsg.ContentBlock = assistantContentBlocks
 			messages = append(messages, assistantMsg)
 
-			// Execute tools and collect results
+			// Execute tools in parallel and collect results
+			logging.InfoWith("Executing tools in parallel", "count", len(toolUses))
+
+			type toolResult struct {
+				block core.ContentBlock
+				index int
+			}
+
+			resultChan := make(chan toolResult, len(toolUses))
+			var wg sync.WaitGroup
+
+			// Launch all tool executions concurrently
+			for i, toolUse := range toolUses {
+				wg.Add(1)
+
+				// Capture loop variables
+				idx := i
+				tu := toolUse
+
+				go func() {
+					defer wg.Done()
+
+					logging.InfoWith("Executing tool", "name", tu.Name, "id", tu.ID)
+
+					result, err := executor.Execute(context.Background(), tu.Name, tu.Input)
+					if err != nil {
+						resultChan <- toolResult{
+							block: core.ContentBlock{
+								Type:      "tool_result",
+								ToolUseID: tu.ID,
+								Content:   fmt.Sprintf("Error: %v", err),
+							},
+							index: idx,
+						}
+						return
+					}
+
+					resultChan <- toolResult{
+						block: core.ContentBlock{
+							Type:      "tool_result",
+							ToolUseID: tu.ID,
+							Content:   result.Output,
+						},
+						index: idx,
+					}
+				}()
+			}
+
+			// Wait for all tools to complete
+			go func() {
+				wg.Wait()
+				close(resultChan)
+			}()
+
+			// Collect results in original order
+			results := make([]toolResult, len(toolUses))
+			for tr := range resultChan {
+				results[tr.index] = tr
+			}
+
+			// Build toolResults array in original order
 			var toolResults []core.ContentBlock
-			for _, toolUse := range toolUses {
-				logging.InfoWith("Executing tool", "name", toolUse.Name, "id", toolUse.ID)
-
-				result, err := executor.Execute(context.Background(), toolUse.Name, toolUse.Input)
-				if err != nil {
-					toolResults = append(toolResults, core.ContentBlock{
-						Type:      "tool_result",
-						ToolUseID: toolUse.ID,
-						Content:   fmt.Sprintf("Error: %v", err),
-					})
-					continue
-				}
-
-				toolResults = append(toolResults, core.ContentBlock{
-					Type:      "tool_result",
-					ToolUseID: toolUse.ID,
-					Content:   result.Output,
-				})
+			for _, tr := range results {
+				toolResults = append(toolResults, tr.block)
 			}
 
 			// Add tool results as user message
@@ -186,9 +254,25 @@ func runPrintMode(prompt string) error {
 
 		// Unknown stop reason
 		logging.WarnWith("Unknown stop reason", "stop_reason", resp.StopReason)
+		// Print token usage summary if we have metrics
+		if totalInputTokens > 0 || totalOutputTokens > 0 {
+			logging.InfoWith("Total token usage",
+				"input_tokens", totalInputTokens,
+				"output_tokens", totalOutputTokens,
+				"total_tokens", totalInputTokens+totalOutputTokens,
+			)
+		}
 		return formatOutput(resp, outputFormat)
 	}
 
+	// Print token usage even on max turns error
+	if totalInputTokens > 0 || totalOutputTokens > 0 {
+		logging.InfoWith("Total token usage (partial)",
+			"input_tokens", totalInputTokens,
+			"output_tokens", totalOutputTokens,
+			"total_tokens", totalInputTokens+totalOutputTokens,
+		)
+	}
 	return fmt.Errorf("exceeded maximum turns (%d) in tool execution loop", maxTurns)
 }
 

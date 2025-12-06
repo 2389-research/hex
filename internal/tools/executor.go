@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/2389-research/hex/internal/hooks"
 	"github.com/2389-research/hex/internal/logging"
@@ -28,6 +29,7 @@ type Executor struct {
 	permissionChecker *permissions.Checker
 	permissionHook    PermissionHook
 	hookEngine        *hooks.Engine
+	resultCache       *ResultCache // LRU cache for read-only tool results
 }
 
 // NewExecutor creates a new tool executor
@@ -37,8 +39,28 @@ func NewExecutor(registry *Registry, approvalFunc ApprovalFunc) *Executor {
 		approvalFunc:      approvalFunc,
 		permissionChecker: nil, // No permission checker by default (backward compatible)
 		permissionHook:    nil,
-		hookEngine:        nil, // No hook engine by default (backward compatible)
+		hookEngine:        nil,                                // No hook engine by default (backward compatible)
+		resultCache:       NewResultCache(100, 5*time.Minute), // 100 entries, 5 minute TTL
 	}
+}
+
+// EnableCache enables result caching with custom capacity and TTL
+func (e *Executor) EnableCache(capacity int, ttl time.Duration) {
+	e.resultCache = NewResultCache(capacity, ttl)
+}
+
+// DisableCache disables result caching
+func (e *Executor) DisableCache() {
+	e.resultCache = nil
+}
+
+// GetCacheStats returns cache statistics
+func (e *Executor) GetCacheStats() *CacheStats {
+	if e.resultCache == nil {
+		return nil
+	}
+	stats := e.resultCache.Stats()
+	return &stats
 }
 
 // SetPermissionChecker sets the permission checker for this executor
@@ -68,10 +90,20 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 		params = make(map[string]interface{})
 	}
 
-	// Debug logging: Log tool execution start
+	// Debug logging: Log tool execution starting
 	if os.Getenv("HEX_DEBUG") != "" {
 		paramsJSON, _ := json.Marshal(params)
 		logging.Debug("Tool execution starting", "tool", toolName, "params", string(paramsJSON))
+	}
+
+	// Check cache for cacheable tools
+	if e.resultCache != nil && IsCacheable(toolName) {
+		if cachedResult, found := e.resultCache.Get(toolName, params); found {
+			if os.Getenv("HEX_DEBUG") != "" {
+				logging.Debug("Tool result retrieved from cache", "tool", toolName)
+			}
+			return cachedResult, nil
+		}
 	}
 
 	// Get tool from registry
@@ -156,6 +188,15 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 			if result == nil {
 				return nil, fmt.Errorf("tool returned nil result")
 			}
+
+			// Cache successful results for cacheable tools
+			if e.resultCache != nil && IsCacheable(toolName) && result.Success {
+				e.resultCache.Set(toolName, params, result)
+				if os.Getenv("HEX_DEBUG") != "" {
+					logging.Debug("Tool result cached", "tool", toolName)
+				}
+			}
+
 			return result, nil
 		}
 
@@ -218,6 +259,14 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 	}
 	if result == nil {
 		return nil, fmt.Errorf("tool returned nil result")
+	}
+
+	// Cache successful results for cacheable tools
+	if e.resultCache != nil && IsCacheable(toolName) && result.Success {
+		e.resultCache.Set(toolName, params, result)
+		if os.Getenv("HEX_DEBUG") != "" {
+			logging.Debug("Tool result cached", "tool", toolName)
+		}
 	}
 
 	return result, nil

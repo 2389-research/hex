@@ -23,9 +23,10 @@ const (
 
 // Client is the Anthropic API client
 type Client struct {
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
+	apiKey           string
+	baseURL          string
+	httpClient       *http.Client
+	streamBufferSize int // Configurable buffer size for streaming channels
 }
 
 // ClientOption configures a Client
@@ -45,11 +46,21 @@ func WithBaseURL(baseURL string) ClientOption {
 	}
 }
 
+// WithStreamBufferSize sets the streaming channel buffer size
+func WithStreamBufferSize(size int) ClientOption {
+	return func(c *Client) {
+		if size > 0 {
+			c.streamBufferSize = size
+		}
+	}
+}
+
 // NewClient creates a new API client
 func NewClient(apiKey string, opts ...ClientOption) *Client {
 	c := &Client{
-		apiKey:  apiKey,
-		baseURL: defaultBaseURL,
+		apiKey:           apiKey,
+		baseURL:          defaultBaseURL,
+		streamBufferSize: 10, // Default buffer size
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 		},
