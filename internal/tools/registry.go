@@ -156,6 +156,65 @@ func getToolSchema(toolName string) map[string]interface{} {
 			},
 			"required": []string{"command"},
 		}
+	case "grep":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pattern": map[string]interface{}{
+					"type":        "string",
+					"description": "The regular expression pattern to search for in file contents",
+				},
+				"path": map[string]interface{}{
+					"type":        "string",
+					"description": "File or directory to search in (rg PATH). Defaults to current working directory.",
+				},
+				"output_mode": map[string]interface{}{
+					"type":        "string",
+					"enum":        []string{"content", "files_with_matches", "count"},
+					"description": "Output mode: \"content\" shows matching lines, \"files_with_matches\" shows file paths (default), \"count\" shows match counts",
+				},
+				"-i": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Case insensitive search (rg -i)",
+				},
+				"-A": map[string]interface{}{
+					"type":        "number",
+					"description": "Number of lines to show after each match (rg -A). Requires output_mode: \"content\", ignored otherwise.",
+				},
+				"-B": map[string]interface{}{
+					"type":        "number",
+					"description": "Number of lines to show before each match (rg -B). Requires output_mode: \"content\", ignored otherwise.",
+				},
+				"-C": map[string]interface{}{
+					"type":        "number",
+					"description": "Number of lines to show before and after each match (rg -C). Requires output_mode: \"content\", ignored otherwise.",
+				},
+				"glob": map[string]interface{}{
+					"type":        "string",
+					"description": "Glob pattern to filter files (e.g. \"*.js\", \"*.{ts,tsx}\") - maps to rg --glob",
+				},
+				"type": map[string]interface{}{
+					"type":        "string",
+					"description": "File type to search (rg --type). Common types: js, py, rust, go, java, etc.",
+				},
+			},
+			"required": []string{"pattern"},
+		}
+	case "glob":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"pattern": map[string]interface{}{
+					"type":        "string",
+					"description": "The glob pattern to match files against",
+				},
+				"path": map[string]interface{}{
+					"type":        "string",
+					"description": "The directory to search in. If not specified, the current working directory will be used.",
+				},
+			},
+			"required": []string{"pattern"},
+		}
 	default:
 		// For other tools, return minimal schema
 		return map[string]interface{}{
