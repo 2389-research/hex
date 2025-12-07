@@ -55,6 +55,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case subscriptionErrorMsg:
 		// Display subscription failures so users know data may be stale
 		m.ErrorMessage = fmt.Sprintf("Subscription error: %v", msg.err)
+
+		// Attempt to restart subscriptions after error
+		if m.convSvc != nil && m.msgSvc != nil && m.eventCtx != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "[SUBSCRIPTION] Restarting after error: %v\n", msg.err)
+
+			// Restart subscriptions
+			convEvents := m.convSvc.Subscribe(m.eventCtx)
+			msgEvents := m.msgSvc.Subscribe(m.eventCtx)
+
+			return m, tea.Batch(
+				waitForConversationEvent(convEvents),
+				waitForMessageEvent(msgEvents),
+			)
+		}
 		return m, nil
 
 	// Task 6: Handle streaming chunks
@@ -142,7 +156,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle quick actions form results from huh
 	case *forms.QuickActionsResultMsg:
-		return m.handleQuickActionsResult(msg)
+		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
 		// Forward messages to embedded approval form if in approval mode
@@ -501,6 +515,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		// Re-entrance guard: prevent infinite loops from WindowSizeMsg
+		if m.processingWindowSize {
+			return m, nil
+		}
+		m.processingWindowSize = true
+		defer func() { m.processingWindowSize = false }()
+
 		m.Width = msg.Width
 		m.Height = msg.Height
 		m.Input.SetWidth(msg.Width - 4)
@@ -746,10 +767,7 @@ func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea
 	m.updateViewport()
 
 	// Continue reading from stream
-	if m.streamChan != nil {
-		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-	}
-	return m, nil
+	return m, m.continueReading()
 }
 
 // handleContentBlockDelta processes delta events for content blocks (text or tool input JSON)
@@ -762,10 +780,7 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 	if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" && m.assemblingToolUse != nil {
 		m.toolInputJSONBuf += chunk.Delta.PartialJSON
 		// Continue reading
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-		}
-		return m, nil
+		return m, m.continueReading()
 	}
 
 	// Handle text delta for assistant message
@@ -780,9 +795,7 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 		m.SetStatus(StatusStreaming)
 		m.updateViewport()
 		// Continue reading
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-		}
+		return m, m.continueReading()
 	}
 
 	return m, nil
@@ -822,10 +835,7 @@ func (m *Model) handleContentBlockStop() (tea.Model, tea.Cmd) {
 	m.toolInputJSONBuf = ""
 
 	// Continue reading from stream
-	if m.streamChan != nil {
-		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-	}
-	return m, nil
+	return m, m.continueReading()
 }
 
 // handleMessageDelta processes usage metadata updates
@@ -834,10 +844,7 @@ func (m *Model) handleMessageDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd)
 		m.UpdateTokens(chunk.Usage.InputTokens, chunk.Usage.OutputTokens)
 	}
 	// Continue reading from stream
-	if m.streamChan != nil {
-		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-	}
-	return m, nil
+	return m, m.continueReading()
 }
 
 // handleMessageStop processes stream completion and handles tool approval or text commit
@@ -847,6 +854,11 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 	if os.Getenv("HEX_DEBUG") != "" {
 		logging.Debug("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
 	}
+
+	// Always clear stream state when message completes, regardless of path
+	m.streamChan = nil
+	m.streamCancel = nil
+	m.streamCtx = nil
 
 	// Path 1: Stream completed with tool uses - need approval
 	if len(m.pendingToolUses) > 0 {
@@ -969,9 +981,7 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 	}
 
 	m.SetStatus(StatusIdle)
-	m.streamChan = nil
-	m.streamCancel = nil
-	m.streamCtx = nil
+	// Stream state already cleared at start of handleMessageStop()
 
 	m.updateViewport()
 	return m, nil
@@ -1059,6 +1069,14 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	apiClient := m.apiClient
 
 	return func() tea.Msg {
+		// Defensive check: ensure context hasn't been cancelled between
+		// context creation and when this async command executes
+		select {
+		case <-ctx.Done():
+			return &StreamChunkMsg{Error: ctx.Err()}
+		default:
+		}
+
 		// Start stream with the context we created
 		streamChan, err := apiClient.CreateMessageStream(ctx, req)
 		if err != nil {
@@ -1069,12 +1087,21 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 }
 
+// continueReading is a helper that safely continues reading from the stream
+// Consolidates nil checks for both context and channel
+func (m *Model) continueReading() tea.Cmd {
+	if m.streamChan == nil || m.streamCtx == nil {
+		return nil
+	}
+	return m.readStreamChunks(m.streamCtx, m.streamChan)
+}
+
 // readStreamChunks reads from the stream channel and returns messages
 // Uses context to handle cancellation and prevent goroutine leaks
 func (m *Model) readStreamChunks(ctx context.Context, streamChan <-chan *core.StreamChunk) tea.Cmd {
 	return func() tea.Msg {
-		// Defensive check for nil channel
-		if streamChan == nil {
+		// Defensive check for nil channel or context
+		if streamChan == nil || ctx == nil {
 			return &StreamChunkMsg{
 				Chunk: &core.StreamChunk{
 					Type: "message_stop",

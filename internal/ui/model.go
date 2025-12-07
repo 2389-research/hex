@@ -195,6 +195,9 @@ type Model struct {
 
 	// Performance: Throttled viewport updates (60fps max)
 	lastViewportUpdate time.Time // Last time viewport was updated
+
+	// Robustness: Re-entrance guards
+	processingWindowSize bool // Prevent re-entrance in WindowSizeMsg handler
 }
 
 // ToolResult represents a tool execution result for the API
@@ -1400,7 +1403,7 @@ func (m *Model) LaunchQuickActionsForm() tea.Cmd {
 }
 
 // handleQuickActionsResult processes the result from the huh quick actions form
-func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.Model, tea.Cmd) {
+func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.Model {
 	// Exit quick actions mode
 	m.quickActionsMode = false
 
@@ -1410,7 +1413,7 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
 		}
-		return m, nil
+		return m
 	}
 
 	// Execute the selected action
@@ -1422,7 +1425,7 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: action not found")
 		}
-		return m, nil
+		return m
 	}
 
 	// Execute the action handler
@@ -1432,12 +1435,12 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + err.Error())
 		}
-		return m, nil
+		return m
 	}
 
 	if m.statusBar != nil {
 		m.statusBar.SetCustomMessage("Executed: " + action.Name)
 	}
 
-	return m, nil
+	return m
 }
