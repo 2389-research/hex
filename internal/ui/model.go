@@ -59,10 +59,12 @@ const (
 
 // Message represents a chat message in the UI
 type Message struct {
-	Role         string
-	Content      string
-	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
-	Timestamp    time.Time           // When the message was created
+	Role          string
+	Content       string
+	ContentBlock  []core.ContentBlock // For structured content like tool_result blocks
+	Timestamp     time.Time           // When the message was created
+	renderedCache string              // Cached rendered markdown output
+	cachedContent string              // Content that was cached (for invalidation)
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -93,6 +95,11 @@ type conversationEventMsg struct {
 // messageEventMsg wraps a message event
 type messageEventMsg struct {
 	event pubsub.Event[services.Message]
+}
+
+// subscriptionErrorMsg indicates a subscription channel closed
+type subscriptionErrorMsg struct {
+	err error
 }
 
 // Model is the Bubbletea model for interactive mode
@@ -185,6 +192,12 @@ type Model struct {
 	// Phase 4 Task 3: Event subscriptions
 	eventCtx    context.Context
 	eventCancel context.CancelFunc
+
+	// Performance: Throttled viewport updates (60fps max)
+	lastViewportUpdate time.Time // Last time viewport was updated
+
+	// Robustness: Re-entrance guards
+	processingWindowSize bool // Prevent re-entrance in WindowSizeMsg handler
 }
 
 // ToolResult represents a tool execution result for the API
@@ -339,8 +352,13 @@ func (m *Model) SetStatus(status Status) {
 	}
 }
 
-// RenderMessage renders a message using glamour for assistant messages
-func (m *Model) RenderMessage(msg Message) (string, error) {
+// RenderMessage renders a message using glamour for assistant messages with caching
+func (m *Model) RenderMessage(msg *Message) (string, error) {
+	// Performance: Use cached render if available
+	if msg.renderedCache != "" && msg.cachedContent == msg.Content {
+		return msg.renderedCache, nil
+	}
+
 	content := msg.Content
 
 	// Constrain long code blocks to prevent flooding
@@ -352,8 +370,19 @@ func (m *Model) RenderMessage(msg Message) (string, error) {
 			return content, err
 		}
 		// Remove glamour's paragraph indentation (leading 2 spaces on each line)
-		return removeGlamourIndent(rendered), nil
+		rendered = removeGlamourIndent(rendered)
+
+		// Cache the rendered output
+		msg.renderedCache = rendered
+		msg.cachedContent = content
+
+		return rendered, nil
 	}
+
+	// Cache non-assistant messages too (they're already "rendered")
+	msg.renderedCache = content
+	msg.cachedContent = content
+
 	return content, nil
 }
 
@@ -506,15 +535,21 @@ func (m *Model) ClearStreamingText() {
 	m.StreamingText = ""
 }
 
-// ClearContext resets the conversation context and UI state (for /clear command)
-func (m *Model) ClearContext() {
-	// Cancel any active stream
+// cancelStream safely cancels the active stream and clears all stream-related state
+// This prevents memory leaks from unclosed contexts and goroutine leaks
+func (m *Model) cancelStream() {
 	if m.streamCancel != nil {
 		m.streamCancel()
 	}
-	m.streamCtx = nil
 	m.streamCancel = nil
+	m.streamCtx = nil
 	m.streamChan = nil
+}
+
+// ClearContext resets the conversation context and UI state (for /clear command)
+func (m *Model) ClearContext() {
+	// Cancel any active stream
+	m.cancelStream()
 
 	// Clear all messages and streaming state
 	m.Messages = []Message{}
@@ -627,7 +662,9 @@ func waitForConversationEvent(ch <-chan pubsub.Event[services.Conversation]) tea
 	return func() tea.Msg {
 		event, ok := <-ch
 		if !ok {
-			return nil
+			// Channel closed - return error instead of silent nil
+			// This provides visibility when subscriptions fail
+			return subscriptionErrorMsg{err: fmt.Errorf("conversation event subscription closed")}
 		}
 		return conversationEventMsg{event: event}
 	}
@@ -638,7 +675,9 @@ func waitForMessageEvent(ch <-chan pubsub.Event[services.Message]) tea.Cmd {
 	return func() tea.Msg {
 		event, ok := <-ch
 		if !ok {
-			return nil
+			// Channel closed - return error instead of silent nil
+			// This provides visibility when subscriptions fail
+			return subscriptionErrorMsg{err: fmt.Errorf("message event subscription closed")}
 		}
 		return messageEventMsg{event: event}
 	}
@@ -747,6 +786,11 @@ func (m *Model) GetPrunedMessages() []core.Message {
 
 // ApproveToolUse executes ALL pending tools
 func (m *Model) ApproveToolUse() tea.Cmd {
+	// Guard against double-execution from button mashing
+	if m.executingTool {
+		return nil
+	}
+
 	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
@@ -1012,6 +1056,11 @@ func (m *Model) ExecuteQuickAction() error {
 
 // dumpMessages logs all messages with their content blocks for debugging
 func (m *Model) dumpMessages(label string) {
+	// Performance: Only dump messages when HEX_DEBUG is set
+	if os.Getenv("HEX_DEBUG") == "" {
+		return
+	}
+
 	_, _ = fmt.Fprintf(os.Stderr, "\n========== MESSAGE DUMP: %s ==========\n", label)
 	for i, msg := range m.Messages {
 		_, _ = fmt.Fprintf(os.Stderr, "[%d] Role: %s\n", i, msg.Role)
@@ -1104,12 +1153,8 @@ func (m *Model) sendToolResults() tea.Cmd {
 	m.dumpMessages("AFTER adding tool results")
 
 	// Cancel any existing stream context before creating a new one
-	if m.streamCancel != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
-		m.streamCancel()
-	} else {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no old context to cancel\n")
-	}
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
+	m.cancelStream()
 
 	// Create cancellable context for this stream BEFORE the async command
 	ctx, cancel := context.WithCancel(context.Background())
@@ -1358,7 +1403,7 @@ func (m *Model) LaunchQuickActionsForm() tea.Cmd {
 }
 
 // handleQuickActionsResult processes the result from the huh quick actions form
-func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.Model, tea.Cmd) {
+func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.Model {
 	// Exit quick actions mode
 	m.quickActionsMode = false
 
@@ -1368,7 +1413,7 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
 		}
-		return m, nil
+		return m
 	}
 
 	// Execute the selected action
@@ -1380,7 +1425,7 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: action not found")
 		}
-		return m, nil
+		return m
 	}
 
 	// Execute the action handler
@@ -1390,12 +1435,12 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + err.Error())
 		}
-		return m, nil
+		return m
 	}
 
 	if m.statusBar != nil {
 		m.statusBar.SetCustomMessage("Executed: " + action.Name)
 	}
 
-	return m, nil
+	return m
 }

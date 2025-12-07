@@ -51,6 +51,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messageEventMsg:
 		return m.handleMessageEvent(msg)
 
+	// Handle subscription errors
+	case subscriptionErrorMsg:
+		// Display subscription failures so users know data may be stale
+		m.ErrorMessage = fmt.Sprintf("Subscription error: %v", msg.err)
+
+		// Attempt to restart subscriptions after error
+		if m.convSvc != nil && m.msgSvc != nil && m.eventCtx != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "[SUBSCRIPTION] Restarting after error: %v\n", msg.err)
+
+			// Restart subscriptions
+			convEvents := m.convSvc.Subscribe(m.eventCtx)
+			msgEvents := m.msgSvc.Subscribe(m.eventCtx)
+
+			return m, tea.Batch(
+				waitForConversationEvent(convEvents),
+				waitForMessageEvent(msgEvents),
+			)
+		}
+		return m, nil
+
 	// Task 6: Handle streaming chunks
 	case *StreamChunkMsg:
 		return m.handleStreamChunk(msg)
@@ -60,7 +80,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.streamChan = msg.channel
 		m.SetStatus(StatusStreaming)
 		m.updateViewport()
-		return m, m.readStreamChunks(m.streamChan)
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 
 	// Task 12: Handle tool execution results
 	case toolExecutionMsg:
@@ -136,7 +156,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle quick actions form results from huh
 	case *forms.QuickActionsResultMsg:
-		return m.handleQuickActionsResult(msg)
+		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
 		// Forward messages to embedded approval form if in approval mode
@@ -255,31 +275,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Esc key - dismiss suggestions or exit modes (does NOT quit)
+		// Handle Esc key - clear priority order:
+		// 1. Close help (highest priority - modal overlay)
+		// 2. Exit search mode (active editing state)
+		// 3. Dismiss suggestions (transient UI)
+		// 4. Clear quick actions (transient UI)
+		// Does NOT quit - use Ctrl+C for that
 		if msg.Type == tea.KeyEsc {
-			// Phase 6C Task 8: Dismiss suggestions first
-			if m.showSuggestions {
-				m.DismissSuggestions()
+			if m.helpVisible {
+				m.ToggleHelp()
 				return m, nil
 			}
 			if m.SearchMode {
 				m.ExitSearchMode()
 				return m, nil
 			}
-			if m.helpVisible {
-				m.ToggleHelp()
+			if m.showSuggestions {
+				m.DismissSuggestions()
 				return m, nil
 			}
-			// Escape no longer quits - use "exit" or "/exit" commands or Ctrl+C
+			if m.quickActionsMode {
+				m.quickActionsMode = false
+				return m, nil
+			}
+			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
 		}
 
 		// Handle Ctrl+C to quit
 		if msg.Type == tea.KeyCtrlC {
 			// Cancel any active stream before quitting
-			if m.streamCancel != nil {
-				m.streamCancel()
-			}
+			m.cancelStream()
 			// Cancel event subscriptions before quitting
 			if m.eventCancel != nil {
 				m.eventCancel()
@@ -357,9 +383,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Check for exit commands
 				if input == "exit" || input == "/exit" {
 					// Cancel any active stream before quitting
-					if m.streamCancel != nil {
-						m.streamCancel()
-					}
+					m.cancelStream()
 					// Cancel event subscriptions before quitting
 					if m.eventCancel != nil {
 						m.eventCancel()
@@ -491,6 +515,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		// Re-entrance guard: prevent infinite loops from WindowSizeMsg
+		if m.processingWindowSize {
+			return m, nil
+		}
+		m.processingWindowSize = true
+		defer func() { m.processingWindowSize = false }()
+
 		m.Width = msg.Width
 		m.Height = msg.Height
 		m.Input.SetWidth(msg.Width - 4)
@@ -546,32 +577,40 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// CRITICAL: Forward ALL messages to approval form when in approval mode
-	// The form's Init() command generates messages that must be processed
+	// Forward whitelisted messages to approval form when in approval mode
+	// Only forward safe user input messages to prevent message loops
+	// from internal events that the form generates
 	if m.toolApprovalMode && m.toolApprovalForm != nil {
-		// DEBUG: Log what messages the form receives
-		if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-			_, _ = fmt.Fprintf(f, "[APPROVAL_MSG] forwarding message type: %T\n", msg)
-			_ = f.Close()
+		// Whitelist: only forward user input and resize events
+		var shouldForward bool
+		switch msg.(type) {
+		case tea.KeyMsg:
+			// User keyboard input - always safe to forward
+			shouldForward = true
+		case tea.WindowSizeMsg:
+			// Terminal resize - needed for proper rendering
+			shouldForward = true
+		default:
+			// Don't forward internal messages (StreamChunkMsg, etc.)
+			// to prevent potential infinite loops
+			shouldForward = false
 		}
 
-		var formCmd tea.Cmd
-		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-		if formCmd != nil {
-			cmds = append(cmds, formCmd)
-		}
-
-		// Check if form completed after this message
-		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
-			if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-				_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE] form completed after receiving %T\n", msg)
-				_ = f.Close()
+		if shouldForward {
+			var formCmd tea.Cmd
+			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
+			if formCmd != nil {
+				cmds = append(cmds, formCmd)
 			}
-			result := approvalForm.GetDecision()
-			return m.handleApprovalResult(&forms.ApprovalResultMsg{
-				Result: result,
-				Error:  nil,
-			})
+
+			// Check if form completed after this message
+			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
+				result := approvalForm.GetDecision()
+				return m.handleApprovalResult(&forms.ApprovalResultMsg{
+					Result: result,
+					Error:  nil,
+				})
+			}
 		}
 	}
 
@@ -582,8 +621,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// updateViewport renders messages into viewport
+// updateViewport renders messages into viewport with throttling for smooth performance
+// Limits updates to 60fps max to reduce CPU overhead for expensive renders
 func (m *Model) updateViewport() {
+	// Performance: Always throttle viewport updates to 60fps max (16.67ms = 60fps)
+	// Expensive renders happen anytime (glamour markdown, large messages), not just streaming
+	timeSinceLastUpdate := time.Since(m.lastViewportUpdate)
+	if timeSinceLastUpdate < 16*time.Millisecond {
+		// Too soon since last update - skip this update
+		// This prevents excessive CPU usage from rapid updateViewport() calls
+		return
+	}
+
+	// Record the start of this update BEFORE doing the expensive work
+	// This ensures subsequent calls are throttled even if this render takes time
+	m.lastViewportUpdate = time.Now()
+
+	// Render viewport content
 	var content strings.Builder
 
 	// Prepend intro screen if ShowIntro is true
@@ -593,12 +647,11 @@ func (m *Model) updateViewport() {
 	}
 
 	// Render messages with Neo-Terminal style
-	for i, msg := range m.Messages {
-		// Skip messages with empty Content but non-empty ContentBlock (tool result messages)
-		// These are internal API messages that shouldn't be displayed
-		if msg.Content == "" && len(msg.ContentBlock) > 0 {
-			continue
-		}
+	// Safe: BubbleTea guarantees single-threaded Update calls,
+	// so Messages slice won't be modified during this loop.
+	// Taking pointers is safe because no concurrent reallocation can occur.
+	for i := range m.Messages {
+		msg := &m.Messages[i] // Get pointer to allow cache updates
 
 		// Get timestamp (use current time if not set for backward compatibility)
 		timestamp := msg.Timestamp
@@ -606,7 +659,18 @@ func (m *Model) updateViewport() {
 			timestamp = time.Now()
 		}
 
-		// Render message content
+		// Handle messages with ContentBlock (tool results, tool uses)
+		if msg.Content == "" && len(msg.ContentBlock) > 0 {
+			// Render structured content blocks instead of skipping
+			blockContent := m.renderContentBlocks(msg.ContentBlock)
+			if blockContent != "" {
+				neoMessage := m.renderNeoTerminalMessage(msg.Role, blockContent, timestamp)
+				content.WriteString(neoMessage)
+			}
+			continue
+		}
+
+		// Render message content (uses cache for performance)
 		messageContent := msg.Content
 		if msg.Role == "assistant" {
 			// Use glamour for assistant messages
@@ -633,12 +697,13 @@ func (m *Model) updateViewport() {
 			content.WriteString("\n")
 		}
 
-		// Render streaming text
+		// Render streaming text (don't cache - it's still being built)
 		streamContent := m.StreamingText
-		rendered, err := m.RenderMessage(Message{
+		tempMsg := Message{
 			Role:    "assistant",
 			Content: m.StreamingText,
-		})
+		}
+		rendered, err := m.RenderMessage(&tempMsg)
 		if err == nil {
 			streamContent = strings.TrimSpace(rendered)
 		}
@@ -661,247 +726,310 @@ func (m *Model) updateViewport() {
 
 // Task 6: Streaming Integration Functions
 
-// handleStreamChunk processes a streaming chunk message
-func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
-	// Handle errors
-	if msg.Error != nil {
-		logging.DebugIf("Stream error", "error", msg.Error)
-		m.ClearStreamingText()
-		m.SetStatus(StatusError)
-		m.ErrorMessage = msg.Error.Error()
-		m.streamChan = nil
-		m.streamCancel = nil
-		m.streamCtx = nil
-		m.updateViewport()
+// handleStreamError cleans up state when a stream error occurs
+func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
+	if os.Getenv("HEX_DEBUG") != "" {
+		logging.Debug("Stream error", "error", err)
+	}
+	m.ClearStreamingText()
+	m.SetStatus(StatusError)
+	m.ErrorMessage = err.Error()
+	m.streamChan = nil
+	m.streamCancel = nil
+	m.streamCtx = nil
+	m.updateViewport()
+	return m, nil
+}
+
+// handleContentBlockStart processes the start of a content block (tool_use)
+func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	// Only handle tool_use blocks
+	if chunk.ContentBlock == nil || chunk.ContentBlock.Type != "tool_use" {
 		return m, nil
 	}
 
-	chunk := msg.Chunk
+	_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n",
+		chunk.ContentBlock.ID, chunk.ContentBlock.Name)
 
-	// Debug logging: Log chunk type
-	logging.DebugJSON("Stream chunk received", "chunk", chunk, "type", chunk.Type)
+	// Start assembling tool use - Input will come in delta events
+	m.assemblingToolUse = &core.ToolUse{
+		Type:  "tool_use",
+		ID:    chunk.ContentBlock.ID,
+		Name:  chunk.ContentBlock.Name,
+		Input: make(map[string]interface{}), // Will be populated when JSON is complete
+	}
+	m.toolInputJSONBuf = "" // Reset JSON buffer
 
-	// Task 12: Handle tool_use content blocks
-	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
-		if chunk.ContentBlock.Type == "tool_use" {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+	// Update streaming display to show tool call in progress
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+	}
+	m.updateViewport()
 
-			// DON'T commit streaming text yet - it will be included in the same
-			// assistant message as the tool_use blocks when the stream ends
-			// (see lines 584-603 which creates one message with both text and tool_use blocks)
+	// Continue reading from stream
+	return m, m.continueReading()
+}
 
-			// Start assembling tool use - Input will come in delta events
-			m.assemblingToolUse = &core.ToolUse{
-				Type:  "tool_use",
-				ID:    chunk.ContentBlock.ID,
-				Name:  chunk.ContentBlock.Name,
-				Input: make(map[string]interface{}), // Will be populated when JSON is complete
-			}
-			m.toolInputJSONBuf = "" // Reset JSON buffer
-
-			// Update streaming display to show tool call in progress
-			if m.streamingDisplay != nil {
-				m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
-			}
-			m.updateViewport()
-
-			// Continue processing stream to get input_json_delta events
-		}
+// handleContentBlockDelta processes delta events for content blocks (text or tool input JSON)
+func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	if chunk.Delta == nil {
+		return m, nil
 	}
 
-	// Handle input_json_delta events to build tool parameters
-	if chunk.Type == "content_block_delta" && chunk.Delta != nil && m.assemblingToolUse != nil {
-		if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" {
-			// Accumulate JSON chunks
-			m.toolInputJSONBuf += chunk.Delta.PartialJSON
-		}
+	// Handle input_json_delta for tool use parameters
+	if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" && m.assemblingToolUse != nil {
+		m.toolInputJSONBuf += chunk.Delta.PartialJSON
+		// Continue reading
+		return m, m.continueReading()
 	}
 
-	// Handle content_block_stop - tool parameters are complete
-	if chunk.Type == "content_block_stop" && m.assemblingToolUse != nil {
-		// Parse accumulated JSON into Input map
-		if m.toolInputJSONBuf != "" {
-			var input map[string]interface{}
-			if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
-				m.assemblingToolUse.Input = input
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
-			} else {
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
-			}
+	// Handle text delta for assistant message
+	if chunk.Delta.Text != "" {
+		if os.Getenv("HEX_DEBUG") != "" {
+			logging.Debug("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
 		}
-
-		// Mark tool call as complete in streaming display
-		if m.streamingDisplay != nil {
-			m.streamingDisplay.CompleteToolCall(m.assemblingToolUse.ID)
-		}
-		m.updateViewport()
-
-		// Tool use is complete, append to pending tools list
-		// Don't handle yet - wait for message_stop to ensure full response is received
-		m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
-		fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
-			len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
-		m.assemblingToolUse = nil
-		m.toolInputJSONBuf = ""
-		// Continue streaming to get rest of response
-	}
-
-	// Handle content deltas
-	if chunk.Delta != nil && chunk.Delta.Text != "" {
-		logging.DebugIf("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
 		m.AppendStreamingText(chunk.Delta.Text)
-		// Phase 6C: Update streaming display
 		if m.streamingDisplay != nil {
 			m.streamingDisplay.AppendText(chunk.Delta.Text)
 		}
 		m.SetStatus(StatusStreaming)
 		m.updateViewport()
-		// Continue reading from stream
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamChan)
-		}
+		// Continue reading
+		return m, m.continueReading()
+	}
+
+	return m, nil
+}
+
+// handleContentBlockStop processes the completion of a content block (tool parameters complete)
+func (m *Model) handleContentBlockStop() (tea.Model, tea.Cmd) {
+	if m.assemblingToolUse == nil {
 		return m, nil
 	}
 
-	// Handle usage metadata (message_delta event)
-	if chunk.Type == "message_delta" && chunk.Usage != nil {
+	// Parse accumulated JSON into Input map
+	if m.toolInputJSONBuf != "" {
+		var input map[string]interface{}
+		if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
+			m.assemblingToolUse.Input = input
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n",
+				m.assemblingToolUse.ID, input)
+		} else {
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n",
+				m.assemblingToolUse.ID, err)
+		}
+	}
+
+	// Mark tool call as complete in streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.CompleteToolCall(m.assemblingToolUse.ID)
+	}
+	m.updateViewport()
+
+	// Tool use is complete, append to pending tools list
+	m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
+	fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
+		len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
+
+	m.assemblingToolUse = nil
+	m.toolInputJSONBuf = ""
+
+	// Continue reading from stream
+	return m, m.continueReading()
+}
+
+// handleMessageDelta processes usage metadata updates
+func (m *Model) handleMessageDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	if chunk.Usage != nil {
 		m.UpdateTokens(chunk.Usage.InputTokens, chunk.Usage.OutputTokens)
-		// Continue reading from stream
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamChan)
-		}
-		return m, nil
+	}
+	// Continue reading from stream
+	return m, m.continueReading()
+}
+
+// handleMessageStop processes stream completion and handles tool approval or text commit
+func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
+	_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		logging.Debug("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
 	}
 
-	// Handle message completion
-	if chunk.Type == "message_stop" || chunk.Done {
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
+	// Always clear stream state when message completes, regardless of path
+	m.streamChan = nil
+	m.streamCancel = nil
+	m.streamCtx = nil
 
-		logging.DebugIf("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
+	// Path 1: Stream completed with tool uses - need approval
+	if len(m.pendingToolUses) > 0 {
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
 
-		// Commit streaming text, including tool_use blocks if present
-		if len(m.pendingToolUses) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
-
-			logging.DebugIf("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
-
-			// Create assistant message with both text and ALL tool_use content blocks
-			blocks := []core.ContentBlock{}
-
-			// Add text block if there's any text content
-			if m.StreamingText != "" {
-				blocks = append(blocks, core.NewTextBlock(m.StreamingText))
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
-			}
-
-			// Add ALL tool_use blocks
-			for i, toolUse := range m.pendingToolUses {
-				blocks = append(blocks, core.ContentBlock{
-					Type:  "tool_use",
-					ID:    toolUse.ID,
-					Name:  toolUse.Name,
-					Input: toolUse.Input,
-				})
-				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
-					i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
-
-				logging.DebugJSON("Adding tool use to message", "input", toolUse.Input, "tool_id", toolUse.ID, "tool_name", toolUse.Name)
-			}
-
-			// Add assistant message with content blocks
-			assistantMsg := Message{
-				Role:         "assistant",
-				ContentBlock: blocks,
-			}
-			m.Messages = append(m.Messages, assistantMsg)
-
-			logging.DebugJSON("Assistant message added to history", "message", assistantMsg)
-			m.StreamingText = ""
-
-			// Hide intro after first assistant response
-			if m.ShowIntro {
-				m.ShowIntro = false
-			}
-
-			// Reset streaming display (work is done, now waiting for approval)
-			if m.streamingDisplay != nil {
-				m.streamingDisplay.Reset()
-			}
-
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
-
-			// Dump messages after adding assistant message with tool_use blocks
-			m.dumpMessages("AFTER stream completion with tool_use blocks")
-
-			// Check approval rules BEFORE showing form
-			// If user has set "Always Allow" or "Never Allow" for this tool, apply it
-			if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
-				toolName := m.pendingToolUses[0].Name
-				rule := m.approvalRules.Check(toolName)
-
-				switch rule {
-				case approval.RuleAlwaysAllow:
-					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
-					m.updateViewport()
-					return m, m.ApproveToolUse()
-				case approval.RuleNeverAllow:
-					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
-					m.updateViewport()
-					return m, m.DenyToolUse()
-				}
-			}
-
-			// Show tool approval dialog using embedded huh form
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
-			m.toolApprovalMode = true
-			m.updateViewport()
-
-			// Create embedded form for the first pending tool
-			// Note: For now, only handle single tool approval. Batch approval needs refactoring.
-			if len(m.pendingToolUses) > 0 {
-				approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
-				m.toolApprovalForm = approvalForm
-
-				// Initialize the form and immediately send it a WindowSizeMsg
-				// so it knows its dimensions (required for proper rendering in tmux)
-				initCmd := approvalForm.Init()
-
-				// CRITICAL: Must capture the updated model, not discard it
-				updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
-					Width:  m.Width,
-					Height: m.Height,
-				})
-				m.toolApprovalForm = updatedForm
-
-				return m, tea.Batch(initCmd, sizeCmd)
-			}
-			return m, nil
+		if os.Getenv("HEX_DEBUG") != "" {
+			logging.Debug("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
 		}
-		// No tool, just commit regular text
-		m.CommitStreamingText()
+
+		// Create assistant message with both text and ALL tool_use content blocks
+		blocks := []core.ContentBlock{}
+
+		// Add text block if there's any text content
+		if m.StreamingText != "" {
+			blocks = append(blocks, core.NewTextBlock(m.StreamingText))
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
+		}
+
+		// Add ALL tool_use blocks
+		for i, toolUse := range m.pendingToolUses {
+			blocks = append(blocks, core.ContentBlock{
+				Type:  "tool_use",
+				ID:    toolUse.ID,
+				Name:  toolUse.Name,
+				Input: toolUse.Input,
+			})
+			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
+				i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
+
+			if os.Getenv("HEX_DEBUG") != "" {
+				inputJSON, _ := json.Marshal(toolUse.Input)
+				logging.Debug("Adding tool use to message", "tool_id", toolUse.ID, "tool_name", toolUse.Name, "input", string(inputJSON))
+			}
+		}
+
+		// Add assistant message with content blocks
+		assistantMsg := Message{
+			Role:         "assistant",
+			ContentBlock: blocks,
+		}
+		m.Messages = append(m.Messages, assistantMsg)
+
+		if os.Getenv("HEX_DEBUG") != "" {
+			msgJSON, _ := json.Marshal(assistantMsg)
+			logging.Debug("Assistant message added to history", "message", string(msgJSON))
+		}
+		m.StreamingText = ""
 
 		// Hide intro after first assistant response
 		if m.ShowIntro {
 			m.ShowIntro = false
 		}
 
-		// Reset streaming display
+		// Reset streaming display (work is done, now waiting for approval)
 		if m.streamingDisplay != nil {
 			m.streamingDisplay.Reset()
 		}
 
-		m.SetStatus(StatusIdle)
-		m.streamChan = nil
-		m.streamCancel = nil
-		m.streamCtx = nil
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
 
+		// Dump messages after adding assistant message with tool_use blocks
+		m.dumpMessages("AFTER stream completion with tool_use blocks")
+
+		// Check approval rules BEFORE showing form
+		// If user has set "Always Allow" or "Never Allow" for this tool, apply it
+		if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
+			toolName := m.pendingToolUses[0].Name
+			rule := m.approvalRules.Check(toolName)
+
+			switch rule {
+			case approval.RuleAlwaysAllow:
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
+				m.updateViewport()
+				return m, m.ApproveToolUse()
+			case approval.RuleNeverAllow:
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
+				m.updateViewport()
+				return m, m.DenyToolUse()
+			}
+		}
+
+		// Show tool approval dialog using embedded huh form
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
+		m.toolApprovalMode = true
 		m.updateViewport()
+
+		// Create embedded form for the first pending tool
+		// Note: For now, only handle single tool approval. Batch approval needs refactoring.
+		if len(m.pendingToolUses) > 0 {
+			approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
+			m.toolApprovalForm = approvalForm
+
+			// Initialize the form and immediately send it a WindowSizeMsg
+			// so it knows its dimensions (required for proper rendering in tmux)
+			initCmd := approvalForm.Init()
+
+			// CRITICAL: Must capture the updated model, not discard it
+			updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
+				Width:  m.Width,
+				Height: m.Height,
+			})
+			m.toolApprovalForm = updatedForm
+
+			return m, tea.Batch(initCmd, sizeCmd)
+		}
 		return m, nil
+	}
+
+	// Path 2: No tools, just commit regular text
+	m.CommitStreamingText()
+
+	// Hide intro after first assistant response
+	if m.ShowIntro {
+		m.ShowIntro = false
+	}
+
+	// Reset streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.Reset()
+	}
+
+	m.SetStatus(StatusIdle)
+	// Stream state already cleared at start of handleMessageStop()
+
+	m.updateViewport()
+	return m, nil
+}
+
+// handleStreamChunk processes a streaming chunk message
+func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
+	// Handle errors
+	if msg.Error != nil {
+		return m.handleStreamError(msg.Error)
+	}
+
+	chunk := msg.Chunk
+
+	// Debug logging: Log chunk type
+	if os.Getenv("HEX_DEBUG") != "" {
+		chunkJSON, _ := json.Marshal(chunk)
+		logging.Debug("Stream chunk received", "type", chunk.Type, "chunk", string(chunkJSON))
+	}
+
+	// Handle tool_use content block start
+	if chunk.Type == "content_block_start" {
+		return m.handleContentBlockStart(chunk)
+	}
+
+	// Handle content block deltas (text or tool input JSON)
+	if chunk.Type == "content_block_delta" {
+		return m.handleContentBlockDelta(chunk)
+	}
+
+	// Handle content_block_stop - tool parameters complete
+	if chunk.Type == "content_block_stop" {
+		return m.handleContentBlockStop()
+	}
+
+	// Handle usage metadata (message_delta event)
+	if chunk.Type == "message_delta" {
+		return m.handleMessageDelta(chunk)
+	}
+
+	// Handle message completion
+	if chunk.Type == "message_stop" || chunk.Done {
+		return m.handleMessageStop()
 	}
 
 	// For other chunk types, continue reading
 	if m.streamChan != nil {
-		return m, m.readStreamChunks(m.streamChan)
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 	}
 
 	return m, nil
@@ -929,9 +1057,7 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 
 	// Cancel any existing stream context before creating a new one
-	if m.streamCancel != nil {
-		m.streamCancel()
-	}
+	m.cancelStream()
 
 	// Create cancellable context for this stream BEFORE the async command
 	ctx, cancel := context.WithCancel(context.Background())
@@ -943,6 +1069,14 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	apiClient := m.apiClient
 
 	return func() tea.Msg {
+		// Defensive check: ensure context hasn't been cancelled between
+		// context creation and when this async command executes
+		select {
+		case <-ctx.Done():
+			return &StreamChunkMsg{Error: ctx.Err()}
+		default:
+		}
+
 		// Start stream with the context we created
 		streamChan, err := apiClient.CreateMessageStream(ctx, req)
 		if err != nil {
@@ -953,11 +1087,21 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 }
 
+// continueReading is a helper that safely continues reading from the stream
+// Consolidates nil checks for both context and channel
+func (m *Model) continueReading() tea.Cmd {
+	if m.streamChan == nil || m.streamCtx == nil {
+		return nil
+	}
+	return m.readStreamChunks(m.streamCtx, m.streamChan)
+}
+
 // readStreamChunks reads from the stream channel and returns messages
-func (m *Model) readStreamChunks(streamChan <-chan *core.StreamChunk) tea.Cmd {
+// Uses context to handle cancellation and prevent goroutine leaks
+func (m *Model) readStreamChunks(ctx context.Context, streamChan <-chan *core.StreamChunk) tea.Cmd {
 	return func() tea.Msg {
-		// Defensive check for nil channel
-		if streamChan == nil {
+		// Defensive check for nil channel or context
+		if streamChan == nil || ctx == nil {
 			return &StreamChunkMsg{
 				Chunk: &core.StreamChunk{
 					Type: "message_stop",
@@ -966,20 +1110,28 @@ func (m *Model) readStreamChunks(streamChan <-chan *core.StreamChunk) tea.Cmd {
 			}
 		}
 
-		// Read next chunk
-		chunk, ok := <-streamChan
-		if !ok {
-			// Channel closed, stream is done
+		// Read next chunk with context cancellation support
+		// This prevents blocking forever if context is cancelled
+		select {
+		case chunk, ok := <-streamChan:
+			if !ok {
+				// Channel closed, stream is done
+				return &StreamChunkMsg{
+					Chunk: &core.StreamChunk{
+						Type: "message_stop",
+						Done: true,
+					},
+				}
+			}
+			// Return this chunk
+			return &StreamChunkMsg{Chunk: chunk}
+
+		case <-ctx.Done():
+			// Context cancelled - clean shutdown
 			return &StreamChunkMsg{
-				Chunk: &core.StreamChunk{
-					Type: "message_stop",
-					Done: true,
-				},
+				Error: ctx.Err(),
 			}
 		}
-
-		// Return this chunk
-		return &StreamChunkMsg{Chunk: chunk}
 	}
 }
 
@@ -1031,6 +1183,63 @@ func (m *Model) updateConversationTitle(title string) error {
 }
 
 // Task 12: Tool result formatting
+
+// renderContentBlocks formats ContentBlock array for display (tool results, tool uses)
+func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
+	if len(blocks) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	for i, block := range blocks {
+		switch block.Type {
+		case "tool_result":
+			// Render tool result with visual indicator
+			b.WriteString(m.theme.ToolResult.Render("🔧 Tool Result"))
+			if block.ToolUseID != "" {
+				b.WriteString(m.theme.Muted.Render(fmt.Sprintf(" [%s]", block.ToolUseID)))
+			}
+			b.WriteString(":\n")
+			if block.Content != "" {
+				// Truncate very long outputs
+				content := block.Content
+				if len(content) > 1000 {
+					content = content[:997] + "..."
+				}
+				b.WriteString(content)
+			}
+
+		case "tool_use":
+			// Render tool use request with visual indicator
+			b.WriteString(m.theme.ToolCall.Render("🛠 Tool Call: " + block.Name))
+			if block.ID != "" {
+				b.WriteString(m.theme.Muted.Render(fmt.Sprintf(" [%s]", block.ID)))
+			}
+			if len(block.Input) > 0 {
+				b.WriteString("\nParameters:\n")
+				// Format parameters nicely
+				for key, value := range block.Input {
+					valueStr := fmt.Sprintf("%v", value)
+					if len(valueStr) > 100 {
+						valueStr = valueStr[:97] + "..."
+					}
+					b.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
+				}
+			}
+
+		case "text":
+			// Regular text block
+			b.WriteString(block.Text)
+		}
+
+		// Add spacing between blocks
+		if i < len(blocks)-1 {
+			b.WriteString("\n")
+		}
+	}
+
+	return b.String()
+}
 
 // formatToolResult formats a tool result for display
 func formatToolResult(result *tools.Result) string {
