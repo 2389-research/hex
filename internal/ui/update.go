@@ -60,7 +60,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.streamChan = msg.channel
 		m.SetStatus(StatusStreaming)
 		m.updateViewport()
-		return m, m.readStreamChunks(m.streamChan)
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 
 	// Task 12: Handle tool execution results
 	case toolExecutionMsg:
@@ -795,7 +795,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		m.updateViewport()
 		// Continue reading from stream
 		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamChan)
+			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 		}
 		return m, nil
 	}
@@ -805,7 +805,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		m.UpdateTokens(chunk.Usage.InputTokens, chunk.Usage.OutputTokens)
 		// Continue reading from stream
 		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamChan)
+			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 		}
 		return m, nil
 	}
@@ -948,7 +948,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// For other chunk types, continue reading
 	if m.streamChan != nil {
-		return m, m.readStreamChunks(m.streamChan)
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 	}
 
 	return m, nil
@@ -999,7 +999,8 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 }
 
 // readStreamChunks reads from the stream channel and returns messages
-func (m *Model) readStreamChunks(streamChan <-chan *core.StreamChunk) tea.Cmd {
+// Uses context to handle cancellation and prevent goroutine leaks
+func (m *Model) readStreamChunks(ctx context.Context, streamChan <-chan *core.StreamChunk) tea.Cmd {
 	return func() tea.Msg {
 		// Defensive check for nil channel
 		if streamChan == nil {
@@ -1011,20 +1012,28 @@ func (m *Model) readStreamChunks(streamChan <-chan *core.StreamChunk) tea.Cmd {
 			}
 		}
 
-		// Read next chunk
-		chunk, ok := <-streamChan
-		if !ok {
-			// Channel closed, stream is done
+		// Read next chunk with context cancellation support
+		// This prevents blocking forever if context is cancelled
+		select {
+		case chunk, ok := <-streamChan:
+			if !ok {
+				// Channel closed, stream is done
+				return &StreamChunkMsg{
+					Chunk: &core.StreamChunk{
+						Type: "message_stop",
+						Done: true,
+					},
+				}
+			}
+			// Return this chunk
+			return &StreamChunkMsg{Chunk: chunk}
+
+		case <-ctx.Done():
+			// Context cancelled - clean shutdown
 			return &StreamChunkMsg{
-				Chunk: &core.StreamChunk{
-					Type: "message_stop",
-					Done: true,
-				},
+				Error: ctx.Err(),
 			}
 		}
-
-		// Return this chunk
-		return &StreamChunkMsg{Chunk: chunk}
 	}
 }
 
