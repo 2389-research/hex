@@ -58,7 +58,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Attempt to restart subscriptions after error
 		if m.convSvc != nil && m.msgSvc != nil && m.eventCtx != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "[SUBSCRIPTION] Restarting after error: %v\n", msg.err)
+			if os.Getenv("HEX_DEBUG") != "" {
+				_, _ = fmt.Fprintf(os.Stderr, "[SUBSCRIPTION] Restarting after error: %v\n", msg.err)
+			}
 
 			// Restart subscriptions
 			convEvents := m.convSvc.Subscribe(m.eventCtx)
