@@ -550,32 +550,40 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// CRITICAL: Forward ALL messages to approval form when in approval mode
-	// The form's Init() command generates messages that must be processed
+	// Forward whitelisted messages to approval form when in approval mode
+	// Only forward safe user input messages to prevent message loops
+	// from internal events that the form generates
 	if m.toolApprovalMode && m.toolApprovalForm != nil {
-		// DEBUG: Log what messages the form receives
-		if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-			_, _ = fmt.Fprintf(f, "[APPROVAL_MSG] forwarding message type: %T\n", msg)
-			_ = f.Close()
+		// Whitelist: only forward user input and resize events
+		var shouldForward bool
+		switch msg.(type) {
+		case tea.KeyMsg:
+			// User keyboard input - always safe to forward
+			shouldForward = true
+		case tea.WindowSizeMsg:
+			// Terminal resize - needed for proper rendering
+			shouldForward = true
+		default:
+			// Don't forward internal messages (StreamChunkMsg, etc.)
+			// to prevent potential infinite loops
+			shouldForward = false
 		}
 
-		var formCmd tea.Cmd
-		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-		if formCmd != nil {
-			cmds = append(cmds, formCmd)
-		}
-
-		// Check if form completed after this message
-		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
-			if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-				_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE] form completed after receiving %T\n", msg)
-				_ = f.Close()
+		if shouldForward {
+			var formCmd tea.Cmd
+			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
+			if formCmd != nil {
+				cmds = append(cmds, formCmd)
 			}
-			result := approvalForm.GetDecision()
-			return m.handleApprovalResult(&forms.ApprovalResultMsg{
-				Result: result,
-				Error:  nil,
-			})
+
+			// Check if form completed after this message
+			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
+				result := approvalForm.GetDecision()
+				return m.handleApprovalResult(&forms.ApprovalResultMsg{
+					Result: result,
+					Error:  nil,
+				})
+			}
 		}
 	}
 
