@@ -840,6 +840,143 @@ func (m *Model) handleMessageDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd)
 	return m, nil
 }
 
+// handleMessageStop processes stream completion and handles tool approval or text commit
+func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
+	_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		logging.Debug("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
+	}
+
+	// Path 1: Stream completed with tool uses - need approval
+	if len(m.pendingToolUses) > 0 {
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
+
+		if os.Getenv("HEX_DEBUG") != "" {
+			logging.Debug("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
+		}
+
+		// Create assistant message with both text and ALL tool_use content blocks
+		blocks := []core.ContentBlock{}
+
+		// Add text block if there's any text content
+		if m.StreamingText != "" {
+			blocks = append(blocks, core.NewTextBlock(m.StreamingText))
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
+		}
+
+		// Add ALL tool_use blocks
+		for i, toolUse := range m.pendingToolUses {
+			blocks = append(blocks, core.ContentBlock{
+				Type:  "tool_use",
+				ID:    toolUse.ID,
+				Name:  toolUse.Name,
+				Input: toolUse.Input,
+			})
+			fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
+				i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
+
+			if os.Getenv("HEX_DEBUG") != "" {
+				inputJSON, _ := json.Marshal(toolUse.Input)
+				logging.Debug("Adding tool use to message", "tool_id", toolUse.ID, "tool_name", toolUse.Name, "input", string(inputJSON))
+			}
+		}
+
+		// Add assistant message with content blocks
+		assistantMsg := Message{
+			Role:         "assistant",
+			ContentBlock: blocks,
+		}
+		m.Messages = append(m.Messages, assistantMsg)
+
+		if os.Getenv("HEX_DEBUG") != "" {
+			msgJSON, _ := json.Marshal(assistantMsg)
+			logging.Debug("Assistant message added to history", "message", string(msgJSON))
+		}
+		m.StreamingText = ""
+
+		// Hide intro after first assistant response
+		if m.ShowIntro {
+			m.ShowIntro = false
+		}
+
+		// Reset streaming display (work is done, now waiting for approval)
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.Reset()
+		}
+
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
+
+		// Dump messages after adding assistant message with tool_use blocks
+		m.dumpMessages("AFTER stream completion with tool_use blocks")
+
+		// Check approval rules BEFORE showing form
+		// If user has set "Always Allow" or "Never Allow" for this tool, apply it
+		if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
+			toolName := m.pendingToolUses[0].Name
+			rule := m.approvalRules.Check(toolName)
+
+			switch rule {
+			case approval.RuleAlwaysAllow:
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
+				m.updateViewport()
+				return m, m.ApproveToolUse()
+			case approval.RuleNeverAllow:
+				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
+				m.updateViewport()
+				return m, m.DenyToolUse()
+			}
+		}
+
+		// Show tool approval dialog using embedded huh form
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
+		m.toolApprovalMode = true
+		m.updateViewport()
+
+		// Create embedded form for the first pending tool
+		// Note: For now, only handle single tool approval. Batch approval needs refactoring.
+		if len(m.pendingToolUses) > 0 {
+			approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
+			m.toolApprovalForm = approvalForm
+
+			// Initialize the form and immediately send it a WindowSizeMsg
+			// so it knows its dimensions (required for proper rendering in tmux)
+			initCmd := approvalForm.Init()
+
+			// CRITICAL: Must capture the updated model, not discard it
+			updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
+				Width:  m.Width,
+				Height: m.Height,
+			})
+			m.toolApprovalForm = updatedForm
+
+			return m, tea.Batch(initCmd, sizeCmd)
+		}
+		return m, nil
+	}
+
+	// Path 2: No tools, just commit regular text
+	m.CommitStreamingText()
+
+	// Hide intro after first assistant response
+	if m.ShowIntro {
+		m.ShowIntro = false
+	}
+
+	// Reset streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.Reset()
+	}
+
+	m.SetStatus(StatusIdle)
+	m.streamChan = nil
+	m.streamCancel = nil
+	m.streamCtx = nil
+
+	m.updateViewport()
+	return m, nil
+}
+
 // handleStreamChunk processes a streaming chunk message
 func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Handle errors
@@ -877,138 +1014,7 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 
 	// Handle message completion
 	if chunk.Type == "message_stop" || chunk.Done {
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP] message stream ended, pendingToolUses count=%d\n", len(m.pendingToolUses))
-
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Message stream stopped", "pending_tools", len(m.pendingToolUses), "streaming_text_len", len(m.StreamingText))
-		}
-
-		// Commit streaming text, including tool_use blocks if present
-		if len(m.pendingToolUses) > 0 {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] creating assistant message with %d tool_use block(s)\n", len(m.pendingToolUses))
-
-			if os.Getenv("HEX_DEBUG") != "" {
-				logging.Debug("Creating assistant message with tool uses", "tool_count", len(m.pendingToolUses), "text_length", len(m.StreamingText))
-			}
-
-			// Create assistant message with both text and ALL tool_use content blocks
-			blocks := []core.ContentBlock{}
-
-			// Add text block if there's any text content
-			if m.StreamingText != "" {
-				blocks = append(blocks, core.NewTextBlock(m.StreamingText))
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] including text block (%d chars)\n", len(m.StreamingText))
-			}
-
-			// Add ALL tool_use blocks
-			for i, toolUse := range m.pendingToolUses {
-				blocks = append(blocks, core.ContentBlock{
-					Type:  "tool_use",
-					ID:    toolUse.ID,
-					Name:  toolUse.Name,
-					Input: toolUse.Input,
-				})
-				fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] added tool_use block %d/%d: id=%s, name=%s\n",
-					i+1, len(m.pendingToolUses), toolUse.ID, toolUse.Name)
-
-				if os.Getenv("HEX_DEBUG") != "" {
-					inputJSON, _ := json.Marshal(toolUse.Input)
-					logging.Debug("Adding tool use to message", "tool_id", toolUse.ID, "tool_name", toolUse.Name, "input", string(inputJSON))
-				}
-			}
-
-			// Add assistant message with content blocks
-			assistantMsg := Message{
-				Role:         "assistant",
-				ContentBlock: blocks,
-			}
-			m.Messages = append(m.Messages, assistantMsg)
-
-			if os.Getenv("HEX_DEBUG") != "" {
-				msgJSON, _ := json.Marshal(assistantMsg)
-				logging.Debug("Assistant message added to history", "message", string(msgJSON))
-			}
-			m.StreamingText = ""
-
-			// Hide intro after first assistant response
-			if m.ShowIntro {
-				m.ShowIntro = false
-			}
-
-			// Reset streaming display (work is done, now waiting for approval)
-			if m.streamingDisplay != nil {
-				m.streamingDisplay.Reset()
-			}
-
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] assistant message added to history (total messages: %d)\n", len(m.Messages))
-
-			// Dump messages after adding assistant message with tool_use blocks
-			m.dumpMessages("AFTER stream completion with tool_use blocks")
-
-			// Check approval rules BEFORE showing form
-			// If user has set "Always Allow" or "Never Allow" for this tool, apply it
-			if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
-				toolName := m.pendingToolUses[0].Name
-				rule := m.approvalRules.Check(toolName)
-
-				switch rule {
-				case approval.RuleAlwaysAllow:
-					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
-					m.updateViewport()
-					return m, m.ApproveToolUse()
-				case approval.RuleNeverAllow:
-					_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
-					m.updateViewport()
-					return m, m.DenyToolUse()
-				}
-			}
-
-			// Show tool approval dialog using embedded huh form
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
-			m.toolApprovalMode = true
-			m.updateViewport()
-
-			// Create embedded form for the first pending tool
-			// Note: For now, only handle single tool approval. Batch approval needs refactoring.
-			if len(m.pendingToolUses) > 0 {
-				approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
-				m.toolApprovalForm = approvalForm
-
-				// Initialize the form and immediately send it a WindowSizeMsg
-				// so it knows its dimensions (required for proper rendering in tmux)
-				initCmd := approvalForm.Init()
-
-				// CRITICAL: Must capture the updated model, not discard it
-				updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
-					Width:  m.Width,
-					Height: m.Height,
-				})
-				m.toolApprovalForm = updatedForm
-
-				return m, tea.Batch(initCmd, sizeCmd)
-			}
-			return m, nil
-		}
-		// No tool, just commit regular text
-		m.CommitStreamingText()
-
-		// Hide intro after first assistant response
-		if m.ShowIntro {
-			m.ShowIntro = false
-		}
-
-		// Reset streaming display
-		if m.streamingDisplay != nil {
-			m.streamingDisplay.Reset()
-		}
-
-		m.SetStatus(StatusIdle)
-		m.streamChan = nil
-		m.streamCancel = nil
-		m.streamCtx = nil
-
-		m.updateViewport()
-		return m, nil
+		return m.handleMessageStop()
 	}
 
 	// For other chunk types, continue reading
