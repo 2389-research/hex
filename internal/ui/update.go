@@ -255,22 +255,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Esc key - dismiss suggestions or exit modes (does NOT quit)
+		// Handle Esc key - clear priority order:
+		// 1. Close help (highest priority - modal overlay)
+		// 2. Exit search mode (active editing state)
+		// 3. Dismiss suggestions (transient UI)
+		// 4. Clear quick actions (transient UI)
+		// Does NOT quit - use Ctrl+C for that
 		if msg.Type == tea.KeyEsc {
-			// Phase 6C Task 8: Dismiss suggestions first
-			if m.showSuggestions {
-				m.DismissSuggestions()
+			if m.helpVisible {
+				m.ToggleHelp()
 				return m, nil
 			}
 			if m.SearchMode {
 				m.ExitSearchMode()
 				return m, nil
 			}
-			if m.helpVisible {
-				m.ToggleHelp()
+			if m.showSuggestions {
+				m.DismissSuggestions()
 				return m, nil
 			}
-			// Escape no longer quits - use "exit" or "/exit" commands or Ctrl+C
+			if m.quickActionsMode {
+				m.quickActionsMode = false
+				return m, nil
+			}
+			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
 		}
 
