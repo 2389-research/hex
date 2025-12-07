@@ -612,6 +612,9 @@ func (m *Model) updateViewport() {
 	}
 
 	// Render messages with Neo-Terminal style
+	// Safe: BubbleTea guarantees single-threaded Update calls,
+	// so Messages slice won't be modified during this loop.
+	// Taking pointers is safe because no concurrent reallocation can occur.
 	for i := range m.Messages {
 		msg := &m.Messages[i] // Get pointer to allow cache updates
 
