@@ -64,7 +64,7 @@ type Message struct {
 	ContentBlock  []core.ContentBlock // For structured content like tool_result blocks
 	Timestamp     time.Time           // When the message was created
 	renderedCache string              // Cached rendered markdown output
-	cacheVersion  int                 // Incremented when content changes (for invalidation)
+	cachedContent string              // Content that was cached (for invalidation)
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -347,7 +347,7 @@ func (m *Model) SetStatus(status Status) {
 // RenderMessage renders a message using glamour for assistant messages with caching
 func (m *Model) RenderMessage(msg *Message) (string, error) {
 	// Performance: Use cached render if available
-	if msg.renderedCache != "" {
+	if msg.renderedCache != "" && msg.cachedContent == msg.Content {
 		return msg.renderedCache, nil
 	}
 
@@ -366,14 +366,14 @@ func (m *Model) RenderMessage(msg *Message) (string, error) {
 
 		// Cache the rendered output
 		msg.renderedCache = rendered
-		msg.cacheVersion++
+		msg.cachedContent = content
 
 		return rendered, nil
 	}
 
 	// Cache non-assistant messages too (they're already "rendered")
 	msg.renderedCache = content
-	msg.cacheVersion++
+	msg.cachedContent = content
 
 	return content, nil
 }
