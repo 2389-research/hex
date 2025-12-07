@@ -5,6 +5,34 @@
 
 ---
 
+## Recent Work: TUI Bug Fixes (2025-12-07)
+
+Fixed 4 critical/high severity bugs from comprehensive TUI code review:
+
+1. ✅ **Tool Results Visibility** (commit 6009c06)
+   - Tool execution results now visible to users with visual indicators
+   - Added 🔧 for tool results, 🛠 for tool calls
+   - Fixed transparency violation where users couldn't see what tools did
+
+2. ✅ **Stream Cancellation Memory Leaks** (commit 2d23c99)
+   - Created `cancelStream()` helper for proper cleanup
+   - Fixed 5 locations that leaked contexts and goroutines
+   - Prevents memory leaks during streaming operations
+
+3. ✅ **Button Mashing Vulnerability** (commit 9c0f0a2)
+   - Added guard in `ApproveToolUse()` to prevent double-execution
+   - Protects against accidental multiple tool runs from rapid key presses
+   - Critical for destructive operations
+
+4. ✅ **Viewport Throttling** (commit 1e9457b)
+   - Throttling now applies to ALL viewport updates, not just streaming
+   - Prevents CPU spikes from expensive glamour markdown renders
+   - 60fps limit for smooth performance
+
+**Methodology**: These fixes were made using direct file editing (Edit tool) because we were fixing bugs IN the TUI itself. Going forward, use hex for all development work.
+
+---
+
 ## Core Principle: Hex First, Always
 
 When working on the hex codebase, **YOU MUST USE HEX ITSELF** for all development tasks. This is non-negotiable.
