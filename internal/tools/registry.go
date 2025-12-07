@@ -215,6 +215,29 @@ func getToolSchema(toolName string) map[string]interface{} {
 			},
 			"required": []string{"pattern"},
 		}
+	case "edit":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "The absolute path to the file to modify",
+				},
+				"old_string": map[string]interface{}{
+					"type":        "string",
+					"description": "The exact text to replace (must be unique in file unless replace_all is true)",
+				},
+				"new_string": map[string]interface{}{
+					"type":        "string",
+					"description": "The text to replace it with (must be different from old_string)",
+				},
+				"replace_all": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Replace all occurrences of old_string (default false). Use for renaming across file.",
+				},
+			},
+			"required": []string{"file_path", "old_string", "new_string"},
+		}
 	default:
 		// For other tools, return minimal schema
 		return map[string]interface{}{
