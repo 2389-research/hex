@@ -101,7 +101,7 @@ func TestMarkdownRendering(t *testing.T) {
 	model.AddMessage("assistant", "# Header\n\n**bold** and *italic*")
 
 	// Render should use glamour for assistant messages
-	rendered, err := model.RenderMessage(model.Messages[0])
+	rendered, err := model.RenderMessage(&model.Messages[0])
 	assert.NoError(t, err)
 	assert.NotEmpty(t, rendered)
 	// Rendered output should be different from raw markdown

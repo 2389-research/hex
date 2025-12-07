@@ -59,10 +59,12 @@ const (
 
 // Message represents a chat message in the UI
 type Message struct {
-	Role         string
-	Content      string
-	ContentBlock []core.ContentBlock // For structured content like tool_result blocks
-	Timestamp    time.Time           // When the message was created
+	Role          string
+	Content       string
+	ContentBlock  []core.ContentBlock // For structured content like tool_result blocks
+	Timestamp     time.Time           // When the message was created
+	renderedCache string              // Cached rendered markdown output
+	cacheVersion  int                 // Incremented when content changes (for invalidation)
 }
 
 // StreamChunk is an alias for core.StreamChunk for use in UI
@@ -339,8 +341,13 @@ func (m *Model) SetStatus(status Status) {
 	}
 }
 
-// RenderMessage renders a message using glamour for assistant messages
-func (m *Model) RenderMessage(msg Message) (string, error) {
+// RenderMessage renders a message using glamour for assistant messages with caching
+func (m *Model) RenderMessage(msg *Message) (string, error) {
+	// Performance: Use cached render if available
+	if msg.renderedCache != "" {
+		return msg.renderedCache, nil
+	}
+
 	content := msg.Content
 
 	// Constrain long code blocks to prevent flooding
@@ -352,8 +359,19 @@ func (m *Model) RenderMessage(msg Message) (string, error) {
 			return content, err
 		}
 		// Remove glamour's paragraph indentation (leading 2 spaces on each line)
-		return removeGlamourIndent(rendered), nil
+		rendered = removeGlamourIndent(rendered)
+
+		// Cache the rendered output
+		msg.renderedCache = rendered
+		msg.cacheVersion++
+
+		return rendered, nil
 	}
+
+	// Cache non-assistant messages too (they're already "rendered")
+	msg.renderedCache = content
+	msg.cacheVersion++
+
 	return content, nil
 }
 

@@ -582,7 +582,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// updateViewport renders messages into viewport
+// updateViewport renders messages into viewport (now with caching for performance)
 func (m *Model) updateViewport() {
 	var content strings.Builder
 
@@ -593,7 +593,8 @@ func (m *Model) updateViewport() {
 	}
 
 	// Render messages with Neo-Terminal style
-	for i, msg := range m.Messages {
+	for i := range m.Messages {
+		msg := &m.Messages[i] // Get pointer to allow cache updates
 		// Skip messages with empty Content but non-empty ContentBlock (tool result messages)
 		// These are internal API messages that shouldn't be displayed
 		if msg.Content == "" && len(msg.ContentBlock) > 0 {
@@ -606,7 +607,7 @@ func (m *Model) updateViewport() {
 			timestamp = time.Now()
 		}
 
-		// Render message content
+		// Render message content (uses cache for performance)
 		messageContent := msg.Content
 		if msg.Role == "assistant" {
 			// Use glamour for assistant messages
@@ -633,12 +634,13 @@ func (m *Model) updateViewport() {
 			content.WriteString("\n")
 		}
 
-		// Render streaming text
+		// Render streaming text (don't cache - it's still being built)
 		streamContent := m.StreamingText
-		rendered, err := m.RenderMessage(Message{
+		tempMsg := Message{
 			Role:    "assistant",
 			Content: m.StreamingText,
-		})
+		}
+		rendered, err := m.RenderMessage(&tempMsg)
 		if err == nil {
 			streamContent = strings.TrimSpace(rendered)
 		}
