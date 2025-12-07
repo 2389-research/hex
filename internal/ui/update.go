@@ -578,19 +578,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// updateViewport renders messages into viewport with throttling for smooth streaming
-// Limits updates to 60fps max during rapid streaming to reduce CPU overhead
+// updateViewport renders messages into viewport with throttling for smooth performance
+// Limits updates to 60fps max to reduce CPU overhead for expensive renders
 func (m *Model) updateViewport() {
-	// Performance: Throttle viewport updates to 60fps max during streaming
-	// Check if enough time has passed since last update (16.67ms = 60fps)
+	// Performance: Always throttle viewport updates to 60fps max (16.67ms = 60fps)
+	// Expensive renders happen anytime (glamour markdown, large messages), not just streaming
 	timeSinceLastUpdate := time.Since(m.lastViewportUpdate)
-	if m.Streaming && timeSinceLastUpdate < 16*time.Millisecond {
-		// Too soon since last update during streaming - skip this update
-		// Next streaming chunk will trigger another update
+	if timeSinceLastUpdate < 16*time.Millisecond {
+		// Too soon since last update - skip this update
+		// This prevents excessive CPU usage from rapid updateViewport() calls
 		return
 	}
 
-	// Enough time has passed (or not streaming), update now
+	// Record the start of this update BEFORE doing the expensive work
+	// This ensures subsequent calls are throttled even if this render takes time
 	m.lastViewportUpdate = time.Now()
 
 	// Render viewport content
