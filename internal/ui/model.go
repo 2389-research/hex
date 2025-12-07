@@ -774,6 +774,11 @@ func (m *Model) GetPrunedMessages() []core.Message {
 
 // ApproveToolUse executes ALL pending tools
 func (m *Model) ApproveToolUse() tea.Cmd {
+	// Guard against double-execution from button mashing
+	if m.executingTool {
+		return nil
+	}
+
 	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
