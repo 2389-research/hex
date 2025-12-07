@@ -277,9 +277,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Handle Ctrl+C to quit
 		if msg.Type == tea.KeyCtrlC {
 			// Cancel any active stream before quitting
-			if m.streamCancel != nil {
-				m.streamCancel()
-			}
+			m.cancelStream()
 			// Cancel event subscriptions before quitting
 			if m.eventCancel != nil {
 				m.eventCancel()
@@ -357,9 +355,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Check for exit commands
 				if input == "exit" || input == "/exit" {
 					// Cancel any active stream before quitting
-					if m.streamCancel != nil {
-						m.streamCancel()
-					}
+					m.cancelStream()
 					// Cancel event subscriptions before quitting
 					if m.eventCancel != nil {
 						m.eventCancel()
@@ -968,9 +964,7 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 
 	// Cancel any existing stream context before creating a new one
-	if m.streamCancel != nil {
-		m.streamCancel()
-	}
+	m.cancelStream()
 
 	// Create cancellable context for this stream BEFORE the async command
 	ctx, cancel := context.WithCancel(context.Background())

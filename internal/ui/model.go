@@ -527,15 +527,21 @@ func (m *Model) ClearStreamingText() {
 	m.StreamingText = ""
 }
 
-// ClearContext resets the conversation context and UI state (for /clear command)
-func (m *Model) ClearContext() {
-	// Cancel any active stream
+// cancelStream safely cancels the active stream and clears all stream-related state
+// This prevents memory leaks from unclosed contexts and goroutine leaks
+func (m *Model) cancelStream() {
 	if m.streamCancel != nil {
 		m.streamCancel()
 	}
-	m.streamCtx = nil
 	m.streamCancel = nil
+	m.streamCtx = nil
 	m.streamChan = nil
+}
+
+// ClearContext resets the conversation context and UI state (for /clear command)
+func (m *Model) ClearContext() {
+	// Cancel any active stream
+	m.cancelStream()
 
 	// Clear all messages and streaming state
 	m.Messages = []Message{}
@@ -1130,12 +1136,8 @@ func (m *Model) sendToolResults() tea.Cmd {
 	m.dumpMessages("AFTER adding tool results")
 
 	// Cancel any existing stream context before creating a new one
-	if m.streamCancel != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
-		m.streamCancel()
-	} else {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no old context to cancel\n")
-	}
+	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
+	m.cancelStream()
 
 	// Create cancellable context for this stream BEFORE the async command
 	ctx, cancel := context.WithCancel(context.Background())
