@@ -187,6 +187,9 @@ type Model struct {
 	// Phase 4 Task 3: Event subscriptions
 	eventCtx    context.Context
 	eventCancel context.CancelFunc
+
+	// Performance: Throttled viewport updates (60fps max)
+	lastViewportUpdate time.Time // Last time viewport was updated
 }
 
 // ToolResult represents a tool execution result for the API
@@ -1030,6 +1033,11 @@ func (m *Model) ExecuteQuickAction() error {
 
 // dumpMessages logs all messages with their content blocks for debugging
 func (m *Model) dumpMessages(label string) {
+	// Performance: Only dump messages when HEX_DEBUG is set
+	if os.Getenv("HEX_DEBUG") == "" {
+		return
+	}
+
 	_, _ = fmt.Fprintf(os.Stderr, "\n========== MESSAGE DUMP: %s ==========\n", label)
 	for i, msg := range m.Messages {
 		_, _ = fmt.Fprintf(os.Stderr, "[%d] Role: %s\n", i, msg.Role)
