@@ -705,21 +705,146 @@ func (m *Model) updateViewport() {
 
 // Task 6: Streaming Integration Functions
 
+// handleStreamError cleans up state when a stream error occurs
+func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
+	if os.Getenv("HEX_DEBUG") != "" {
+		logging.Debug("Stream error", "error", err)
+	}
+	m.ClearStreamingText()
+	m.SetStatus(StatusError)
+	m.ErrorMessage = err.Error()
+	m.streamChan = nil
+	m.streamCancel = nil
+	m.streamCtx = nil
+	m.updateViewport()
+	return m, nil
+}
+
+// handleContentBlockStart processes the start of a content block (tool_use)
+func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	// Only handle tool_use blocks
+	if chunk.ContentBlock == nil || chunk.ContentBlock.Type != "tool_use" {
+		return m, nil
+	}
+
+	_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n",
+		chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+
+	// Start assembling tool use - Input will come in delta events
+	m.assemblingToolUse = &core.ToolUse{
+		Type:  "tool_use",
+		ID:    chunk.ContentBlock.ID,
+		Name:  chunk.ContentBlock.Name,
+		Input: make(map[string]interface{}), // Will be populated when JSON is complete
+	}
+	m.toolInputJSONBuf = "" // Reset JSON buffer
+
+	// Update streaming display to show tool call in progress
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+	}
+	m.updateViewport()
+
+	// Continue reading from stream
+	if m.streamChan != nil {
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
+	}
+	return m, nil
+}
+
+// handleContentBlockDelta processes delta events for content blocks (text or tool input JSON)
+func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	if chunk.Delta == nil {
+		return m, nil
+	}
+
+	// Handle input_json_delta for tool use parameters
+	if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" && m.assemblingToolUse != nil {
+		m.toolInputJSONBuf += chunk.Delta.PartialJSON
+		// Continue reading
+		if m.streamChan != nil {
+			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
+		}
+		return m, nil
+	}
+
+	// Handle text delta for assistant message
+	if chunk.Delta.Text != "" {
+		if os.Getenv("HEX_DEBUG") != "" {
+			logging.Debug("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
+		}
+		m.AppendStreamingText(chunk.Delta.Text)
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.AppendText(chunk.Delta.Text)
+		}
+		m.SetStatus(StatusStreaming)
+		m.updateViewport()
+		// Continue reading
+		if m.streamChan != nil {
+			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
+		}
+	}
+
+	return m, nil
+}
+
+// handleContentBlockStop processes the completion of a content block (tool parameters complete)
+func (m *Model) handleContentBlockStop() (tea.Model, tea.Cmd) {
+	if m.assemblingToolUse == nil {
+		return m, nil
+	}
+
+	// Parse accumulated JSON into Input map
+	if m.toolInputJSONBuf != "" {
+		var input map[string]interface{}
+		if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
+			m.assemblingToolUse.Input = input
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n",
+				m.assemblingToolUse.ID, input)
+		} else {
+			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n",
+				m.assemblingToolUse.ID, err)
+		}
+	}
+
+	// Mark tool call as complete in streaming display
+	if m.streamingDisplay != nil {
+		m.streamingDisplay.CompleteToolCall(m.assemblingToolUse.ID)
+	}
+	m.updateViewport()
+
+	// Tool use is complete, append to pending tools list
+	m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
+	fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
+		len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
+
+	m.assemblingToolUse = nil
+	m.toolInputJSONBuf = ""
+
+	// Continue reading from stream
+	if m.streamChan != nil {
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
+	}
+	return m, nil
+}
+
+// handleMessageDelta processes usage metadata updates
+func (m *Model) handleMessageDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
+	if chunk.Usage != nil {
+		m.UpdateTokens(chunk.Usage.InputTokens, chunk.Usage.OutputTokens)
+	}
+	// Continue reading from stream
+	if m.streamChan != nil {
+		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
+	}
+	return m, nil
+}
+
 // handleStreamChunk processes a streaming chunk message
 func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 	// Handle errors
 	if msg.Error != nil {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Stream error", "error", msg.Error)
-		}
-		m.ClearStreamingText()
-		m.SetStatus(StatusError)
-		m.ErrorMessage = msg.Error.Error()
-		m.streamChan = nil
-		m.streamCancel = nil
-		m.streamCtx = nil
-		m.updateViewport()
-		return m, nil
+		return m.handleStreamError(msg.Error)
 	}
 
 	chunk := msg.Chunk
@@ -730,98 +855,24 @@ func (m *Model) handleStreamChunk(msg *StreamChunkMsg) (tea.Model, tea.Cmd) {
 		logging.Debug("Stream chunk received", "type", chunk.Type, "chunk", string(chunkJSON))
 	}
 
-	// Task 12: Handle tool_use content blocks
-	if chunk.Type == "content_block_start" && chunk.ContentBlock != nil {
-		if chunk.ContentBlock.Type == "tool_use" {
-			_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n", chunk.ContentBlock.ID, chunk.ContentBlock.Name)
-
-			// DON'T commit streaming text yet - it will be included in the same
-			// assistant message as the tool_use blocks when the stream ends
-			// (see lines 584-603 which creates one message with both text and tool_use blocks)
-
-			// Start assembling tool use - Input will come in delta events
-			m.assemblingToolUse = &core.ToolUse{
-				Type:  "tool_use",
-				ID:    chunk.ContentBlock.ID,
-				Name:  chunk.ContentBlock.Name,
-				Input: make(map[string]interface{}), // Will be populated when JSON is complete
-			}
-			m.toolInputJSONBuf = "" // Reset JSON buffer
-
-			// Update streaming display to show tool call in progress
-			if m.streamingDisplay != nil {
-				m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
-			}
-			m.updateViewport()
-
-			// Continue processing stream to get input_json_delta events
-		}
+	// Handle tool_use content block start
+	if chunk.Type == "content_block_start" {
+		return m.handleContentBlockStart(chunk)
 	}
 
-	// Handle input_json_delta events to build tool parameters
-	if chunk.Type == "content_block_delta" && chunk.Delta != nil && m.assemblingToolUse != nil {
-		if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" {
-			// Accumulate JSON chunks
-			m.toolInputJSONBuf += chunk.Delta.PartialJSON
-		}
+	// Handle content block deltas (text or tool input JSON)
+	if chunk.Type == "content_block_delta" {
+		return m.handleContentBlockDelta(chunk)
 	}
 
-	// Handle content_block_stop - tool parameters are complete
-	if chunk.Type == "content_block_stop" && m.assemblingToolUse != nil {
-		// Parse accumulated JSON into Input map
-		if m.toolInputJSONBuf != "" {
-			var input map[string]interface{}
-			if err := json.Unmarshal([]byte(m.toolInputJSONBuf), &input); err == nil {
-				m.assemblingToolUse.Input = input
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT] parsed input for tool_use_id=%s, input=%+v\n", m.assemblingToolUse.ID, input)
-			} else {
-				_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_INPUT_ERROR] failed to parse input JSON for tool_use_id=%s: %v\n", m.assemblingToolUse.ID, err)
-			}
-		}
-
-		// Mark tool call as complete in streaming display
-		if m.streamingDisplay != nil {
-			m.streamingDisplay.CompleteToolCall(m.assemblingToolUse.ID)
-		}
-		m.updateViewport()
-
-		// Tool use is complete, append to pending tools list
-		// Don't handle yet - wait for message_stop to ensure full response is received
-		m.pendingToolUses = append(m.pendingToolUses, m.assemblingToolUse)
-		fmt.Fprintf(os.Stderr, "[STREAM_TOOL_COMPLETE] tool_use complete, added to pending (total pending: %d): id=%s, name=%s\n",
-			len(m.pendingToolUses), m.assemblingToolUse.ID, m.assemblingToolUse.Name)
-		m.assemblingToolUse = nil
-		m.toolInputJSONBuf = ""
-		// Continue streaming to get rest of response
-	}
-
-	// Handle content deltas
-	if chunk.Delta != nil && chunk.Delta.Text != "" {
-		if os.Getenv("HEX_DEBUG") != "" {
-			logging.Debug("Stream text delta", "text", chunk.Delta.Text, "length", len(chunk.Delta.Text))
-		}
-		m.AppendStreamingText(chunk.Delta.Text)
-		// Phase 6C: Update streaming display
-		if m.streamingDisplay != nil {
-			m.streamingDisplay.AppendText(chunk.Delta.Text)
-		}
-		m.SetStatus(StatusStreaming)
-		m.updateViewport()
-		// Continue reading from stream
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-		}
-		return m, nil
+	// Handle content_block_stop - tool parameters complete
+	if chunk.Type == "content_block_stop" {
+		return m.handleContentBlockStop()
 	}
 
 	// Handle usage metadata (message_delta event)
-	if chunk.Type == "message_delta" && chunk.Usage != nil {
-		m.UpdateTokens(chunk.Usage.InputTokens, chunk.Usage.OutputTokens)
-		// Continue reading from stream
-		if m.streamChan != nil {
-			return m, m.readStreamChunks(m.streamCtx, m.streamChan)
-		}
-		return m, nil
+	if chunk.Type == "message_delta" {
+		return m.handleMessageDelta(chunk)
 	}
 
 	// Handle message completion
