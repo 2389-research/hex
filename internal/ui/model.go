@@ -97,6 +97,11 @@ type messageEventMsg struct {
 	event pubsub.Event[services.Message]
 }
 
+// subscriptionErrorMsg indicates a subscription channel closed
+type subscriptionErrorMsg struct {
+	err error
+}
+
 // Model is the Bubbletea model for interactive mode
 type Model struct {
 	ConversationID string
@@ -654,7 +659,9 @@ func waitForConversationEvent(ch <-chan pubsub.Event[services.Conversation]) tea
 	return func() tea.Msg {
 		event, ok := <-ch
 		if !ok {
-			return nil
+			// Channel closed - return error instead of silent nil
+			// This provides visibility when subscriptions fail
+			return subscriptionErrorMsg{err: fmt.Errorf("conversation event subscription closed")}
 		}
 		return conversationEventMsg{event: event}
 	}
@@ -665,7 +672,9 @@ func waitForMessageEvent(ch <-chan pubsub.Event[services.Message]) tea.Cmd {
 	return func() tea.Msg {
 		event, ok := <-ch
 		if !ok {
-			return nil
+			// Channel closed - return error instead of silent nil
+			// This provides visibility when subscriptions fail
+			return subscriptionErrorMsg{err: fmt.Errorf("message event subscription closed")}
 		}
 		return messageEventMsg{event: event}
 	}

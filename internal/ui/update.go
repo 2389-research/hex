@@ -51,6 +51,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case messageEventMsg:
 		return m.handleMessageEvent(msg)
 
+	// Handle subscription errors
+	case subscriptionErrorMsg:
+		// Display subscription failures so users know data may be stale
+		m.ErrorMessage = fmt.Sprintf("Subscription error: %v", msg.err)
+		return m, nil
+
 	// Task 6: Handle streaming chunks
 	case *StreamChunkMsg:
 		return m.handleStreamChunk(msg)
