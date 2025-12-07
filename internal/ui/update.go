@@ -609,16 +609,22 @@ func (m *Model) updateViewport() {
 	// Render messages with Neo-Terminal style
 	for i := range m.Messages {
 		msg := &m.Messages[i] // Get pointer to allow cache updates
-		// Skip messages with empty Content but non-empty ContentBlock (tool result messages)
-		// These are internal API messages that shouldn't be displayed
-		if msg.Content == "" && len(msg.ContentBlock) > 0 {
-			continue
-		}
 
 		// Get timestamp (use current time if not set for backward compatibility)
 		timestamp := msg.Timestamp
 		if timestamp.IsZero() {
 			timestamp = time.Now()
+		}
+
+		// Handle messages with ContentBlock (tool results, tool uses)
+		if msg.Content == "" && len(msg.ContentBlock) > 0 {
+			// Render structured content blocks instead of skipping
+			blockContent := m.renderContentBlocks(msg.ContentBlock)
+			if blockContent != "" {
+				neoMessage := m.renderNeoTerminalMessage(msg.Role, blockContent, timestamp)
+				content.WriteString(neoMessage)
+			}
+			continue
 		}
 
 		// Render message content (uses cache for performance)
@@ -1064,6 +1070,63 @@ func (m *Model) updateConversationTitle(title string) error {
 }
 
 // Task 12: Tool result formatting
+
+// renderContentBlocks formats ContentBlock array for display (tool results, tool uses)
+func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
+	if len(blocks) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	for i, block := range blocks {
+		switch block.Type {
+		case "tool_result":
+			// Render tool result with visual indicator
+			b.WriteString(m.theme.ToolResult.Render("🔧 Tool Result"))
+			if block.ToolUseID != "" {
+				b.WriteString(m.theme.Muted.Render(fmt.Sprintf(" [%s]", block.ToolUseID)))
+			}
+			b.WriteString(":\n")
+			if block.Content != "" {
+				// Truncate very long outputs
+				content := block.Content
+				if len(content) > 1000 {
+					content = content[:997] + "..."
+				}
+				b.WriteString(content)
+			}
+
+		case "tool_use":
+			// Render tool use request with visual indicator
+			b.WriteString(m.theme.ToolCall.Render("🛠 Tool Call: " + block.Name))
+			if block.ID != "" {
+				b.WriteString(m.theme.Muted.Render(fmt.Sprintf(" [%s]", block.ID)))
+			}
+			if len(block.Input) > 0 {
+				b.WriteString("\nParameters:\n")
+				// Format parameters nicely
+				for key, value := range block.Input {
+					valueStr := fmt.Sprintf("%v", value)
+					if len(valueStr) > 100 {
+						valueStr = valueStr[:97] + "..."
+					}
+					b.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
+				}
+			}
+
+		case "text":
+			// Regular text block
+			b.WriteString(block.Text)
+		}
+
+		// Add spacing between blocks
+		if i < len(blocks)-1 {
+			b.WriteString("\n")
+		}
+	}
+
+	return b.String()
+}
 
 // formatToolResult formats a tool result for display
 func formatToolResult(result *tools.Result) string {

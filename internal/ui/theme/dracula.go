@@ -78,6 +78,8 @@ type Theme struct {
 	ToolExecuting lipgloss.Style
 	ToolSuccess   lipgloss.Style
 	ToolError     lipgloss.Style
+	ToolResult    lipgloss.Style
+	ToolCall      lipgloss.Style
 
 	// Suggestion styles
 	SuggestionBox    lipgloss.Style
@@ -231,6 +233,14 @@ func NewDraculaTheme() *Theme {
 
 	t.ToolError = lipgloss.NewStyle().
 		Foreground(t.Colors.Red).
+		Bold(true)
+
+	t.ToolResult = lipgloss.NewStyle().
+		Foreground(t.Colors.Cyan).
+		Bold(true)
+
+	t.ToolCall = lipgloss.NewStyle().
+		Foreground(t.Colors.Purple).
 		Bold(true)
 
 	// Suggestion styles

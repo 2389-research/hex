@@ -1,6 +1,6 @@
 // ABOUTME: Tests for message summarization using Claude API
 // ABOUTME: Verifies summary generation and caching behavior
-package context
+package context // nolint:revive // internal package name, not importing stdlib context
 
 import (
 	"context"
