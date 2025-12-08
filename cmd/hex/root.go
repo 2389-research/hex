@@ -187,6 +187,13 @@ func runRoot(_ *cobra.Command, args []string) error {
 				"tools":  enabledTools,
 			},
 		})
+
+		// Inform user about event recording
+		if os.Getenv("HEX_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "📊 Recording events to: %s\n", eventFile)
+			fmt.Fprintf(os.Stderr, "   Replay: hex replay %s\n", eventFile)
+			fmt.Fprintf(os.Stderr, "   Visualize: hex visualize %s\n", eventFile)
+		}
 	}
 
 	// Initialize global cost tracker (singleton pattern used throughout codebase)
