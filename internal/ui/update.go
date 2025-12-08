@@ -131,6 +131,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Display result in UI
 			resultMsg := formatToolResult(msg.result)
 			m.AddMessage("tool", resultMsg)
+
+			// Save tool result to database
+			if err := m.saveMessage("tool", resultMsg); err != nil {
+				m.ErrorMessage = "Failed to save tool result: " + err.Error()
+			}
 		}
 
 		m.updateViewport()
@@ -158,6 +163,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, result := range msg.results {
 			resultMsg := formatToolResult(result.Result)
 			m.AddMessage("tool", resultMsg)
+
+			// Save tool result to database
+			if err := m.saveMessage("tool", resultMsg); err != nil {
+				m.ErrorMessage = "Failed to save tool result: " + err.Error()
+			}
 		}
 
 		m.updateViewport()
@@ -927,6 +937,14 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		}
 		m.Messages = append(m.Messages, assistantMsg)
 
+		// Save assistant message with tool_use blocks to database
+		// Serialize ContentBlock to JSON for storage
+		if blocksJSON, err := json.Marshal(blocks); err == nil {
+			if err := m.saveMessage("assistant", string(blocksJSON)); err != nil {
+				m.ErrorMessage = "Failed to save assistant message: " + err.Error()
+			}
+		}
+
 		if os.Getenv("HEX_DEBUG") != "" {
 			msgJSON, _ := json.Marshal(assistantMsg)
 			logging.Debug("Assistant message added to history", "message", string(msgJSON))
@@ -995,6 +1013,16 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 
 	// Path 2: No tools, just commit regular text
 	m.CommitStreamingText()
+
+	// Save assistant message to database
+	if len(m.Messages) > 0 {
+		lastMsg := m.Messages[len(m.Messages)-1]
+		if lastMsg.Role == "assistant" && lastMsg.Content != "" {
+			if err := m.saveMessage("assistant", lastMsg.Content); err != nil {
+				m.ErrorMessage = "Failed to save assistant message: " + err.Error()
+			}
+		}
+	}
 
 	// Hide intro after first assistant response
 	if m.ShowIntro {
