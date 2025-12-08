@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -131,7 +133,8 @@ func runRoot(_ *cobra.Command, args []string) error {
 	defer closeLogger()
 
 	// Initialize event store
-	eventStore, err := events.NewEventStore("hex_events.jsonl")
+	eventFile := filepath.Join(os.TempDir(), fmt.Sprintf("hex_events_%s.jsonl", time.Now().Format("20060102_150405")))
+	eventStore, err := events.NewEventStore(eventFile)
 	if err != nil {
 		logging.WarnWith("Failed to create event store", "error", err)
 	} else {
@@ -139,9 +142,29 @@ func runRoot(_ *cobra.Command, args []string) error {
 		defer func() { _ = eventStore.Close() }()
 
 		// Set agent ID if not already set
-		if os.Getenv("HEX_AGENT_ID") == "" {
-			_ = os.Setenv("HEX_AGENT_ID", "root")
+		agentID := os.Getenv("HEX_AGENT_ID")
+		if agentID == "" {
+			agentID = "root"
+			_ = os.Setenv("HEX_AGENT_ID", agentID)
 		}
+
+		// Get user prompt for event recording
+		userPrompt := ""
+		if len(args) > 0 {
+			userPrompt = joinArgs(args)
+		}
+
+		// Record session start event
+		_ = eventStore.Record(events.Event{
+			ID:        uuid.New().String(),
+			AgentID:   agentID,
+			Type:      "SessionStart",
+			Timestamp: time.Now(),
+			Data: map[string]interface{}{
+				"prompt": userPrompt,
+				"tools":  enabledTools,
+			},
+		})
 	}
 
 	logging.InfoWith("Hex starting", "version", version)
