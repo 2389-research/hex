@@ -745,9 +745,9 @@ func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
 
 // handleContentBlockStart processes the start of a content block (tool_use)
 func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
-	// Only handle tool_use blocks
+	// Only handle tool_use blocks - for text blocks, just continue reading
 	if chunk.ContentBlock == nil || chunk.ContentBlock.Type != "tool_use" {
-		return m, nil
+		return m, m.continueReading()
 	}
 
 	_, _ = fmt.Fprintf(os.Stderr, "[STREAM_TOOL_START] tool_use detected: id=%s, name=%s\n",
