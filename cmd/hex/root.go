@@ -33,7 +33,8 @@ import (
 type contextKey string
 
 const (
-	eventStoreKey contextKey = "event_store"
+	eventStoreKey  contextKey = "event_store"
+	costTrackerKey contextKey = "cost_tracker"
 )
 
 var (
@@ -182,6 +183,28 @@ func runRoot(_ *cobra.Command, args []string) error {
 			},
 		})
 	}
+
+	// Initialize cost tracker
+	costTracker := cost.NewCostTracker()
+
+	// Store in context
+	ctx = context.WithValue(ctx, costTrackerKey, costTracker)
+
+	// Set as global for backward compatibility
+	// Note: cost.Global() already returns a singleton, but we set it anyway
+	// to ensure consistency with our context-based approach
+	defer func() {
+		agentID := os.Getenv("HEX_AGENT_ID")
+		if agentID != "" {
+			// Use the global tracker which has been populated by client.go
+			summary, err := cost.Global().GetAgentCost(agentID)
+			if err == nil && summary.TotalCost > 0 {
+				fmt.Fprintf(os.Stderr, "\n💰 Session Cost: $%.4f\n", summary.TotalCost)
+				fmt.Fprintf(os.Stderr, "   Input tokens: %d, Output tokens: %d\n",
+					summary.InputTokens, summary.OutputTokens)
+			}
+		}
+	}()
 
 	logging.InfoWith("Hex starting", "version", version)
 

@@ -235,13 +235,13 @@ func renderTreeView(events []Event) string {
 func renderTreeNode(sb *strings.Builder, node *AgentNode, prefix string, isRoot bool, isLast bool) {
 	// Render current node
 	if isRoot {
-		sb.WriteString(fmt.Sprintf("%s\n", node.ID))
+		fmt.Fprintf(sb, "%s\n", node.ID)
 	} else {
 		connector := "├─"
 		if isLast {
 			connector = "└─"
 		}
-		sb.WriteString(fmt.Sprintf("%s%s %s\n", prefix, connector, node.ID))
+		fmt.Fprintf(sb, "%s%s %s\n", prefix, connector, node.ID)
 	}
 
 	// Add details
@@ -255,13 +255,13 @@ func renderTreeNode(sb *strings.Builder, node *AgentNode, prefix string, isRoot 
 	}
 
 	if node.Task != "" {
-		sb.WriteString(fmt.Sprintf("%s├── Task: %q\n", detailPrefix, node.Task))
+		fmt.Fprintf(sb, "%s├── Task: %q\n", detailPrefix, node.Task)
 	}
 	if node.Cost > 0 {
-		sb.WriteString(fmt.Sprintf("%s├── Cost: $%.2f\n", detailPrefix, node.Cost))
+		fmt.Fprintf(sb, "%s├── Cost: $%.2f\n", detailPrefix, node.Cost)
 	}
 	if node.Duration > 0 {
-		sb.WriteString(fmt.Sprintf("%s└── Duration: %s\n", detailPrefix, formatDuration(node.Duration)))
+		fmt.Fprintf(sb, "%s└── Duration: %s\n", detailPrefix, formatDuration(node.Duration))
 	}
 
 	// Render children
@@ -374,9 +374,10 @@ func renderCostView(events []Event) string {
 		var usage UsageStats
 
 		for _, e := range events {
-			if e.Type == "AgentStart" {
+			switch e.Type {
+			case "AgentStart":
 				model = extractModel(e.Data)
-			} else if e.Type == "AgentStop" {
+			case "AgentStop":
 				usage = extractUsage(e.Data)
 			}
 		}

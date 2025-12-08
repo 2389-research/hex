@@ -31,6 +31,7 @@ func TestRegisterProcess(t *testing.T) {
 	process := registry.Get("root.1")
 	if process == nil {
 		t.Error("Process not found in registry")
+		return // Early return to avoid nil pointer dereference
 	}
 
 	if process.PID != cmd.Process.Pid {
