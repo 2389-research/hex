@@ -9,7 +9,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/2389-research/hex)](https://goreportcard.com/report/github.com/2389-research/hex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Go implementation of Claude Code CLI with interactive mode and tool execution capabilities.
+A powerful command-line interface for Claude AI, inspired by Claude Code, Crush, Codex, and MaKeR. Built in Go with interactive mode and comprehensive tool execution capabilities.
 
 **Latest Version**: v1.0.0
 

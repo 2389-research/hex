@@ -83,8 +83,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "hex [prompt]",
-	Short: "Hex - AI assistant CLI",
-	Long: `Hex is an AI assistant for your terminal.
+	Short: "Hex - Powerful CLI for Claude AI",
+	Long: `Hex is a powerful command-line interface for Claude AI, inspired by Claude Code, Crush, Codex, and MaKeR.
 
 Start an interactive session or use --print for one-off queries.`,
 	Version: version,

@@ -159,7 +159,7 @@ git push origin v1.0.0
 ```markdown
 # 🎉 Hex v1.0.0 - Production Release
 
-We're excited to announce the first production-ready release of Hex, a clean-room implementation of Claude CLI in Go!
+We're excited to announce the first production-ready release of Hex, a powerful CLI for Claude AI inspired by Claude Code, Crush, Codex, and MaKeR!
 
 ## ✨ Highlights
 

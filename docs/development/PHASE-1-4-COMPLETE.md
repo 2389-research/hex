@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Successfully implemented **Phases 1-4** of the Claude Code alignment roadmap in a single sprint using parallel subagent execution. Hex has jumped from **65% to 85% feature parity** with Claude Code.
+Successfully implemented **Phases 1-4** of the advanced features roadmap in a single sprint using parallel subagent execution. Hex has jumped from **65% to 85% feature completeness** toward becoming a comprehensive CLI inspired by Claude Code, Crush, Codex, and MaKeR.
 
 ### What Was Implemented
 
@@ -19,7 +19,7 @@ Successfully implemented **Phases 1-4** of the Claude Code alignment roadmap in 
 
 **Total:** ~6,650 lines of production code + tests
 **Timeline:** Single day (parallel implementation)
-**Feature Parity:** 65% → 85% (+20 percentage points)
+**Feature Completeness:** 65% → 85% (+20 percentage points)
 
 ## Phase 1: Hooks System ✅
 
@@ -319,15 +319,15 @@ go test ./internal/commands/... -cover
 
 ---
 
-## Feature Parity Update
+## Feature Completeness Update
 
 ### Before (from audit)
-- Feature parity: **65%**
+- Feature completeness: **65%**
 - Strong: Core tools, persistence, UI
 - Missing: Hooks, Skills, Permissions, Slash Commands
 
 ### After (current state)
-- Feature parity: **85%**
+- Feature completeness: **85%**
 - Strong: Core tools, persistence, UI, extensibility
 - Implemented:
   - ✅ Hooks (10 events, shell execution, matchers)

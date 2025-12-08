@@ -1,14 +1,14 @@
 # Hex - Go Implementation Design
 
 **Date:** 2025-11-25
-**Goal:** Full feature parity reimplementation of Claude Code CLI in Go
-**Approach:** Clean-room implementation with real-world testing
+**Goal:** A powerful CLI for Claude AI inspired by Claude Code, Crush, Codex, and MaKeR
+**Approach:** Modern Go implementation with real-world testing
 
 ---
 
 ## Executive Summary
 
-Hex is a complete Go reimplementation of Claude Code CLI with full feature parity. Built with modern Go practices, leveraging battle-tested libraries, and emphasizing real-world testing over mocks.
+Hex is a comprehensive command-line interface for Claude AI, drawing inspiration from Claude Code, Crush, Codex, and MaKeR. Built with modern Go practices, leveraging battle-tested libraries, and emphasizing real-world testing over mocks.
 
 **Key Technologies:**
 - **CLI:** Cobra for argument parsing
