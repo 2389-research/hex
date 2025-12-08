@@ -1,4 +1,4 @@
-.PHONY: build test test-short test-coverage clean install run lint fmt vet release snapshot help
+.PHONY: build test test-short test-coverage clean install run lint fmt vet release snapshot help build-viz install-viz clean-viz
 
 # Build configuration
 BINARY_NAME=hex
@@ -8,8 +8,10 @@ DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-s -w -X github.com/2389-research/hex/internal/core.Version=$(VERSION) -X github.com/2389-research/hex/internal/core.Commit=$(COMMIT) -X github.com/2389-research/hex/internal/core.Date=$(DATE)"
 
 ## build: Build binary for current platform
-build:
-	go build $(LDFLAGS) -o $(BINARY_NAME) ./cmd/hex
+build: build-viz
+	@echo "Building hex..."
+	go build $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd/hex
+	@echo "✅ Built bin/hex"
 
 ## test: Run all tests with race detection
 test:
@@ -26,8 +28,8 @@ test-coverage:
 	@echo "Coverage report generated: coverage.html"
 
 ## clean: Remove build artifacts
-clean:
-	rm -f $(BINARY_NAME)
+clean: clean-viz
+	rm -f bin/$(BINARY_NAME)
 	rm -f coverage.txt coverage.html
 	rm -rf dist/
 	go clean
@@ -92,6 +94,25 @@ tidy:
 ## verify: Run all verification steps (fmt, vet, lint, test)
 verify: fmt vet lint test
 	@echo "All checks passed!"
+
+## build-viz: Build visualization tools
+build-viz:
+	@echo "Building visualization tools..."
+	go build -o bin/hexviz ./cmd/hexviz
+	go build -o bin/hexreplay ./cmd/hexreplay
+	@echo "✅ Built bin/hexviz and bin/hexreplay"
+
+## install-viz: Install visualization tools to PATH
+install-viz: build-viz
+	@echo "Installing visualization tools..."
+	cp bin/hexviz $(GOPATH)/bin/hexviz
+	cp bin/hexreplay $(GOPATH)/bin/hexreplay
+	@echo "✅ Installed hexviz and hexreplay to $(GOPATH)/bin"
+
+## clean-viz: Clean visualization binaries
+clean-viz:
+	rm -f bin/hexviz bin/hexreplay
+	@echo "✅ Cleaned visualization binaries"
 
 ## help: Show this help message
 help:
