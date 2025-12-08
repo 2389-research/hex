@@ -591,7 +591,7 @@ func initializeLogging() error {
 	var logger *logging.Logger
 	var err error
 
-	// In debug mode, always write to stderr/file even in TUI mode
+	// In debug mode, write to file and optionally to stderr (only in print mode)
 	if debug || level == logging.LevelDebug {
 		debugFile := logFile
 		if debugFile == "" {
@@ -599,16 +599,22 @@ func initializeLogging() error {
 			debugFile = "/tmp/hex-debug.log"
 		}
 		config.LogFile = debugFile
-		config.Writer = os.Stderr // Also write to stderr
+		// Only write to stderr in print mode - in interactive mode it corrupts the TUI
+		if printMode {
+			config.Writer = os.Stderr
+		}
 		logger, err = logging.NewLoggerWithFile(config)
 		if err != nil {
 			return fmt.Errorf("failed to create debug logger with file %s: %w", debugFile, err)
 		}
-		fmt.Fprintf(os.Stderr, "Debug mode enabled. Logs writing to: %s\n", debugFile)
+		// Only print debug message in print mode
+		if printMode {
+			fmt.Fprintf(os.Stderr, "Debug mode enabled. Logs writing to: %s\n", debugFile)
+		}
 	} else if logFile != "" {
-		// Log to file (and optionally stderr in debug mode)
+		// Log to file (and optionally stderr in debug mode, but only in print mode)
 		config.LogFile = logFile
-		if level == logging.LevelDebug {
+		if level == logging.LevelDebug && printMode {
 			config.Writer = os.Stderr
 		}
 		logger, err = logging.NewLoggerWithFile(config)
