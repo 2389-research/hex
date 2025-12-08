@@ -27,6 +27,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // Context key type for storing values in context
@@ -531,8 +532,18 @@ func runInteractive(prompt string) error {
 		}()
 	}
 
-	// Start Bubbletea program
-	p := tea.NewProgram(uiModel, tea.WithAltScreen())
+	// Start Bubbletea program with appropriate options based on terminal availability
+	var opts []tea.ProgramOption
+	// Check if stdin is a terminal
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		// Use alt screen mode when running in a proper terminal
+		opts = append(opts, tea.WithAltScreen())
+	} else {
+		// When not in a terminal, explicitly specify I/O
+		opts = append(opts, tea.WithInput(os.Stdin), tea.WithOutput(os.Stdout))
+	}
+
+	p := tea.NewProgram(uiModel, opts...)
 	if _, err := p.Run(); err != nil {
 		os.Stderr = origStderr // Restore stderr for error reporting
 		logging.ErrorWithErr("Failed to run UI", err)

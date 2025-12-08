@@ -16,6 +16,7 @@ import (
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/term"
 )
 
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model
@@ -185,8 +186,18 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 		}()
 	}
 
-	// Start Bubbletea program
-	p := tea.NewProgram(uiModel, tea.WithAltScreen())
+	// Start Bubbletea program with appropriate options based on terminal availability
+	var opts []tea.ProgramOption
+	// Check if stdin is a terminal
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		// Use alt screen mode when running in a proper terminal
+		opts = append(opts, tea.WithAltScreen())
+	} else {
+		// When not in a terminal, explicitly specify I/O
+		opts = append(opts, tea.WithInput(os.Stdin), tea.WithOutput(os.Stdout))
+	}
+
+	p := tea.NewProgram(uiModel, opts...)
 	if _, err := p.Run(); err != nil {
 		os.Stderr = origStderr // Restore stderr for error reporting
 		logging.ErrorWithErr("Failed to run UI", err)
