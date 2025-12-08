@@ -128,6 +128,10 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&permissionMode, "permission-mode", "ask", "Permission mode: auto (approve all), ask (prompt for each), deny (block all)")
 	rootCmd.PersistentFlags().StringSliceVar(&allowedTools, "allowed-tools", []string{}, "Whitelist of allowed tools (comma-separated). If set, only these tools are allowed.")
 	rootCmd.PersistentFlags().StringSliceVar(&disallowedTools, "disallowed-tools", []string{}, "Blacklist of disallowed tools (comma-separated). These tools are blocked.")
+
+	// Register subcommands
+	rootCmd.AddCommand(visualizeCmd)
+	rootCmd.AddCommand(replayCmd)
 }
 
 func runRoot(_ *cobra.Command, args []string) error {
