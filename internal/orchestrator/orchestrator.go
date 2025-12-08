@@ -300,14 +300,56 @@ func (o *AgentOrchestrator) emitEvent(typ EventType, data interface{}) {
 
 // emitEventLocked emits an event while holding the lock (caller must hold lock)
 func (o *AgentOrchestrator) emitEventLocked(typ EventType, data interface{}) {
+	now := time.Now()
+
+	// Emit to orchestrator's event channel
 	select {
-	case o.eventChan <- Event{Type: typ, Data: data, Timestamp: time.Now()}:
+	case o.eventChan <- Event{Type: typ, Data: data, Timestamp: now}:
 		// Event sent successfully
 	case <-time.After(100 * time.Millisecond):
 		// Event channel full, drop event (log warning if debug enabled)
 		if os.Getenv("HEX_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[ORCHESTRATOR] Warning: dropped event %s (channel full)\n", typ)
 		}
+	}
+
+	// Also record to global event store for persistence
+	if store := events.Global(); store != nil {
+		agentID := os.Getenv("HEX_AGENT_ID")
+		if agentID == "" {
+			agentID = "root"
+		}
+
+		// Map orchestrator event types to global event types
+		var eventType events.EventType
+		switch typ {
+		case EventStreamStart:
+			eventType = events.EventStreamStarted
+		case EventStreamChunk:
+			eventType = events.EventStreamChunk
+		case EventToolCall:
+			eventType = events.EventToolCallRequested
+		case EventToolResult:
+			eventType = events.EventToolExecutionEnd
+		case EventError:
+			eventType = events.EventError
+		case EventComplete:
+			// Complete is not a global event type, skip
+			return
+		default:
+			// Unknown event type, skip
+			return
+		}
+
+		// Record event to global store
+		_ = store.Record(events.Event{
+			ID:        uuid.New().String(),
+			AgentID:   agentID,
+			ParentID:  "", // TODO: Get parent ID from context if available
+			Type:      eventType,
+			Timestamp: now,
+			Data:      data,
+		})
 	}
 }
 

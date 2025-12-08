@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/2389-research/hex/internal/events"
+	"github.com/google/uuid"
 )
 
 // Executor manages the execution of isolated subagent instances
@@ -65,11 +66,49 @@ func (e *Executor) Execute(ctx context.Context, req *ExecutionRequest) (*Result,
 	// Record start time
 	startTime := time.Now()
 
+	// Record AgentStarted event
+	if store := events.Global(); store != nil {
+		_ = store.Record(events.Event{
+			ID:        uuid.New().String(),
+			AgentID:   isolatedCtx.ID,
+			ParentID:  parentID,
+			Type:      events.EventAgentStarted,
+			Timestamp: startTime,
+			Data: map[string]interface{}{
+				"type":        string(req.Type),
+				"description": req.Description,
+				"prompt":      req.Prompt,
+			},
+		})
+	}
+
 	// Execute the subagent
 	output, execErr := e.executeSubprocess(ctx, req, config, isolatedCtx)
 
 	// Record end time
 	endTime := time.Now()
+
+	// Record AgentStopped event
+	if store := events.Global(); store != nil {
+		stopData := map[string]interface{}{
+			"type":        string(req.Type),
+			"description": req.Description,
+			"duration":    endTime.Sub(startTime).Seconds(),
+			"success":     execErr == nil,
+		}
+		if execErr != nil {
+			stopData["error"] = execErr.Error()
+		}
+
+		_ = store.Record(events.Event{
+			ID:        uuid.New().String(),
+			AgentID:   isolatedCtx.ID,
+			ParentID:  parentID,
+			Type:      events.EventAgentStopped,
+			Timestamp: endTime,
+			Data:      stopData,
+		})
+	}
 
 	// Build result
 	result := &Result{

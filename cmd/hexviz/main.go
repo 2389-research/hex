@@ -166,7 +166,8 @@ func buildAgentTree(events []Event) *AgentNode {
 
 	// First pass: create all nodes
 	for _, e := range events {
-		if e.Type == "AgentStart" {
+		// Support both old ("AgentStart") and new ("agent_started") event formats
+		if e.Type == "AgentStart" || e.Type == "agent_started" {
 			node := &AgentNode{
 				ID:        e.AgentID,
 				ParentID:  e.ParentID,
@@ -181,7 +182,8 @@ func buildAgentTree(events []Event) *AgentNode {
 
 	// Second pass: update nodes with stop event data
 	for _, e := range events {
-		if e.Type == "AgentStop" {
+		// Support both old ("AgentStop") and new ("agent_stopped") event formats
+		if e.Type == "AgentStop" || e.Type == "agent_stopped" {
 			if node, exists := nodes[e.AgentID]; exists {
 				node.CompletedAt = &e.Timestamp
 				node.Duration = e.Timestamp.Sub(node.StartedAt)
