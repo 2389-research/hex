@@ -29,30 +29,10 @@ func setupTestDB(t *testing.T) *sql.DB {
 		_ = os.Remove(tmpFile.Name())
 	})
 
-	db, err := sql.Open("sqlite", tmpFile.Name())
+	// Use storage.OpenDatabase to properly initialize schema with migrations
+	db, err := storage.OpenDatabase(tmpFile.Name())
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
-	}
-
-	// Create schema
-	schema := `
-	CREATE TABLE IF NOT EXISTS conversations (
-		id TEXT PRIMARY KEY,
-		title TEXT NOT NULL,
-		model TEXT NOT NULL,
-		system_prompt TEXT,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL,
-		is_favorite INTEGER DEFAULT 0,
-		prompt_tokens INTEGER DEFAULT 0,
-		completion_tokens INTEGER DEFAULT 0,
-		total_cost REAL DEFAULT 0.0,
-		summary_message_id TEXT
-	);
-	`
-
-	if _, err := db.Exec(schema); err != nil {
-		t.Fatalf("Failed to create schema: %v", err)
 	}
 
 	return db

@@ -15,6 +15,7 @@ import (
 type Conversation struct {
 	ID           string
 	Title        string
+	Provider     string
 	Model        string
 	SystemPrompt string
 	CreatedAt    time.Time
@@ -38,11 +39,16 @@ func CreateConversation(db *sql.DB, conv *Conversation) error {
 		conv.UpdatedAt = now
 	}
 
+	// Default to anthropic if provider not set
+	if conv.Provider == "" {
+		conv.Provider = "anthropic"
+	}
+
 	query := `
-		INSERT INTO conversations (id, title, model, system_prompt, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO conversations (id, title, provider, model, system_prompt, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := db.Exec(query, conv.ID, conv.Title, conv.Model, conv.SystemPrompt, conv.CreatedAt, conv.UpdatedAt)
+	_, err := db.Exec(query, conv.ID, conv.Title, conv.Provider, conv.Model, conv.SystemPrompt, conv.CreatedAt, conv.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert conversation: %w", err)
 	}
@@ -52,7 +58,7 @@ func CreateConversation(db *sql.DB, conv *Conversation) error {
 // GetConversation retrieves a conversation by ID
 func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
+		SELECT id, title, COALESCE(provider, 'anthropic') as provider, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		WHERE id = ?
 	`
@@ -62,6 +68,7 @@ func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 	err := db.QueryRow(query, id).Scan(
 		&conv.ID,
 		&conv.Title,
+		&conv.Provider,
 		&conv.Model,
 		&systemPrompt,
 		&conv.CreatedAt,
@@ -82,7 +89,7 @@ func GetConversation(db *sql.DB, id string) (*Conversation, error) {
 // GetLatestConversation retrieves the most recently updated conversation
 func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
+		SELECT id, title, COALESCE(provider, 'anthropic') as provider, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		ORDER BY updated_at DESC
 		LIMIT 1
@@ -93,6 +100,7 @@ func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 	err := db.QueryRow(query).Scan(
 		&conv.ID,
 		&conv.Title,
+		&conv.Provider,
 		&conv.Model,
 		&systemPrompt,
 		&conv.CreatedAt,
@@ -113,7 +121,7 @@ func GetLatestConversation(db *sql.DB) (*Conversation, error) {
 // ListConversations returns conversations ordered by updated_at DESC
 func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
+		SELECT id, title, COALESCE(provider, 'anthropic') as provider, model, system_prompt, created_at, updated_at, COALESCE(is_favorite, 0) as is_favorite
 		FROM conversations
 		ORDER BY updated_at DESC
 		LIMIT ? OFFSET ?
@@ -129,7 +137,7 @@ func ListConversations(db *sql.DB, limit, offset int) ([]*Conversation, error) {
 	for rows.Next() {
 		conv := &Conversation{}
 		var systemPrompt sql.NullString
-		err := rows.Scan(&conv.ID, &conv.Title, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
+		err := rows.Scan(&conv.ID, &conv.Title, &conv.Provider, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
 		if err != nil {
 			return nil, fmt.Errorf("scan conversation: %w", err)
 		}
@@ -186,7 +194,7 @@ func SetFavorite(db *sql.DB, id string, isFavorite bool) error {
 // ListFavorites returns all favorite conversations ordered by updated_at DESC
 func ListFavorites(db *sql.DB) ([]*Conversation, error) {
 	query := `
-		SELECT id, title, model, system_prompt, created_at, updated_at, is_favorite
+		SELECT id, title, COALESCE(provider, 'anthropic') as provider, model, system_prompt, created_at, updated_at, is_favorite
 		FROM conversations
 		WHERE is_favorite = 1
 		ORDER BY updated_at DESC
@@ -202,7 +210,7 @@ func ListFavorites(db *sql.DB) ([]*Conversation, error) {
 	for rows.Next() {
 		conv := &Conversation{}
 		var systemPrompt sql.NullString
-		err := rows.Scan(&conv.ID, &conv.Title, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
+		err := rows.Scan(&conv.ID, &conv.Title, &conv.Provider, &conv.Model, &systemPrompt, &conv.CreatedAt, &conv.UpdatedAt, &conv.IsFavorite)
 		if err != nil {
 			return nil, fmt.Errorf("scan conversation: %w", err)
 		}
