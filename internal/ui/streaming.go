@@ -25,6 +25,10 @@ type StreamingDisplay struct {
 	currentToolCalls []ToolCallProgress
 	thinkingActive   bool
 	thinkingText     string
+	// Thinking spinner animation
+	spinnerFrames []string
+	spinnerFrame  int
+	lastSpinTime  time.Time
 }
 
 var (
@@ -72,6 +76,10 @@ func NewStreamingDisplay() *StreamingDisplay {
 		typewriterSpeed:  30 * time.Millisecond,
 		waitingForTokens: true,
 		startTime:        time.Now(),
+		// "dots" spinner from cli-spinners (80ms interval)
+		spinnerFrames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		spinnerFrame:  0,
+		lastSpinTime:  time.Now(),
 	}
 }
 
@@ -354,15 +362,36 @@ func (s *StreamingDisplay) CompleteToolCall(id string) {
 func (s *StreamingDisplay) SetThinking(active bool, text string) {
 	s.thinkingActive = active
 	s.thinkingText = text
+	if active {
+		// Reset spinner when starting to think
+		s.lastSpinTime = time.Now()
+	}
+}
+
+// getSpinnerFrame returns the current spinner frame and advances if enough time has passed
+func (s *StreamingDisplay) getSpinnerFrame() string {
+	if len(s.spinnerFrames) == 0 {
+		return "⠋"
+	}
+
+	// Advance frame every 80ms (dots spinner interval)
+	now := time.Now()
+	if now.Sub(s.lastSpinTime) > 80*time.Millisecond {
+		s.spinnerFrame = (s.spinnerFrame + 1) % len(s.spinnerFrames)
+		s.lastSpinTime = now
+	}
+
+	return s.spinnerFrames[s.spinnerFrame]
 }
 
 // GetWorkDisplay returns the current work display (tool calls, thinking)
 func (s *StreamingDisplay) GetWorkDisplay() string {
 	var parts []string
 
-	// Show thinking if active
+	// Show thinking if active with animated spinner
 	if s.thinkingActive {
-		display := "▍ Thinking"
+		spinner := s.getSpinnerFrame()
+		display := spinner + " Thinking"
 		if s.thinkingText != "" {
 			display += "..."
 		}

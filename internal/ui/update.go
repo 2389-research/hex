@@ -81,6 +81,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Store the stream channel and start reading
 		m.streamChan = msg.channel
 		m.SetStatus(StatusStreaming)
+		// Show thinking indicator while waiting for first response chunk
+		if m.streamingDisplay != nil {
+			m.streamingDisplay.SetThinking(true, "")
+		}
 		m.updateViewport()
 		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 
@@ -792,6 +796,10 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 		}
 		m.AppendStreamingText(chunk.Delta.Text)
 		if m.streamingDisplay != nil {
+			// Turn off thinking indicator once we receive actual content
+			if m.streamingDisplay.IsWaitingForTokens() {
+				m.streamingDisplay.SetThinking(false, "")
+			}
 			m.streamingDisplay.AppendText(chunk.Delta.Text)
 		}
 		m.SetStatus(StatusStreaming)
