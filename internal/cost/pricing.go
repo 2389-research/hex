@@ -16,7 +16,9 @@ type PricingModel struct {
 }
 
 // modelPricing contains pricing for all supported models
+// Prices are per 1M tokens (divide by 1,000,000 to get per-token cost)
 var modelPricing = map[string]PricingModel{
+	// Anthropic Claude models (with prompt caching)
 	"claude-sonnet-4-5-20250929": {
 		InputTokenPrice:  3.00,  // $3.00 per 1M input tokens
 		OutputTokenPrice: 15.00, // $15.00 per 1M output tokens
@@ -52,6 +54,58 @@ var modelPricing = map[string]PricingModel{
 		OutputTokenPrice: 1.25,
 		CacheReadPrice:   0.03,
 		CacheWritePrice:  0.30,
+	},
+
+	// OpenAI models (no prompt caching)
+	"gpt-4o": {
+		InputTokenPrice:  2.50,
+		OutputTokenPrice: 10.00,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"gpt-4o-mini": {
+		InputTokenPrice:  0.15,
+		OutputTokenPrice: 0.60,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"o3": {
+		InputTokenPrice:  15.00, // Reasoning models are more expensive
+		OutputTokenPrice: 60.00,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"o4-mini": {
+		InputTokenPrice:  1.00,
+		OutputTokenPrice: 4.00,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+
+	// Google Gemini models (no prompt caching in pricing)
+	"gemini-3-pro-preview": {
+		InputTokenPrice:  1.25,
+		OutputTokenPrice: 5.00,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"gemini-2.5-flash": {
+		InputTokenPrice:  0.075,
+		OutputTokenPrice: 0.30,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"gemini-2.5-flash-lite": {
+		InputTokenPrice:  0.025,
+		OutputTokenPrice: 0.10,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
+	},
+	"gemini-2.5-pro": {
+		InputTokenPrice:  1.25,
+		OutputTokenPrice: 5.00,
+		CacheReadPrice:   0.00,
+		CacheWritePrice:  0.00,
 	},
 }
 
