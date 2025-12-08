@@ -515,18 +515,25 @@ func (m *Model) UpdateSearchQuery(query string) {
 	m.SearchQuery = query
 }
 
-// AppendStreamingText adds a chunk to the streaming buffer
+// AppendStreamingText adds a chunk to the streaming buffer and updates the last message in place
 func (m *Model) AppendStreamingText(chunk string) {
 	m.StreamingText += chunk
+
+	// Update the last message in place (should be the assistant message placeholder)
+	if len(m.Messages) > 0 && m.Messages[len(m.Messages)-1].Role == "assistant" {
+		m.Messages[len(m.Messages)-1].Content = m.StreamingText
+		// Invalidate render cache when content changes
+		m.Messages[len(m.Messages)-1].renderedCache = ""
+	}
 }
 
-// CommitStreamingText converts streaming text into a permanent assistant message
+// CommitStreamingText finalizes the streaming message
+// The message is already in m.Messages (added as placeholder at stream start),
+// so we just need to clear the streaming buffer
 func (m *Model) CommitStreamingText() {
-	// Only commit if there's actual content (AddMessage will also check this)
-	trimmed := strings.TrimSpace(m.StreamingText)
-	if trimmed != "" {
-		m.AddMessage("assistant", m.StreamingText)
-	}
+	// The assistant message was already added when streaming started
+	// and has been updated in place during streaming.
+	// Just clear the streaming buffer.
 	m.StreamingText = ""
 }
 

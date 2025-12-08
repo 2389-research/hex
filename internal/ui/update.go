@@ -85,6 +85,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.streamingDisplay != nil {
 			m.streamingDisplay.SetThinking(true, "")
 		}
+		// Add assistant message placeholder immediately to preserve message ordering
+		// This ensures the assistant response appears after the user message that triggered it,
+		// even if the user sends more messages while streaming
+		// We add directly to m.Messages to bypass the empty content check in AddMessage
+		m.Messages = append(m.Messages, Message{
+			Role:      "assistant",
+			Content:   "",
+			Timestamp: time.Now(),
+		})
 		m.updateViewport()
 		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 
@@ -697,26 +706,8 @@ func (m *Model) updateViewport() {
 		}
 	}
 
-	// Append streaming text if present
-	if m.StreamingText != "" {
-		if len(m.Messages) > 0 {
-			content.WriteString("\n")
-		}
-
-		// Render streaming text (don't cache - it's still being built)
-		streamContent := m.StreamingText
-		tempMsg := Message{
-			Role:    "assistant",
-			Content: m.StreamingText,
-		}
-		rendered, err := m.RenderMessage(&tempMsg)
-		if err == nil {
-			streamContent = strings.TrimSpace(rendered)
-		}
-
-		neoMessage := m.renderNeoTerminalMessage("assistant", streamContent, time.Now())
-		content.WriteString(neoMessage)
-	}
+	// Streaming text is now handled by updating the placeholder message in m.Messages
+	// No need to render it separately here (that would cause duplication)
 
 	// Show work display if streaming and display is available
 	if m.Streaming && m.streamingDisplay != nil {
@@ -738,6 +729,16 @@ func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
 		logging.Debug("Stream error", "error", err)
 	}
 	m.ClearStreamingText()
+
+	// Remove empty assistant message placeholder if error occurred before any content
+	if len(m.Messages) > 0 {
+		lastMsg := &m.Messages[len(m.Messages)-1]
+		if lastMsg.Role == "assistant" && strings.TrimSpace(lastMsg.Content) == "" {
+			// Remove the empty placeholder message
+			m.Messages = m.Messages[:len(m.Messages)-1]
+		}
+	}
+
 	m.SetStatus(StatusError)
 	m.ErrorMessage = err.Error()
 	m.streamChan = nil

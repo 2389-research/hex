@@ -51,17 +51,26 @@ func TestUIStreamingFlow(t *testing.T) {
 	// Manually set streaming (in real app, this happens via Update)
 	model.Streaming = true
 
-	// Add streaming chunks
+	// Add assistant message placeholder (in real app, this happens in streamStartMsg)
+	model.Messages = append(model.Messages, ui.Message{
+		Role:    "assistant",
+		Content: "",
+	})
+
+	// Add streaming chunks - these update the placeholder in place
 	model.AppendStreamingText("Hello ")
 	assert.Equal(t, "Hello ", model.StreamingText)
+	assert.Equal(t, "Hello ", model.Messages[0].Content) // Updated in place
 
 	model.AppendStreamingText("world")
 	assert.Equal(t, "Hello world", model.StreamingText)
+	assert.Equal(t, "Hello world", model.Messages[0].Content) // Updated in place
 
 	model.AppendStreamingText("!")
 	assert.Equal(t, "Hello world!", model.StreamingText)
+	assert.Equal(t, "Hello world!", model.Messages[0].Content) // Updated in place
 
-	// Commit streaming text
+	// Commit streaming text - just clears buffer, message already in place
 	model.CommitStreamingText()
 	// Note: Streaming flag remains true, must be manually set to false
 	assert.Empty(t, model.StreamingText)
@@ -147,8 +156,14 @@ func TestUIStateTransitions(t *testing.T) {
 
 	// State: Streaming text accumulation
 	m.Streaming = true
+	// Add placeholder message (happens in streamStartMsg in real flow)
+	m.Messages = append(m.Messages, ui.Message{
+		Role:    "assistant",
+		Content: "",
+	})
 	m.AppendStreamingText("Test")
 	assert.Equal(t, "Test", m.StreamingText)
+	assert.Equal(t, "Test", m.Messages[0].Content) // Updated in place
 
 	// Commit and verify clear
 	m.CommitStreamingText()

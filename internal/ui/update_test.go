@@ -229,6 +229,12 @@ func TestStreamMessageStopCommitsText(t *testing.T) {
 	model.Ready = true
 	model.StreamingText = "Completed response"
 
+	// Add assistant message placeholder (happens in streamStartMsg in real flow)
+	model.Messages = append(model.Messages, ui.Message{
+		Role:    "assistant",
+		Content: "Completed response", // Updated during streaming
+	})
+
 	// Simulate message_stop event
 	chunk := &ui.StreamChunkMsg{
 		Chunk: &ui.StreamChunk{
@@ -240,7 +246,7 @@ func TestStreamMessageStopCommitsText(t *testing.T) {
 	updatedModel, _ := model.Update(chunk)
 	m := updatedModel.(*ui.Model)
 
-	// Streaming text should be committed to messages
+	// Streaming text buffer should be cleared, message already in Messages
 	assert.Equal(t, "", m.StreamingText)
 	assert.Len(t, m.Messages, 1)
 	assert.Equal(t, "assistant", m.Messages[0].Role)

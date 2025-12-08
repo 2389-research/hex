@@ -143,8 +143,16 @@ func TestCommitStreamingText(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.StreamingText = "Streamed content"
 
+	// In the new flow, message is already added as placeholder before streaming
+	// and updated in place during streaming, so we need to simulate that
+	model.Messages = append(model.Messages, ui.Message{
+		Role:    "assistant",
+		Content: "Streamed content",
+	})
+
 	model.CommitStreamingText()
 
+	// CommitStreamingText now just clears the buffer; message is already in place
 	assert.Equal(t, "", model.StreamingText)
 	assert.Equal(t, 1, len(model.Messages))
 	assert.Equal(t, "assistant", model.Messages[0].Role)
