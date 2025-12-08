@@ -11,9 +11,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/2389-research/hex/internal/registry"
 	"github.com/2389-research/hex/internal/subagents"
 )
 
@@ -23,7 +26,41 @@ const (
 
 	// MaxTaskTimeout is the maximum allowed timeout (30 minutes)
 	MaxTaskTimeout = 30 * time.Minute
+
+	// DefaultMaxAgentDepth is the default maximum recursion depth for sub-agents
+	DefaultMaxAgentDepth = 5
 )
+
+// Global counter for generating unique sub-agent IDs
+var subagentCounter atomic.Uint64
+
+// getAgentDepth reads the current agent depth from environment variable
+// Returns 0 if not set (root agent) or if value is invalid
+func getAgentDepth() int {
+	depthStr := os.Getenv("HEX_AGENT_DEPTH")
+	if depthStr == "" {
+		return 0 // Root agent
+	}
+	depth, err := strconv.Atoi(depthStr)
+	if err != nil {
+		return 0
+	}
+	return depth
+}
+
+// getMaxAgentDepth reads the maximum agent depth from environment variable
+// Returns DefaultMaxAgentDepth if not set or if value is invalid
+func getMaxAgentDepth() int {
+	maxDepthStr := os.Getenv("HEX_MAX_AGENT_DEPTH")
+	if maxDepthStr == "" {
+		return DefaultMaxAgentDepth
+	}
+	maxDepth, err := strconv.Atoi(maxDepthStr)
+	if err != nil || maxDepth < 1 {
+		return DefaultMaxAgentDepth
+	}
+	return maxDepth
+}
 
 // TaskTool implements sub-agent task delegation functionality
 type TaskTool struct {
@@ -31,6 +68,19 @@ type TaskTool struct {
 	HexBinPath     string        // Path to hex binary (empty = search PATH)
 	Executor       *subagents.Executor
 	UseFramework   bool // If true, use new subagent framework instead of direct subprocess
+}
+
+// generateAgentID creates a hierarchical agent ID based on parent ID
+// Format: root.1, root.2, root.1.1, root.1.2, etc.
+func generateAgentID() string {
+	parentID := os.Getenv("HEX_AGENT_ID")
+	if parentID == "" {
+		parentID = "root"
+	}
+
+	// Get next sequential ID for this parent
+	nextID := subagentCounter.Add(1)
+	return fmt.Sprintf("%s.%d", parentID, nextID)
 }
 
 // NewTaskTool creates a new task tool with default settings
@@ -86,6 +136,28 @@ func (t *TaskTool) Execute(ctx context.Context, params map[string]interface{}) (
 
 // executeWithFramework uses the new subagent framework
 func (t *TaskTool) executeWithFramework(ctx context.Context, params map[string]interface{}) (*Result, error) {
+	// Check recursion depth BEFORE doing anything else
+	currentDepth := getAgentDepth()
+	maxDepth := getMaxAgentDepth()
+
+	if currentDepth >= maxDepth {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error: fmt.Sprintf(
+				"max agent depth (%d) exceeded - this usually means:\n"+
+					"1. The task is too complex for recursive decomposition\n"+
+					"2. The agent is stuck in a loop\n"+
+					"3. You need to break down the task differently\n"+
+					"Set HEX_MAX_AGENT_DEPTH to increase limit (use with caution)",
+				maxDepth),
+		}, nil
+	}
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[TASK] Agent depth: %d/%d (framework)\n", currentDepth, maxDepth)
+	}
+
 	// Validate and extract parameters
 	prompt, ok := params["prompt"].(string)
 	if !ok || prompt == "" {
@@ -161,6 +233,28 @@ func (t *TaskTool) executeWithFramework(ctx context.Context, params map[string]i
 
 // executeLegacy uses the original subprocess implementation
 func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interface{}) (*Result, error) {
+	// Check recursion depth BEFORE doing anything else
+	currentDepth := getAgentDepth()
+	maxDepth := getMaxAgentDepth()
+
+	if currentDepth >= maxDepth {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error: fmt.Sprintf(
+				"max agent depth (%d) exceeded - this usually means:\n"+
+					"1. The task is too complex for recursive decomposition\n"+
+					"2. The agent is stuck in a loop\n"+
+					"3. You need to break down the task differently\n"+
+					"Set HEX_MAX_AGENT_DEPTH to increase limit (use with caution)",
+				maxDepth),
+		}, nil
+	}
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[TASK] Agent depth: %d/%d\n", currentDepth, maxDepth)
+	}
+
 	// Validate required parameters
 	prompt, ok := params["prompt"].(string)
 	if !ok || prompt == "" {
@@ -275,8 +369,22 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 
 	cmd := exec.CommandContext(cmdCtx, hexbinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
+	// Generate hierarchical agent ID for this sub-agent
+	agentID := generateAgentID()
+	parentID := os.Getenv("HEX_AGENT_ID")
+	if parentID == "" {
+		parentID = "root"
+	}
+
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()
+
+	// Set agent ID environment variables for process hierarchy tracking
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_ID=%s", agentID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_PARENT_AGENT_ID=%s", parentID))
+
+	// Pass depth+1 to child agent
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_DEPTH=%d", currentDepth+1))
 
 	// Set working directory to current directory
 	cwd, err := os.Getwd()
@@ -293,8 +401,31 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 	// Record start time
 	startTime := time.Now()
 
-	// Execute command
-	execErr := cmd.Run()
+	// Start the command so we can register the process
+	if err := cmd.Start(); err != nil {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    fmt.Sprintf("failed to start sub-agent: %v", err),
+			Metadata: map[string]interface{}{
+				"prompt":        prompt,
+				"description":   description,
+				"subagent_type": subagentType,
+			},
+		}, nil
+	}
+
+	// Register process immediately after start
+	if err := registry.Global().Register(agentID, parentID, cmd.Process); err != nil {
+		// Log error but continue - registration failure shouldn't block execution
+		fmt.Fprintf(os.Stderr, "Warning: failed to register sub-agent %s: %v\n", agentID, err)
+	}
+
+	// Ensure cleanup on exit
+	defer registry.Global().Deregister(agentID)
+
+	// Wait for command to complete
+	execErr := cmd.Wait()
 	duration := time.Since(startTime)
 
 	// Check if timeout occurred first (before checking other errors)
@@ -437,6 +568,31 @@ func (t *TaskTool) buildHex(ctx context.Context) (string, error) {
 // Returns a channel that emits Result objects as output becomes available.
 // The channel is closed when execution completes or fails.
 func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]interface{}) (<-chan *Result, error) {
+	// Check recursion depth BEFORE doing anything else
+	currentDepth := getAgentDepth()
+	maxDepth := getMaxAgentDepth()
+
+	if currentDepth >= maxDepth {
+		resultChan := make(chan *Result, 1)
+		resultChan <- &Result{
+			ToolName: "task",
+			Success:  false,
+			Error: fmt.Sprintf(
+				"max agent depth (%d) exceeded - this usually means:\n"+
+					"1. The task is too complex for recursive decomposition\n"+
+					"2. The agent is stuck in a loop\n"+
+					"3. You need to break down the task differently\n"+
+					"Set HEX_MAX_AGENT_DEPTH to increase limit (use with caution)",
+				maxDepth),
+		}
+		close(resultChan)
+		return resultChan, nil
+	}
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[TASK] Agent depth: %d/%d (streaming)\n", currentDepth, maxDepth)
+	}
+
 	// Validate required parameters (same as Execute)
 	prompt, ok := params["prompt"].(string)
 	if !ok || prompt == "" {
@@ -558,8 +714,22 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 
 	cmd := exec.CommandContext(cmdCtx, hexbinPath, args...) //nolint:gosec // G204: Args constructed from validated parameters for subprocess tool execution
 
+	// Generate hierarchical agent ID for this sub-agent
+	agentID := generateAgentID()
+	parentID := os.Getenv("HEX_AGENT_ID")
+	if parentID == "" {
+		parentID = "root"
+	}
+
 	// Inherit environment variables (API key, config, etc.)
 	cmd.Env = os.Environ()
+
+	// Set agent ID environment variables for process hierarchy tracking
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_ID=%s", agentID))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_PARENT_AGENT_ID=%s", parentID))
+
+	// Pass depth+1 to child agent
+	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_DEPTH=%d", currentDepth+1))
 
 	// Set working directory to current directory
 	cwd, err := os.Getwd()
@@ -612,6 +782,12 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 		}
 		close(resultChan)
 		return resultChan, nil
+	}
+
+	// Register process with registry for cascading stop protocol
+	if err := registry.Global().Register(agentID, parentID, cmd.Process); err != nil {
+		// Log error but continue - registration failure shouldn't block execution
+		fmt.Fprintf(os.Stderr, "Warning: failed to register sub-agent %s: %v\n", agentID, err)
 	}
 
 	// Create result channel (buffered to avoid blocking)

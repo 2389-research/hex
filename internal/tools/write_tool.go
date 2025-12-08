@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/2389-research/hex/internal/filelock"
 )
 
 const (
@@ -109,6 +112,24 @@ func (t *WriteTool) Execute(_ context.Context, params map[string]interface{}) (*
 			Error:    fmt.Sprintf("invalid path: %v", err),
 		}, nil
 	}
+
+	// Acquire file lock
+	agentID := os.Getenv("HEX_AGENT_ID")
+	if agentID == "" {
+		agentID = "main" // Default for non-agent execution
+	}
+
+	lockManager := filelock.Global()
+	if err := lockManager.Acquire(absPath, agentID, 30*time.Second); err != nil {
+		return &Result{
+			ToolName: "write_file",
+			Success:  false,
+			Error:    fmt.Sprintf("failed to acquire file lock: %v", err),
+		}, nil
+	}
+	defer func() {
+		_ = lockManager.Release(absPath, agentID)
+	}()
 
 	// Ensure parent directory exists
 	parentDir := filepath.Dir(absPath)

@@ -62,6 +62,11 @@ func (a *StreamAccumulator) Reset() {
 
 // CreateMessageStream sends a streaming request and returns a channel of chunks
 func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<-chan *StreamChunk, error) {
+	// Acquire rate limit token before making API call
+	if err := globalLimiter.Acquire(ctx); err != nil {
+		return nil, fmt.Errorf("rate limit: %w", err)
+	}
+
 	req.Stream = true
 
 	// Marshal request

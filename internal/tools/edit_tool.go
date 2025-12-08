@@ -7,7 +7,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/2389-research/hex/internal/filelock"
 )
 
 // EditTool performs exact string replacements in files
@@ -78,6 +82,34 @@ func (t *EditTool) Execute(_ context.Context, params map[string]interface{}) (*R
 	if replaceAllParam, ok := params["replace_all"].(bool); ok {
 		replaceAll = replaceAllParam
 	}
+
+	// Get absolute path for locking
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("failed to get absolute path: %v", err),
+		}, nil
+	}
+
+	// Acquire file lock
+	agentID := os.Getenv("HEX_AGENT_ID")
+	if agentID == "" {
+		agentID = "main" // Default for non-agent execution
+	}
+
+	lockManager := filelock.Global()
+	if err := lockManager.Acquire(absPath, agentID, 30*time.Second); err != nil {
+		return &Result{
+			ToolName: t.Name(),
+			Success:  false,
+			Error:    fmt.Sprintf("failed to acquire file lock: %v", err),
+		}, nil
+	}
+	defer func() {
+		_ = lockManager.Release(absPath, agentID)
+	}()
 
 	// Read the file
 	content, err := os.ReadFile(filePath) //nolint:gosec // G304: Tool accepts user file paths as intended functionality

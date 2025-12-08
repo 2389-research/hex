@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/2389-research/hex/internal/events"
 )
 
 // Executor manages the execution of isolated subagent instances
@@ -149,10 +151,19 @@ func (e *Executor) executeSubprocess(ctx context.Context, req *ExecutionRequest,
 		}
 	}
 
+	// Generate hierarchical agent ID for this subagent
+	parentAgentID := os.Getenv("HEX_AGENT_ID")
+	if parentAgentID == "" {
+		parentAgentID = "root"
+	}
+	agentID := events.GenerateAgentID(parentAgentID)
+
 	// Add subagent-specific environment variables
 	cmd.Env = append(cmd.Env,
 		fmt.Sprintf("HEX_SUBAGENT_TYPE=%s", req.Type),
 		fmt.Sprintf("HEX_SUBAGENT_CONTEXT_ID=%s", isolatedCtx.ID),
+		fmt.Sprintf("HEX_AGENT_ID=%s", agentID),
+		fmt.Sprintf("HEX_PARENT_AGENT_ID=%s", parentAgentID),
 	)
 
 	// Set working directory

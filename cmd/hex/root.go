@@ -11,10 +11,13 @@ import (
 	"github.com/2389-research/hex/internal/agentsmd"
 	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/cost"
+	"github.com/2389-research/hex/internal/events"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
 	"github.com/2389-research/hex/internal/permissions"
 	"github.com/2389-research/hex/internal/services"
+	"github.com/2389-research/hex/internal/shutdown"
 	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/templates"
 	"github.com/2389-research/hex/internal/tools"
@@ -118,11 +121,28 @@ func init() {
 }
 
 func runRoot(_ *cobra.Command, args []string) error {
+	// Initialize shutdown handler for cascading process cleanup
+	shutdown.InitShutdownHandler()
+
 	// Initialize logging
 	if err := initializeLogging(); err != nil {
 		return fmt.Errorf("initialize logging: %w", err)
 	}
 	defer closeLogger()
+
+	// Initialize event store
+	eventStore, err := events.NewEventStore("hex_events.jsonl")
+	if err != nil {
+		logging.WarnWith("Failed to create event store", "error", err)
+	} else {
+		events.SetGlobal(eventStore)
+		defer func() { _ = eventStore.Close() }()
+
+		// Set agent ID if not already set
+		if os.Getenv("HEX_AGENT_ID") == "" {
+			_ = os.Setenv("HEX_AGENT_ID", "root")
+		}
+	}
 
 	logging.InfoWith("Hex starting", "version", version)
 
@@ -446,6 +466,15 @@ func runInteractive(prompt string) error {
 		os.Stderr = origStderr // Restore stderr for error reporting
 		logging.ErrorWithErr("Failed to run UI", err)
 		return fmt.Errorf("run UI: %w", err)
+	}
+
+	// Restore stderr before printing cost summary
+	os.Stderr = origStderr
+
+	// Print cost summary if agent ID is set
+	agentID := os.Getenv("HEX_AGENT_ID")
+	if agentID != "" {
+		cost.PrintCostSummary(agentID)
 	}
 
 	logging.Info("Hex shutting down")

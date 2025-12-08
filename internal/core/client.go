@@ -10,15 +10,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/ratelimit"
 )
 
 const (
 	defaultBaseURL = "https://api.anthropic.com/v1"
 	apiVersion     = "2023-06-01"
 )
+
+// Global rate limiter shared across all clients to prevent 429 errors
+// Anthropic API allows ~50 requests per minute (Tier 1).
+//
+// NOTE: This limiter is never stopped and runs a background goroutine
+// for the lifetime of the process. This is acceptable for a singleton
+// that lives for the entire application lifecycle.
+var globalLimiter = ratelimit.NewSharedLimiter(50, time.Minute)
 
 // Client is the Anthropic API client
 type Client struct {
@@ -74,6 +85,11 @@ func NewClient(apiKey string, opts ...ClientOption) *Client {
 
 // CreateMessage sends a message to the API
 func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*MessageResponse, error) {
+	// Acquire rate limit token before making API call
+	if err := globalLimiter.Acquire(ctx); err != nil {
+		return nil, fmt.Errorf("rate limit: %w", err)
+	}
+
 	// Marshal request
 	body, err := json.Marshal(req)
 	if err != nil {
@@ -148,6 +164,24 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 		"output_tokens", resp.Usage.OutputTokens,
 		"stop_reason", resp.StopReason,
 	)
+
+	// Record cost tracking
+	agentID := os.Getenv("HEX_AGENT_ID")
+	parentID := os.Getenv("HEX_PARENT_AGENT_ID")
+
+	if agentID != "" {
+		// Convert core.Usage to cost.Usage
+		costUsage := cost.Usage{
+			InputTokens:      resp.Usage.InputTokens,
+			OutputTokens:     resp.Usage.OutputTokens,
+			CacheReadTokens:  resp.Usage.CacheReadTokens,
+			CacheWriteTokens: resp.Usage.CacheWriteTokens,
+		}
+		if err := cost.Global().RecordUsage(agentID, parentID, req.Model, costUsage); err != nil {
+			// Log error but don't fail the request
+			logging.DebugIf("Cost tracking failed", "error", err)
+		}
+	}
 
 	return &resp, nil
 }

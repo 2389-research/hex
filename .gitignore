@@ -37,3 +37,8 @@ test-react/
 hex
 reacttest/
 .worktrees/
+
+# Binaries
+/bin/hexviz
+/bin/hexreplay
+/hexreplay

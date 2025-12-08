@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/tools"
 )
@@ -290,6 +291,13 @@ func runPrintMode(prompt string) error {
 				"total_tokens", totalInputTokens+totalOutputTokens,
 			)
 		}
+
+		// Print cost summary if agent ID is set
+		agentID := os.Getenv("HEX_AGENT_ID")
+		if agentID != "" {
+			cost.PrintCostSummary(agentID)
+		}
+
 		return formatOutput(resp, outputFormat)
 	}
 
@@ -301,6 +309,13 @@ func runPrintMode(prompt string) error {
 			"total_tokens", totalInputTokens+totalOutputTokens,
 		)
 	}
+
+	// Print cost summary if agent ID is set (even on error)
+	agentID := os.Getenv("HEX_AGENT_ID")
+	if agentID != "" {
+		cost.PrintCostSummary(agentID)
+	}
+
 	return fmt.Errorf("exceeded maximum turns (%d) in tool execution loop", maxTurns)
 }
 
