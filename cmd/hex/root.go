@@ -46,6 +46,7 @@ var (
 	// Global flags
 	printMode    bool
 	outputFormat string
+	provider     string
 	model        string
 	verbose      bool
 	debug        bool
@@ -96,6 +97,7 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&printMode, "print", "p", false, "Print mode (non-interactive)")
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "output-format", "text", "Output format: text, json, stream-json")
+	rootCmd.PersistentFlags().StringVar(&provider, "provider", "", "LLM provider (anthropic) - other providers coming soon")
 	rootCmd.PersistentFlags().StringVarP(&model, "model", "m", "", "Model to use")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging to /tmp/hex-debug.log")
@@ -253,6 +255,27 @@ func runInteractive(prompt string) error {
 	defer func() { _ = db.Close() }()
 	logging.InfoWith("Database opened successfully", "path", dbPath)
 
+	// Task 9: Load config and validate provider early (fail fast)
+	cfg, err := core.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	// Task 9: Determine provider (flag > config > default)
+	providerName := provider
+	if providerName == "" {
+		providerName = cfg.Provider
+	}
+	if providerName == "" {
+		providerName = "anthropic" // Default to anthropic
+	}
+
+	// Task 9: Validate provider (only anthropic supported for now)
+	if providerName != "anthropic" {
+		return fmt.Errorf("provider '%s' not yet supported. Currently only 'anthropic' is available. Other providers (openai, gemini, openrouter) coming soon", providerName)
+	}
+	logging.InfoWith("Using provider", "provider", providerName)
+
 	// Phase 6C: Load template if specified
 	var template *templates.Template
 	var systemPrompt string
@@ -352,10 +375,13 @@ func runInteractive(prompt string) error {
 		if template != nil && template.Name != "" {
 			title = template.Name + " Session"
 		}
+
+		// Task 9: Use validated provider name from config/flag
 		conv := &storage.Conversation{
-			ID:    conversationID,
-			Title: title,
-			Model: modelName,
+			ID:       conversationID,
+			Title:    title,
+			Provider: providerName,
+			Model:    modelName,
 		}
 		if err := storage.CreateConversation(db, conv); err != nil {
 			return fmt.Errorf("create conversation: %w", err)
@@ -375,12 +401,7 @@ func runInteractive(prompt string) error {
 	msgSvc := services.NewMessageService(db)
 
 	// Task 6: Create and set API client
-	// Load config to get API key
-	cfg, err := core.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-
+	// Config and provider were validated earlier, just get API key
 	// Get API key from config (handles all providers and env vars)
 	apiKey, _ := cfg.GetAPIKey() // Ignore error - we'll check if empty below
 
