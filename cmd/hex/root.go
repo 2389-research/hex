@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/2389-research/hex/internal/agentsmd"
@@ -20,7 +18,6 @@ import (
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
 	"github.com/2389-research/hex/internal/permissions"
-	"github.com/2389-research/hex/internal/registry"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/shutdown"
 	"github.com/2389-research/hex/internal/storage"
@@ -134,32 +131,12 @@ func init() {
 }
 
 func runRoot(_ *cobra.Command, args []string) error {
-	// Set up signal handling for graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
+	// Create cancellable context for future tasks
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go func() {
-		<-sigChan
-		fmt.Fprintln(os.Stderr, "\n🛑 Interrupt received, shutting down gracefully...")
-
-		// Stop all child processes
-		agentID := os.Getenv("HEX_AGENT_ID")
-		if agentID == "" {
-			agentID = "root"
-		}
-
-		if err := registry.Global().StopCascading(agentID, nil); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: cleanup error: %v\n", err)
-		}
-
-		cancel()
-		os.Exit(0)
-	}()
-
 	// Initialize shutdown handler for cascading process cleanup
+	// This handles SIGINT/SIGTERM, releases file locks, stops child processes, and checks for orphans
 	shutdown.InitShutdownHandler()
 
 	// Initialize logging
