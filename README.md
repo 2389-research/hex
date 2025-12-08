@@ -173,6 +173,15 @@ After 6 phases of development, Hex v1.0 is production-ready with:
 - 📄 **File and console output**
 - 🔍 **Context propagation** (conversation ID, request ID)
 
+**Multi-Agent Capabilities**
+- 📊 **Event-Sourcing** - Complete audit trail of all agent activities
+- 💰 **Cost Tracking** - Automatic cost calculation per agent and tree totals
+- 🔍 **Visualization** - Tree, timeline, and cost views with HTML export
+- 🛡️ **Process Management** - Graceful shutdown with cascading cleanup
+- 📈 **Analytics** - Analyze multi-agent performance and costs
+
+See [Multi-Agent Features Guide](docs/MULTIAGENT_FEATURES.md) for details.
+
 ### Security Notes
 ⚠️ **Important**: v1.0 requires **Go 1.24.9+** to address 12 known vulnerabilities in Go stdlib. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for details.
 
