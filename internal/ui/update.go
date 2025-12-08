@@ -81,6 +81,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Store the stream channel and start reading
 		m.streamChan = msg.channel
 		m.SetStatus(StatusStreaming)
+		m.Streaming = true // Set streaming flag for queue logic
 		// Show thinking indicator while waiting for first response chunk
 		if m.streamingDisplay != nil {
 			m.streamingDisplay.SetThinking(true, "")
@@ -413,6 +414,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if input != "" {
+					// Check if currently streaming - if so, queue the message
+					if m.Streaming {
+						// Queue message for later processing
+						m.messageQueue = append(m.messageQueue, input)
+						m.AddMessage("user", input)
+						m.Input.Reset()
+
+						// Update status to show queued
+						if len(m.messageQueue) == 1 {
+							m.SetStatus(StatusQueued)
+						}
+						m.updateViewport()
+
+						// Save to database
+						if err := m.saveMessage("user", input); err != nil {
+							m.ErrorMessage = "Failed to save message: " + err.Error()
+						}
+
+						return m, nil
+					}
+
+					// Not streaming - process immediately
 					m.AddMessage("user", input)
 					m.Input.Reset()
 					m.updateViewport()
@@ -427,15 +450,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if len(m.Messages) == 1 {
 						title := generateConversationTitle(input)
 						_ = m.updateConversationTitle(title)
-					}
-
-					// Phase 4 Task 4: Check if agent is busy before triggering streaming
-					if m.agentSvc != nil && m.agentSvc.IsConversationBusy(m.ConversationID) {
-						// Message will be queued by AgentService
-						m.SetStatus(StatusQueued)
-						m.updateViewport()
-						// Note: AgentService will handle the actual queuing and execution
-						// For now, still fall through to streamMessage which will queue via service layer
 					}
 
 					// Task 6: Trigger streaming
@@ -815,7 +829,8 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 // handleContentBlockStop processes the completion of a content block (tool parameters complete)
 func (m *Model) handleContentBlockStop() (tea.Model, tea.Cmd) {
 	if m.assemblingToolUse == nil {
-		return m, nil
+		// No tool being assembled, just a text block - continue reading for message_stop
+		return m, m.continueReading()
 	}
 
 	// Parse accumulated JSON into Input map
@@ -992,10 +1007,13 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 	}
 
 	m.SetStatus(StatusIdle)
+	m.Streaming = false // Clear streaming flag
 	// Stream state already cleared at start of handleMessageStop()
 
 	m.updateViewport()
-	return m, nil
+
+	// Check if there are queued messages to process
+	return m, m.processNextQueuedMessage()
 }
 
 // handleStreamChunk processes a streaming chunk message
@@ -1096,6 +1114,34 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 
 		return &streamStartMsg{channel: streamChan}
 	}
+}
+
+// processNextQueuedMessage checks the message queue and processes the next message if any
+func (m *Model) processNextQueuedMessage() tea.Cmd {
+	if len(m.messageQueue) == 0 {
+		// No queued messages
+		return nil
+	}
+
+	// Get first queued message
+	nextMessage := m.messageQueue[0]
+	m.messageQueue = m.messageQueue[1:]
+
+	// Update status
+	if len(m.messageQueue) > 0 {
+		// More messages still queued
+		m.SetStatus(StatusQueued)
+	} else {
+		// This was the last queued message
+		m.SetStatus(StatusIdle)
+	}
+
+	// Process the queued message
+	if m.apiClient != nil {
+		return m.streamMessage(nextMessage)
+	}
+
+	return nil
 }
 
 // continueReading is a helper that safely continues reading from the stream
