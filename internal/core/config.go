@@ -83,7 +83,23 @@ func LoadConfig() (*Config, error) {
 
 	// Read config file (ignore error if file doesn't exist)
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file doesn't exist - create a default one
+			home, err := os.UserHomeDir()
+			if err == nil {
+				hexDir := filepath.Join(home, ".hex")
+				tomlPath := filepath.Join(hexDir, "config.toml")
+
+				// Create directory if needed
+				if err := os.MkdirAll(hexDir, 0755); err != nil {
+					// Log the mkdir failure specifically
+					fmt.Fprintf(os.Stderr, "Note: Could not create config directory: %v\n", err)
+				} else if err := createDefaultConfig(tomlPath); err != nil {
+					// Don't fail if we can't create default config
+					fmt.Fprintf(os.Stderr, "Note: Could not create default config: %v\n", err)
+				}
+			}
+		} else {
 			return nil, fmt.Errorf("read config: %w", err)
 		}
 	}
@@ -149,4 +165,68 @@ func (c *Config) GetAPIKey() (string, error) {
 		return "", fmt.Errorf("API key not configured. Set %s_API_KEY or run 'hex setup-token'", c.Provider)
 	}
 	return pc.APIKey, nil
+}
+
+// createDefaultConfig creates a default config.toml with helpful comments
+func createDefaultConfig(path string) error {
+	defaultConfig := `# Hex Configuration File
+# This file is automatically created on first run
+# Priority: env vars > .env file > this config > defaults
+
+# Default provider (anthropic, openai, gemini, openrouter)
+provider = "anthropic"
+
+# Default model (optional - can be overridden with --model flag)
+# Only Anthropic has a default; other providers require --model flag
+# model = "claude-sonnet-4-5-20250929"
+
+# Permission mode for tool execution (ask, auto)
+permission_mode = "ask"
+
+# Default tools available in print mode
+default_tools = ["Bash", "Read", "Write", "Edit", "Grep", "Glob"]
+
+# Provider configurations
+# API keys can also be set via environment variables:
+#   ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY
+
+[providers.anthropic]
+# api_key = "sk-ant-..."
+# base_url = "https://api.anthropic.com"  # Optional custom endpoint
+
+[providers.openai]
+# api_key = "sk-..."
+# base_url = "https://api.openai.com/v1"  # Optional custom endpoint
+
+[providers.gemini]
+# api_key = "..."
+# base_url = "https://generativelanguage.googleapis.com/v1beta"
+
+[providers.openrouter]
+# api_key = "sk-or-..."
+# base_url = "https://openrouter.ai/api/v1"
+
+# Current models (as of 2025-12-08):
+# Anthropic: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101, claude-haiku-4-5-20251001
+# OpenAI: gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini
+# Gemini: gemini-2.5-pro, gemini-2.5-flash, gemini-pro-latest
+# OpenRouter: anthropic/claude-sonnet-4-5, openai/gpt-5.1, google/gemini-2.5-pro
+`
+
+	// Use O_EXCL to atomically create file only if it doesn't exist
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		if os.IsExist(err) {
+			return nil // File exists, someone else created it
+		}
+		return fmt.Errorf("create config: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	if _, err := f.WriteString(defaultConfig); err != nil {
+		return fmt.Errorf("write config: %w", err)
+	}
+
+	fmt.Fprintf(os.Stderr, "✅ Created default config at %s\n", path)
+	return nil
 }

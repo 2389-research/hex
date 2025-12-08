@@ -32,6 +32,10 @@ type mockProvider struct {
 	name string
 }
 
+func (m *mockProvider) CreateMessage(ctx context.Context, req core.MessageRequest) (*core.MessageResponse, error) {
+	return nil, nil
+}
+
 func (m *mockProvider) CreateMessageStream(ctx context.Context, req core.MessageRequest) (<-chan *core.StreamChunk, error) {
 	return nil, nil
 }

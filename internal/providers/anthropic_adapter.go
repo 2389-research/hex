@@ -21,6 +21,11 @@ func NewAnthropicAdapter(client *core.Client) *AnthropicAdapter {
 	}
 }
 
+// CreateMessage implements Provider.CreateMessage
+func (a *AnthropicAdapter) CreateMessage(ctx context.Context, req core.MessageRequest) (*core.MessageResponse, error) {
+	return a.client.CreateMessage(ctx, req)
+}
+
 // CreateMessageStream implements Provider.CreateMessageStream
 func (a *AnthropicAdapter) CreateMessageStream(ctx context.Context, req core.MessageRequest) (<-chan *core.StreamChunk, error) {
 	return a.client.CreateMessageStream(ctx, req)

@@ -18,6 +18,10 @@ import (
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
 	"github.com/2389-research/hex/internal/permissions"
+	"github.com/2389-research/hex/internal/providers"
+	"github.com/2389-research/hex/internal/providers/gemini"
+	"github.com/2389-research/hex/internal/providers/openai"
+	"github.com/2389-research/hex/internal/providers/openrouter"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/shutdown"
 	"github.com/2389-research/hex/internal/storage"
@@ -88,9 +92,11 @@ var rootCmd = &cobra.Command{
 	Long: `Hex is a powerful command-line interface for Claude AI, inspired by Claude Code, Crush, Codex, and MaKeR.
 
 Start an interactive session or use --print for one-off queries.`,
-	Version: version,
-	Args:    cobra.ArbitraryArgs,
-	RunE:    runRoot,
+	Version:       version,
+	Args:          cobra.ArbitraryArgs,
+	RunE:          runRoot,
+	SilenceUsage:  true, // Don't print usage on errors - keeps error messages clean
+	SilenceErrors: true, // Don't print errors - main.go handles it (prevents double printing)
 }
 
 func init() {
@@ -270,9 +276,15 @@ func runInteractive(prompt string) error {
 		providerName = "anthropic" // Default to anthropic
 	}
 
-	// Task 9: Validate provider (only anthropic supported for now)
-	if providerName != "anthropic" {
-		return fmt.Errorf("provider '%s' not yet supported. Currently only 'anthropic' is available. Other providers (openai, gemini, openrouter) coming soon", providerName)
+	// Task 11: All providers now supported!
+	validProviders := map[string]bool{
+		"anthropic":  true,
+		"openai":     true,
+		"gemini":     true,
+		"openrouter": true,
+	}
+	if !validProviders[providerName] {
+		return fmt.Errorf("unknown provider '%s'. Supported providers: anthropic, openai, gemini, openrouter", providerName)
 	}
 	logging.InfoWith("Using provider", "provider", providerName)
 
@@ -308,8 +320,11 @@ func runInteractive(prompt string) error {
 	if modelName == "" {
 		if template != nil && template.Model != "" {
 			modelName = template.Model
-		} else {
+		} else if providerName == "anthropic" {
 			modelName = "claude-sonnet-4-5-20250929"
+		} else {
+			// Non-Anthropic providers require explicit --model flag
+			return fmt.Errorf("--model flag is required when using --provider=%s\n\nExample models:\n  anthropic: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101, claude-haiku-4-5-20251001\n  openai: gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini\n  gemini: gemini-2.5-pro, gemini-2.5-flash, gemini-pro-latest\n  openrouter: anthropic/claude-sonnet-4-5, openai/gpt-5.1, google/gemini-2.5-pro", providerName)
 		}
 	}
 
@@ -400,23 +415,40 @@ func runInteractive(prompt string) error {
 	convSvc := services.NewConversationService(db)
 	msgSvc := services.NewMessageService(db)
 
-	// Task 6: Create and set API client
-	// Config and provider were validated earlier, just get API key
-	// Get API key from config (handles all providers and env vars)
-	apiKey, _ := cfg.GetAPIKey() // Ignore error - we'll check if empty below
-
-	if apiKey != "" {
-		client := core.NewClient(apiKey)
-		uiModel.SetAPIClient(client)
-
-		// Phase 4: Initialize AgentService (requires client)
-		agentSvc := services.NewAgentService(client, convSvc, msgSvc)
-
-		// Phase 4: Set all services on UI model
-		uiModel.SetServices(convSvc, msgSvc, agentSvc)
-	} else {
-		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+	// Task 11: Create API client
+	// For now, TUI mode only supports Anthropic (which uses core.Client with both CreateMessage and CreateMessageStream)
+	// Other providers will be supported once we extend the Provider interface
+	if providerName != "anthropic" {
+		return fmt.Errorf("TUI mode currently only supports Anthropic provider. Use --provider=anthropic or print mode for other providers")
 	}
+
+	// Get provider config for Anthropic
+	providerCfg, ok := cfg.ProviderConfigs[providerName]
+	if !ok {
+		return fmt.Errorf("no configuration found for provider '%s'", providerName)
+	}
+
+	// Check for environment variable
+	if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
+		providerCfg.APIKey = envKey
+	}
+
+	// Validate API key
+	if providerCfg.APIKey == "" {
+		return fmt.Errorf("API key not configured for Anthropic. Set ANTHROPIC_API_KEY environment variable or add to config")
+	}
+
+	// Create core.Client for Anthropic (has both CreateMessage and CreateMessageStream)
+	apiClient := core.NewClient(providerCfg.APIKey)
+
+	// Set API client on UI model
+	uiModel.SetAPIClient(apiClient)
+
+	// Phase 4: Initialize AgentService (requires LLMClient with both methods)
+	agentSvc := services.NewAgentService(apiClient, convSvc, msgSvc)
+
+	// Phase 4: Set all services on UI model
+	uiModel.SetServices(convSvc, msgSvc, agentSvc)
 
 	// Task 12: Create tool registry and executor
 	registry := tools.NewRegistry()
@@ -690,4 +722,64 @@ func createPermissionChecker() (*permissions.Checker, error) {
 
 	logging.DebugWith("Permission checker created", "config", config.String())
 	return checker, nil
+}
+
+// createProvider creates the appropriate provider based on config and provider name
+func createProvider(cfg *core.Config, providerName string) (providers.Provider, error) {
+	// Get provider-specific config
+	providerCfg, ok := cfg.ProviderConfigs[providerName]
+	if !ok {
+		return nil, fmt.Errorf("no configuration found for provider '%s'", providerName)
+	}
+
+	// Check for provider-specific environment variables
+	envKey := ""
+	switch providerName {
+	case "anthropic":
+		envKey = os.Getenv("ANTHROPIC_API_KEY")
+	case "openai":
+		envKey = os.Getenv("OPENAI_API_KEY")
+	case "gemini":
+		envKey = os.Getenv("GEMINI_API_KEY")
+	case "openrouter":
+		envKey = os.Getenv("OPENROUTER_API_KEY")
+	}
+	if envKey != "" {
+		providerCfg.APIKey = envKey
+	}
+
+	// Validate we have an API key
+	if providerCfg.APIKey == "" {
+		return nil, fmt.Errorf("API key not configured for provider '%s'. Set %s_API_KEY environment variable or add to config",
+			providerName, strings.ToUpper(providerName))
+	}
+
+	// Convert to providers.ProviderConfig
+	config := providers.ProviderConfig{
+		APIKey:  providerCfg.APIKey,
+		BaseURL: providerCfg.BaseURL,
+	}
+
+	// Create appropriate provider
+	var provider providers.Provider
+	switch providerName {
+	case "anthropic":
+		client := core.NewClient(config.APIKey)
+		provider = providers.NewAnthropicAdapter(client)
+	case "openai":
+		provider = openai.NewProvider(config)
+	case "gemini":
+		provider = gemini.NewProvider(config)
+	case "openrouter":
+		provider = openrouter.NewProvider(config)
+	default:
+		return nil, fmt.Errorf("unknown provider: %s", providerName)
+	}
+
+	// Validate provider config
+	if err := provider.ValidateConfig(config); err != nil {
+		return nil, fmt.Errorf("invalid provider config: %w", err)
+	}
+
+	return provider, nil
 }

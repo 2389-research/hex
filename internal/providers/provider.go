@@ -9,9 +9,14 @@ import (
 )
 
 // Provider defines the interface all LLM providers must implement
-// This matches the orchestrator.APIClient interface for easy integration
+// This matches both the orchestrator.APIClient and services.LLMClient interfaces
 type Provider interface {
+	// CreateMessage sends a message request and returns a complete response (synchronous)
+	// Used by print mode and agent services
+	CreateMessage(ctx context.Context, req core.MessageRequest) (*core.MessageResponse, error)
+
 	// CreateMessageStream sends a message request and returns a streaming response
+	// Used by TUI mode for real-time streaming
 	CreateMessageStream(ctx context.Context, req core.MessageRequest) (<-chan *core.StreamChunk, error)
 
 	// Name returns the provider's identifier (e.g., "anthropic", "openai")

@@ -29,22 +29,35 @@ func runPrintMode(prompt string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// Get API key
-	apiKey, err := cfg.GetAPIKey()
-	if err != nil {
-		return fmt.Errorf("get API key: %w", err)
+	// Determine which provider to use (from flag, config, or default)
+	providerName := provider
+	if providerName == "" && cfg.Provider != "" {
+		providerName = cfg.Provider
+	}
+	if providerName == "" {
+		providerName = "anthropic" // Default
 	}
 
-	// Create client
-	client := core.NewClient(apiKey)
-
-	// Use model from flag if set, otherwise use config/default
+	// Validate and determine model BEFORE creating provider (fail fast)
 	modelToUse := model
-	if modelToUse == "" && cfg.Model != "" {
-		modelToUse = cfg.Model
-	}
 	if modelToUse == "" {
-		modelToUse = core.DefaultModel
+		// Anthropic has a hardcoded default as fallback
+		// Other providers require explicit --model flag
+		if providerName == "anthropic" {
+			if cfg.Model != "" {
+				modelToUse = cfg.Model
+			} else {
+				modelToUse = core.DefaultModel
+			}
+		} else {
+			return fmt.Errorf("--model flag is required when using --provider=%s\n\nExample models:\n  anthropic: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101, claude-haiku-4-5-20251001\n  openai: gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini\n  gemini: gemini-2.5-pro, gemini-2.5-flash, gemini-pro-latest\n  openrouter: anthropic/claude-sonnet-4-5, openai/gpt-5.1, google/gemini-2.5-pro", providerName)
+		}
+	}
+
+	// Now create provider (after model is validated)
+	client, err := createProvider(cfg, providerName)
+	if err != nil {
+		return fmt.Errorf("create provider: %w", err)
 	}
 
 	// Build initial user message
@@ -200,6 +213,21 @@ func runPrintMode(prompt string) error {
 
 				go func() {
 					defer wg.Done()
+
+					// Recover from panics in tool execution
+					defer func() {
+						if r := recover(); r != nil {
+							logging.WarnWith("Tool execution panicked", "tool", tu.Name, "panic", r)
+							resultChan <- toolResult{
+								block: core.ContentBlock{
+									Type:      "tool_result",
+									ToolUseID: tu.ID,
+									Content:   fmt.Sprintf("Error: tool panicked: %v", r),
+								},
+								index: idx,
+							}
+						}
+					}()
 
 					// Check context cancellation before executing
 					select {
