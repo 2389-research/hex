@@ -109,8 +109,11 @@ func runPrintMode(prompt string) error {
 			Messages:  messages,
 		}
 
+		// Always include Hex identity in system prompt
 		if systemPrompt != "" {
-			req.System = systemPrompt
+			req.System = core.DefaultSystemPrompt + "\n\n" + systemPrompt
+		} else {
+			req.System = core.DefaultSystemPrompt
 		}
 
 		if len(toolDefs) > 0 {

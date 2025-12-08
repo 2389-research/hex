@@ -1189,13 +1189,19 @@ func (m *Model) sendToolResults() tea.Cmd {
 			tools = toolRegistry.GetDefinitions()
 		}
 
+		// Always include Hex identity in system prompt
+		finalSystemPrompt := core.DefaultSystemPrompt
+		if systemPrompt != "" {
+			finalSystemPrompt = core.DefaultSystemPrompt + "\n\n" + systemPrompt
+		}
+
 		// Create API request to continue conversation with tool results
 		req := core.MessageRequest{
 			Model:     model,
 			Messages:  apiMessages,
 			MaxTokens: 4096,
 			Stream:    true,
-			System:    systemPrompt,
+			System:    finalSystemPrompt,
 			Tools:     tools, // Include tool definitions
 		}
 

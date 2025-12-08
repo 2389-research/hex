@@ -1104,13 +1104,19 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 
 	// Create API request
+	// Always include Hex identity in system prompt
+	systemPrompt := core.DefaultSystemPrompt
+	if m.systemPrompt != "" {
+		systemPrompt = core.DefaultSystemPrompt + "\n\n" + m.systemPrompt
+	}
+
 	req := core.MessageRequest{
 		Model:     m.Model,
 		Messages:  messages,
 		MaxTokens: 4096,
 		Stream:    true,
-		System:    m.systemPrompt, // Phase 6C: Use system prompt from template
-		Tools:     tools,          // Include registered tools
+		System:    systemPrompt, // Phase 6C: Use system prompt from template with Hex identity
+		Tools:     tools,        // Include registered tools
 	}
 
 	// Cancel any existing stream context before creating a new one
