@@ -381,11 +381,8 @@ func runInteractive(prompt string) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	// Prioritize environment variable, fall back to config file
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
-	if apiKey == "" {
-		apiKey = cfg.APIKey
-	}
+	// Get API key from config (handles all providers and env vars)
+	apiKey, _ := cfg.GetAPIKey() // Ignore error - we'll check if empty below
 
 	if apiKey != "" {
 		client := core.NewClient(apiKey)

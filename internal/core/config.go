@@ -12,27 +12,36 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ProviderConfig holds provider-specific configuration
+type ProviderConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
 // Config holds application configuration
 type Config struct {
-	APIKey         string   `mapstructure:"api_key"`
-	Model          string   `mapstructure:"model"`
-	DefaultTools   []string `mapstructure:"default_tools"`
-	PermissionMode string   `mapstructure:"permission_mode"`
+	Provider        string                    `mapstructure:"provider"`
+	Model           string                    `mapstructure:"model"`
+	ProviderConfigs map[string]ProviderConfig `mapstructure:"providers"`
+	DefaultTools    []string                  `mapstructure:"default_tools"`
+	PermissionMode  string                    `mapstructure:"permission_mode"`
 }
 
 // LoadConfig loads configuration from multiple sources
 // Priority (highest to lowest):
 // 1. Environment variables (HEX_*)
-// 2. .env file (current directory)
-// 3. ~/.hex/config.yaml
-// 4. Defaults
+// 2. Provider-specific env vars (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
+// 3. .env file (current directory)
+// 4. ~/.hex/config.toml (migrated from config.yaml if needed)
+// 5. Defaults
 func LoadConfig() (*Config, error) {
-	// Load .env file if it exists (don't error if missing)
+	// Load .env file if it exists
 	_ = godotenv.Load()
 
 	v := viper.New()
 
 	// Set defaults
+	v.SetDefault("provider", "anthropic")
 	v.SetDefault("model", DefaultModel)
 	v.SetDefault("permission_mode", "ask")
 	v.SetDefault("default_tools", []string{"Bash", "Read", "Write", "Edit", "Grep"})
@@ -40,27 +49,35 @@ func LoadConfig() (*Config, error) {
 	// Environment variables
 	v.SetEnvPrefix("HEX")
 	v.AutomaticEnv()
-	// Bind specific keys to handle underscore conversion
-	_ = v.BindEnv("api_key")
-	_ = v.BindEnv("api_key", "ANTHROPIC_API_KEY") // Also check standard Anthropic env var
+	_ = v.BindEnv("provider")
 	_ = v.BindEnv("model")
 	_ = v.BindEnv("permission_mode")
 	_ = v.BindEnv("default_tools")
 
-	// Config file
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-
-	// Check for custom config path
-	if configPath := os.Getenv("HEX_CONFIG_PATH"); configPath != "" {
+	// Check for config file
+	configPath := os.Getenv("HEX_CONFIG_PATH")
+	if configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
-		// Add search paths
-		v.AddConfigPath(".") // Current directory
 		home, err := os.UserHomeDir()
 		if err == nil {
 			hexDir := filepath.Join(home, ".hex")
+
+			// Check if config.yaml exists and migrate to config.toml
+			yamlPath := filepath.Join(hexDir, "config.yaml")
+			tomlPath := filepath.Join(hexDir, "config.toml")
+			if _, err := os.Stat(yamlPath); err == nil {
+				if _, err := os.Stat(tomlPath); os.IsNotExist(err) {
+					if err := migrateYAMLToTOML(yamlPath, tomlPath); err != nil {
+						fmt.Fprintf(os.Stderr, "Warning: failed to migrate config: %v\n", err)
+					}
+				}
+			}
+
+			v.SetConfigName("config")
+			v.SetConfigType("toml")
 			v.AddConfigPath(hexDir)
+			v.AddConfigPath(".")
 		}
 	}
 
@@ -76,13 +93,60 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	// Initialize provider configs if nil
+	if cfg.ProviderConfigs == nil {
+		cfg.ProviderConfigs = make(map[string]ProviderConfig)
+	}
+
+	// Check standard provider env vars (these override config file)
+	providers := map[string]string{
+		"anthropic":  os.Getenv("ANTHROPIC_API_KEY"),
+		"openai":     os.Getenv("OPENAI_API_KEY"),
+		"gemini":     os.Getenv("GEMINI_API_KEY"),
+		"openrouter": os.Getenv("OPENROUTER_API_KEY"),
+	}
+
+	for name, envKey := range providers {
+		if envKey != "" {
+			if pc, ok := cfg.ProviderConfigs[name]; ok {
+				pc.APIKey = envKey // Override with env var
+				cfg.ProviderConfigs[name] = pc
+			} else {
+				cfg.ProviderConfigs[name] = ProviderConfig{APIKey: envKey}
+			}
+		}
+	}
+
 	return &cfg, nil
 }
 
-// GetAPIKey returns the API key from config or environment
-func (c *Config) GetAPIKey() (string, error) {
-	if c.APIKey == "" {
-		return "", fmt.Errorf("API key not configured. Set HEX_API_KEY/ANTHROPIC_API_KEY or run 'hex setup-token'")
+// ValidateProvider ensures the selected provider is configured
+func (c *Config) ValidateProvider() error {
+	pc, ok := c.ProviderConfigs[c.Provider]
+	if !ok {
+		return fmt.Errorf("provider %s not configured", c.Provider)
 	}
-	return c.APIKey, nil
+	if pc.APIKey == "" {
+		return fmt.Errorf("API key not set for provider %s", c.Provider)
+	}
+	return nil
+}
+
+// GetProviderConfig returns the config for the selected provider
+func (c *Config) GetProviderConfig() (ProviderConfig, error) {
+	pc, ok := c.ProviderConfigs[c.Provider]
+	if !ok {
+		return ProviderConfig{}, fmt.Errorf("provider %s not configured", c.Provider)
+	}
+	return pc, nil
+}
+
+// GetAPIKey returns the API key for backward compatibility
+// Deprecated: Use GetProviderConfig instead
+func (c *Config) GetAPIKey() (string, error) {
+	pc, err := c.GetProviderConfig()
+	if err != nil {
+		return "", fmt.Errorf("API key not configured. Set %s_API_KEY or run 'hex setup-token'", c.Provider)
+	}
+	return pc.APIKey, nil
 }
