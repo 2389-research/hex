@@ -21,7 +21,7 @@ const MaxPendingTools = 100
 func (o *AgentOrchestrator) handleStream(ctx context.Context) {
 	// Create stream request
 	req := core.MessageRequest{
-		Model:     "claude-sonnet-4-5-20250929",
+		Model:     o.model,
 		Messages:  o.getMessageHistorySafe(),
 		MaxTokens: 4096,
 		Stream:    true,

@@ -58,6 +58,7 @@ type ToolExecutor interface {
 // AgentOrchestrator manages the agent lifecycle independent of UI layer
 type AgentOrchestrator struct {
 	client          APIClient
+	model           string
 	toolExecutor    ToolExecutor
 	messageHistory  []core.Message
 	stateMachine    *StateMachine
@@ -77,7 +78,7 @@ type AgentOrchestrator struct {
 }
 
 // NewOrchestrator creates a new agent orchestrator
-func NewOrchestrator(client APIClient, executor ToolExecutor) *AgentOrchestrator {
+func NewOrchestrator(client APIClient, model string, executor ToolExecutor) *AgentOrchestrator {
 	// Initialize state machine with observers
 	sm := NewStateMachine(StateIdle)
 	history := &StateHistory{
@@ -89,6 +90,7 @@ func NewOrchestrator(client APIClient, executor ToolExecutor) *AgentOrchestrator
 
 	return &AgentOrchestrator{
 		client:         client,
+		model:          model,
 		toolExecutor:   executor,
 		stateMachine:   sm,
 		stateHistory:   history,

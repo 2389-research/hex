@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/providers"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +32,7 @@ type mockProvider struct {
 	name string
 }
 
-func (m *mockProvider) CreateStream(ctx context.Context, req *providers.MessageRequest) (providers.Stream, error) {
+func (m *mockProvider) CreateMessageStream(ctx context.Context, req core.MessageRequest) (<-chan *core.StreamChunk, error) {
 	return nil, nil
 }
 

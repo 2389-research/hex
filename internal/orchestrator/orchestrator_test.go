@@ -18,7 +18,7 @@ func TestStart_SendsStreamStartEvent(t *testing.T) {
 	mockExecutor := &mockToolExecutor{}
 
 	// Create orchestrator
-	orch := NewOrchestrator(mockClient, mockExecutor)
+	orch := NewOrchestrator(mockClient, "claude-sonnet-4-5-20250929", mockExecutor)
 
 	// Subscribe to events
 	eventChan := orch.Subscribe()
@@ -52,7 +52,7 @@ func TestToolApproval_TransitionsState(t *testing.T) {
 	mockClient := &mockAPIClient{}
 	mockExecutor := &mockToolExecutor{}
 
-	orch := NewOrchestrator(mockClient, mockExecutor)
+	orch := NewOrchestrator(mockClient, "claude-sonnet-4-5-20250929", mockExecutor)
 
 	// Do valid transition sequence: Idle -> Streaming -> AwaitingApproval
 	orch.setState(StateStreaming)
@@ -84,7 +84,7 @@ func TestStop_CancelsStream(t *testing.T) {
 	mockClient := &mockAPIClient{}
 	mockExecutor := &mockToolExecutor{}
 
-	orch := NewOrchestrator(mockClient, mockExecutor)
+	orch := NewOrchestrator(mockClient, "claude-sonnet-4-5-20250929", mockExecutor)
 
 	// Start a stream
 	ctx := context.Background()
@@ -111,7 +111,7 @@ func TestEventEmission(t *testing.T) {
 	mockClient := &mockAPIClient{}
 	mockExecutor := &mockToolExecutor{}
 
-	orch := NewOrchestrator(mockClient, mockExecutor)
+	orch := NewOrchestrator(mockClient, "claude-sonnet-4-5-20250929", mockExecutor)
 	eventChan := orch.Subscribe()
 
 	// Manually emit different event types
@@ -149,7 +149,7 @@ func TestConcurrentEventEmission(t *testing.T) {
 	mockClient := &mockAPIClient{}
 	mockExecutor := &mockToolExecutor{}
 
-	orch := NewOrchestrator(mockClient, mockExecutor)
+	orch := NewOrchestrator(mockClient, "claude-sonnet-4-5-20250929", mockExecutor)
 	eventChan := orch.Subscribe()
 
 	// Emit events from multiple goroutines
