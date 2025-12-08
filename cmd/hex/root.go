@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -26,6 +27,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+)
+
+// Context key type for storing values in context
+type contextKey string
+
+const (
+	eventStoreKey contextKey = "event_store"
 )
 
 var (
@@ -132,13 +140,27 @@ func runRoot(_ *cobra.Command, args []string) error {
 	}
 	defer closeLogger()
 
+	// Create context for the session
+	ctx := context.Background()
+
+	// Extract prompt once at the top level to avoid duplication
+	prompt := ""
+	if len(args) > 0 {
+		prompt = joinArgs(args)
+	}
+
 	// Initialize event store
 	eventFile := filepath.Join(os.TempDir(), fmt.Sprintf("hex_events_%s.jsonl", time.Now().Format("20060102_150405")))
 	eventStore, err := events.NewEventStore(eventFile)
 	if err != nil {
 		logging.WarnWith("Failed to create event store", "error", err)
 	} else {
+		// Set global event store for backward compatibility
 		events.SetGlobal(eventStore)
+
+		// Store event store in context for future use
+		ctx = context.WithValue(ctx, eventStoreKey, eventStore)
+
 		defer func() { _ = eventStore.Close() }()
 
 		// Set agent ID if not already set
@@ -148,12 +170,6 @@ func runRoot(_ *cobra.Command, args []string) error {
 			_ = os.Setenv("HEX_AGENT_ID", agentID)
 		}
 
-		// Get user prompt for event recording
-		userPrompt := ""
-		if len(args) > 0 {
-			userPrompt = joinArgs(args)
-		}
-
 		// Record session start event
 		_ = eventStore.Record(events.Event{
 			ID:        uuid.New().String(),
@@ -161,7 +177,7 @@ func runRoot(_ *cobra.Command, args []string) error {
 			Type:      "SessionStart",
 			Timestamp: time.Now(),
 			Data: map[string]interface{}{
-				"prompt": userPrompt,
+				"prompt": prompt,
 				"tools":  enabledTools,
 			},
 		})
@@ -169,10 +185,8 @@ func runRoot(_ *cobra.Command, args []string) error {
 
 	logging.InfoWith("Hex starting", "version", version)
 
-	prompt := ""
-	if len(args) > 0 {
-		prompt = joinArgs(args)
-	}
+	// Suppress unused context warning - ctx will be used in future tasks
+	_ = ctx
 
 	if printMode {
 		return runPrintMode(prompt)
