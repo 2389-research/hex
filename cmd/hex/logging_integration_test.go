@@ -16,7 +16,8 @@ import (
 func TestLoggingIntegration(t *testing.T) {
 	// Create temp directory for test logs
 	tmpDir := t.TempDir()
-	logFile := filepath.Join(tmpDir, "test.log")
+	testLogFile := filepath.Join(tmpDir, "test.log")
+	_ = testLogFile // Silence unused variable warning - kept for reference
 
 	// Save and restore original flags
 	originalLogLevel := logLevel

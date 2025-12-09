@@ -516,23 +516,23 @@ func runInteractive(prompt string) error {
 
 	// Phase 2: Register Skills system (with plugin skills)
 	skillRegistry, skillTool := initializeSkills(pluginSkillPaths)
-	if err := registry.Register(skillTool); err != nil {
-		return fmt.Errorf("register skill tool: %w", err)
+	if regErr := registry.Register(skillTool); regErr != nil {
+		return fmt.Errorf("register skill tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded skills", "count", skillRegistry.Count())
 
 	// Phase 4: Register Slash Commands system (with plugin commands)
 	commandRegistry, slashCommandTool := initializeCommands(pluginCommandPaths)
-	if err := registry.Register(slashCommandTool); err != nil {
-		return fmt.Errorf("register slash command tool: %w", err)
+	if regErr := registry.Register(slashCommandTool); regErr != nil {
+		return fmt.Errorf("register slash command tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded slash commands", "count", commandRegistry.Count())
 
 	// Phase 5B: Load MCP tools from .mcp.json if present
 	logging.Debug("Loading MCP tools")
-	if err := mcp.LoadMCPTools(".", registry); err != nil {
+	if mcpErr := mcp.LoadMCPTools(".", registry); mcpErr != nil {
 		// Log error but don't fail - continue with built-in tools
-		logging.WarnWith("Failed to load MCP tools", "error", err.Error())
+		logging.WarnWith("Failed to load MCP tools", "error", mcpErr.Error())
 	} else {
 		logging.Info("MCP tools loaded successfully")
 	}

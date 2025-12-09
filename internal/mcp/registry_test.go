@@ -194,20 +194,20 @@ func TestRegistry_Persist(t *testing.T) {
 
 	// Verify file exists
 	configPath := filepath.Join(tempDir, ".mcp.json")
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
 		t.Fatal(".mcp.json file was not created")
 	}
 
 	// Verify file contents
 	//nolint:gosec // G304: Test file reads/writes are safe
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		t.Fatalf("Failed to read .mcp.json: %v", err)
+	data, readErr := os.ReadFile(configPath)
+	if readErr != nil {
+		t.Fatalf("Failed to read .mcp.json: %v", readErr)
 	}
 
 	var config MCPConfig
-	if err := json.Unmarshal(data, &config); err != nil {
-		t.Fatalf("Failed to parse .mcp.json: %v", err)
+	if unmarshalErr := json.Unmarshal(data, &config); unmarshalErr != nil {
+		t.Fatalf("Failed to parse .mcp.json: %v", unmarshalErr)
 	}
 
 	if len(config.Servers) != 2 {
@@ -238,19 +238,19 @@ func TestRegistry_Load(t *testing.T) {
 	}
 
 	configPath := filepath.Join(tempDir, ".mcp.json")
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		t.Fatalf("Failed to marshal config: %v", err)
+	data, marshalErr := json.MarshalIndent(config, "", "  ")
+	if marshalErr != nil {
+		t.Fatalf("Failed to marshal config: %v", marshalErr)
 	}
 
-	if err := os.WriteFile(configPath, data, 0600); err != nil {
-		t.Fatalf("Failed to write config: %v", err)
+	if writeErr := os.WriteFile(configPath, data, 0600); writeErr != nil {
+		t.Fatalf("Failed to write config: %v", writeErr)
 	}
 
 	// Load registry
 	registry := NewRegistry(tempDir)
-	if err := registry.Load(); err != nil {
-		t.Fatalf("Load() error = %v", err)
+	if loadErr := registry.Load(); loadErr != nil {
+		t.Fatalf("Load() error = %v", loadErr)
 	}
 
 	// Verify servers were loaded
