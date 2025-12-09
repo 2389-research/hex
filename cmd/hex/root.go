@@ -44,8 +44,8 @@ const (
 var (
 	// Version information
 	version = "1.0.0"
-	commit  = "dev"     //nolint:unused // Populated by goreleaser ldflags
-	date    = "unknown" //nolint:unused // Populated by goreleaser ldflags
+	_       = "dev"     // commit - populated by goreleaser ldflags, currently unused
+	_       = "unknown" // date - populated by goreleaser ldflags, currently unused
 
 	// Global flags
 	printMode    bool
