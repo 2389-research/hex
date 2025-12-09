@@ -120,11 +120,11 @@ func (t *WriteTool) Execute(_ context.Context, params map[string]interface{}) (*
 	}
 
 	lockManager := filelock.Global()
-	if err := lockManager.Acquire(absPath, agentID, 30*time.Second); err != nil {
+	if lockErr := lockManager.Acquire(absPath, agentID, 30*time.Second); lockErr != nil {
 		return &Result{
 			ToolName: "write_file",
 			Success:  false,
-			Error:    fmt.Sprintf("failed to acquire file lock: %v", err),
+			Error:    fmt.Sprintf("failed to acquire file lock: %v", lockErr),
 		}, nil
 	}
 	defer func() {
@@ -133,12 +133,12 @@ func (t *WriteTool) Execute(_ context.Context, params map[string]interface{}) (*
 
 	// Ensure parent directory exists
 	parentDir := filepath.Dir(absPath)
-	if _, err := os.Stat(parentDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(parentDir, 0750); err != nil {
+	if _, statErr := os.Stat(parentDir); os.IsNotExist(statErr) {
+		if mkdirErr := os.MkdirAll(parentDir, 0750); mkdirErr != nil {
 			return &Result{
 				ToolName: "write_file",
 				Success:  false,
-				Error:    fmt.Sprintf("failed to create parent directory: %v", err),
+				Error:    fmt.Sprintf("failed to create parent directory: %v", mkdirErr),
 			}, nil
 		}
 	}

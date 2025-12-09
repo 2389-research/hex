@@ -145,16 +145,26 @@ func TestBuildAgentTree(t *testing.T) {
 	assert.Len(t, tree.Children, 2)
 	assert.Greater(t, tree.Duration, time.Duration(0))
 
-	// Verify children
-	child1 := tree.Children[0]
-	assert.Equal(t, "root.1", child1.ID)
-	assert.Equal(t, "Sub task 1", child1.Task)
-	assert.Len(t, child1.Children, 1)
+	// Verify children - find by ID since map iteration order is non-deterministic
+	var child1 *AgentNode
+	for _, c := range tree.Children {
+		if c.ID == "root.1" {
+			child1 = c
+			break
+		}
+	}
+	assert.NotNil(t, child1, "child root.1 should exist")
+	if child1 != nil {
+		assert.Equal(t, "Sub task 1", child1.Task)
+		assert.Len(t, child1.Children, 1)
 
-	// Verify nested child
-	nested := child1.Children[0]
-	assert.Equal(t, "root.1.1", nested.ID)
-	assert.Equal(t, "Nested task", nested.Task)
+		// Verify nested child
+		if len(child1.Children) > 0 {
+			nested := child1.Children[0]
+			assert.Equal(t, "root.1.1", nested.ID)
+			assert.Equal(t, "Nested task", nested.Task)
+		}
+	}
 }
 
 // TestRenderTreeView verifies tree visualization output

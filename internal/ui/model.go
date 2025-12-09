@@ -146,9 +146,9 @@ type Model struct {
 	executingToolUses []*core.ToolUse // Tools currently being executed (for display)
 	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
 	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
-	toolApprovalMode  bool            // Showing approval prompt
-	toolApprovalForm  tea.Model       // Embedded huh form for tool approval (avoids terminal conflicts)
-	executingTool     bool            // Tool is running
+	toolApprovalMode bool      // Showing approval prompt
+	toolApprovalForm tea.Model // Embedded huh form for tool approval
+	executingTool    bool      // Tool is running
 	currentToolID     string          // ID of currently executing tool
 	toolResults       []ToolResult    // Results to send back to API
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
@@ -801,7 +801,6 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 
 	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
-		m.toolApprovalForm = nil
 		return nil
 	}
 
@@ -817,8 +816,8 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.pendingToolUses = nil
 	m.executingToolUses = toolUses // Save for status display
 	m.toolApprovalMode = false
-	m.approvalPrompt = nil   // Clear approval prompt for next time
-	m.toolApprovalForm = nil // Clear embedded form
+	m.toolApprovalForm = nil
+	m.approvalPrompt = nil // Clear approval prompt for next time
 	m.executingTool = true
 
 	// Phase 6C: Start spinner for tool execution
@@ -847,7 +846,6 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 func (m *Model) DenyToolUse() tea.Cmd {
 	if len(m.pendingToolUses) == 0 {
 		m.toolApprovalMode = false
-		m.toolApprovalForm = nil
 		return nil
 	}
 
@@ -1338,14 +1336,14 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	if msg.Error != nil {
 		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
 		m.toolApprovalMode = false
-		m.toolApprovalForm = nil // Clear the embedded form
+		m.toolApprovalForm = nil
 		return m, m.DenyToolUse()
 	}
 
 	// Exit approval mode
 	m.toolApprovalMode = false
+	m.toolApprovalForm = nil
 	m.approvalPrompt = nil
-	m.toolApprovalForm = nil // Clear the embedded form
 
 	// Process the decision
 	switch msg.Result.Decision {

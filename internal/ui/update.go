@@ -185,30 +185,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
-		// Forward messages to embedded approval form if in approval mode
+		// Forward key messages to embedded approval form if active
 		if m.toolApprovalMode && m.toolApprovalForm != nil {
-			// DEBUG: Log to file since stderr is redirected
-			if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-				_, _ = fmt.Fprintf(f, "[APPROVAL_KEY] received key: %v (type=%v, alt=%v, runes=%v)\n",
-					msg.String(), msg.Type, msg.Alt, msg.Runes)
-				_ = f.Close()
-			}
-
 			var formCmd tea.Cmd
 			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
 
-			// Check if form is complete
+			// Check if form is complete after processing key
 			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
-				if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-					_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE_CHECK] isComplete=%v\n", approvalForm.IsComplete())
-					_ = f.Close()
-				}
 				if approvalForm.IsComplete() {
-					if f, err := os.OpenFile("/tmp/hex-approval-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
-						_, _ = fmt.Fprintf(f, "[APPROVAL_COMPLETE] form completed, handling result\n")
-						_ = f.Close()
-					}
-					// Extract decision and convert to ApprovalResultMsg
 					result := approvalForm.GetDecision()
 					return m.handleApprovalResult(&forms.ApprovalResultMsg{
 						Result: result,
@@ -216,7 +200,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					})
 				}
 			}
-
 			return m, formCmd
 		}
 
@@ -577,14 +560,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.approvalPrompt != nil {
 			m.approvalPrompt.SetWidth(msg.Width)
 		}
-		// Forward to embedded approval form if in approval mode
-		if m.toolApprovalMode && m.toolApprovalForm != nil {
-			var formCmd tea.Cmd
-			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-			if formCmd != nil {
-				cmds = append(cmds, formCmd)
-			}
-		}
+		// NOTE: Async approval form handles its own sizing via form.Run()
 	}
 
 	// Phase 6C: Update spinner
@@ -616,40 +592,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Forward whitelisted messages to approval form when in approval mode
-	// Only forward safe user input messages to prevent message loops
-	// from internal events that the form generates
+	// Forward other messages to embedded approval form (for internal huh commands)
+	// This is critical - huh returns internal commands (NextField, etc.) that must be
+	// routed back to the form for proper state transitions
 	if m.toolApprovalMode && m.toolApprovalForm != nil {
-		// Whitelist: only forward user input and resize events
-		var shouldForward bool
-		switch msg.(type) {
-		case tea.KeyMsg:
-			// User keyboard input - always safe to forward
-			shouldForward = true
-		case tea.WindowSizeMsg:
-			// Terminal resize - needed for proper rendering
-			shouldForward = true
-		default:
-			// Don't forward internal messages (StreamChunkMsg, etc.)
-			// to prevent potential infinite loops
-			shouldForward = false
-		}
+		var formCmd tea.Cmd
+		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
 
-		if shouldForward {
-			var formCmd tea.Cmd
-			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-			if formCmd != nil {
-				cmds = append(cmds, formCmd)
-			}
-
-			// Check if form completed after this message
-			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok && approvalForm.IsComplete() {
+		// Check if form is complete after processing message
+		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
+			if approvalForm.IsComplete() {
 				result := approvalForm.GetDecision()
 				return m.handleApprovalResult(&forms.ApprovalResultMsg{
 					Result: result,
 					Error:  nil,
 				})
 			}
+		}
+
+		if formCmd != nil {
+			cmds = append(cmds, formCmd)
 		}
 	}
 
@@ -808,9 +770,12 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 	}
 
 	// Handle input_json_delta for tool use parameters
-	if chunk.Delta.Type == "input_json_delta" && chunk.Delta.PartialJSON != "" && m.assemblingToolUse != nil {
-		m.toolInputJSONBuf += chunk.Delta.PartialJSON
-		// Continue reading
+	if chunk.Delta.Type == "input_json_delta" && m.assemblingToolUse != nil {
+		// Accumulate non-empty JSON chunks
+		if chunk.Delta.PartialJSON != "" {
+			m.toolInputJSONBuf += chunk.Delta.PartialJSON
+		}
+		// ALWAYS continue reading - even empty chunks are valid stream events
 		return m, m.continueReading()
 	}
 
@@ -995,18 +960,10 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 			approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
 			m.toolApprovalForm = approvalForm
 
-			// Initialize the form and immediately send it a WindowSizeMsg
-			// so it knows its dimensions (required for proper rendering in tmux)
+			// Initialize the form
 			initCmd := approvalForm.Init()
 
-			// CRITICAL: Must capture the updated model, not discard it
-			updatedForm, sizeCmd := approvalForm.Update(tea.WindowSizeMsg{
-				Width:  m.Width,
-				Height: m.Height,
-			})
-			m.toolApprovalForm = updatedForm
-
-			return m, tea.Batch(initCmd, sizeCmd)
+			return m, initCmd
 		}
 		return m, nil
 	}

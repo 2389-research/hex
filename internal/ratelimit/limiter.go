@@ -61,8 +61,6 @@ func NewSharedLimiter(maxTokens int, refillRate time.Duration) *SharedLimiter {
 // Blocks until a token is available or the context is cancelled.
 // Returns context.Canceled or context.DeadlineExceeded if context is cancelled/times out.
 func (l *SharedLimiter) Acquire(ctx context.Context) error {
-	start := time.Now()
-
 	// Set up context cancellation handling
 	done := make(chan struct{})
 	defer close(done)
@@ -79,6 +77,10 @@ func (l *SharedLimiter) Acquire(ctx context.Context) error {
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	// Track if we actually had to wait for tokens (not just lock contention)
+	hadToWait := false
+	var waitStart time.Time
 
 	for {
 		// Check if limiter is stopped (BEFORE other checks)
@@ -103,8 +105,9 @@ func (l *SharedLimiter) Acquire(ctx context.Context) error {
 			l.tokens--
 			l.metrics.TotalAcquired.Add(1)
 
-			waitTime := time.Since(start)
-			if waitTime > time.Millisecond {
+			// Only count as a wait if we actually had to wait for tokens
+			if hadToWait {
+				waitTime := time.Since(waitStart)
 				l.metrics.TotalWaits.Add(1)
 				l.metrics.TotalWaitMs.Add(waitTime.Milliseconds())
 
@@ -119,6 +122,12 @@ func (l *SharedLimiter) Acquire(ctx context.Context) error {
 
 			l.metrics.CurrentTokens.Store(int64(l.tokens))
 			return nil
+		}
+
+		// No tokens available - mark that we're starting to wait
+		if !hadToWait {
+			hadToWait = true
+			waitStart = time.Now()
 		}
 
 		// No tokens available - wait for refill

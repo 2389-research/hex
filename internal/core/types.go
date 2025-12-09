@@ -58,18 +58,18 @@ type Message struct {
 func (m Message) MarshalJSON() ([]byte, error) {
 	type Alias Message
 	aux := struct {
-		Content interface{} `json:"content,omitempty"`
+		Content interface{} `json:"content"` // Required field - no omitempty
 		*Alias
 	}{
 		Alias: (*Alias)(&m),
 	}
 
 	// If ContentBlock is set, use it as an array
-	// Otherwise, use the string Content
+	// Otherwise, use the string Content (even if empty - API requires content field)
 	if len(m.ContentBlock) > 0 {
 		aux.Content = m.ContentBlock
-	} else if m.Content != "" {
-		aux.Content = m.Content
+	} else {
+		aux.Content = m.Content // Will be "" if not set, but field is required
 	}
 
 	return json.Marshal(aux)

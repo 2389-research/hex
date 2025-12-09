@@ -100,7 +100,7 @@ func (c *Client) CreateMessage(ctx context.Context, req MessageRequest) (*Messag
 	if logging.IsDebugEnabled() {
 		// Pretty-print the request for readability
 		var prettyReq bytes.Buffer
-		if err := json.Indent(&prettyReq, body, "", "  "); err == nil {
+		if indentErr := json.Indent(&prettyReq, body, "", "  "); indentErr == nil {
 			logging.Debug("API Request to /messages", "body", prettyReq.String())
 		} else {
 			logging.Debug("API Request to /messages", "body", string(body))

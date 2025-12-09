@@ -65,9 +65,9 @@ func loadServerTools(serverConfig ServerConfig, registry *tools.Registry) error 
 	}
 
 	// Initialize the client
-	if err := client.Initialize(ctx, "hex", "0.1.0", "2024-11-05"); err != nil {
+	if initErr := client.Initialize(ctx, "hex", "0.1.0", "2024-11-05"); initErr != nil {
 		_ = client.Shutdown()
-		return fmt.Errorf("failed to initialize: %w", err)
+		return fmt.Errorf("failed to initialize: %w", initErr)
 	}
 
 	// List available tools

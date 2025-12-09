@@ -57,10 +57,10 @@ func (i *Installer) installFromGit(repoURL string) error {
 	}
 
 	// Load and validate manifest
-	if err := i.loader.ValidatePlugin(targetDir); err != nil {
+	if validateErr := i.loader.ValidatePlugin(targetDir); validateErr != nil {
 		// Clean up on validation failure
 		_ = os.RemoveAll(targetDir)
-		return fmt.Errorf("plugin validation failed: %w", err)
+		return fmt.Errorf("plugin validation failed: %w", validateErr)
 	}
 
 	// Load manifest to get actual name and version
@@ -109,8 +109,8 @@ func (i *Installer) installFromLocal(sourcePath string) error {
 	}
 
 	// Validate source plugin
-	if err := i.loader.ValidatePlugin(absSource); err != nil {
-		return fmt.Errorf("invalid plugin: %w", err)
+	if validateErr := i.loader.ValidatePlugin(absSource); validateErr != nil {
+		return fmt.Errorf("invalid plugin: %w", validateErr)
 	}
 
 	// Load manifest to get name
@@ -322,8 +322,8 @@ func copyDir(src, dst string) error {
 	}
 
 	// Create destination
-	if err := os.MkdirAll(dst, srcInfo.Mode()); err != nil {
-		return err
+	if mkdirErr := os.MkdirAll(dst, srcInfo.Mode()); mkdirErr != nil {
+		return mkdirErr
 	}
 
 	// Read source directory
@@ -365,8 +365,8 @@ func copyFile(src, dst string) error {
 	}
 	defer dstFile.Close() //nolint:errcheck // Error handled by explicit sync/close below
 
-	if _, err := io.Copy(dstFile, srcFile); err != nil {
-		return err
+	if _, copyErr := io.Copy(dstFile, srcFile); copyErr != nil {
+		return copyErr
 	}
 
 	// Copy permissions

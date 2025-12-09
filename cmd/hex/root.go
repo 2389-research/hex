@@ -44,8 +44,8 @@ const (
 var (
 	// Version information
 	version = "1.0.0"
-	commit  = "dev"     //nolint:unused // Populated by goreleaser ldflags
-	date    = "unknown" //nolint:unused // Populated by goreleaser ldflags
+	_       = "dev"     // commit - populated by goreleaser ldflags, currently unused
+	_       = "unknown" // date - populated by goreleaser ldflags, currently unused
 
 	// Global flags
 	printMode    bool
@@ -292,10 +292,10 @@ func runInteractive(prompt string) error {
 	var template *templates.Template
 	var systemPrompt string
 	if templateName != "" {
-		var err error
-		template, err = loadTemplateByName(templateName)
-		if err != nil {
-			return fmt.Errorf("load template: %w", err)
+		var tmplErr error
+		template, tmplErr = loadTemplateByName(templateName)
+		if tmplErr != nil {
+			return fmt.Errorf("load template: %w", tmplErr)
 		}
 		systemPrompt = template.SystemPrompt
 		logging.InfoWith("Loaded template", "name", template.Name)
@@ -334,13 +334,13 @@ func runInteractive(prompt string) error {
 	// Task 7: Handle --continue or --resume flags
 	if continueFlag {
 		// Load latest conversation
-		conv, err := storage.GetLatestConversation(db)
-		if err == sql.ErrNoRows {
+		conv, latestErr := storage.GetLatestConversation(db)
+		if latestErr == sql.ErrNoRows {
 			// No conversations found, start new one (this is OK)
 			_, _ = fmt.Fprintf(os.Stderr, "No previous conversations found, starting new session\n")
-		} else if err != nil {
+		} else if latestErr != nil {
 			// Real database error (corrupt DB, connection issue, etc.)
-			return fmt.Errorf("failed to load latest conversation: %w", err)
+			return fmt.Errorf("failed to load latest conversation: %w", latestErr)
 		} else {
 			// Success - load the conversation
 			conversationID = conv.ID
@@ -348,9 +348,9 @@ func runInteractive(prompt string) error {
 			uiModel = ui.NewModel(conversationID, modelName)
 
 			// Load messages into UI
-			msgs, err := storage.ListMessages(db, conversationID)
-			if err != nil {
-				return fmt.Errorf("failed to load conversation messages: %w", err)
+			msgs, msgErr := storage.ListMessages(db, conversationID)
+			if msgErr != nil {
+				return fmt.Errorf("failed to load conversation messages: %w", msgErr)
 			}
 			for _, msg := range msgs {
 				uiModel.AddMessage(msg.Role, msg.Content)
@@ -358,9 +358,9 @@ func runInteractive(prompt string) error {
 		}
 	} else if resumeID != "" {
 		// Load specific conversation
-		conv, messages, err := loadConversationHistory(db, resumeID)
-		if err != nil {
-			return fmt.Errorf("load conversation: %w", err)
+		conv, messages, loadErr := loadConversationHistory(db, resumeID)
+		if loadErr != nil {
+			return fmt.Errorf("load conversation: %w", loadErr)
 		}
 		conversationID = conv.ID
 		modelName = conv.Model
@@ -398,8 +398,8 @@ func runInteractive(prompt string) error {
 			Provider: providerName,
 			Model:    modelName,
 		}
-		if err := storage.CreateConversation(db, conv); err != nil {
-			return fmt.Errorf("create conversation: %w", err)
+		if createErr := storage.CreateConversation(db, conv); createErr != nil {
+			return fmt.Errorf("create conversation: %w", createErr)
 		}
 
 		// Phase 6C: Add initial messages from template
@@ -452,51 +452,51 @@ func runInteractive(prompt string) error {
 
 	// Task 12: Create tool registry and executor
 	registry := tools.NewRegistry()
-	if err := registry.Register(tools.NewReadTool()); err != nil {
-		return fmt.Errorf("register read tool: %w", err)
+	if regErr := registry.Register(tools.NewReadTool()); regErr != nil {
+		return fmt.Errorf("register read tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewWriteTool()); err != nil {
-		return fmt.Errorf("register write tool: %w", err)
+	if regErr := registry.Register(tools.NewWriteTool()); regErr != nil {
+		return fmt.Errorf("register write tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewBashTool()); err != nil {
-		return fmt.Errorf("register bash tool: %w", err)
+	if regErr := registry.Register(tools.NewBashTool()); regErr != nil {
+		return fmt.Errorf("register bash tool: %w", regErr)
 	}
 	// Phase 3: Register Edit, Grep, Glob tools
-	if err := registry.Register(tools.NewEditTool()); err != nil {
-		return fmt.Errorf("register edit tool: %w", err)
+	if regErr := registry.Register(tools.NewEditTool()); regErr != nil {
+		return fmt.Errorf("register edit tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewGrepTool()); err != nil {
-		return fmt.Errorf("register grep tool: %w", err)
+	if regErr := registry.Register(tools.NewGrepTool()); regErr != nil {
+		return fmt.Errorf("register grep tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewGlobTool()); err != nil {
-		return fmt.Errorf("register glob tool: %w", err)
+	if regErr := registry.Register(tools.NewGlobTool()); regErr != nil {
+		return fmt.Errorf("register glob tool: %w", regErr)
 	}
 
 	// Phase 4A: Register Interactive tools (AskUserQuestion, TodoWrite)
-	if err := registry.Register(tools.NewAskUserQuestionTool()); err != nil {
-		return fmt.Errorf("register ask_user_question tool: %w", err)
+	if regErr := registry.Register(tools.NewAskUserQuestionTool()); regErr != nil {
+		return fmt.Errorf("register ask_user_question tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewTodoWriteTool()); err != nil {
-		return fmt.Errorf("register todo_write tool: %w", err)
+	if regErr := registry.Register(tools.NewTodoWriteTool()); regErr != nil {
+		return fmt.Errorf("register todo_write tool: %w", regErr)
 	}
 
 	// Phase 4B: Register Research tools (WebFetch, WebSearch)
-	if err := registry.Register(tools.NewWebFetchTool()); err != nil {
-		return fmt.Errorf("register web_fetch tool: %w", err)
+	if regErr := registry.Register(tools.NewWebFetchTool()); regErr != nil {
+		return fmt.Errorf("register web_fetch tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewWebSearchTool()); err != nil {
-		return fmt.Errorf("register web_search tool: %w", err)
+	if regErr := registry.Register(tools.NewWebSearchTool()); regErr != nil {
+		return fmt.Errorf("register web_search tool: %w", regErr)
 	}
 
 	// Phase 4C: Register Advanced Execution tools (Task, BashOutput, KillShell)
-	if err := registry.Register(tools.NewTaskTool()); err != nil {
-		return fmt.Errorf("register task tool: %w", err)
+	if regErr := registry.Register(tools.NewTaskTool()); regErr != nil {
+		return fmt.Errorf("register task tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewBashOutputTool()); err != nil {
-		return fmt.Errorf("register bash_output tool: %w", err)
+	if regErr := registry.Register(tools.NewBashOutputTool()); regErr != nil {
+		return fmt.Errorf("register bash_output tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewKillShellTool()); err != nil {
-		return fmt.Errorf("register kill_shell tool: %w", err)
+	if regErr := registry.Register(tools.NewKillShellTool()); regErr != nil {
+		return fmt.Errorf("register kill_shell tool: %w", regErr)
 	}
 
 	// Phase 6: Initialize plugin system
@@ -516,23 +516,23 @@ func runInteractive(prompt string) error {
 
 	// Phase 2: Register Skills system (with plugin skills)
 	skillRegistry, skillTool := initializeSkills(pluginSkillPaths)
-	if err := registry.Register(skillTool); err != nil {
-		return fmt.Errorf("register skill tool: %w", err)
+	if regErr := registry.Register(skillTool); regErr != nil {
+		return fmt.Errorf("register skill tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded skills", "count", skillRegistry.Count())
 
 	// Phase 4: Register Slash Commands system (with plugin commands)
 	commandRegistry, slashCommandTool := initializeCommands(pluginCommandPaths)
-	if err := registry.Register(slashCommandTool); err != nil {
-		return fmt.Errorf("register slash command tool: %w", err)
+	if regErr := registry.Register(slashCommandTool); regErr != nil {
+		return fmt.Errorf("register slash command tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded slash commands", "count", commandRegistry.Count())
 
 	// Phase 5B: Load MCP tools from .mcp.json if present
 	logging.Debug("Loading MCP tools")
-	if err := mcp.LoadMCPTools(".", registry); err != nil {
+	if mcpErr := mcp.LoadMCPTools(".", registry); mcpErr != nil {
 		// Log error but don't fail - continue with built-in tools
-		logging.WarnWith("Failed to load MCP tools", "error", err.Error())
+		logging.WarnWith("Failed to load MCP tools", "error", mcpErr.Error())
 	} else {
 		logging.Info("MCP tools loaded successfully")
 	}

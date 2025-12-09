@@ -158,12 +158,12 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 			}
 
 			// Execute tool without prompt
-			result, err := tool.Execute(ctx, params)
+			result, execErr := tool.Execute(ctx, params)
 
 			// Debug logging: Log execution result
 			if os.Getenv("HEX_DEBUG") != "" {
-				if err != nil {
-					logging.Debug("Tool execution failed", "tool", toolName, "error", err)
+				if execErr != nil {
+					logging.Debug("Tool execution failed", "tool", toolName, "error", execErr)
 				} else if result != nil {
 					resultJSON, _ := json.Marshal(result)
 					logging.Debug("Tool execution completed", "tool", toolName, "success", result.Success, "result", string(resultJSON))
@@ -172,18 +172,18 @@ func (e *Executor) Execute(ctx context.Context, toolName string, params map[stri
 
 			// Fire PostToolUse hook if engine is set
 			if e.hookEngine != nil {
-				success := err == nil && result != nil && result.Success
+				success := execErr == nil && result != nil && result.Success
 				errMsg := ""
-				if err != nil {
-					errMsg = err.Error()
+				if execErr != nil {
+					errMsg = execErr.Error()
 				} else if result != nil && !result.Success {
 					errMsg = result.Error
 				}
 				_ = e.hookEngine.FirePostToolUse(toolName, filePath, success, errMsg, false)
 			}
 
-			if err != nil {
-				return nil, fmt.Errorf("execute tool: %w", err)
+			if execErr != nil {
+				return nil, fmt.Errorf("execute tool: %w", execErr)
 			}
 			if result == nil {
 				return nil, fmt.Errorf("tool returned nil result")

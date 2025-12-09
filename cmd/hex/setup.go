@@ -44,8 +44,8 @@ func runSetup(_ *cobra.Command, args []string) error {
 
 	// Create .hex directory
 	hexDir := filepath.Join(home, ".hex")
-	if err := os.MkdirAll(hexDir, 0750); err != nil {
-		return fmt.Errorf("create .hex dir: %w", err)
+	if mkdirErr := os.MkdirAll(hexDir, 0750); mkdirErr != nil {
+		return fmt.Errorf("create .hex dir: %w", mkdirErr)
 	}
 
 	// Write config

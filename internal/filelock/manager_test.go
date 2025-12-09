@@ -59,9 +59,9 @@ func TestConcurrentAcquire_BlocksSecond(t *testing.T) {
 	// Agent 2 tries to acquire (should block)
 	go func() {
 		defer wg.Done()
-		err := manager.Acquire(path, owner2, 5*time.Second)
-		if err != nil {
-			t.Errorf("Agent 2 failed to acquire lock: %v", err)
+		acquireErr := manager.Acquire(path, owner2, 5*time.Second)
+		if acquireErr != nil {
+			t.Errorf("Agent 2 failed to acquire lock: %v", acquireErr)
 			return
 		}
 		agent2AcquiredAt = time.Now()

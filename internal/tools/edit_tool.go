@@ -100,11 +100,11 @@ func (t *EditTool) Execute(_ context.Context, params map[string]interface{}) (*R
 	}
 
 	lockManager := filelock.Global()
-	if err := lockManager.Acquire(absPath, agentID, 30*time.Second); err != nil {
+	if lockErr := lockManager.Acquire(absPath, agentID, 30*time.Second); lockErr != nil {
 		return &Result{
 			ToolName: t.Name(),
 			Success:  false,
-			Error:    fmt.Sprintf("failed to acquire file lock: %v", err),
+			Error:    fmt.Sprintf("failed to acquire file lock: %v", lockErr),
 		}, nil
 	}
 	defer func() {

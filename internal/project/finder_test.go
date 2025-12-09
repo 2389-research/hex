@@ -31,14 +31,14 @@ func TestFindDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		if err := os.Chdir(origCwd); err != nil {
-			t.Error(err)
+		if chdirErr := os.Chdir(origCwd); chdirErr != nil {
+			t.Error(chdirErr)
 		}
 	}()
 
 	// Change to subdirectory
-	if err := os.Chdir(subDir); err != nil {
-		t.Fatal(err)
+	if chdirErr := os.Chdir(subDir); chdirErr != nil {
+		t.Fatal(chdirErr)
 	}
 
 	// Should find .hex/skills by walking up

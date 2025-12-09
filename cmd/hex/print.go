@@ -67,9 +67,9 @@ func runPrintMode(prompt string) error {
 	if len(imagePaths) > 0 {
 		contentBlocks := []core.ContentBlock{}
 		for _, imgPath := range imagePaths {
-			imgSrc, err := core.LoadImage(imgPath)
-			if err != nil {
-				return fmt.Errorf("load image %s: %w", imgPath, err)
+			imgSrc, loadErr := core.LoadImage(imgPath)
+			if loadErr != nil {
+				return fmt.Errorf("load image %s: %w", imgPath, loadErr)
 			}
 			contentBlocks = append(contentBlocks, core.NewImageBlock(imgSrc))
 		}

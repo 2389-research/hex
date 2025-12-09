@@ -193,16 +193,16 @@ func TestPersistenceToDisk(t *testing.T) {
 		Data:      map[string]interface{}{"test": "persistence"},
 	}
 
-	if err := store.Record(event); err != nil {
-		t.Fatalf("Failed to record event: %v", err)
+	if recordErr := store.Record(event); recordErr != nil {
+		t.Fatalf("Failed to record event: %v", recordErr)
 	}
 
 	_ = store.Close()
 
 	// Read file and verify JSON Lines format
-	content, err := os.ReadFile(eventFile)
-	if err != nil {
-		t.Fatalf("Failed to read event file: %v", err)
+	content, readErr := os.ReadFile(eventFile)
+	if readErr != nil {
+		t.Fatalf("Failed to read event file: %v", readErr)
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
@@ -289,15 +289,15 @@ func TestLoadExistingEvents(t *testing.T) {
 		Data:      nil,
 	}
 
-	if err := store1.Record(event1); err != nil {
-		t.Fatalf("Failed to record event: %v", err)
+	if recordErr := store1.Record(event1); recordErr != nil {
+		t.Fatalf("Failed to record event: %v", recordErr)
 	}
 	_ = store1.Close()
 
 	// Create new store pointing to same file
-	store2, err := NewEventStore(eventFile)
-	if err != nil {
-		t.Fatalf("Failed to create second event store: %v", err)
+	store2, createErr := NewEventStore(eventFile)
+	if createErr != nil {
+		t.Fatalf("Failed to create second event store: %v", createErr)
 	}
 	defer func() { _ = store2.Close() }()
 

@@ -62,44 +62,44 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 
 	// Create tool registry and executor
 	registry := tools.NewRegistry()
-	if err := registry.Register(tools.NewReadTool()); err != nil {
-		return fmt.Errorf("register read tool: %w", err)
+	if regErr := registry.Register(tools.NewReadTool()); regErr != nil {
+		return fmt.Errorf("register read tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewWriteTool()); err != nil {
-		return fmt.Errorf("register write tool: %w", err)
+	if regErr := registry.Register(tools.NewWriteTool()); regErr != nil {
+		return fmt.Errorf("register write tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewBashTool()); err != nil {
-		return fmt.Errorf("register bash tool: %w", err)
+	if regErr := registry.Register(tools.NewBashTool()); regErr != nil {
+		return fmt.Errorf("register bash tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewEditTool()); err != nil {
-		return fmt.Errorf("register edit tool: %w", err)
+	if regErr := registry.Register(tools.NewEditTool()); regErr != nil {
+		return fmt.Errorf("register edit tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewGrepTool()); err != nil {
-		return fmt.Errorf("register grep tool: %w", err)
+	if regErr := registry.Register(tools.NewGrepTool()); regErr != nil {
+		return fmt.Errorf("register grep tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewGlobTool()); err != nil {
-		return fmt.Errorf("register glob tool: %w", err)
+	if regErr := registry.Register(tools.NewGlobTool()); regErr != nil {
+		return fmt.Errorf("register glob tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewAskUserQuestionTool()); err != nil {
-		return fmt.Errorf("register ask_user_question tool: %w", err)
+	if regErr := registry.Register(tools.NewAskUserQuestionTool()); regErr != nil {
+		return fmt.Errorf("register ask_user_question tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewTodoWriteTool()); err != nil {
-		return fmt.Errorf("register todo_write tool: %w", err)
+	if regErr := registry.Register(tools.NewTodoWriteTool()); regErr != nil {
+		return fmt.Errorf("register todo_write tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewWebFetchTool()); err != nil {
-		return fmt.Errorf("register web_fetch tool: %w", err)
+	if regErr := registry.Register(tools.NewWebFetchTool()); regErr != nil {
+		return fmt.Errorf("register web_fetch tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewWebSearchTool()); err != nil {
-		return fmt.Errorf("register web_search tool: %w", err)
+	if regErr := registry.Register(tools.NewWebSearchTool()); regErr != nil {
+		return fmt.Errorf("register web_search tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewTaskTool()); err != nil {
-		return fmt.Errorf("register task tool: %w", err)
+	if regErr := registry.Register(tools.NewTaskTool()); regErr != nil {
+		return fmt.Errorf("register task tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewBashOutputTool()); err != nil {
-		return fmt.Errorf("register bash_output tool: %w", err)
+	if regErr := registry.Register(tools.NewBashOutputTool()); regErr != nil {
+		return fmt.Errorf("register bash_output tool: %w", regErr)
 	}
-	if err := registry.Register(tools.NewKillShellTool()); err != nil {
-		return fmt.Errorf("register kill_shell tool: %w", err)
+	if regErr := registry.Register(tools.NewKillShellTool()); regErr != nil {
+		return fmt.Errorf("register kill_shell tool: %w", regErr)
 	}
 
 	// Initialize plugin system
@@ -119,23 +119,23 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 
 	// Register Skills system (with plugin skills)
 	skillRegistry, skillTool := initializeSkills(pluginSkillPaths)
-	if err := registry.Register(skillTool); err != nil {
-		return fmt.Errorf("register skill tool: %w", err)
+	if regErr := registry.Register(skillTool); regErr != nil {
+		return fmt.Errorf("register skill tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded skills", "count", skillRegistry.Count())
 
 	// Register Slash Commands system (with plugin commands)
 	commandRegistry, slashCommandTool := initializeCommands(pluginCommandPaths)
-	if err := registry.Register(slashCommandTool); err != nil {
-		return fmt.Errorf("register slash command tool: %w", err)
+	if regErr := registry.Register(slashCommandTool); regErr != nil {
+		return fmt.Errorf("register slash command tool: %w", regErr)
 	}
 	logging.InfoWith("Loaded slash commands", "count", commandRegistry.Count())
 
 	// Load MCP tools from .mcp.json if present
 	logging.Debug("Loading MCP tools")
-	if err := mcp.LoadMCPTools(".", registry); err != nil {
+	if mcpErr := mcp.LoadMCPTools(".", registry); mcpErr != nil {
 		// Log error but don't fail - continue with built-in tools
-		logging.WarnWith("Failed to load MCP tools", "error", err.Error())
+		logging.WarnWith("Failed to load MCP tools", "error", mcpErr.Error())
 	} else {
 		logging.Info("MCP tools loaded successfully")
 	}

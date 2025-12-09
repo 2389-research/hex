@@ -33,6 +33,9 @@ type ApprovalFormResult struct {
 	ToolUse  *core.ToolUse
 }
 
+// NOTE: ApprovalResultMsg and RunToolApprovalForm are defined in integration.go
+// to provide the async pattern for running huh forms within bubbletea
+
 // RiskLevel represents the risk level of a tool operation
 type RiskLevel int
 
@@ -95,7 +98,8 @@ func (f *ToolApprovalForm) BuildForm() *huh.Form {
 				Description(description).
 				Options(options...).
 				Value(&f.decision).
-				Height(12),
+				Height(8).
+				Filtering(false), // Disable filtering so Enter submits immediately
 		),
 	).WithTheme(f.getDraculaTheme())
 }

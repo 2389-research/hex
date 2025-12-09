@@ -85,18 +85,18 @@ func LoadConfig() (*Config, error) {
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file doesn't exist - create a default one
-			home, err := os.UserHomeDir()
-			if err == nil {
+			home, homeErr := os.UserHomeDir()
+			if homeErr == nil {
 				hexDir := filepath.Join(home, ".hex")
 				tomlPath := filepath.Join(hexDir, "config.toml")
 
 				// Create directory if needed
-				if err := os.MkdirAll(hexDir, 0755); err != nil {
+				if mkdirErr := os.MkdirAll(hexDir, 0755); mkdirErr != nil {
 					// Log the mkdir failure specifically
-					fmt.Fprintf(os.Stderr, "Note: Could not create config directory: %v\n", err)
-				} else if err := createDefaultConfig(tomlPath); err != nil {
+					fmt.Fprintf(os.Stderr, "Note: Could not create config directory: %v\n", mkdirErr)
+				} else if createErr := createDefaultConfig(tomlPath); createErr != nil {
 					// Don't fail if we can't create default config
-					fmt.Fprintf(os.Stderr, "Note: Could not create default config: %v\n", err)
+					fmt.Fprintf(os.Stderr, "Note: Could not create default config: %v\n", createErr)
 				}
 			}
 		} else {
