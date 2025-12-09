@@ -104,9 +104,9 @@ func (a *ApprovalPrompt) View() string {
 			b.WriteString(a.theme.Emphasized.Render(key + ":"))
 			b.WriteString(" ")
 			b.WriteString(lines[0])
-			padding := a.width - 6 - len(key) - lipgloss.Width(lines[0])
-			if padding > 0 {
-				b.WriteString(strings.Repeat(" ", padding))
+			linePadding := a.width - 6 - len(key) - lipgloss.Width(lines[0])
+			if linePadding > 0 {
+				b.WriteString(strings.Repeat(" ", linePadding))
 			}
 			b.WriteString("│\n")
 
@@ -114,9 +114,9 @@ func (a *ApprovalPrompt) View() string {
 			for i := 1; i < len(lines); i++ {
 				b.WriteString("│     ")
 				b.WriteString(lines[i])
-				padding := a.width - 7 - lipgloss.Width(lines[i])
-				if padding > 0 {
-					b.WriteString(strings.Repeat(" ", padding))
+				wrapPadding := a.width - 7 - lipgloss.Width(lines[i])
+				if wrapPadding > 0 {
+					b.WriteString(strings.Repeat(" ", wrapPadding))
 				}
 				b.WriteString("│\n")
 			}

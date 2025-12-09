@@ -160,7 +160,7 @@ func (t *BashTool) executeBackground(_ context.Context, command string, params m
 		}
 
 		// Start the command
-		if err := cmd.Start(); err != nil {
+		if startErr := cmd.Start(); startErr != nil {
 			proc.MarkDone(-1)
 			return
 		}

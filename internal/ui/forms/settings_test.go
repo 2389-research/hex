@@ -208,15 +208,15 @@ func TestSaveToFile(t *testing.T) {
 	}
 
 	// Verify file exists
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
 		t.Error("config file was not created")
 	}
 
 	// Read and verify content
 	// #nosec G304 - this is a test file reading from a temp directory
-	content, err := os.ReadFile(configPath)
-	if err != nil {
-		t.Fatalf("failed to read config file: %v", err)
+	content, readErr := os.ReadFile(configPath)
+	if readErr != nil {
+		t.Fatalf("failed to read config file: %v", readErr)
 	}
 
 	contentStr := string(content)

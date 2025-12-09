@@ -87,13 +87,13 @@ func TestSearchHistory(t *testing.T) {
 	}
 
 	for _, entry := range entries {
-		err := storage.AddHistoryEntry(db, entry)
-		require.NoError(t, err)
+		addErr := storage.AddHistoryEntry(db, entry)
+		require.NoError(t, addErr)
 	}
 
 	// Search for "docker"
-	results, err := storage.SearchHistory(db, "docker", 10)
-	assert.NoError(t, err)
+	results, searchErr := storage.SearchHistory(db, "docker", 10)
+	assert.NoError(t, searchErr)
 	assert.Len(t, results, 1)
 	assert.Contains(t, results[0].UserMessage, "Docker")
 
@@ -146,13 +146,13 @@ func TestSearchHistoryMultipleMatches(t *testing.T) {
 	}
 
 	for _, entry := range entries {
-		err := storage.AddHistoryEntry(db, entry)
-		require.NoError(t, err)
+		addErr := storage.AddHistoryEntry(db, entry)
+		require.NoError(t, addErr)
 	}
 
 	// Search should return all three
-	results, err := storage.SearchHistory(db, "python", 10)
-	assert.NoError(t, err)
+	results, searchErr := storage.SearchHistory(db, "python", 10)
+	assert.NoError(t, searchErr)
 	assert.Len(t, results, 3)
 }
 
@@ -177,14 +177,14 @@ func TestGetRecentHistory(t *testing.T) {
 			UserMessage:       "Message " + string(rune('A'+i)),
 			AssistantResponse: "Response " + string(rune('A'+i)),
 		}
-		err := storage.AddHistoryEntry(db, entry)
-		require.NoError(t, err)
+		addErr := storage.AddHistoryEntry(db, entry)
+		require.NoError(t, addErr)
 		time.Sleep(10 * time.Millisecond) // Ensure different timestamps
 	}
 
 	// Get recent history
-	results, err := storage.GetRecentHistory(db, 3)
-	assert.NoError(t, err)
+	results, recentErr := storage.GetRecentHistory(db, 3)
+	assert.NoError(t, recentErr)
 	assert.Len(t, results, 3)
 
 	// Should be in reverse chronological order (most recent first)
@@ -214,13 +214,13 @@ func TestSearchHistoryLimit(t *testing.T) {
 			UserMessage:       "How to use Docker feature " + string(rune('A'+i)),
 			AssistantResponse: "Docker feature explanation...",
 		}
-		err := storage.AddHistoryEntry(db, entry)
-		require.NoError(t, err)
+		addErr := storage.AddHistoryEntry(db, entry)
+		require.NoError(t, addErr)
 	}
 
 	// Search with limit
-	results, err := storage.SearchHistory(db, "docker", 5)
-	assert.NoError(t, err)
+	results, searchErr := storage.SearchHistory(db, "docker", 5)
+	assert.NoError(t, searchErr)
 	assert.Len(t, results, 5)
 }
 

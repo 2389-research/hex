@@ -141,16 +141,16 @@ func (t *AskUserQuestionTool) Execute(_ context.Context, params map[string]inter
 		// Extract option labels
 		optionLabels := make([]string, 0, len(options))
 		for _, optRaw := range options {
-			opt, ok := optRaw.(map[string]interface{})
-			if !ok {
+			opt, optOK := optRaw.(map[string]interface{})
+			if !optOK {
 				return &Result{
 					Success: false,
 					Error:   fmt.Sprintf("question %d has invalid option", i+1),
 				}, nil
 			}
 
-			label, ok := opt["label"].(string)
-			if !ok {
+			label, labelOK := opt["label"].(string)
+			if !labelOK {
 				return &Result{
 					Success: false,
 					Error:   fmt.Sprintf("question %d option missing label", i+1),

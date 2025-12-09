@@ -217,8 +217,8 @@ func TestRegister_DuplicateID(t *testing.T) {
 
 	// Try to register same ID again
 	cmd2 := exec.Command("sleep", "10")
-	if err := cmd2.Start(); err != nil {
-		t.Fatalf("Failed to start second process: %v", err)
+	if startErr := cmd2.Start(); startErr != nil {
+		t.Fatalf("Failed to start second process: %v", startErr)
 	}
 	defer func() { _ = cmd2.Process.Kill() }()
 
