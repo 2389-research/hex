@@ -109,7 +109,9 @@ func (c *Client) CreateMessageStream(ctx context.Context, req MessageRequest) (<
 	// Start goroutine to read SSE stream
 	go func() {
 		defer close(chunks)
-		defer func() { _ = httpResp.Body.Close() }()
+		defer func() {
+			_ = httpResp.Body.Close()
+		}()
 
 		scanner := bufio.NewScanner(httpResp.Body)
 		for scanner.Scan() {

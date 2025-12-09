@@ -766,7 +766,8 @@ func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea
 // handleContentBlockDelta processes delta events for content blocks (text or tool input JSON)
 func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea.Cmd) {
 	if chunk.Delta == nil {
-		return m, nil
+		// Even with nil delta, continue reading the stream
+		return m, m.continueReading()
 	}
 
 	// Handle input_json_delta for tool use parameters
@@ -798,7 +799,8 @@ func (m *Model) handleContentBlockDelta(chunk *core.StreamChunk) (tea.Model, tea
 		return m, m.continueReading()
 	}
 
-	return m, nil
+	// For any other delta type, continue reading
+	return m, m.continueReading()
 }
 
 // handleContentBlockStop processes the completion of a content block (tool parameters complete)
