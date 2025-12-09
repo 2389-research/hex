@@ -31,7 +31,7 @@ func LoadContext() (string, error) {
 	if err == nil {
 		globalPath := filepath.Join(homeDir, ".hex", "AGENTS.md")
 		//nolint:gosec // Intentional file read from user's home directory
-		if content, err := os.ReadFile(globalPath); err == nil {
+		if content, readErr := os.ReadFile(globalPath); readErr == nil {
 			globalContext = fmt.Sprintf("# Global Context\n\n%s\n\n", string(content))
 		}
 	}

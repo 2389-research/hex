@@ -20,8 +20,8 @@ func migrateYAMLToTOML(yamlPath, tomlPath string) error {
 	}
 
 	var yamlCfg map[string]interface{}
-	if err := yaml.Unmarshal(yamlData, &yamlCfg); err != nil {
-		return fmt.Errorf("unmarshal yaml: %w", err)
+	if unmarshalErr := yaml.Unmarshal(yamlData, &yamlCfg); unmarshalErr != nil {
+		return fmt.Errorf("unmarshal yaml: %w", unmarshalErr)
 	}
 
 	// Convert to new structure

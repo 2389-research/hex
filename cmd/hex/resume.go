@@ -71,11 +71,11 @@ func runResume(_ *cobra.Command, args []string) error {
 
 	case resumeLast:
 		// Resume most recent conversation
-		conv, err := storage.GetLatestConversation(db)
-		if err == sql.ErrNoRows {
+		conv, latestErr := storage.GetLatestConversation(db)
+		if latestErr == sql.ErrNoRows {
 			return fmt.Errorf("no previous conversations found")
-		} else if err != nil {
-			return fmt.Errorf("failed to get latest conversation: %w", err)
+		} else if latestErr != nil {
+			return fmt.Errorf("failed to get latest conversation: %w", latestErr)
 		}
 		conversationID = conv.ID
 		logging.InfoWith("Resuming latest conversation", "id", conversationID, "title", conv.Title)
@@ -83,9 +83,9 @@ func runResume(_ *cobra.Command, args []string) error {
 	default:
 		// Show interactive picker
 		logging.Debug("Showing conversation picker")
-		selectedID, err := showConversationPicker(db)
-		if err != nil {
-			return fmt.Errorf("picker error: %w", err)
+		selectedID, pickerErr := showConversationPicker(db)
+		if pickerErr != nil {
+			return fmt.Errorf("picker error: %w", pickerErr)
 		}
 		if selectedID == "" {
 			// User cancelled

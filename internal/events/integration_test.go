@@ -105,8 +105,8 @@ func TestEventSourcingIntegration(t *testing.T) {
 
 	// Record all events
 	for _, e := range events {
-		if err := store.Record(e); err != nil {
-			t.Fatalf("Failed to record event: %v", err)
+		if recordErr := store.Record(e); recordErr != nil {
+			t.Fatalf("Failed to record event: %v", recordErr)
 		}
 	}
 
@@ -132,8 +132,8 @@ func TestEventSourcingIntegration(t *testing.T) {
 	}
 	defer func() { _ = store2.Close() }()
 
-	if err := store2.LoadExisting(); err != nil {
-		t.Fatalf("Failed to load existing events: %v", err)
+	if loadErr := store2.LoadExisting(); loadErr != nil {
+		t.Fatalf("Failed to load existing events: %v", loadErr)
 	}
 
 	// Verify events were persisted and loaded
