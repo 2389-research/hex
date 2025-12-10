@@ -92,6 +92,12 @@ type Theme struct {
 	ListItemSelected lipgloss.Style
 	ListItemActive   lipgloss.Style
 
+	// Autocomplete dropdown styles
+	AutocompleteDropdown lipgloss.Style
+	AutocompleteItem     lipgloss.Style
+	AutocompleteSelected lipgloss.Style
+	AutocompleteHelp     lipgloss.Style
+
 	// Help and modal styles
 	HelpPanel  lipgloss.Style
 	HelpKey    lipgloss.Style
@@ -275,6 +281,27 @@ func NewDraculaTheme() *Theme {
 		Foreground(t.Colors.Background).
 		Background(t.Colors.Purple).
 		Bold(true)
+
+	// Autocomplete dropdown styles - high contrast for readability
+	t.AutocompleteDropdown = lipgloss.NewStyle().
+		Background(t.Colors.CurrentLine).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(t.Colors.Purple).
+		Padding(0, 1)
+
+	t.AutocompleteItem = lipgloss.NewStyle().
+		Foreground(t.Colors.Foreground).
+		Background(t.Colors.CurrentLine)
+
+	t.AutocompleteSelected = lipgloss.NewStyle().
+		Foreground(t.Colors.Background).
+		Background(t.Colors.Cyan).
+		Bold(true)
+
+	t.AutocompleteHelp = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Background(t.Colors.CurrentLine).
+		Italic(true)
 
 	// Help and modal styles
 	t.HelpPanel = lipgloss.NewStyle().

@@ -183,6 +183,27 @@ func NewNeoTerminalTheme() *Theme {
 		Background(t.Colors.Cyan).
 		Bold(true)
 
+	// Autocomplete dropdown styles - high contrast for readability
+	t.AutocompleteDropdown = lipgloss.NewStyle().
+		Background(t.Colors.CurrentLine).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(t.Colors.Cyan).
+		Padding(0, 1)
+
+	t.AutocompleteItem = lipgloss.NewStyle().
+		Foreground(t.Colors.Foreground).
+		Background(t.Colors.CurrentLine)
+
+	t.AutocompleteSelected = lipgloss.NewStyle().
+		Foreground(t.Colors.Background).
+		Background(t.Colors.Cyan).
+		Bold(true)
+
+	t.AutocompleteHelp = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Background(t.Colors.CurrentLine).
+		Italic(true)
+
 	// Help and modal styles
 	t.HelpPanel = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
