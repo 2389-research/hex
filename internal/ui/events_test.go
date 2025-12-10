@@ -371,6 +371,7 @@ func TestUpdateHandlesMessageEvent(t *testing.T) {
 
 // TestQuitHandlersCleanupEvents verifies that Ctrl+C cleans up event subscriptions
 // Note: Esc no longer quits, only Ctrl+C and exit commands do
+// With the double-Ctrl+C confirmation feature, we need to press Ctrl+C twice to quit
 func TestQuitHandlersCleanupEvents(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -405,12 +406,20 @@ func TestQuitHandlersCleanupEvents(t *testing.T) {
 				// Good
 			}
 
-			// Send quit key
+			// First Ctrl+C sets pending quit (doesn't quit yet)
 			_, cmd := model.Update(tt.keyMsg)
+
+			// First Ctrl+C should NOT return quit command (just sets pending state)
+			if cmd != nil {
+				t.Fatal("First Ctrl+C should not return quit command (should just set pending state)")
+			}
+
+			// Second Ctrl+C within timeout should actually quit
+			_, cmd = model.Update(tt.keyMsg)
 
 			// Verify quit command was returned
 			if cmd == nil {
-				t.Fatal("Update should return quit command")
+				t.Fatal("Update should return quit command on second Ctrl+C")
 			}
 
 			// Verify context was canceled

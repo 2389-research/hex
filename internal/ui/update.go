@@ -159,10 +159,46 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Store all results
 		m.toolResults = append(m.toolResults, msg.results...)
 
-		// Display results in UI
+		// Display results in UI and add to tool log
+		// Each tool result gets a header followed by its output to keep them grouped
 		for _, result := range msg.results {
 			resultMsg := formatToolResult(result.Result)
 			m.AddMessage("tool", resultMsg)
+
+			// Add tool header and output to tool log (keeps call and output together)
+			if result.Result != nil {
+				// Build header with tool name and parameter preview
+				toolName := result.Result.ToolName
+				if toolName == "" {
+					toolName = "unknown"
+				}
+				// Try to get a parameter preview from metadata
+				var paramPreview string
+				if cmd, ok := result.Result.Metadata["command"].(string); ok {
+					paramPreview = cmd
+				} else if path, ok := result.Result.Metadata["path"].(string); ok {
+					paramPreview = path
+				} else if pattern, ok := result.Result.Metadata["pattern"].(string); ok {
+					paramPreview = pattern
+				}
+				// Truncate and format the header
+				if paramPreview != "" {
+					paramPreview = strings.ReplaceAll(paramPreview, "\n", "\\n")
+					if len(paramPreview) > 40 {
+						paramPreview = paramPreview[:37] + "..."
+					}
+					m.appendToolLogLine(fmt.Sprintf("─── %s(%q) ───", toolName, paramPreview))
+				} else {
+					m.appendToolLogLine(fmt.Sprintf("─── %s ───", toolName))
+				}
+
+				// Add output or error
+				if result.Result.Output != "" {
+					m.appendToolLogOutput(result.Result.Output)
+				} else if result.Result.Error != "" {
+					m.appendToolLogLine("Error: " + result.Result.Error)
+				}
+			}
 
 			// Save tool result to database
 			if err := m.saveMessage("tool", resultMsg); err != nil {
@@ -185,22 +221,42 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
-		// Forward key messages to embedded approval form if active
-		if m.toolApprovalMode && m.toolApprovalForm != nil {
-			var formCmd tea.Cmd
-			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-
-			// Check if form is complete after processing key
-			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
-				if approvalForm.IsComplete() {
-					result := approvalForm.GetDecision()
-					return m.handleApprovalResult(&forms.ApprovalResultMsg{
-						Result: result,
-						Error:  nil,
-					})
+		// Handle custom approval menu navigation
+		if m.toolApprovalMode {
+			switch msg.Type {
+			case tea.KeyUp:
+				if m.selectedApprovalOpt > 0 {
+					m.selectedApprovalOpt--
 				}
+				return m, nil
+			case tea.KeyDown:
+				if m.selectedApprovalOpt < 3 {
+					m.selectedApprovalOpt++
+				}
+				return m, nil
+			case tea.KeyEnter:
+				// Map selected option to decision
+				var decision forms.ApprovalDecision
+				switch m.selectedApprovalOpt {
+				case 0:
+					decision = forms.DecisionApprove
+				case 1:
+					decision = forms.DecisionDeny
+				case 2:
+					decision = forms.DecisionAlwaysAllow
+				case 3:
+					decision = forms.DecisionNeverAllow
+				}
+				// Reset selection for next time
+				m.selectedApprovalOpt = 0
+				return m.handleApprovalResult(&forms.ApprovalResultMsg{
+					Result: forms.ApprovalFormResult{
+						Decision: decision,
+						ToolUse:  m.pendingToolUses[0],
+					},
+					Error: nil,
+				})
 			}
-			return m, formCmd
 		}
 
 		// Intro screen: Switch to chat mode
@@ -284,13 +340,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle Ctrl+O: toggle tool log overlay
+		if msg.Type == tea.KeyCtrlO {
+			m.toggleToolLogOverlay()
+			return m, nil
+		}
+
 		// Handle Esc key - clear priority order:
-		// 1. Close help (highest priority - modal overlay)
-		// 2. Exit search mode (active editing state)
-		// 3. Dismiss suggestions (transient UI)
-		// 4. Clear quick actions (transient UI)
+		// 1. Close tool log overlay (highest priority - modal overlay)
+		// 2. Close help (modal overlay)
+		// 3. Exit search mode (active editing state)
+		// 4. Dismiss suggestions (transient UI)
+		// 5. Clear quick actions (transient UI)
 		// Does NOT quit - use Ctrl+C for that
 		if msg.Type == tea.KeyEsc {
+			if m.toolLogOverlay {
+				m.toolLogOverlay = false
+				return m, nil
+			}
 			if m.helpVisible {
 				m.ToggleHelp()
 				return m, nil
@@ -311,15 +378,61 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Ctrl+C to quit
+		// Handle Ctrl+C: cancel active work on first press, quit on second press when idle
 		if msg.Type == tea.KeyCtrlC {
-			// Cancel any active stream before quitting
-			m.cancelStream()
-			// Cancel event subscriptions before quitting
-			if m.eventCancel != nil {
-				m.eventCancel()
+			// If streaming, first Ctrl+C cancels the stream
+			if m.Streaming {
+				m.cancelStream()
+				m.Streaming = false
+				m.StreamingText = ""
+				m.Status = StatusIdle
+				m.pendingQuit = false // Reset quit state
+				return m, nil
 			}
-			return m, tea.Quit
+
+			// If executing a tool, first Ctrl+C cancels it
+			if m.executingTool {
+				m.cancelStream() // Cancel any underlying stream
+				m.executingTool = false
+				m.executingToolUses = nil
+				m.currentToolID = ""
+				if m.spinner != nil {
+					m.spinner.Stop()
+				}
+				m.Status = StatusIdle
+				m.pendingQuit = false
+				return m, nil
+			}
+
+			// If in tool approval mode, first Ctrl+C cancels it (denies the tool)
+			if m.toolApprovalMode {
+				m.toolApprovalMode = false
+				m.toolApprovalForm = nil
+				m.pendingToolUses = nil
+				m.Status = StatusIdle
+				m.pendingQuit = false
+				return m, nil
+			}
+
+			// Check if this is within the confirmation window (2 seconds)
+			if m.pendingQuit && time.Since(m.pendingQuitTime) < 2*time.Second {
+				// Second Ctrl+C within timeout - actually quit
+				m.cancelStream()
+				if m.eventCancel != nil {
+					m.eventCancel()
+				}
+				return m, tea.Quit
+			}
+
+			// First Ctrl+C when idle - show warning and wait for confirmation
+			m.pendingQuit = true
+			m.pendingQuitTime = time.Now()
+			return m, nil
+		}
+
+		// Reset pending quit on any other key press
+		if m.pendingQuit {
+			m.pendingQuit = false
 		}
 
 		// Phase 6C Task 4: Handle autocomplete navigation
@@ -407,6 +520,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				if input != "" {
+					// Add to input history
+					m.addToInputHistory(input)
+
 					// Check if currently streaming - if so, queue the message
 					if m.Streaming {
 						// Queue message for later processing
@@ -474,6 +590,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Scroll up when input is empty
 				m.Viewport.ScrollUp(1)
 				return m, nil
+			}
+		}
+
+		// Handle up/down arrows for input history navigation
+		// Only when textarea is focused and cursor is at the start/end of input
+		if m.Input.Focused() && len(m.inputHistory) > 0 {
+			if msg.Type == tea.KeyUp {
+				// Navigate to older history
+				if m.navigateHistoryUp() {
+					return m, nil
+				}
+			}
+			if msg.Type == tea.KeyDown {
+				// Navigate to newer history
+				if m.navigateHistoryDown() {
+					return m, nil
+				}
 			}
 		}
 
@@ -592,29 +725,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Forward other messages to embedded approval form (for internal huh commands)
-	// This is critical - huh returns internal commands (NextField, etc.) that must be
-	// routed back to the form for proper state transitions
-	if m.toolApprovalMode && m.toolApprovalForm != nil {
-		var formCmd tea.Cmd
-		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-
-		// Check if form is complete after processing message
-		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
-			if approvalForm.IsComplete() {
-				result := approvalForm.GetDecision()
-				return m.handleApprovalResult(&forms.ApprovalResultMsg{
-					Result: result,
-					Error:  nil,
-				})
-			}
-		}
-
-		if formCmd != nil {
-			cmds = append(cmds, formCmd)
-		}
-	}
-
 	// Update viewport
 	m.Viewport, cmd = m.Viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -653,6 +763,26 @@ func (m *Model) updateViewport() {
 	// Taking pointers is safe because no concurrent reallocation can occur.
 	for i := range m.Messages {
 		msg := &m.Messages[i] // Get pointer to allow cache updates
+
+		// Skip internal messages that shouldn't be displayed to users:
+		// - "tool" role messages (internal tool result tracking)
+		// - "user" messages with only tool_result ContentBlocks (API protocol)
+		if msg.Role == "tool" {
+			continue
+		}
+		if msg.Role == "user" && msg.Content == "" && len(msg.ContentBlock) > 0 {
+			// Check if this is a tool_result only message
+			allToolResults := true
+			for _, block := range msg.ContentBlock {
+				if block.Type != "tool_result" {
+					allToolResults = false
+					break
+				}
+			}
+			if allToolResults {
+				continue // Skip displaying tool_result user messages
+			}
+		}
 
 		// Get timestamp (use current time if not set for backward compatibility)
 		timestamp := msg.Timestamp
@@ -897,12 +1027,19 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Add assistant message with content blocks
-		assistantMsg := Message{
-			Role:         "assistant",
-			ContentBlock: blocks,
+		// Update the existing placeholder message with content blocks
+		// The placeholder was added in streamStartMsg to preserve message ordering
+		if len(m.Messages) > 0 && m.Messages[len(m.Messages)-1].Role == "assistant" {
+			// Update the last assistant message (the placeholder) with content blocks
+			m.Messages[len(m.Messages)-1].ContentBlock = blocks
+			m.Messages[len(m.Messages)-1].Content = "" // Clear any streaming text
+		} else {
+			// Fallback: add new message if no placeholder exists
+			m.Messages = append(m.Messages, Message{
+				Role:         "assistant",
+				ContentBlock: blocks,
+			})
 		}
-		m.Messages = append(m.Messages, assistantMsg)
 
 		// Save assistant message with tool_use blocks to database
 		// Serialize ContentBlock to JSON for storage
@@ -913,8 +1050,7 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		}
 
 		if os.Getenv("HEX_DEBUG") != "" {
-			msgJSON, _ := json.Marshal(assistantMsg)
-			logging.Debug("Assistant message added to history", "message", string(msgJSON))
+			logging.Debug("Assistant message updated with tool uses", "block_count", len(blocks))
 		}
 		m.StreamingText = ""
 
@@ -1260,22 +1396,11 @@ func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
 			}
 
 		case "tool_use":
-			// Render tool use request with visual indicator
-			b.WriteString(m.theme.ToolCall.Render("🛠 Tool Call: " + block.Name))
-			if block.ID != "" {
-				b.WriteString(m.theme.Muted.Render(fmt.Sprintf(" [%s]", block.ID)))
-			}
-			if len(block.Input) > 0 {
-				b.WriteString("\nParameters:\n")
-				// Format parameters nicely
-				for key, value := range block.Input {
-					valueStr := fmt.Sprintf("%v", value)
-					if len(valueStr) > 100 {
-						valueStr = valueStr[:97] + "..."
-					}
-					b.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
-				}
-			}
+			// Render compact tool use indicator (just the tool name and params)
+			// The collapsed log view is rendered once at the end of all tool_use blocks
+			paramPreview := getToolParamPreview(block.Name, block.Input)
+			toolLine := fmt.Sprintf("🛠 %s(%s)", block.Name, paramPreview)
+			b.WriteString(m.theme.ToolCall.Render(toolLine))
 
 		case "text":
 			// Regular text block
@@ -1285,6 +1410,29 @@ func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
 		// Add spacing between blocks
 		if i < len(blocks)-1 {
 			b.WriteString("\n")
+		}
+	}
+
+	// After all blocks, add collapsed tool log if there were any tool_use blocks
+	hasToolUse := false
+	for _, block := range blocks {
+		if block.Type == "tool_use" {
+			hasToolUse = true
+			break
+		}
+	}
+	if hasToolUse {
+		b.WriteString("\n")
+		// Add collapsed tool log (last 3 lines of chunk output)
+		collapsedLog, hiddenLines := m.renderCollapsedToolLog()
+		if collapsedLog != "" {
+			b.WriteString(collapsedLog)
+		}
+		// Combine "+ N lines" with Ctrl+O hint on one line
+		if hiddenLines > 0 {
+			b.WriteString(m.theme.Muted.Render(fmt.Sprintf("+ %d lines · Ctrl+O for details", hiddenLines)))
+		} else {
+			b.WriteString(m.theme.Muted.Render("Ctrl+O for details"))
 		}
 	}
 
@@ -1312,6 +1460,56 @@ func formatToolResult(result *tools.Result) string {
 	}
 
 	return output
+}
+
+// getToolParamPreview extracts a compact parameter preview for tool display
+func getToolParamPreview(toolName string, input map[string]interface{}) string {
+	// Get the most relevant parameter based on tool type
+	var preview string
+	switch toolName {
+	case "bash":
+		if cmd, ok := input["command"].(string); ok {
+			preview = cmd
+		}
+	case "read_file", "Read":
+		if path, ok := input["file_path"].(string); ok {
+			preview = path
+		} else if path, ok := input["path"].(string); ok {
+			preview = path
+		}
+	case "write_file", "Write", "edit", "Edit":
+		if path, ok := input["file_path"].(string); ok {
+			preview = path
+		}
+	case "grep", "Grep":
+		if pattern, ok := input["pattern"].(string); ok {
+			preview = pattern
+		}
+	case "glob", "Glob":
+		if pattern, ok := input["pattern"].(string); ok {
+			preview = pattern
+		}
+	default:
+		// For unknown tools, try to get first string parameter
+		for _, val := range input {
+			if str, ok := val.(string); ok && str != "" {
+				preview = str
+				break
+			}
+		}
+	}
+
+	// Truncate and quote the preview
+	if preview == "" {
+		return ""
+	}
+	// Escape newlines and truncate
+	preview = strings.ReplaceAll(preview, "\n", "\\n")
+	preview = strings.ReplaceAll(preview, "\t", "\\t")
+	if len(preview) > 40 {
+		preview = preview[:37] + "..."
+	}
+	return fmt.Sprintf("%q", preview)
 }
 
 // Phase 6C Task 6: Quick Actions Key Handler

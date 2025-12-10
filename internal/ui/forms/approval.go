@@ -77,17 +77,8 @@ func (f *ToolApprovalForm) BuildForm() *huh.Form {
 		huh.NewOption("✗✗ Never Allow (block permanently)", DecisionNeverAllow),
 	}
 
-	// Format tool information for display
-	toolInfo := f.formatToolInfo()
-	riskInfo := f.formatRiskInfo()
-	paramInfo := f.formatParameterInfo()
-
-	// Build the form description
-	description := fmt.Sprintf("%s\n\n%s\n\n%s",
-		toolInfo,
-		riskInfo,
-		paramInfo,
-	)
+	// Build compact description: "⚠ bash: command="echo hello""
+	description := f.formatCompactDescription()
 
 	// Create the form with Dracula theme colors
 	// Don't call Run() - return the form as a tea.Model for embedding
@@ -110,6 +101,16 @@ func (f *ToolApprovalForm) GetDecision() ApprovalFormResult {
 		Decision: f.decision,
 		ToolUse:  f.toolUse,
 	}
+}
+
+// GetRiskLevel returns the assessed risk level for this tool use
+func (f *ToolApprovalForm) GetRiskLevel() RiskLevel {
+	return f.riskLevel
+}
+
+// GetToolUse returns the tool use being approved
+func (f *ToolApprovalForm) GetToolUse() *core.ToolUse {
+	return f.toolUse
 }
 
 // Init implements tea.Model
@@ -197,6 +198,79 @@ func (f *ToolApprovalForm) formatParameterInfo() string {
 	return strings.TrimSpace(b.String())
 }
 
+// formatCompactDescription creates a single-line compact description for the approval prompt
+// Format: "⚠ bash("ls -la")" or "✓ read_file("/path/to/file")"
+func (f *ToolApprovalForm) formatCompactDescription() string {
+	// Defensive nil check
+	if f.toolUse == nil {
+		return "⚠ unknown_tool()"
+	}
+
+	// Get risk emoji
+	var riskEmoji string
+	switch f.riskLevel {
+	case RiskSafe:
+		riskEmoji = "✓"
+	case RiskCaution:
+		riskEmoji = "⚠"
+	case RiskDanger:
+		riskEmoji = "⚠⚠"
+	default:
+		riskEmoji = "?"
+	}
+
+	// Get the key parameter based on tool type
+	var paramValue string
+	toolName := f.toolUse.Name
+
+	switch toolName {
+	case "bash":
+		if cmd, ok := f.toolUse.Input["command"].(string); ok {
+			paramValue = formatCompactValue(cmd, 60)
+		}
+	case "read_file":
+		// read_file uses "path" parameter
+		if path, ok := f.toolUse.Input["path"].(string); ok {
+			paramValue = formatCompactValue(path, 60)
+		}
+	case "write_file", "edit":
+		if path, ok := f.toolUse.Input["file_path"].(string); ok {
+			paramValue = formatCompactValue(path, 60)
+		}
+	case "grep", "glob":
+		if pattern, ok := f.toolUse.Input["pattern"].(string); ok {
+			paramValue = formatCompactValue(pattern, 50)
+		}
+	default:
+		// For other tools, show first string parameter value
+		for _, val := range f.toolUse.Input {
+			if str, ok := val.(string); ok && str != "" {
+				paramValue = formatCompactValue(str, 50)
+				break
+			}
+		}
+	}
+
+	// Format as function call style: ⚠ bash("ls -la")
+	if paramValue != "" {
+		return fmt.Sprintf("%s %s(%s)", riskEmoji, toolName, paramValue)
+	}
+	return fmt.Sprintf("%s %s()", riskEmoji, toolName)
+}
+
+// formatCompactValue formats a value for compact display
+func formatCompactValue(value string, maxLen int) string {
+	// Escape newlines and handle multiline
+	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\t", "\\t")
+
+	// Wrap in quotes for clarity
+	if len(value) > maxLen {
+		return fmt.Sprintf("%q", value[:maxLen-3]+"...")
+	}
+	return fmt.Sprintf("%q", value)
+}
+
 // formatValue formats a parameter value for display
 func formatValue(value interface{}) string {
 	switch v := value.(type) {
@@ -259,6 +333,11 @@ func (f *ToolApprovalForm) getDraculaTheme() *huh.Theme {
 		Background(colors.CurrentLine)
 
 	return t
+}
+
+// AssessRiskLevel determines the risk level of a tool operation (exported for view.go)
+func AssessRiskLevel(toolUse *core.ToolUse) RiskLevel {
+	return assessRiskLevel(toolUse)
 }
 
 // assessRiskLevel determines the risk level of a tool operation

@@ -146,8 +146,9 @@ type Model struct {
 	executingToolUses []*core.ToolUse // Tools currently being executed (for display)
 	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
 	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
-	toolApprovalMode bool      // Showing approval prompt
-	toolApprovalForm tea.Model // Embedded huh form for tool approval
+	toolApprovalMode     bool      // Showing approval prompt
+	toolApprovalForm     tea.Model // Embedded huh form for tool approval (deprecated)
+	selectedApprovalOpt  int       // Currently highlighted approval option (0-3)
 	executingTool    bool      // Tool is running
 	currentToolID     string          // ID of currently executing tool
 	toolResults       []ToolResult    // Results to send back to API
@@ -199,6 +200,21 @@ type Model struct {
 
 	// Robustness: Re-entrance guards
 	processingWindowSize bool // Prevent re-entrance in WindowSizeMsg handler
+
+	// TUI Polish: Quit confirmation
+	pendingQuit     bool      // First Ctrl+C pressed, waiting for confirmation
+	pendingQuitTime time.Time // When first Ctrl+C was pressed
+
+	// TUI Polish: Input history navigation
+	inputHistory      []string // History of user inputs
+	inputHistoryIndex int      // Current position in history (-1 = current input, 0 = most recent)
+	inputHistorySaved string   // Saved current input when navigating history
+
+	// TUI Polish: Tool output log
+	toolLogLines       []string // Accumulated output lines for current chunk
+	toolLogOverlay     bool     // Whether overlay is visible
+	currentToolLogName  string   // Name of currently logging tool
+	currentToolLogParam string   // Parameter preview of current tool
 }
 
 // ToolResult represents a tool execution result for the API
@@ -290,6 +306,8 @@ func NewModel(conversationID, model string) *Model {
 		lastAnalyzedInput:    "",
 		theme:                neoTerminalTheme,
 		approvalRules:        approvalRules,
+		inputHistory:         []string{},
+		inputHistoryIndex:    -1, // -1 means at current input, not browsing history
 	}
 }
 
@@ -536,6 +554,10 @@ func (m *Model) CommitStreamingText() {
 	// and has been updated in place during streaming.
 	// Just clear the streaming buffer.
 	m.StreamingText = ""
+
+	// NOTE: We do NOT clear the tool log chunk here. The chunk persists so the user
+	// can view it with Ctrl+O even after the assistant responds. The chunk is cleared
+	// when the next tool use begins (in ApproveToolUse).
 }
 
 // ClearStreamingText discards streaming buffer (e.g., on error)
@@ -619,6 +641,10 @@ func (m *Model) ClearContext() {
 	m.showSuggestions = false
 	m.suggestions = nil
 	m.lastAnalyzedInput = ""
+
+	// Clear tool log state
+	m.clearToolLogChunk()
+	m.toolLogOverlay = false
 
 	// Hide autocomplete if active
 	if m.autocomplete != nil {
@@ -819,6 +845,10 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.toolApprovalForm = nil
 	m.approvalPrompt = nil // Clear approval prompt for next time
 	m.executingTool = true
+
+	// Clear previous tool log chunk - output will be added when results come back
+	// This preserves the previous chunk until a new tool use begins
+	m.clearToolLogChunk()
 
 	// Phase 6C: Start spinner for tool execution
 	var spinnerCmd tea.Cmd
@@ -1455,4 +1485,93 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.M
 	}
 
 	return m
+}
+
+// TUI Polish: Input History Navigation Methods
+
+// addToInputHistory adds an input to the history (avoiding duplicates of last entry)
+func (m *Model) addToInputHistory(input string) {
+	// Don't add empty inputs
+	if strings.TrimSpace(input) == "" {
+		return
+	}
+
+	// Don't add if it's the same as the last entry
+	if len(m.inputHistory) > 0 && m.inputHistory[len(m.inputHistory)-1] == input {
+		return
+	}
+
+	// Add to history (most recent at the end)
+	m.inputHistory = append(m.inputHistory, input)
+
+	// Limit history size to 100 entries
+	const maxHistorySize = 100
+	if len(m.inputHistory) > maxHistorySize {
+		m.inputHistory = m.inputHistory[len(m.inputHistory)-maxHistorySize:]
+	}
+
+	// Reset history navigation state
+	m.inputHistoryIndex = -1
+	m.inputHistorySaved = ""
+}
+
+// navigateHistoryUp moves to an older history entry (returns true if handled)
+func (m *Model) navigateHistoryUp() bool {
+	if len(m.inputHistory) == 0 {
+		return false
+	}
+
+	// Save current input when starting to navigate
+	if m.inputHistoryIndex == -1 {
+		m.inputHistorySaved = m.Input.Value()
+	}
+
+	// Move to older entry
+	newIndex := m.inputHistoryIndex + 1
+	if newIndex >= len(m.inputHistory) {
+		// Already at oldest entry
+		return true // Still handled, just don't move further
+	}
+
+	m.inputHistoryIndex = newIndex
+
+	// History is stored oldest-first, so we index from the end
+	historyIdx := len(m.inputHistory) - 1 - m.inputHistoryIndex
+	m.Input.SetValue(m.inputHistory[historyIdx])
+
+	// Move cursor to end of input
+	m.Input.CursorEnd()
+
+	return true
+}
+
+// navigateHistoryDown moves to a newer history entry (returns true if handled)
+func (m *Model) navigateHistoryDown() bool {
+	if m.inputHistoryIndex == -1 {
+		// Not browsing history
+		return false
+	}
+
+	// Move to newer entry
+	newIndex := m.inputHistoryIndex - 1
+
+	if newIndex < 0 {
+		// Restore saved input
+		m.inputHistoryIndex = -1
+		m.Input.SetValue(m.inputHistorySaved)
+		m.inputHistorySaved = ""
+		m.Input.CursorEnd()
+		return true
+	}
+
+	m.inputHistoryIndex = newIndex
+
+	// History is stored oldest-first, so we index from the end
+	historyIdx := len(m.inputHistory) - 1 - m.inputHistoryIndex
+	m.Input.SetValue(m.inputHistory[historyIdx])
+
+	// Move cursor to end of input
+	m.Input.CursorEnd()
+
+	return true
 }

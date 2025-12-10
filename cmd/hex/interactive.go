@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/2389-research/hex/internal/agentsmd"
 	ctxmgr "github.com/2389-research/hex/internal/convcontext"
@@ -19,9 +21,46 @@ import (
 	"golang.org/x/term"
 )
 
+// disableMouseMode sends ANSI escape sequences to disable all mouse tracking modes
+// This is critical for terminal cleanup on exit, especially abnormal exits
+func disableMouseMode() {
+	// Disable mouse tracking modes:
+	// 1000 = X11 mouse tracking (basic)
+	// 1002 = Cell motion tracking (button events while pressed)
+	// 1003 = All motion tracking
+	// 1006 = SGR extended mode
+	fmt.Fprint(os.Stdout, "\033[?1000l\033[?1002l\033[?1003l\033[?1006l")
+}
+
+// setupTerminalCleanup sets up signal handlers and defer to ensure terminal is restored
+// Returns a cleanup function that should be deferred
+func setupTerminalCleanup() func() {
+	// Set up signal handler for graceful cleanup
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	// Start goroutine to handle signals
+	go func() {
+		<-sigChan
+		disableMouseMode()
+		// Don't os.Exit here - let the normal flow handle it
+	}()
+
+	// Return cleanup function to be deferred
+	return func() {
+		signal.Stop(sigChan)
+		disableMouseMode()
+	}
+}
+
 // continueInteractiveWithModel runs the interactive TUI with a pre-configured model
 // This is used by both normal interactive mode and the resume command
 func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt string) error {
+	// Set up terminal cleanup for abnormal exits (signals, panics)
+	// This ensures mouse mode is disabled even if we crash or get killed
+	cleanup := setupTerminalCleanup()
+	defer cleanup()
+
 	// Load AGENTS.md context from directory hierarchy (repo root → CWD)
 	agentsContext, err := agentsmd.LoadContext()
 	if err != nil {

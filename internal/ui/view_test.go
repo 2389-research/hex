@@ -65,9 +65,10 @@ func TestViewShowsHelpText(t *testing.T) {
 	model.Ready = true
 
 	view := model.View()
-	// Neo-Terminal shows help text with Unicode control symbols
-	assert.Contains(t, view, "/help")
+	// Neo-Terminal status bar shows key bindings with Unicode control symbols
+	// We removed "/help" from status bar - now shows "⌃C quit · ⇥ views"
 	assert.Contains(t, view, "⌃C quit") // Unicode control symbol
+	assert.Contains(t, view, "⇥ views") // Tab to switch views
 }
 
 func TestViewStatusIndicatorChanges(t *testing.T) {

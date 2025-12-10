@@ -5,6 +5,8 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -139,38 +141,108 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 		statusText = statusStyle.Foreground(m.theme.Colors.Red).Render("● error")
 	}
 
-	// Shortcuts
-	shortcuts := "/clear /exit /help"
+	// Model name (extract short name from full model ID)
+	modelName := m.getShortModelName()
 
-	// Key bindings
-	bindings := "⌃C quit · ⇥ views · ⌃L clear"
+	// CWD (shortened)
+	cwd := m.getShortCwd()
 
-	// Format: ┗━━ ● status │ shortcuts │ bindings ━━┛
+	// Format: ┗━━ ● status │ model │ cwd │ ⌃C quit ━━┛
+	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
+	separatorStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+	modelStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan)
+	cwdStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green)
+	bindingsStyle := m.theme.Muted
+	warningStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Yellow).Bold(true)
+
 	leftPart := statusText
-	middlePart := m.theme.Muted.Render(shortcuts)
-	rightPart := m.theme.Muted.Render(bindings)
+	modelPart := modelStyle.Render(modelName)
+	cwdPart := cwdStyle.Render(cwd)
+
+	// Show quit confirmation warning if pending
+	var rightPart string
+	if m.pendingQuit && time.Since(m.pendingQuitTime) < 2*time.Second {
+		rightPart = warningStyle.Render("⌃C again to quit")
+	} else {
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
+	}
 
 	leftLen := lipgloss.Width(leftPart)
-	middleLen := lipgloss.Width(middlePart)
+	modelLen := lipgloss.Width(modelPart)
+	cwdLen := lipgloss.Width(cwdPart)
 	rightLen := lipgloss.Width(rightPart)
 
-	// Calculate spacing
-	totalContentLen := leftLen + middleLen + rightLen + 8 // " │ " separators and padding
+	// Calculate spacing - 12 for separators and borders
+	totalContentLen := leftLen + modelLen + cwdLen + rightLen + 16
 	fillLen := m.Width - totalContentLen
 	if fillLen < 0 {
 		fillLen = 0
 	}
 
-	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
-	separatorStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
-
 	bar := "┗━━ " +
 		leftPart +
 		separatorStyle.Render(" │ ") +
-		middlePart +
+		modelPart +
+		separatorStyle.Render(" │ ") +
+		cwdPart +
 		separatorStyle.Render(" │ ") +
 		rightPart +
 		" " + strings.Repeat("━", fillLen) + " ━━┛"
 
 	return borderStyle.Render(bar)
+}
+
+// getShortModelName extracts a short, readable model name from the full model ID
+func (m *Model) getShortModelName() string {
+	if m.Model == "" {
+		return "unknown"
+	}
+
+	// Common model ID patterns to short names
+	modelName := m.Model
+	switch {
+	case strings.Contains(modelName, "opus"):
+		return "opus"
+	case strings.Contains(modelName, "sonnet"):
+		return "sonnet"
+	case strings.Contains(modelName, "haiku"):
+		return "haiku"
+	case strings.Contains(modelName, "gpt-4"):
+		return "gpt-4"
+	case strings.Contains(modelName, "gpt-3"):
+		return "gpt-3.5"
+	case strings.Contains(modelName, "gemini"):
+		if strings.Contains(modelName, "pro") {
+			return "gemini-pro"
+		}
+		return "gemini"
+	default:
+		// Truncate long model names
+		if len(modelName) > 15 {
+			return modelName[:12] + "..."
+		}
+		return modelName
+	}
+}
+
+// getShortCwd returns a shortened version of the current working directory
+func (m *Model) getShortCwd() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "~"
+	}
+
+	// Try to make it relative to home directory
+	home, err := os.UserHomeDir()
+	if err == nil && strings.HasPrefix(cwd, home) {
+		cwd = "~" + cwd[len(home):]
+	}
+
+	// Shorten long paths by showing only last 2 components
+	parts := strings.Split(cwd, string(filepath.Separator))
+	if len(parts) > 3 {
+		return "…/" + strings.Join(parts[len(parts)-2:], "/")
+	}
+
+	return cwd
 }

@@ -1,0 +1,142 @@
+// Package ui provides the Bubble Tea terminal user interface components.
+// ABOUTME: Tool output log functionality for displaying tool execution output
+// ABOUTME: Collapsed 3-line view with Ctrl+O overlay for full log
+package ui
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+)
+
+// appendToolLogLine adds a single line to the tool log
+func (m *Model) appendToolLogLine(line string) {
+	m.toolLogLines = append(m.toolLogLines, line)
+}
+
+// appendToolLogOutput adds multi-line output to the tool log
+func (m *Model) appendToolLogOutput(output string) {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue // Skip empty lines
+		}
+		// Strip STDOUT:/STDERR: prefixes from tool output
+		line = strings.TrimPrefix(line, "STDOUT:")
+		line = strings.TrimPrefix(line, "STDERR:")
+		line = strings.TrimSpace(line)
+		if line != "" {
+			m.toolLogLines = append(m.toolLogLines, line)
+		}
+	}
+}
+
+// getToolLogLastN returns the last n lines of tool output
+func (m *Model) getToolLogLastN(n int) []string {
+	if len(m.toolLogLines) <= n {
+		return m.toolLogLines
+	}
+	return m.toolLogLines[len(m.toolLogLines)-n:]
+}
+
+// clearToolLogChunk clears the current tool log chunk
+func (m *Model) clearToolLogChunk() {
+	m.toolLogLines = nil
+	m.currentToolLogName = ""
+	m.currentToolLogParam = ""
+}
+
+// startToolLogEntry starts a new tool entry in the log
+func (m *Model) startToolLogEntry(toolName, paramPreview string) {
+	m.currentToolLogName = toolName
+	m.currentToolLogParam = paramPreview
+	// Add header line for this tool
+	header := fmt.Sprintf("─── %s(%s) ───", toolName, paramPreview)
+	m.toolLogLines = append(m.toolLogLines, header)
+}
+
+// toggleToolLogOverlay toggles the tool log overlay visibility
+func (m *Model) toggleToolLogOverlay() {
+	m.toolLogOverlay = !m.toolLogOverlay
+}
+
+// renderCollapsedToolLog renders the last 3 lines of tool output with dimmed style
+// Returns the rendered string and the number of hidden lines (for combining with hint)
+func (m *Model) renderCollapsedToolLog() (string, int) {
+	if len(m.toolLogLines) == 0 {
+		return "", 0
+	}
+
+	// Style: dimmed with │ prefix
+	dimStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Comment)
+
+	var b strings.Builder
+
+	// Calculate hidden lines
+	totalLines := len(m.toolLogLines)
+	hiddenLines := 0
+	if totalLines > 3 {
+		hiddenLines = totalLines - 3
+	}
+
+	// Show last 3 lines
+	last3 := m.getToolLogLastN(3)
+	for _, line := range last3 {
+		b.WriteString(dimStyle.Render("│ " + line))
+		b.WriteString("\n")
+	}
+
+	return b.String(), hiddenLines
+}
+
+// renderToolLogOverlay renders the full tool log overlay
+func (m *Model) renderToolLogOverlay() string {
+	var b strings.Builder
+
+	// Calculate dimensions
+	width := m.Width - 4 // Leave some margin
+	if width < 40 {
+		width = 40
+	}
+
+	// Header
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(m.theme.Colors.Cyan)
+
+	closeHint := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Comment).
+		Render("Ctrl+O or Esc to close")
+
+	header := headerStyle.Render("Tool Output Log")
+	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
+		header,
+		strings.Repeat("━", width-len("Tool Output Log")-len("Ctrl+O or Esc to close")-12),
+		closeHint)
+	b.WriteString(headerLine)
+	b.WriteString("\n\n")
+
+	// Content
+	if len(m.toolLogLines) == 0 {
+		emptyMsg := lipgloss.NewStyle().
+			Foreground(m.theme.Colors.Comment).
+			Italic(true).
+			Render("No tool output in current chunk")
+		b.WriteString(emptyMsg)
+		b.WriteString("\n")
+	} else {
+		for _, line := range m.toolLogLines {
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+
+	// Footer
+	b.WriteString("\n")
+	footerLine := fmt.Sprintf("┗%s┛", strings.Repeat("━", width))
+	b.WriteString(footerLine)
+
+	return b.String()
+}
