@@ -524,7 +524,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						}
 						m.queuedMessage = input
 						m.Input.Reset()
-						m.updateViewport()
+						m.updateViewportPreserveScroll()
 						return m, nil
 					}
 
@@ -583,7 +583,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.Input.Focused() && msg.Type == tea.KeyUp && m.queuedMessage != "" && m.Input.Value() == "" {
 			m.Input.SetValue(m.queuedMessage)
 			m.queuedMessage = ""
-			m.updateViewport()
+			m.updateViewportPreserveScroll()
 			return m, nil
 		}
 
@@ -729,7 +729,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateViewport renders messages into viewport with throttling for smooth performance
 // Limits updates to 60fps max to reduce CPU overhead for expensive renders
+// Always scrolls to bottom - use updateViewportPreserveScroll() to keep position
 func (m *Model) updateViewport() {
+	m.updateViewportInternal(true)
+}
+
+// updateViewportPreserveScroll renders messages without scrolling to bottom
+func (m *Model) updateViewportPreserveScroll() {
+	m.updateViewportInternal(false)
+}
+
+// updateViewportInternal is the shared implementation
+func (m *Model) updateViewportInternal(scrollToBottom bool) {
 	// Performance: Always throttle viewport updates to 60fps max (16.67ms = 60fps)
 	// Expensive renders happen anytime (glamour markdown, large messages), not just streaming
 	timeSinceLastUpdate := time.Since(m.lastViewportUpdate)
@@ -829,7 +840,9 @@ func (m *Model) updateViewport() {
 	}
 
 	m.Viewport.SetContent(content.String())
-	m.Viewport.GotoBottom()
+	if scrollToBottom {
+		m.Viewport.GotoBottom()
+	}
 }
 
 // Task 6: Streaming Integration Functions
