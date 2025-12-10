@@ -221,22 +221,42 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
-		// Forward key messages to embedded approval form if active
-		if m.toolApprovalMode && m.toolApprovalForm != nil {
-			var formCmd tea.Cmd
-			m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-
-			// Check if form is complete after processing key
-			if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
-				if approvalForm.IsComplete() {
-					result := approvalForm.GetDecision()
-					return m.handleApprovalResult(&forms.ApprovalResultMsg{
-						Result: result,
-						Error:  nil,
-					})
+		// Handle custom approval menu navigation
+		if m.toolApprovalMode {
+			switch msg.Type {
+			case tea.KeyUp:
+				if m.selectedApprovalOpt > 0 {
+					m.selectedApprovalOpt--
 				}
+				return m, nil
+			case tea.KeyDown:
+				if m.selectedApprovalOpt < 3 {
+					m.selectedApprovalOpt++
+				}
+				return m, nil
+			case tea.KeyEnter:
+				// Map selected option to decision
+				var decision forms.ApprovalDecision
+				switch m.selectedApprovalOpt {
+				case 0:
+					decision = forms.DecisionApprove
+				case 1:
+					decision = forms.DecisionDeny
+				case 2:
+					decision = forms.DecisionAlwaysAllow
+				case 3:
+					decision = forms.DecisionNeverAllow
+				}
+				// Reset selection for next time
+				m.selectedApprovalOpt = 0
+				return m.handleApprovalResult(&forms.ApprovalResultMsg{
+					Result: forms.ApprovalFormResult{
+						Decision: decision,
+						ToolUse:  m.pendingToolUses[0],
+					},
+					Error: nil,
+				})
 			}
-			return m, formCmd
 		}
 
 		// Intro screen: Switch to chat mode
@@ -702,29 +722,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newValue := m.Input.Value()
 		if newValue != oldValue {
 			m.AnalyzeSuggestions()
-		}
-	}
-
-	// Forward other messages to embedded approval form (for internal huh commands)
-	// This is critical - huh returns internal commands (NextField, etc.) that must be
-	// routed back to the form for proper state transitions
-	if m.toolApprovalMode && m.toolApprovalForm != nil {
-		var formCmd tea.Cmd
-		m.toolApprovalForm, formCmd = m.toolApprovalForm.Update(msg)
-
-		// Check if form is complete after processing message
-		if approvalForm, ok := m.toolApprovalForm.(*forms.ToolApprovalForm); ok {
-			if approvalForm.IsComplete() {
-				result := approvalForm.GetDecision()
-				return m.handleApprovalResult(&forms.ApprovalResultMsg{
-					Result: result,
-					Error:  nil,
-				})
-			}
-		}
-
-		if formCmd != nil {
-			cmds = append(cmds, formCmd)
 		}
 	}
 

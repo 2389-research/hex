@@ -425,27 +425,91 @@ func (m *Model) renderHelpPanel() string {
 	return helpStyle.Render(m.statusBar.GetFullHelp())
 }
 
-// renderToolApprovalPromptEnhanced renders enhanced tool approval UI
+// renderToolApprovalPromptEnhanced renders enhanced tool approval UI with custom menu
 func (m *Model) renderToolApprovalPromptEnhanced() string {
 	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
-		return m.renderToolApprovalPrompt() // Fallback to basic version
+		return ""
 	}
 
-	// Use embedded huh form if available
-	if m.toolApprovalForm != nil {
-		return m.toolApprovalForm.View()
-	}
+	var b strings.Builder
 
-	// Fallback to ApprovalPrompt component
+	// Styles
+	boxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(m.theme.Colors.Purple).
+		Padding(0, 1)
+
+	titleStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Purple).
+		Bold(true)
+
+	selectedStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Cyan).
+		Bold(true)
+
+	unselectedStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Comment)
+
+	selectorStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Pink)
+
+	hintStyle := lipgloss.NewStyle().
+		Foreground(m.theme.Colors.Comment)
+
+	// Title
+	b.WriteString(titleStyle.Render("🛠  Tool Approval Required"))
+	b.WriteString("\n")
+
+	// Tool description - compact format
 	if len(m.pendingToolUses) == 1 {
-		if m.approvalPrompt == nil {
-			m.approvalPrompt = NewApprovalPrompt(m.pendingToolUses[0])
-			m.approvalPrompt.SetWidth(m.Width)
+		tool := m.pendingToolUses[0]
+		riskLevel := forms.AssessRiskLevel(tool)
+		coloredRisk := m.renderColoredRiskEmoji(riskLevel)
+		paramPreview := m.getToolParamPreview(tool)
+		if paramPreview != "" {
+			b.WriteString(fmt.Sprintf("%s %s(%s)", coloredRisk, tool.Name, paramPreview))
+		} else {
+			b.WriteString(fmt.Sprintf("%s %s()", coloredRisk, tool.Name))
 		}
-		return m.approvalPrompt.View()
+	} else {
+		b.WriteString(fmt.Sprintf("%s %d tools:", m.renderColoredRiskEmoji(forms.RiskCaution), len(m.pendingToolUses)))
+		for _, tool := range m.pendingToolUses {
+			riskLevel := forms.AssessRiskLevel(tool)
+			coloredRisk := m.renderColoredRiskEmoji(riskLevel)
+			paramPreview := m.getToolParamPreview(tool)
+			if paramPreview != "" {
+				b.WriteString(fmt.Sprintf("\n  %s %s(%s)", coloredRisk, tool.Name, paramPreview))
+			} else {
+				b.WriteString(fmt.Sprintf("\n  %s %s()", coloredRisk, tool.Name))
+			}
+		}
+	}
+	b.WriteString("\n")
+
+	// Options - all visible, highlight selected
+	options := []string{
+		"✓ Approve (run this time)",
+		"✗ Deny (skip this time)",
+		"✓✓ Always Allow (never ask again)",
+		"✗✗ Never Allow (block permanently)",
 	}
 
-	return m.renderToolApprovalPrompt()
+	for i, opt := range options {
+		if i == m.selectedApprovalOpt {
+			b.WriteString(selectorStyle.Render("> "))
+			b.WriteString(selectedStyle.Render(opt))
+		} else {
+			b.WriteString("  ")
+			b.WriteString(unselectedStyle.Render(opt))
+		}
+		b.WriteString("\n")
+	}
+
+	// Hint
+	b.WriteString("\n")
+	b.WriteString(hintStyle.Render("↑ up • ↓ down • enter submit"))
+
+	return boxStyle.Render(b.String())
 }
 
 // renderStatusBarEnhanced renders the enhanced status bar

@@ -146,8 +146,9 @@ type Model struct {
 	executingToolUses []*core.ToolUse // Tools currently being executed (for display)
 	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
 	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
-	toolApprovalMode bool      // Showing approval prompt
-	toolApprovalForm tea.Model // Embedded huh form for tool approval
+	toolApprovalMode     bool      // Showing approval prompt
+	toolApprovalForm     tea.Model // Embedded huh form for tool approval (deprecated)
+	selectedApprovalOpt  int       // Currently highlighted approval option (0-3)
 	executingTool    bool      // Tool is running
 	currentToolID     string          // ID of currently executing tool
 	toolResults       []ToolResult    // Results to send back to API
