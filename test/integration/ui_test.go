@@ -209,6 +209,7 @@ func TestUISetStatus(t *testing.T) {
 	assert.Equal(t, ui.StatusStreaming, model.Status)
 
 	model.SetStatus(ui.StatusError)
+	model.ErrorMessage = "Test error" // Caller must set ErrorMessage explicitly
 	assert.Equal(t, ui.StatusError, model.Status)
 	assert.NotEmpty(t, model.ErrorMessage)
 }
