@@ -515,26 +515,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Add to input history
 					m.addToInputHistory(input)
 
-					// Check if busy (streaming, executing tool, or awaiting approval) - if so, queue the message
-					if m.Streaming || m.executingTool || m.toolApprovalMode {
-						// Queue message for later processing
-						// Don't add to m.Messages yet - it will be added when actually processed
-						// This prevents it from appearing in API requests before tool results
-						m.messageQueue = append(m.messageQueue, input)
-						m.Input.Reset()
-
-						// Show visual feedback that message is queued
-						if m.statusBar != nil {
-							m.statusBar.SetCustomMessage(fmt.Sprintf("Message queued (%d pending)", len(m.messageQueue)))
+					// Check if waiting for response - if so, queue the message
+					if m.waitingForResponse {
+						// Only allow one queued message at a time
+						if m.queuedMessage != "" {
+							// Already have a queued message - ignore this one
+							if m.statusBar != nil {
+								m.statusBar.SetCustomMessage("Already have a queued message")
+							}
+							return m, nil
 						}
+
+						// Queue message for later processing
+						m.queuedMessage = input
+						m.Input.Reset()
 						m.updateViewport()
 
 						return m, nil
 					}
 
-					// Not busy - process immediately
+					// Not waiting - process immediately
 					m.AddMessage("user", input)
 					m.Input.Reset()
+					m.waitingForResponse = true // Block further input until response complete
 					m.updateViewport()
 
 					// Task 7: Save user message to database
@@ -849,6 +852,7 @@ func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
 	m.streamChan = nil
 	m.streamCancel = nil
 	m.streamCtx = nil
+	m.waitingForResponse = false // Allow new input after error
 	m.updateViewport()
 	return m, nil
 }
@@ -1119,13 +1123,14 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 	}
 
 	m.SetStatus(StatusIdle)
-	m.Streaming = false // Clear streaming flag
+	m.Streaming = false          // Clear streaming flag
+	m.waitingForResponse = false // Allow new input
 	// Stream state already cleared at start of handleMessageStop()
 
 	m.updateViewport()
 
-	// Check if there are queued messages to process
-	return m, m.processNextQueuedMessage()
+	// Check if there's a queued message to process
+	return m, m.processQueuedMessage()
 }
 
 // handleStreamChunk processes a streaming chunk message
@@ -1234,39 +1239,31 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 }
 
-// processNextQueuedMessage checks the message queue and processes the next message if any
-func (m *Model) processNextQueuedMessage() tea.Cmd {
-	if len(m.messageQueue) == 0 {
-		// No queued messages
+// processQueuedMessage checks if there's a queued message and processes it
+func (m *Model) processQueuedMessage() tea.Cmd {
+	if m.queuedMessage == "" {
+		// No queued message
 		return nil
 	}
 
-	// Get first queued message
-	nextMessage := m.messageQueue[0]
-	m.messageQueue = m.messageQueue[1:]
-
-	// Update status
-	if len(m.messageQueue) > 0 {
-		// More messages still queued
-		m.SetStatus(StatusQueued)
-	} else {
-		// This was the last queued message
-		m.SetStatus(StatusIdle)
-	}
+	// Get and clear the queued message
+	message := m.queuedMessage
+	m.queuedMessage = ""
 
 	// Add the queued message to conversation history now that it's being processed
-	m.AddMessage("user", nextMessage)
+	m.AddMessage("user", message)
+	m.waitingForResponse = true // Block input while processing queued message
 	m.updateViewport()
 
 	// Save to database
-	if err := m.saveMessage("user", nextMessage); err != nil {
+	if err := m.saveMessage("user", message); err != nil {
 		// Log error but don't block
 		m.ErrorMessage = "Failed to save queued message: " + err.Error()
 	}
 
 	// Process the queued message
 	if m.apiClient != nil {
-		return m.streamMessage(nextMessage)
+		return m.streamMessage(message)
 	}
 
 	return nil

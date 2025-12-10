@@ -73,6 +73,14 @@ func (m *Model) View() string {
 	} else {
 		// Input (only in chat view)
 		if m.CurrentView == ViewModeChat {
+			// Show queued message above input if one exists
+			if m.queuedMessage != "" {
+				queuedStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("#6272A4")).
+					Italic(true)
+				b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued)") + "\n")
+			}
+
 			b.WriteString(m.theme.Input.Render(m.Input.View()) + "\n")
 
 			// Phase 6C Task 4: Render autocomplete dropdown

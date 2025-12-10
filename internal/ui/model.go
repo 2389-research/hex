@@ -132,7 +132,8 @@ type Model struct {
 	streamChan   <-chan *core.StreamChunk
 	streamCtx    context.Context
 	streamCancel context.CancelFunc
-	messageQueue []string // Queue of user messages to process after current stream
+	queuedMessage      string // Single queued message to process after current operation
+	waitingForResponse bool   // True from message send until response complete - blocks new input
 
 	// Phase 4: Service layer integration
 	convSvc  services.ConversationService
