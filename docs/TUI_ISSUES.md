@@ -70,10 +70,11 @@ Running list of UI issues discovered during testing. Do not fix yet - collecting
 - **Status**: FIXED in PR #3
 - **Fix**: Two-stage Ctrl+C quit confirmation - first press shows warning, second press quits
 
-### 10. No input blocking/staging during tool execution
-- **Description**: While Hex is working/using a tool, user can keep sending messages that have no chance of being processed
-- **Impact**: Confusing UX, messages get lost or queued unexpectedly
-- **Expected**: Input should be blocked or staged while processing, or clearly indicate messages are queued
+### 10. ~~No input blocking/staging during tool execution~~ FIXED
+- **Status**: FIXED in this session
+- **Root Cause**: Messages sent during tool execution were added to `m.Messages` immediately, appearing in API requests before tool_result, which violated Anthropic API protocol (tool_use must be immediately followed by tool_result).
+- **Fix**: Messages typed during busy states (streaming, tool execution, tool approval) are now queued without being added to conversation history. Status bar shows "Message queued (N pending)". Queued messages are processed after the current operation completes and only then added to conversation history.
+- **File**: `internal/ui/update.go` (input queuing logic and `processNextQueuedMessage`)
 
 ---
 
@@ -95,12 +96,9 @@ Running list of UI issues discovered during testing. Do not fix yet - collecting
 - **Status**: FIXED in PR #3
 - **Fix**: Compact approval UI now shows `⚠ bash("command")` format with all options visible
 
-### 15. Tool result display issues
-- **Description**: After tool execution, the result is displayed with several problems:
-  1. Shows raw format including "STDOUT:" prefix instead of parsed/clean output
-  2. Result is repeated as coming from "YOU" which is incorrect (tool results are not user messages)
-- **Impact**: Confusing UX, cluttered display, incorrect attribution
-- **Expected**: Clean tool output without raw prefixes, attributed correctly (not as "YOU")
+### 15. ~~Tool result display issues~~ FIXED
+- **Status**: FIXED in PR #3
+- **Fix**: Tool results now display cleanly with collapsed log view (`│ ─── bash("cmd") ───`) and are attributed to ASSISTANT. No more STDOUT prefix or incorrect YOU attribution.
 
 ### 16. ~~Tool execution needs "background threading" concept~~ FIXED
 - **Status**: FIXED in PR #3
@@ -114,12 +112,10 @@ Running list of UI issues discovered during testing. Do not fix yet - collecting
 
 ---
 
-## Issue Count: 17 (14 fixed, 3 open)
+## Issue Count: 17 (16 fixed, 1 open)
 
 **Remaining open issues:**
 - #2: Context menu moves input box
 - #3: Previous content scrolls up when typing
-- #10: No input blocking/staging during tool execution
-- #15: Tool result display issues (STDOUT prefix, wrong attribution)
 
 Last updated: 2025-12-10

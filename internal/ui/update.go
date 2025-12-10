@@ -515,28 +515,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Add to input history
 					m.addToInputHistory(input)
 
-					// Check if currently streaming - if so, queue the message
-					if m.Streaming {
+					// Check if busy (streaming, executing tool, or awaiting approval) - if so, queue the message
+					if m.Streaming || m.executingTool || m.toolApprovalMode {
 						// Queue message for later processing
+						// Don't add to m.Messages yet - it will be added when actually processed
+						// This prevents it from appearing in API requests before tool results
 						m.messageQueue = append(m.messageQueue, input)
-						m.AddMessage("user", input)
 						m.Input.Reset()
 
-						// Update status to show queued
-						if len(m.messageQueue) == 1 {
-							m.SetStatus(StatusQueued)
+						// Show visual feedback that message is queued
+						if m.statusBar != nil {
+							m.statusBar.SetCustomMessage(fmt.Sprintf("Message queued (%d pending)", len(m.messageQueue)))
 						}
 						m.updateViewport()
-
-						// Save to database
-						if err := m.saveMessage("user", input); err != nil {
-							m.ErrorMessage = "Failed to save message: " + err.Error()
-						}
 
 						return m, nil
 					}
 
-					// Not streaming - process immediately
+					// Not busy - process immediately
 					m.AddMessage("user", input)
 					m.Input.Reset()
 					m.updateViewport()
@@ -1256,6 +1252,16 @@ func (m *Model) processNextQueuedMessage() tea.Cmd {
 	} else {
 		// This was the last queued message
 		m.SetStatus(StatusIdle)
+	}
+
+	// Add the queued message to conversation history now that it's being processed
+	m.AddMessage("user", nextMessage)
+	m.updateViewport()
+
+	// Save to database
+	if err := m.saveMessage("user", nextMessage); err != nil {
+		// Log error but don't block
+		m.ErrorMessage = "Failed to save queued message: " + err.Error()
 	}
 
 	// Process the queued message
