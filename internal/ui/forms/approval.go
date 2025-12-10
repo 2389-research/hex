@@ -201,6 +201,11 @@ func (f *ToolApprovalForm) formatParameterInfo() string {
 // formatCompactDescription creates a single-line compact description for the approval prompt
 // Format: "⚠ bash("ls -la")" or "✓ read_file("/path/to/file")"
 func (f *ToolApprovalForm) formatCompactDescription() string {
+	// Defensive nil check
+	if f.toolUse == nil {
+		return "⚠ unknown_tool()"
+	}
+
 	// Get risk emoji
 	var riskEmoji string
 	switch f.riskLevel {

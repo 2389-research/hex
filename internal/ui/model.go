@@ -642,6 +642,10 @@ func (m *Model) ClearContext() {
 	m.suggestions = nil
 	m.lastAnalyzedInput = ""
 
+	// Clear tool log state
+	m.clearToolLogChunk()
+	m.toolLogOverlay = false
+
 	// Hide autocomplete if active
 	if m.autocomplete != nil {
 		m.autocomplete.Hide()

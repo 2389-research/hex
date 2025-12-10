@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/2389-research/hex/internal/core"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -140,44 +139,4 @@ func (m *Model) renderToolLogOverlay() string {
 	b.WriteString(footerLine)
 
 	return b.String()
-}
-
-// getToolParamPreviewForLog extracts a compact parameter preview for tool log headers
-func (m *Model) getToolParamPreviewForLog(tool *core.ToolUse) string {
-	switch tool.Name {
-	case "bash":
-		if cmd, ok := tool.Input["command"].(string); ok {
-			return truncateForLog(cmd, 50)
-		}
-	case "read_file":
-		if path, ok := tool.Input["path"].(string); ok {
-			return truncateForLog(path, 50)
-		}
-	case "write_file", "edit":
-		if path, ok := tool.Input["file_path"].(string); ok {
-			return truncateForLog(path, 50)
-		}
-	case "grep", "glob":
-		if pattern, ok := tool.Input["pattern"].(string); ok {
-			return truncateForLog(pattern, 40)
-		}
-	default:
-		for _, val := range tool.Input {
-			if str, ok := val.(string); ok && str != "" {
-				return truncateForLog(str, 40)
-			}
-		}
-	}
-	return ""
-}
-
-// truncateForLog truncates a string for log display
-func truncateForLog(s string, maxLen int) string {
-	// Escape newlines
-	s = strings.ReplaceAll(s, "\n", "\\n")
-	s = strings.ReplaceAll(s, "\t", "\\t")
-	if len(s) > maxLen {
-		return fmt.Sprintf("%q", s[:maxLen-3]+"...")
-	}
-	return fmt.Sprintf("%q", s)
 }
