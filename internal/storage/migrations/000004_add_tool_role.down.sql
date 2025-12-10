@@ -11,8 +11,7 @@ CREATE TABLE messages_new (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_summary BOOLEAN DEFAULT 0,
     provider TEXT,
-    model TEXT,
-    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+    model TEXT
 );
 
 -- Copy data (will fail if tool messages exist)

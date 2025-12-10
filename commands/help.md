@@ -9,6 +9,8 @@ description: Show available slash commands and keyboard shortcuts
 
 Type `/` followed by a command name to use these workflows:
 
+<!-- markdownlint-disable MD033 -->
+
 | Command | Description |
 |---------|-------------|
 | `/help` | Show this help information |
@@ -58,4 +60,4 @@ Type `/` followed by a command name to use these workflows:
 - Use `Ctrl+O` to see full tool output when collapsed
 - History navigation: `↑/↓` in empty input field
 
-For more information, visit: https://github.com/2389-research/hex
+For more information, visit: <https://github.com/2389-research/hex>
