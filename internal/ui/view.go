@@ -250,47 +250,6 @@ func (m *Model) renderStatusBar() string {
 
 // Task 12: Tool UI rendering functions
 
-// renderToolApprovalPrompt renders the tool approval UI
-func (m *Model) renderToolApprovalPrompt() string {
-	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
-		return ""
-	}
-
-	var prompt strings.Builder
-
-	// Handle single vs multiple tools - compact format
-	if len(m.pendingToolUses) == 1 {
-		tool := m.pendingToolUses[0]
-		// Compact format with colored risk: ⚠ bash("ls -la")
-		riskLevel := forms.AssessRiskLevel(tool)
-		coloredRisk := m.renderColoredRiskEmoji(riskLevel)
-		paramPreview := m.getToolParamPreview(tool)
-
-		if paramPreview != "" {
-			prompt.WriteString(fmt.Sprintf("%s %s(%s)\n", coloredRisk, tool.Name, paramPreview))
-		} else {
-			prompt.WriteString(fmt.Sprintf("%s %s()\n", coloredRisk, tool.Name))
-		}
-	} else {
-		// Multiple tools - compact summary with colored risk
-		prompt.WriteString(fmt.Sprintf("%s %d tools:\n", m.renderColoredRiskEmoji(forms.RiskCaution), len(m.pendingToolUses)))
-		for _, tool := range m.pendingToolUses {
-			riskLevel := forms.AssessRiskLevel(tool)
-			coloredRisk := m.renderColoredRiskEmoji(riskLevel)
-			paramPreview := m.getToolParamPreview(tool)
-			if paramPreview != "" {
-				prompt.WriteString(fmt.Sprintf("  %s %s(%s)\n", coloredRisk, tool.Name, paramPreview))
-			} else {
-				prompt.WriteString(fmt.Sprintf("  %s %s()\n", coloredRisk, tool.Name))
-			}
-		}
-	}
-
-	prompt.WriteString("[y] Approve  [n] Deny  [a] Always  [!] Never")
-
-	return m.theme.ToolApproval.Render(prompt.String())
-}
-
 // renderColoredRiskEmoji returns a risk emoji colored based on risk level
 func (m *Model) renderColoredRiskEmoji(risk forms.RiskLevel) string {
 	switch risk {
