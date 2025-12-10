@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/ui/forms"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -14,6 +16,11 @@ import (
 func (m *Model) View() string {
 	if !m.Ready {
 		return "\n  Initializing..."
+	}
+
+	// Tool log overlay takes precedence over everything
+	if m.toolLogOverlay {
+		return m.renderToolLogOverlay()
 	}
 
 	var b strings.Builder
@@ -55,6 +62,10 @@ func (m *Model) View() string {
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
+		// TUI Polish: Show collapsed tool log (last 3 lines)
+		if collapsedLog, _ := m.renderCollapsedToolLog(); collapsedLog != "" {
+			b.WriteString(collapsedLog)
+		}
 	} else if m.SearchMode {
 		// Search mode indicator
 		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
@@ -246,45 +257,94 @@ func (m *Model) renderToolApprovalPrompt() string {
 	}
 
 	var prompt strings.Builder
-	prompt.WriteString("⚠ Tool Approval Required\n\n")
 
-	// Handle single vs multiple tools
+	// Handle single vs multiple tools - compact format
 	if len(m.pendingToolUses) == 1 {
 		tool := m.pendingToolUses[0]
-		prompt.WriteString(fmt.Sprintf("Tool: %s\n", tool.Name))
+		// Compact format with colored risk: ⚠ bash("ls -la")
+		riskLevel := forms.AssessRiskLevel(tool)
+		coloredRisk := m.renderColoredRiskEmoji(riskLevel)
+		paramPreview := m.getToolParamPreview(tool)
 
-		// Format parameters nicely
-		if len(tool.Input) > 0 {
-			prompt.WriteString("Parameters:\n")
-			for key, value := range tool.Input {
-				// Truncate long values
-				valueStr := fmt.Sprintf("%v", value)
-				if len(valueStr) > 100 {
-					valueStr = valueStr[:97] + "..."
-				}
-				prompt.WriteString(fmt.Sprintf("  %s: %s\n", key, valueStr))
-			}
+		if paramPreview != "" {
+			prompt.WriteString(fmt.Sprintf("%s %s(%s)\n", coloredRisk, tool.Name, paramPreview))
+		} else {
+			prompt.WriteString(fmt.Sprintf("%s %s()\n", coloredRisk, tool.Name))
 		}
 	} else {
-		// Multiple tools - show summary
-		prompt.WriteString(fmt.Sprintf("The assistant wants to execute %d tools:\n\n", len(m.pendingToolUses)))
-		for i, tool := range m.pendingToolUses {
-			prompt.WriteString(fmt.Sprintf("%d. %s", i+1, tool.Name))
-			if len(tool.Input) > 0 {
-				// Show brief parameter summary
-				keys := make([]string, 0, len(tool.Input))
-				for k := range tool.Input {
-					keys = append(keys, k)
-				}
-				prompt.WriteString(fmt.Sprintf(" (%s)", strings.Join(keys, ", ")))
+		// Multiple tools - compact summary with colored risk
+		prompt.WriteString(fmt.Sprintf("%s %d tools:\n", m.renderColoredRiskEmoji(forms.RiskCaution), len(m.pendingToolUses)))
+		for _, tool := range m.pendingToolUses {
+			riskLevel := forms.AssessRiskLevel(tool)
+			coloredRisk := m.renderColoredRiskEmoji(riskLevel)
+			paramPreview := m.getToolParamPreview(tool)
+			if paramPreview != "" {
+				prompt.WriteString(fmt.Sprintf("  %s %s(%s)\n", coloredRisk, tool.Name, paramPreview))
+			} else {
+				prompt.WriteString(fmt.Sprintf("  %s %s()\n", coloredRisk, tool.Name))
 			}
-			prompt.WriteString("\n")
 		}
 	}
 
-	prompt.WriteString("\nAllow these tool(s) to execute? (y/n): ")
+	prompt.WriteString("[y] Approve  [n] Deny  [a] Always  [!] Never")
 
 	return m.theme.ToolApproval.Render(prompt.String())
+}
+
+// renderColoredRiskEmoji returns a risk emoji colored based on risk level
+func (m *Model) renderColoredRiskEmoji(risk forms.RiskLevel) string {
+	switch risk {
+	case forms.RiskSafe:
+		return lipgloss.NewStyle().Foreground(m.theme.Colors.Green).Render("✓")
+	case forms.RiskCaution:
+		return lipgloss.NewStyle().Foreground(m.theme.Colors.Yellow).Render("⚠")
+	case forms.RiskDanger:
+		return lipgloss.NewStyle().Foreground(m.theme.Colors.Red).Bold(true).Render("⚠⚠")
+	default:
+		return lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Render("?")
+	}
+}
+
+// getToolParamPreview extracts a compact preview of the key parameter for a tool
+func (m *Model) getToolParamPreview(tool *core.ToolUse) string {
+	switch tool.Name {
+	case "bash":
+		if cmd, ok := tool.Input["command"].(string); ok {
+			return truncateQuoted(cmd, 60)
+		}
+	case "read_file":
+		// read_file uses "path" parameter
+		if path, ok := tool.Input["path"].(string); ok {
+			return truncateQuoted(path, 60)
+		}
+	case "write_file", "edit":
+		if path, ok := tool.Input["file_path"].(string); ok {
+			return truncateQuoted(path, 60)
+		}
+	case "grep", "glob":
+		if pattern, ok := tool.Input["pattern"].(string); ok {
+			return truncateQuoted(pattern, 50)
+		}
+	default:
+		// For other tools, show first string parameter
+		for _, val := range tool.Input {
+			if str, ok := val.(string); ok && str != "" {
+				return truncateQuoted(str, 50)
+			}
+		}
+	}
+	return ""
+}
+
+// truncateQuoted returns a quoted, truncated string
+func truncateQuoted(s string, maxLen int) string {
+	// Escape newlines for single-line display
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\t", "\\t")
+	if len(s) > maxLen {
+		return fmt.Sprintf("%q", s[:maxLen-3]+"...")
+	}
+	return fmt.Sprintf("%q", s)
 }
 
 // renderToolStatus renders the tool execution status indicator
@@ -293,16 +353,63 @@ func (m *Model) renderToolStatus() string {
 		return ""
 	}
 
-	toolName := "unknown"
-	if len(m.executingToolUses) > 0 {
-		if len(m.executingToolUses) == 1 {
-			toolName = m.executingToolUses[0].Name
-		} else {
-			toolName = fmt.Sprintf("%d tools", len(m.executingToolUses))
+	if len(m.executingToolUses) == 0 {
+		return m.theme.ToolExecuting.Render("⏳ Executing tool...")
+	}
+
+	if len(m.executingToolUses) > 1 {
+		return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ Executing %d tools...", len(m.executingToolUses)))
+	}
+
+	// Single tool - show name and key parameter
+	tool := m.executingToolUses[0]
+	toolName := tool.Name
+
+	// Extract key parameter based on tool type
+	var paramPreview string
+	switch toolName {
+	case "bash":
+		if cmd, ok := tool.Input["command"].(string); ok {
+			paramPreview = truncateString(cmd, 60)
+		}
+	case "read_file", "write_file":
+		if path, ok := tool.Input["file_path"].(string); ok {
+			paramPreview = truncateString(path, 60)
+		}
+	case "edit":
+		if path, ok := tool.Input["file_path"].(string); ok {
+			paramPreview = truncateString(path, 60)
+		}
+	case "grep":
+		if pattern, ok := tool.Input["pattern"].(string); ok {
+			paramPreview = truncateString(pattern, 40)
+		}
+	case "glob":
+		if pattern, ok := tool.Input["pattern"].(string); ok {
+			paramPreview = truncateString(pattern, 40)
+		}
+	default:
+		// For other tools, try to get a reasonable preview
+		for key, val := range tool.Input {
+			if str, ok := val.(string); ok && str != "" {
+				paramPreview = key + "=" + truncateString(str, 40)
+				break
+			}
 		}
 	}
 
+	if paramPreview != "" {
+		return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ %s: %s", toolName, paramPreview))
+	}
 	return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
+}
+
+// truncateString truncates a string to maxLen, adding ellipsis if needed
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
 
 // Phase 6C: Enhanced rendering methods
@@ -478,11 +585,11 @@ func (m *Model) renderAutocompleteDropdown() string {
 		return ""
 	}
 
-	// Use theme styles
-	dropdownStyle := m.theme.Border.Padding(0, 1).MaxWidth(60)
-	selectedStyle := m.theme.ListItemSelected
-	normalStyle := m.theme.ListItem
-	typeStyle := m.theme.Muted
+	// Use dedicated autocomplete styles for high contrast
+	dropdownStyle := m.theme.AutocompleteDropdown.MaxWidth(60)
+	selectedStyle := m.theme.AutocompleteSelected
+	normalStyle := m.theme.AutocompleteItem
+	helpStyle := m.theme.AutocompleteHelp
 
 	// Build dropdown content
 	var content strings.Builder
@@ -495,13 +602,11 @@ func (m *Model) renderAutocompleteDropdown() string {
 		// Selection indicator and styling
 		if i == selectedIndex {
 			line.WriteString("▸ ")
-			// Highlight the completion
 			line.WriteString(completion.Display)
 
 			// Add description if available
 			if completion.Description != "" {
-				line.WriteString(" ")
-				line.WriteString(typeStyle.Render("(" + completion.Description + ")"))
+				line.WriteString(" (" + completion.Description + ")")
 			}
 
 			content.WriteString(selectedStyle.Render(line.String()))
@@ -509,10 +614,10 @@ func (m *Model) renderAutocompleteDropdown() string {
 			line.WriteString("  ")
 			line.WriteString(completion.Display)
 
-			// Add description if available
+			// Add description if available (muted for non-selected)
 			if completion.Description != "" {
 				line.WriteString(" ")
-				line.WriteString(typeStyle.Render("(" + completion.Description + ")"))
+				line.WriteString(m.theme.Muted.Render("(" + completion.Description + ")"))
 			}
 
 			content.WriteString(normalStyle.Render(line.String()))
@@ -522,7 +627,7 @@ func (m *Model) renderAutocompleteDropdown() string {
 	}
 
 	// Add help text
-	helpText := typeStyle.Render("↑↓: navigate • Enter: accept • Esc: cancel")
+	helpText := helpStyle.Render("↑↓: navigate • Enter: accept • Esc: cancel")
 	content.WriteString("\n")
 	content.WriteString(helpText)
 
