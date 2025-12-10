@@ -82,6 +82,11 @@ func (m *Model) View() string {
 		}
 	}
 
+	// Display error message if present
+	if m.ErrorMessage != "" {
+		b.WriteString(m.renderErrorMessage() + "\n")
+	}
+
 	// Neo-Terminal bottom status bar
 	b.WriteString("\n" + m.renderNeoTerminalBottomBar())
 
@@ -650,3 +655,22 @@ func (m *Model) renderAutocompleteDropdown() string {
 	return dropdownStyle.Render(content.String())
 }
 
+// renderErrorMessage renders error messages prominently
+func (m *Model) renderErrorMessage() string {
+	if m.ErrorMessage == "" {
+		return ""
+	}
+
+	// Use a prominent error style with full width
+	errorBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(m.theme.Colors.Red).
+		Foreground(m.theme.Colors.Red).
+		Padding(0, 1).
+		Width(m.Width - 4)
+
+	// Format the error with icon
+	errorText := fmt.Sprintf("⚠ Error: %s", m.ErrorMessage)
+
+	return errorBoxStyle.Render(errorText)
+}

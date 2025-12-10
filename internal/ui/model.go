@@ -366,9 +366,8 @@ func (m *Model) UpdateTokens(input, output int) {
 // SetStatus sets the current UI status
 func (m *Model) SetStatus(status Status) {
 	m.Status = status
-	if status == StatusError {
-		m.ErrorMessage = "An error occurred"
-	}
+	// Note: Caller should set ErrorMessage explicitly when using StatusError
+	// This allows for specific error messages rather than generic ones
 }
 
 // RenderMessage renders a message using glamour for assistant messages with caching

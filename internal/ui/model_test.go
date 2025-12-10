@@ -88,8 +88,9 @@ func TestStatusIndicators(t *testing.T) {
 	model.SetStatus(ui.StatusStreaming)
 	assert.Equal(t, ui.StatusStreaming, model.Status)
 
-	// Set error status
+	// Set error status - caller must set ErrorMessage explicitly
 	model.SetStatus(ui.StatusError)
+	model.ErrorMessage = "Test error message"
 	assert.Equal(t, ui.StatusError, model.Status)
 	assert.NotEmpty(t, model.ErrorMessage)
 }
