@@ -200,6 +200,14 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 	// Set tool system in model
 	uiModel.SetToolSystem(registry, executor)
 
+	// Set slash commands for autocomplete
+	cmdNames := commandRegistry.List()
+	cmdDescriptions := make(map[string]string)
+	for _, cmd := range commandRegistry.All() {
+		cmdDescriptions[cmd.Name] = cmd.Description
+	}
+	uiModel.SetSlashCommands(cmdNames, cmdDescriptions)
+
 	// Set up context manager
 	contextManager := ctxmgr.NewManager(maxContextTokens)
 	uiModel.SetContextManager(contextManager)

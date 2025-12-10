@@ -366,12 +366,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExitSearchMode()
 				return m, nil
 			}
-			if m.showSuggestions {
-				m.DismissSuggestions()
-				return m, nil
-			}
 			if m.quickActionsMode {
 				m.quickActionsMode = false
+				return m, nil
+			}
+			// Dismiss autocomplete dropdown
+			if m.autocomplete != nil && m.autocomplete.IsActive() {
+				m.autocomplete.Hide()
 				return m, nil
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
@@ -461,23 +462,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case tea.KeyEsc:
-				// FIX: Cancel autocomplete AND dismiss suggestions if active
+				// Cancel autocomplete
 				m.autocomplete.Hide()
-				if m.showSuggestions {
-					m.DismissSuggestions()
-				}
 				return m, nil
 			}
 		}
 
-		// Handle Tab - accept suggestion, trigger autocomplete, or switch views
+		// Handle Tab - trigger autocomplete or switch views
 		if msg.Type == tea.KeyTab {
-			// Phase 6C Task 8: Accept suggestion if visible
-			if m.showSuggestions && len(m.suggestions) > 0 {
-				m.AcceptSuggestion()
-				return m, nil
-			}
-
 			// If textarea is focused and has content, show autocomplete
 			if m.Input.Focused() && m.Input.Value() != "" {
 				provider := DetectProvider(m.Input.Value())
@@ -710,18 +702,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Input, cmd = m.Input.Update(msg)
 		cmds = append(cmds, cmd)
 
-		// Phase 6C Task 4: Update autocomplete as user types
-		if m.autocomplete != nil && m.autocomplete.IsActive() {
-			newValue := m.Input.Value()
-			if newValue != oldValue {
-				m.autocomplete.Update(newValue)
-			}
-		}
-
-		// Phase 6C Task 8: Update suggestions as user types
 		newValue := m.Input.Value()
 		if newValue != oldValue {
-			m.AnalyzeSuggestions()
+			// Phase 6C Task 4: Update autocomplete as user types
+			if m.autocomplete != nil {
+				if m.autocomplete.IsActive() {
+					// Already active - just update with new input
+					m.autocomplete.Update(newValue)
+				} else if strings.HasPrefix(strings.TrimSpace(newValue), "/") {
+					// Auto-show autocomplete when typing starts with /
+					provider := DetectProvider(newValue)
+					m.autocomplete.Show(newValue, provider)
+				}
+			}
 		}
 	}
 

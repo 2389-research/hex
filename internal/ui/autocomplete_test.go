@@ -185,6 +185,66 @@ func TestToolProvider_SetTools(t *testing.T) {
 	assert.Equal(t, 2, len(completions))
 }
 
+func TestSlashCommandProvider_GetCompletions(t *testing.T) {
+	provider := ui.NewSlashCommandProvider()
+	provider.SetCommands(
+		[]string{"plan", "review", "debug", "help"},
+		map[string]string{
+			"plan":   "Create implementation plan",
+			"review": "Review code changes",
+			"debug":  "Debug issues",
+			"help":   "Show available commands",
+		},
+	)
+
+	t.Run("empty input returns all commands", func(t *testing.T) {
+		completions := provider.GetCompletions("")
+		assert.Equal(t, 4, len(completions))
+		// All should have / prefix
+		for _, c := range completions {
+			assert.True(t, len(c.Value) > 0 && c.Value[0] == '/')
+		}
+	})
+
+	t.Run("slash prefix returns all commands", func(t *testing.T) {
+		completions := provider.GetCompletions("/")
+		assert.Equal(t, 4, len(completions))
+	})
+
+	t.Run("fuzzy match on partial input", func(t *testing.T) {
+		completions := provider.GetCompletions("/pla")
+		assert.Equal(t, 1, len(completions))
+		assert.Equal(t, "/plan", completions[0].Value)
+		assert.Equal(t, "Create implementation plan", completions[0].Description)
+	})
+
+	t.Run("fuzzy match without slash", func(t *testing.T) {
+		completions := provider.GetCompletions("rev")
+		assert.Equal(t, 1, len(completions))
+		assert.Equal(t, "/review", completions[0].Value)
+	})
+
+	t.Run("no match returns empty", func(t *testing.T) {
+		completions := provider.GetCompletions("xyz")
+		assert.Equal(t, 0, len(completions))
+	})
+}
+
+func TestSlashCommandProvider_SetCommands(t *testing.T) {
+	provider := ui.NewSlashCommandProvider()
+
+	// Initially empty
+	completions := provider.GetCompletions("")
+	assert.Equal(t, 0, len(completions))
+
+	// Set commands
+	provider.SetCommands([]string{"alpha", "beta"}, nil)
+	completions = provider.GetCompletions("")
+	assert.Equal(t, 2, len(completions))
+	// Default description when not provided
+	assert.Equal(t, "command", completions[0].Description)
+}
+
 func TestFileProvider_GetCompletions(t *testing.T) {
 	// Create a temporary directory with test files
 	tmpDir := t.TempDir()
@@ -299,23 +359,28 @@ func TestDetectProvider(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "tool command",
-			input:    ":tool read",
-			expected: "tool",
+			name:     "slash command",
+			input:    "/help",
+			expected: "command",
 		},
 		{
-			name:     "file path with slash",
-			input:    "/home/user/file.txt",
-			expected: "file",
+			name:     "slash command with text",
+			input:    "/plan some feature",
+			expected: "command",
 		},
 		{
-			name:     "relative path",
+			name:     "relative path with dot slash",
 			input:    "./file.txt",
 			expected: "file",
 		},
 		{
 			name:     "home directory",
 			input:    "~/documents",
+			expected: "file",
+		},
+		{
+			name:     "hidden file",
+			input:    ".gitignore",
 			expected: "file",
 		},
 		{

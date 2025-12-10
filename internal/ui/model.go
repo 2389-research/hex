@@ -723,20 +723,19 @@ func waitForMessageEvent(ch <-chan pubsub.Event[services.Message]) tea.Cmd {
 func (m *Model) SetToolSystem(registry *tools.Registry, executor *tools.Executor) {
 	m.toolRegistry = registry
 	m.toolExecutor = executor
+	// Note: ToolProvider removed from autocomplete - internal tools are not user-facing
+}
 
-	// FIX: Update autocomplete tool provider with available tools
-	if m.autocomplete != nil && registry != nil {
-		// Get existing provider and update it, or create new one
-		provider, ok := m.autocomplete.GetProvider("tool")
-		if ok {
-			// Update existing provider's tool list
-			if toolProvider, ok := provider.(*ToolProvider); ok {
-				toolProvider.SetTools(registry.List())
-			}
-		} else {
-			// Create new provider if it doesn't exist
-			toolProvider := NewToolProvider(registry.List())
-			m.autocomplete.RegisterProvider("tool", toolProvider)
+// SetSlashCommands sets the available slash commands for autocomplete
+func (m *Model) SetSlashCommands(commands []string, descriptions map[string]string) {
+	if m.autocomplete == nil {
+		return
+	}
+
+	provider, ok := m.autocomplete.GetProvider("command")
+	if ok {
+		if cmdProvider, ok := provider.(*SlashCommandProvider); ok {
+			cmdProvider.SetCommands(commands, descriptions)
 		}
 	}
 }

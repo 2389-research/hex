@@ -79,11 +79,6 @@ func (m *Model) View() string {
 			if m.autocomplete != nil && m.autocomplete.IsActive() {
 				b.WriteString(m.renderAutocompleteDropdown() + "\n")
 			}
-
-			// Phase 6C Task 8: Render smart suggestions
-			if m.showSuggestions && len(m.suggestions) > 0 {
-				b.WriteString(m.renderSuggestions() + "\n")
-			}
 		}
 	}
 
@@ -385,6 +380,7 @@ func (m *Model) renderHelpPanel() string {
 }
 
 // renderToolApprovalPromptEnhanced renders enhanced tool approval UI with custom menu
+// Uses autocomplete-style highlighting for consistent UX
 func (m *Model) renderToolApprovalPromptEnhanced() string {
 	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
 		return ""
@@ -392,28 +388,19 @@ func (m *Model) renderToolApprovalPromptEnhanced() string {
 
 	var b strings.Builder
 
-	// Styles
-	boxStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.Colors.Purple).
-		Padding(0, 1)
+	// Use autocomplete styles for consistent look
+	dropdownWidth := m.Width - 4
+	if dropdownWidth < 40 {
+		dropdownWidth = 40
+	}
+	boxStyle := m.theme.AutocompleteDropdown.Width(dropdownWidth)
+	selectedStyle := m.theme.AutocompleteSelected
+	normalStyle := m.theme.AutocompleteItem
+	helpStyle := m.theme.AutocompleteHelp
 
 	titleStyle := lipgloss.NewStyle().
 		Foreground(m.theme.Colors.Purple).
 		Bold(true)
-
-	selectedStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Cyan).
-		Bold(true)
-
-	unselectedStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Comment)
-
-	selectorStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Pink)
-
-	hintStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Comment)
 
 	// Title
 	b.WriteString(titleStyle.Render("🛠  Tool Approval Required"))
@@ -445,7 +432,7 @@ func (m *Model) renderToolApprovalPromptEnhanced() string {
 	}
 	b.WriteString("\n")
 
-	// Options - all visible, highlight selected
+	// Options - all visible, highlight selected with autocomplete style
 	options := []string{
 		"✓ Approve (run this time)",
 		"✗ Deny (skip this time)",
@@ -455,18 +442,16 @@ func (m *Model) renderToolApprovalPromptEnhanced() string {
 
 	for i, opt := range options {
 		if i == m.selectedApprovalOpt {
-			b.WriteString(selectorStyle.Render("> "))
-			b.WriteString(selectedStyle.Render(opt))
+			b.WriteString(selectedStyle.Render("▸ " + opt))
 		} else {
-			b.WriteString("  ")
-			b.WriteString(unselectedStyle.Render(opt))
+			b.WriteString(normalStyle.Render("  " + opt))
 		}
 		b.WriteString("\n")
 	}
 
 	// Hint
 	b.WriteString("\n")
-	b.WriteString(hintStyle.Render("↑ up • ↓ down • enter submit"))
+	b.WriteString(helpStyle.Render("↑↓: navigate • Enter: submit"))
 
 	return boxStyle.Render(b.String())
 }
@@ -609,7 +594,12 @@ func (m *Model) renderAutocompleteDropdown() string {
 	}
 
 	// Use dedicated autocomplete styles for high contrast
-	dropdownStyle := m.theme.AutocompleteDropdown.MaxWidth(60)
+	// Use full width minus some padding for the dropdown
+	dropdownWidth := m.Width - 4
+	if dropdownWidth < 40 {
+		dropdownWidth = 40
+	}
+	dropdownStyle := m.theme.AutocompleteDropdown.Width(dropdownWidth)
 	selectedStyle := m.theme.AutocompleteSelected
 	normalStyle := m.theme.AutocompleteItem
 	helpStyle := m.theme.AutocompleteHelp
@@ -618,6 +608,9 @@ func (m *Model) renderAutocompleteDropdown() string {
 	var content strings.Builder
 
 	selectedIndex := m.autocomplete.GetSelectedIndex()
+
+	// Description style - slightly dimmer than main text but still readable
+	descStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 
 	for i, completion := range completions {
 		var line strings.Builder
@@ -637,10 +630,10 @@ func (m *Model) renderAutocompleteDropdown() string {
 			line.WriteString("  ")
 			line.WriteString(completion.Display)
 
-			// Add description if available (muted for non-selected)
+			// Add description if available (dimmed but readable)
 			if completion.Description != "" {
 				line.WriteString(" ")
-				line.WriteString(m.theme.Muted.Render("(" + completion.Description + ")"))
+				line.WriteString(descStyle.Render("(" + completion.Description + ")"))
 			}
 
 			content.WriteString(normalStyle.Render(line.String()))
@@ -657,35 +650,3 @@ func (m *Model) renderAutocompleteDropdown() string {
 	return dropdownStyle.Render(content.String())
 }
 
-// Phase 6C Task 8: renderSuggestions renders smart tool suggestions
-func (m *Model) renderSuggestions() string {
-	if !m.showSuggestions || len(m.suggestions) == 0 {
-		return ""
-	}
-
-	var content strings.Builder
-
-	// Title
-	content.WriteString(m.theme.SuggestionTitle.Render("💡 Suggestions") + "\n\n")
-
-	// Show top suggestion prominently
-	topSuggestion := m.suggestions[0]
-	content.WriteString(m.theme.SuggestionTitle.Render(fmt.Sprintf("→ %s", topSuggestion.ToolName)) + "\n")
-	content.WriteString("  " + m.theme.SuggestionReason.Render(topSuggestion.Reason) + "\n")
-	content.WriteString("  " + m.theme.SuggestionHint.Render(fmt.Sprintf("Action: %s", topSuggestion.Action)) + "\n")
-
-	// Show additional suggestions if any
-	if len(m.suggestions) > 1 {
-		content.WriteString("\n" + m.theme.SuggestionReason.Render("Other suggestions:") + "\n")
-		for i := 1; i < len(m.suggestions) && i < 3; i++ {
-			s := m.suggestions[i]
-			content.WriteString(fmt.Sprintf("  • %s ", s.ToolName))
-			content.WriteString(m.theme.SuggestionReason.Render(fmt.Sprintf("(%.0f%% confident)", s.Confidence*100)) + "\n")
-		}
-	}
-
-	// Help text
-	content.WriteString("\n" + m.theme.SuggestionHint.Render("Tab: accept • Esc: dismiss"))
-
-	return m.theme.SuggestionBox.Render(content.String())
-}
