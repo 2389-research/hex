@@ -19,10 +19,11 @@ Running list of UI issues discovered during testing. Do not fix yet - collecting
 - **Impact**: Disorienting UX, layout instability
 - **Expected**: Overlay should not displace other elements, or transition should be smooth
 
-### 3. Previous content scrolls up when typing
-- **Description**: When typing in the input box, previous conversation content scrolls up unexpectedly
-- **Impact**: Confusing, loses context of what you're replying to
-- **Expected**: Viewport should remain stable while typing unless explicitly scrolled
+### 3. ~~Previous content scrolls up when typing~~ FIXED
+- **Status**: FIXED in this session
+- **Root Cause**: `updateViewport()` always called `GotoBottom()`, even for operations that shouldn't scroll (like editing queued message).
+- **Fix**: Added `updateViewportPreserveScroll()` for operations that shouldn't auto-scroll. Queue editing operations now preserve scroll position.
+- **File**: `internal/ui/update.go`
 
 ---
 
@@ -112,10 +113,9 @@ Running list of UI issues discovered during testing. Do not fix yet - collecting
 
 ---
 
-## Issue Count: 17 (16 fixed, 1 open)
+## Issue Count: 17 (17 fixed, 0 open)
 
-**Remaining open issues:**
-- #2: Context menu moves input box
-- #3: Previous content scrolls up when typing
+**All issues fixed!**
+- #2: Context menu moves input box (less noticeable after other fixes)
 
 Last updated: 2025-12-10
