@@ -283,24 +283,25 @@ func NewDraculaTheme() *Theme {
 		Bold(true)
 
 	// Autocomplete dropdown styles - high contrast for readability
+	// Use dark background with bright foreground for maximum legibility
 	t.AutocompleteDropdown = lipgloss.NewStyle().
-		Background(t.Colors.CurrentLine).
+		Background(t.Colors.Background). // Dark background
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(t.Colors.Purple).
 		Padding(0, 1)
 
 	t.AutocompleteItem = lipgloss.NewStyle().
-		Foreground(t.Colors.Foreground).
-		Background(t.Colors.CurrentLine)
+		Foreground(t.Colors.Foreground). // Bright text
+		Background(t.Colors.Background)  // Dark background
 
 	t.AutocompleteSelected = lipgloss.NewStyle().
-		Foreground(t.Colors.Background).
-		Background(t.Colors.Cyan).
+		Foreground(t.Colors.Background). // Dark text
+		Background(t.Colors.Cyan).       // Bright background
 		Bold(true)
 
 	t.AutocompleteHelp = lipgloss.NewStyle().
-		Foreground(t.Colors.Comment).
-		Background(t.Colors.CurrentLine).
+		Foreground(t.Colors.Foreground). // Brighter than Comment for visibility
+		Background(t.Colors.Background).
 		Italic(true)
 
 	// Help and modal styles

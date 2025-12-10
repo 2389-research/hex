@@ -61,7 +61,8 @@ func NewAutocomplete() *Autocomplete {
 	}
 
 	// Register default providers
-	ac.RegisterProvider("tool", NewToolProvider(nil)) // Will be updated when model is set
+	// Note: ToolProvider removed - internal tools should not be user-facing
+	ac.RegisterProvider("command", NewSlashCommandProvider()) // Slash commands for users
 	ac.RegisterProvider("file", NewFileProvider())
 	ac.RegisterProvider("history", NewHistoryProvider())
 
@@ -335,6 +336,71 @@ func (fp *FileProvider) GetCompletions(input string) []Completion {
 	return completions
 }
 
+// SlashCommandProvider provides slash command completions
+type SlashCommandProvider struct {
+	// commands is a list of available slash command names (without leading /)
+	commands []string
+	// descriptions maps command names to their descriptions
+	descriptions map[string]string
+}
+
+// NewSlashCommandProvider creates a new slash command completion provider
+func NewSlashCommandProvider() *SlashCommandProvider {
+	return &SlashCommandProvider{
+		commands:     []string{},
+		descriptions: make(map[string]string),
+	}
+}
+
+// SetCommands updates the available slash commands
+func (sp *SlashCommandProvider) SetCommands(commands []string, descriptions map[string]string) {
+	sp.commands = commands
+	sp.descriptions = descriptions
+}
+
+// GetCompletions returns fuzzy-matched slash command completions
+func (sp *SlashCommandProvider) GetCompletions(input string) []Completion {
+	// Remove leading / if present for matching
+	query := strings.TrimPrefix(input, "/")
+
+	if query == "" {
+		// Return all commands if just "/" typed
+		completions := make([]Completion, len(sp.commands))
+		for i, cmd := range sp.commands {
+			desc := sp.descriptions[cmd]
+			if desc == "" {
+				desc = "command"
+			}
+			completions[i] = Completion{
+				Value:       "/" + cmd,
+				Display:     "/" + cmd,
+				Description: desc,
+				Score:       0,
+			}
+		}
+		return completions
+	}
+
+	// Fuzzy match
+	matches := fuzzy.Find(query, sp.commands)
+
+	completions := make([]Completion, len(matches))
+	for i, match := range matches {
+		desc := sp.descriptions[match.Str]
+		if desc == "" {
+			desc = "command"
+		}
+		completions[i] = Completion{
+			Value:       "/" + match.Str,
+			Display:     "/" + match.Str,
+			Description: desc,
+			Score:       match.Score,
+		}
+	}
+
+	return completions
+}
+
 // HistoryProvider provides command history completions
 type HistoryProvider struct {
 	// history stores recent commands
@@ -407,13 +473,15 @@ func (hp *HistoryProvider) GetCompletions(input string) []Completion {
 func DetectProvider(input string) string {
 	trimmed := strings.TrimSpace(input)
 
-	// Tool completion if starting with :tool
-	if strings.HasPrefix(trimmed, ":tool ") {
-		return "tool"
+	// Slash command completion if starting with /
+	if strings.HasPrefix(trimmed, "/") {
+		return "command"
 	}
 
-	// File completion if looks like a path
-	if strings.Contains(trimmed, "/") || strings.HasPrefix(trimmed, ".") || strings.HasPrefix(trimmed, "~") {
+	// File completion if looks like a path (but not slash commands)
+	// Check for ./ or ~/ or contains / after first character
+	if strings.HasPrefix(trimmed, "./") || strings.HasPrefix(trimmed, "~/") ||
+		strings.HasPrefix(trimmed, ".") {
 		return "file"
 	}
 

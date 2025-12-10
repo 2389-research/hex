@@ -366,12 +366,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExitSearchMode()
 				return m, nil
 			}
-			if m.showSuggestions {
-				m.DismissSuggestions()
-				return m, nil
-			}
 			if m.quickActionsMode {
 				m.quickActionsMode = false
+				return m, nil
+			}
+			// Dismiss autocomplete dropdown
+			if m.autocomplete != nil && m.autocomplete.IsActive() {
+				m.autocomplete.Hide()
 				return m, nil
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
@@ -461,23 +462,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case tea.KeyEsc:
-				// FIX: Cancel autocomplete AND dismiss suggestions if active
+				// Cancel autocomplete
 				m.autocomplete.Hide()
-				if m.showSuggestions {
-					m.DismissSuggestions()
-				}
 				return m, nil
 			}
 		}
 
-		// Handle Tab - accept suggestion, trigger autocomplete, or switch views
+		// Handle Tab - trigger autocomplete or switch views
 		if msg.Type == tea.KeyTab {
-			// Phase 6C Task 8: Accept suggestion if visible
-			if m.showSuggestions && len(m.suggestions) > 0 {
-				m.AcceptSuggestion()
-				return m, nil
-			}
-
 			// If textarea is focused and has content, show autocomplete
 			if m.Input.Focused() && m.Input.Value() != "" {
 				provider := DetectProvider(m.Input.Value())
@@ -523,30 +515,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Add to input history
 					m.addToInputHistory(input)
 
-					// Check if currently streaming - if so, queue the message
-					if m.Streaming {
-						// Queue message for later processing
-						m.messageQueue = append(m.messageQueue, input)
-						m.AddMessage("user", input)
+					// Check if waiting for response - if so, queue the message
+					if m.waitingForResponse {
+						// Only allow one queued message
+						if m.queuedMessage != "" {
+							// Already have a queued message - ignore
+							return m, nil
+						}
+						m.queuedMessage = input
 						m.Input.Reset()
-
-						// Update status to show queued
-						if len(m.messageQueue) == 1 {
-							m.SetStatus(StatusQueued)
-						}
-						m.updateViewport()
-
-						// Save to database
-						if err := m.saveMessage("user", input); err != nil {
-							m.ErrorMessage = "Failed to save message: " + err.Error()
-						}
-
+						m.updateViewportPreserveScroll()
 						return m, nil
 					}
 
-					// Not streaming - process immediately
+					// Not waiting - process immediately
 					m.AddMessage("user", input)
 					m.Input.Reset()
+					m.waitingForResponse = true // Block further input until response complete
 					m.updateViewport()
 
 					// Task 7: Save user message to database
@@ -591,6 +576,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Viewport.ScrollUp(1)
 				return m, nil
 			}
+		}
+
+		// Handle UP arrow to edit queued message
+		// If there's a queued message and input is empty, pull it back for editing
+		if m.Input.Focused() && msg.Type == tea.KeyUp && m.queuedMessage != "" && m.Input.Value() == "" {
+			m.Input.SetValue(m.queuedMessage)
+			m.queuedMessage = ""
+			m.updateViewportPreserveScroll()
+			return m, nil
 		}
 
 		// Handle up/down arrows for input history navigation
@@ -704,24 +698,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input (only if not in search mode)
-	if !m.SearchMode {
+	// Update input (only if not in search mode and no queued message)
+	if !m.SearchMode && m.queuedMessage == "" {
 		oldValue := m.Input.Value()
 		m.Input, cmd = m.Input.Update(msg)
 		cmds = append(cmds, cmd)
 
-		// Phase 6C Task 4: Update autocomplete as user types
-		if m.autocomplete != nil && m.autocomplete.IsActive() {
-			newValue := m.Input.Value()
-			if newValue != oldValue {
-				m.autocomplete.Update(newValue)
-			}
-		}
-
-		// Phase 6C Task 8: Update suggestions as user types
 		newValue := m.Input.Value()
 		if newValue != oldValue {
-			m.AnalyzeSuggestions()
+			// Phase 6C Task 4: Update autocomplete as user types
+			if m.autocomplete != nil {
+				if m.autocomplete.IsActive() {
+					// Already active - just update with new input
+					m.autocomplete.Update(newValue)
+				} else if strings.HasPrefix(strings.TrimSpace(newValue), "/") {
+					// Auto-show autocomplete when typing starts with /
+					provider := DetectProvider(newValue)
+					m.autocomplete.Show(newValue, provider)
+				}
+			}
 		}
 	}
 
@@ -734,7 +729,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateViewport renders messages into viewport with throttling for smooth performance
 // Limits updates to 60fps max to reduce CPU overhead for expensive renders
+// Always scrolls to bottom - use updateViewportPreserveScroll() to keep position
 func (m *Model) updateViewport() {
+	m.updateViewportInternal(true)
+}
+
+// updateViewportPreserveScroll renders messages without scrolling to bottom
+func (m *Model) updateViewportPreserveScroll() {
+	m.updateViewportInternal(false)
+}
+
+// updateViewportInternal is the shared implementation
+func (m *Model) updateViewportInternal(scrollToBottom bool) {
 	// Performance: Always throttle viewport updates to 60fps max (16.67ms = 60fps)
 	// Expensive renders happen anytime (glamour markdown, large messages), not just streaming
 	timeSinceLastUpdate := time.Since(m.lastViewportUpdate)
@@ -834,7 +840,9 @@ func (m *Model) updateViewport() {
 	}
 
 	m.Viewport.SetContent(content.String())
-	m.Viewport.GotoBottom()
+	if scrollToBottom {
+		m.Viewport.GotoBottom()
+	}
 }
 
 // Task 6: Streaming Integration Functions
@@ -860,6 +868,7 @@ func (m *Model) handleStreamError(err error) (tea.Model, tea.Cmd) {
 	m.streamChan = nil
 	m.streamCancel = nil
 	m.streamCtx = nil
+	m.waitingForResponse = false // Allow new input after error
 	m.updateViewport()
 	return m, nil
 }
@@ -1130,13 +1139,14 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 	}
 
 	m.SetStatus(StatusIdle)
-	m.Streaming = false // Clear streaming flag
+	m.Streaming = false          // Clear streaming flag
+	m.waitingForResponse = false // Allow new input
 	// Stream state already cleared at start of handleMessageStop()
 
 	m.updateViewport()
 
-	// Check if there are queued messages to process
-	return m, m.processNextQueuedMessage()
+	// Check if there's a queued message to process
+	return m, m.processQueuedMessage()
 }
 
 // handleStreamChunk processes a streaming chunk message
@@ -1245,29 +1255,31 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 }
 
-// processNextQueuedMessage checks the message queue and processes the next message if any
-func (m *Model) processNextQueuedMessage() tea.Cmd {
-	if len(m.messageQueue) == 0 {
-		// No queued messages
+// processQueuedMessage checks if there's a queued message and processes it
+func (m *Model) processQueuedMessage() tea.Cmd {
+	if m.queuedMessage == "" {
+		// No queued message
 		return nil
 	}
 
-	// Get first queued message
-	nextMessage := m.messageQueue[0]
-	m.messageQueue = m.messageQueue[1:]
+	// Get and clear the queued message
+	message := m.queuedMessage
+	m.queuedMessage = ""
 
-	// Update status
-	if len(m.messageQueue) > 0 {
-		// More messages still queued
-		m.SetStatus(StatusQueued)
-	} else {
-		// This was the last queued message
-		m.SetStatus(StatusIdle)
+	// Add the queued message to conversation history now that it's being processed
+	m.AddMessage("user", message)
+	m.waitingForResponse = true // Block input while processing queued message
+	m.updateViewport()
+
+	// Save to database
+	if err := m.saveMessage("user", message); err != nil {
+		// Log error but don't block
+		m.ErrorMessage = "Failed to save queued message: " + err.Error()
 	}
 
 	// Process the queued message
 	if m.apiClient != nil {
-		return m.streamMessage(nextMessage)
+		return m.streamMessage(message)
 	}
 
 	return nil
