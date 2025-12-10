@@ -131,11 +131,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Display result in UI
 			resultMsg := formatToolResult(msg.result)
 			m.AddMessage("tool", resultMsg)
-
-			// Save tool result to database
-			if err := m.saveMessage("tool", resultMsg); err != nil {
-				m.ErrorMessage = "Failed to save tool result: " + err.Error()
-			}
+			// Note: Tool results are not persisted to database - they're internal state
+			// that gets sent back to the API as part of the conversation flow
 		}
 
 		m.updateViewport()
@@ -200,10 +197,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			// Save tool result to database
-			if err := m.saveMessage("tool", resultMsg); err != nil {
-				m.ErrorMessage = "Failed to save tool result: " + err.Error()
-			}
+			// Note: Tool results are not persisted to database - they're internal state
+			// that gets sent back to the API as part of the conversation flow
 		}
 
 		m.updateViewport()
