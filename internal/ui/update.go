@@ -517,20 +517,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					// Check if waiting for response - if so, queue the message
 					if m.waitingForResponse {
-						// Only allow one queued message at a time
+						// Only allow one queued message
 						if m.queuedMessage != "" {
-							// Already have a queued message - ignore this one
-							if m.statusBar != nil {
-								m.statusBar.SetCustomMessage("Already have a queued message")
-							}
+							// Already have a queued message - ignore
 							return m, nil
 						}
-
-						// Queue message for later processing
 						m.queuedMessage = input
 						m.Input.Reset()
 						m.updateViewport()
-
 						return m, nil
 					}
 
@@ -582,6 +576,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Viewport.ScrollUp(1)
 				return m, nil
 			}
+		}
+
+		// Handle UP arrow to edit queued message
+		// If there's a queued message and input is empty, pull it back for editing
+		if m.Input.Focused() && msg.Type == tea.KeyUp && m.queuedMessage != "" && m.Input.Value() == "" {
+			m.Input.SetValue(m.queuedMessage)
+			m.queuedMessage = ""
+			m.updateViewport()
+			return m, nil
 		}
 
 		// Handle up/down arrows for input history navigation
@@ -695,8 +698,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input (only if not in search mode)
-	if !m.SearchMode {
+	// Update input (only if not in search mode and no queued message)
+	if !m.SearchMode && m.queuedMessage == "" {
 		oldValue := m.Input.Value()
 		m.Input, cmd = m.Input.Update(msg)
 		cmds = append(cmds, cmd)

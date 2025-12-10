@@ -78,7 +78,7 @@ func (m *Model) View() string {
 				queuedStyle := lipgloss.NewStyle().
 					Foreground(lipgloss.Color("#6272A4")).
 					Italic(true)
-				b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued)") + "\n")
+				b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued · ↑ to edit)") + "\n")
 			}
 
 			b.WriteString(m.theme.Input.Render(m.Input.View()) + "\n")
