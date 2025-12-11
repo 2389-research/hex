@@ -1,6 +1,11 @@
 package ui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 // AutocompleteOverlay implements the Overlay interface for autocomplete dropdown
 type AutocompleteOverlay struct {
@@ -14,33 +19,145 @@ func NewAutocompleteOverlay(m *Model) *AutocompleteOverlay {
 
 // GetHeader returns the header content
 func (o *AutocompleteOverlay) GetHeader() string {
+	// Autocomplete doesn't need a header
 	return ""
 }
 
 // GetContent returns the main content
 func (o *AutocompleteOverlay) GetContent() string {
-	return o.Render(0, 0)
+	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
+		return ""
+	}
+
+	completions := o.model.autocomplete.GetCompletions()
+	if len(completions) == 0 {
+		return ""
+	}
+
+	var content strings.Builder
+
+	selectedIndex := o.model.autocomplete.GetSelectedIndex()
+	selectedStyle := o.model.theme.AutocompleteSelected
+	normalStyle := o.model.theme.AutocompleteItem
+
+	// Description style - slightly dimmer than main text but still readable
+	descStyle := lipgloss.NewStyle().Foreground(o.model.theme.Colors.Comment)
+
+	for i, completion := range completions {
+		var line strings.Builder
+
+		// Selection indicator and styling
+		if i == selectedIndex {
+			line.WriteString("▸ ")
+			line.WriteString(completion.Display)
+
+			// Add description if available
+			if completion.Description != "" {
+				line.WriteString(" (" + completion.Description + ")")
+			}
+
+			content.WriteString(selectedStyle.Render(line.String()))
+		} else {
+			line.WriteString("  ")
+			line.WriteString(completion.Display)
+
+			// Add description if available (dimmed but readable)
+			if completion.Description != "" {
+				line.WriteString(" ")
+				line.WriteString(descStyle.Render("(" + completion.Description + ")"))
+			}
+
+			content.WriteString(normalStyle.Render(line.String()))
+		}
+
+		content.WriteString("\n")
+	}
+
+	return content.String()
 }
 
 // GetFooter returns the footer content
 func (o *AutocompleteOverlay) GetFooter() string {
-	return ""
+	return "↑↓: navigate • Enter: accept • Esc: cancel"
 }
 
 // GetDesiredHeight returns the desired height for this overlay
 func (o *AutocompleteOverlay) GetDesiredHeight() int {
-	return 10
+	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
+		return 0
+	}
+
+	completions := o.model.autocomplete.GetCompletions()
+	if len(completions) == 0 {
+		return 0
+	}
+
+	// Calculate height: items + footer line + spacing
+	itemHeight := len(completions)
+	footerHeight := 2 // blank line + footer text
+	totalHeight := itemHeight + footerHeight
+
+	// Cap at 40% of screen height
+	if o.model.Height > 0 {
+		maxHeight := int(float64(o.model.Height) * 0.4)
+		if totalHeight > maxHeight {
+			return maxHeight
+		}
+	}
+
+	return totalHeight
 }
 
 // OnPush is called when the overlay is pushed onto the stack
-func (o *AutocompleteOverlay) OnPush(width, height int) {}
+func (o *AutocompleteOverlay) OnPush(width, height int) {
+	// No special initialization needed
+}
 
 // OnPop is called when the overlay is popped from the stack
-func (o *AutocompleteOverlay) OnPop() {}
+func (o *AutocompleteOverlay) OnPop() {
+	// Clear autocomplete state when dismissed
+	if o.model.autocomplete != nil {
+		o.model.autocomplete.Hide()
+	}
+}
 
-// Render returns the autocomplete dropdown UI
+// Render returns the complete overlay rendering
 func (o *AutocompleteOverlay) Render(width, height int) string {
-	return o.model.renderAutocompleteDropdown()
+	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
+		return ""
+	}
+
+	completions := o.model.autocomplete.GetCompletions()
+	if len(completions) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+
+	// Use full width minus some padding for the dropdown
+	dropdownWidth := width - 4
+	if dropdownWidth < 40 {
+		dropdownWidth = 40
+	}
+	boxStyle := o.model.theme.AutocompleteDropdown.Width(dropdownWidth)
+	helpStyle := o.model.theme.AutocompleteHelp
+
+	// Header (autocomplete doesn't use header, but keep pattern consistent)
+	if header := o.GetHeader(); header != "" {
+		b.WriteString(header)
+		b.WriteString("\n")
+	}
+
+	// Content
+	b.WriteString(o.GetContent())
+
+	// Footer
+	b.WriteString("\n")
+	if footer := o.GetFooter(); footer != "" {
+		b.WriteString(helpStyle.Render(footer))
+	}
+
+	return boxStyle.Render(b.String())
 }
 
 // HandleKey processes key presses for autocomplete
