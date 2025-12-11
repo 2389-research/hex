@@ -34,6 +34,39 @@ func (m *Model) View() string {
 		b.WriteString(m.renderHelpPanel() + "\n\n")
 	}
 
+	// Calculate bottom overlay height if present (for viewport adjustment)
+	var bottomOverlayContent string
+	var bottomOverlayHeight int
+	if m.overlayManager != nil && m.overlayManager.HasActive() && !m.overlayManager.IsFullscreen() {
+		active := m.overlayManager.GetActive()
+
+		// Calculate desired height with 40% cap
+		desiredHeight := active.GetDesiredHeight()
+		maxAllowed := int(float64(m.Height) * 0.4)
+		if desiredHeight > maxAllowed {
+			bottomOverlayHeight = maxAllowed
+		} else {
+			bottomOverlayHeight = desiredHeight
+		}
+
+		// Render overlay
+		bottomOverlayContent = active.Render(m.Width, bottomOverlayHeight)
+
+		// Adjust viewport height to account for bottom overlay
+		// Note: This temporarily adjusts viewport for rendering
+		// The viewport height should be restored in Update when overlay is dismissed
+		originalHeight := m.Viewport.Height
+		adjustedHeight := originalHeight - bottomOverlayHeight
+		if adjustedHeight < 5 {
+			adjustedHeight = 5 // Minimum height for viewport
+		}
+		m.Viewport.Height = adjustedHeight
+		defer func() {
+			// Restore original height after rendering
+			m.Viewport.Height = originalHeight
+		}()
+	}
+
 	// Render different views based on CurrentView
 	switch m.CurrentView {
 	case ViewModeIntro:
@@ -47,6 +80,11 @@ func (m *Model) View() string {
 	}
 
 	b.WriteString("\n")
+
+	// Render bottom overlay between viewport and input (if not fullscreen)
+	if bottomOverlayContent != "" {
+		b.WriteString(bottomOverlayContent + "\n")
+	}
 
 	// Phase 6C Task 6: Quick actions modal (takes precedence over everything except tool approval)
 	if m.quickActionsMode {
@@ -80,14 +118,8 @@ func (m *Model) View() string {
 		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
 	}
 
-	// Render modals/overlays on top of input using overlay manager
-	// This handles autocomplete, tool approval, and any future overlays
-	if m.overlayManager != nil && m.overlayManager.HasActive() {
-		overlayContent := m.overlayManager.Render(m.Width, m.Height)
-		if overlayContent != "" {
-			b.WriteString(overlayContent + "\n")
-		}
-	} else
+	// Note: Bottom overlays are rendered above, between viewport and input
+	// Fullscreen overlays are handled at the top of View() function
 	if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
