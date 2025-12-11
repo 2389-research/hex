@@ -50,7 +50,8 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, nil // Handled - caller should call DenyToolUse and Pop
 	}
 	// Other tool approval navigation (up/down/enter) is handled in main Update
-	return false, nil
+	// Modal: capture all input, even if not specifically handled
+	return true, nil
 }
 
 // Cancel dismisses the tool approval (cleanup only, no API calls)

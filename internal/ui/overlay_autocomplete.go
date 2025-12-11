@@ -50,7 +50,8 @@ func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 		return true, nil // Handled - caller should Pop
 	}
 	// Other autocomplete navigation is already handled in main Update
-	return false, nil
+	// Modal: capture all input, even if not specifically handled
+	return true, nil
 }
 
 // Cancel dismisses the autocomplete
