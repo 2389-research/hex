@@ -173,19 +173,19 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 	modelPart := modelStyle.Render(modelName)
 	cwdPart := cwdStyle.Render(cwd)
 
-	// Show quit confirmation warning if pending, or timestamp if hovering over a message
+	// Show quit confirmation warning if pending, or timestamp if clicking on a message
 	var rightPart string
 	var timestampSuffix string
 	if m.pendingQuit && time.Since(m.pendingQuitTime) < 2*time.Second {
 		rightPart = warningStyle.Render("⌃C again to quit")
 	} else if m.hoveredMessageIndex >= 0 && !m.hoveredMessageTime.IsZero() {
-		// Show timestamp when hovering over a message
+		// Show timestamp when clicking on a message
 		timeStr := m.hoveredMessageTime.Format("15:04")
 		timestampStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 		timestampSuffix = timestampStyle.Render("sent at " + timeStr)
-		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · ⇧+drag select")
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · click for time")
 	} else {
-		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · ⇧+drag select")
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · click for time")
 	}
 
 	// Build the content part
