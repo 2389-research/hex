@@ -40,6 +40,18 @@ func (o *AutocompleteOverlay) Cancel() {
 	}
 }
 
+// HandleEscape dismisses autocomplete (no command needed)
+func (o *AutocompleteOverlay) HandleEscape() tea.Cmd {
+	o.Cancel()
+	return nil
+}
+
+// HandleCtrlC dismisses autocomplete (no command needed)
+func (o *AutocompleteOverlay) HandleCtrlC() tea.Cmd {
+	o.Cancel()
+	return nil
+}
+
 // Priority returns the precedence level
 func (o *AutocompleteOverlay) Priority() int {
 	return 50 // Medium priority - helpful but not critical

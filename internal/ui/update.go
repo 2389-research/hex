@@ -379,8 +379,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil && m.overlayManager.HandleEscape() {
-				return m, nil
+			if m.overlayManager != nil {
+				if cmd := m.overlayManager.HandleEscape(); cmd != nil {
+					return m, cmd
+				}
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
@@ -421,9 +423,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil && m.overlayManager.HandleCtrlC() {
-				m.pendingQuit = false
-				return m, nil
+			if m.overlayManager != nil {
+				if cmd := m.overlayManager.HandleCtrlC(); cmd != nil {
+					m.pendingQuit = false
+					return m, cmd
+				}
 			}
 
 			// If in quick actions mode, first Ctrl+C cancels it

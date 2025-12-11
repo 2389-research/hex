@@ -31,6 +31,12 @@ type Overlay interface {
 	// Cancel closes/dismisses the overlay
 	Cancel()
 
+	// HandleEscape processes Escape key and returns optional command (nil = just cancel)
+	HandleEscape() tea.Cmd
+
+	// HandleCtrlC processes Ctrl+C and returns optional command (nil = just cancel)
+	HandleCtrlC() tea.Cmd
+
 	// Priority returns the precedence level (higher = shown on top)
 	Priority() int
 }
@@ -83,25 +89,23 @@ func (om *OverlayManager) HandleKey(msg tea.KeyMsg) bool {
 }
 
 // HandleEscape cancels the active overlay if Escape is pressed
-// Returns true if an overlay was cancelled
-func (om *OverlayManager) HandleEscape() bool {
+// Returns a command if the overlay needs to perform an action, or nil
+func (om *OverlayManager) HandleEscape() tea.Cmd {
 	active := om.GetActive()
 	if active != nil {
-		active.Cancel()
-		return true
+		return active.HandleEscape()
 	}
-	return false
+	return nil
 }
 
 // HandleCtrlC cancels the active overlay if Ctrl+C is pressed
-// Returns true if an overlay was cancelled
-func (om *OverlayManager) HandleCtrlC() bool {
+// Returns a command if the overlay needs to perform an action, or nil
+func (om *OverlayManager) HandleCtrlC() tea.Cmd {
 	active := om.GetActive()
 	if active != nil {
-		active.Cancel()
-		return true
+		return active.HandleCtrlC()
 	}
-	return false
+	return nil
 }
 
 // Render returns the content of the highest priority active overlay

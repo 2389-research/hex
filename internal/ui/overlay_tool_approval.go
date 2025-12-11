@@ -34,12 +34,22 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) bool {
 	return false
 }
 
-// Cancel dismisses the tool approval
+// Cancel dismisses the tool approval (cleanup only, no API calls)
 func (o *ToolApprovalOverlay) Cancel() {
 	o.model.toolApprovalMode = false
 	o.model.toolApprovalForm = nil
 	o.model.pendingToolUses = nil
 	o.model.Status = StatusIdle
+}
+
+// HandleEscape denies the tool and returns command to send denial to API
+func (o *ToolApprovalOverlay) HandleEscape() tea.Cmd {
+	return o.model.DenyToolUse()
+}
+
+// HandleCtrlC denies the tool and returns command to send denial to API
+func (o *ToolApprovalOverlay) HandleCtrlC() tea.Cmd {
+	return o.model.DenyToolUse()
 }
 
 // Priority returns the precedence level
