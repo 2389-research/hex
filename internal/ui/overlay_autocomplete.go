@@ -183,8 +183,9 @@ func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 		}
 	}
 
-	// Modal: capture all other input to prevent leakage
-	return true, nil
+	// Let typing through to filter autocomplete (letters, numbers, backspace, etc.)
+	// Only capture the specific keys we handle above
+	return false, nil
 }
 
 // Cancel dismisses the autocomplete
