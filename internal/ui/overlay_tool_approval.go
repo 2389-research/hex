@@ -1,6 +1,13 @@
 package ui
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/2389-research/hex/internal/ui/forms"
+)
 
 // ToolApprovalOverlay implements the Overlay interface for tool approval
 type ToolApprovalOverlay struct {
@@ -12,35 +19,130 @@ func NewToolApprovalOverlay(m *Model) *ToolApprovalOverlay {
 	return &ToolApprovalOverlay{model: m}
 }
 
-// GetHeader returns the header content
+// GetHeader returns the overlay header
 func (o *ToolApprovalOverlay) GetHeader() string {
-	return ""
+	return "Tool Approval Required"
 }
 
-// GetContent returns the main content
+// GetContent returns the overlay content
 func (o *ToolApprovalOverlay) GetContent() string {
-	return o.Render(0, 0)
+	if !o.model.toolApprovalMode || len(o.model.pendingToolUses) == 0 {
+		return "No tool pending approval"
+	}
+
+	var b strings.Builder
+
+	// Tool description - compact format
+	if len(o.model.pendingToolUses) == 1 {
+		tool := o.model.pendingToolUses[0]
+		riskLevel := forms.AssessRiskLevel(tool)
+		coloredRisk := o.model.renderColoredRiskEmoji(riskLevel)
+		paramPreview := o.model.getToolParamPreview(tool)
+		if paramPreview != "" {
+			b.WriteString(fmt.Sprintf("%s %s(%s)", coloredRisk, tool.Name, paramPreview))
+		} else {
+			b.WriteString(fmt.Sprintf("%s %s()", coloredRisk, tool.Name))
+		}
+	} else {
+		b.WriteString(fmt.Sprintf("%s %d tools:", o.model.renderColoredRiskEmoji(forms.RiskCaution), len(o.model.pendingToolUses)))
+		for _, tool := range o.model.pendingToolUses {
+			riskLevel := forms.AssessRiskLevel(tool)
+			coloredRisk := o.model.renderColoredRiskEmoji(riskLevel)
+			paramPreview := o.model.getToolParamPreview(tool)
+			if paramPreview != "" {
+				b.WriteString(fmt.Sprintf("\n  %s %s(%s)", coloredRisk, tool.Name, paramPreview))
+			} else {
+				b.WriteString(fmt.Sprintf("\n  %s %s()", coloredRisk, tool.Name))
+			}
+		}
+	}
+	b.WriteString("\n\n")
+
+	// Options - all visible, highlight selected with autocomplete style
+	options := []string{
+		"✓ Approve (run this time)",
+		"✗ Deny (skip this time)",
+		"✓✓ Always Allow (never ask again)",
+		"✗✗ Never Allow (block permanently)",
+	}
+
+	selectedStyle := o.model.theme.AutocompleteSelected
+	normalStyle := o.model.theme.AutocompleteItem
+
+	for i, opt := range options {
+		if i == o.model.selectedApprovalOpt {
+			b.WriteString(selectedStyle.Render("▸ " + opt))
+		} else {
+			b.WriteString(normalStyle.Render("  " + opt))
+		}
+		b.WriteString("\n")
+	}
+
+	return b.String()
 }
 
-// GetFooter returns the footer content
+// GetFooter returns the overlay footer
 func (o *ToolApprovalOverlay) GetFooter() string {
-	return ""
+	return "↑/↓: navigate • Enter: submit"
 }
 
 // GetDesiredHeight returns the desired height for this overlay
 func (o *ToolApprovalOverlay) GetDesiredHeight() int {
-	return 5
+	// Base height: header + footer + content
+	// Content: tool description (1-5 lines) + options (4 lines) + spacing
+	baseHeight := 10
+	if len(o.model.pendingToolUses) > 1 {
+		baseHeight += len(o.model.pendingToolUses) // Additional lines for multiple tools
+	}
+	return baseHeight
 }
 
 // OnPush is called when the overlay is pushed onto the stack
-func (o *ToolApprovalOverlay) OnPush(width, height int) {}
+func (o *ToolApprovalOverlay) OnPush(width, height int) {
+	// No special initialization needed
+}
 
 // OnPop is called when the overlay is popped from the stack
-func (o *ToolApprovalOverlay) OnPop() {}
+func (o *ToolApprovalOverlay) OnPop() {
+	// Clear state when dismissed
+	o.model.toolApprovalMode = false
+	o.model.toolApprovalForm = nil
+	o.model.pendingToolUses = nil
+	o.model.Status = StatusIdle
+}
 
-// Render returns the tool approval UI
+// Render returns the complete overlay rendering
 func (o *ToolApprovalOverlay) Render(width, height int) string {
-	return o.model.renderToolApprovalPromptEnhanced()
+	var b strings.Builder
+
+	dropdownWidth := width - 4
+	if dropdownWidth < 40 {
+		dropdownWidth = 40
+	}
+	boxStyle := o.model.theme.AutocompleteDropdown.Width(dropdownWidth)
+
+	titleStyle := lipgloss.NewStyle().
+		Foreground(o.model.theme.Colors.Purple).
+		Bold(true)
+
+	helpStyle := o.model.theme.AutocompleteHelp
+
+	// Header
+	if header := o.GetHeader(); header != "" {
+		b.WriteString(titleStyle.Render("🛠  " + header))
+		b.WriteString("\n")
+	}
+
+	// Content
+	b.WriteString(o.GetContent())
+
+	// Footer
+	b.WriteString("\n")
+	if footer := o.GetFooter(); footer != "" {
+		b.WriteString(helpStyle.Render(footer))
+	}
+
+	return boxStyle.Render(b.String())
 }
 
 // HandleKey processes key presses for tool approval
