@@ -42,6 +42,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	// Handle mouse wheel scrolling
 	case tea.MouseMsg:
+		// If Shift is held, pass through to terminal for text selection
+		if msg.Shift {
+			return m, nil
+		}
+
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
 			m.Viewport.ScrollUp(3)

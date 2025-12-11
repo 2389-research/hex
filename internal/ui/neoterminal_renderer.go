@@ -183,9 +183,9 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 		timeStr := m.hoveredMessageTime.Format("15:04")
 		timestampStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 		timestampSuffix = timestampStyle.Render("sent at " + timeStr)
-		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · ⇧+drag select")
 	} else {
-		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views · ⇧+drag select")
 	}
 
 	// Build the content part
