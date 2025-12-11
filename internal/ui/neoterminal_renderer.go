@@ -13,60 +13,40 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// renderNeoTerminalMessage creates a compact message with role indicator and timestamp
+// renderNeoTerminalMessage creates a message with colored left border
 func (m *Model) renderNeoTerminalMessage(role, content string, timestamp time.Time) string {
 	var b strings.Builder
 
-	// Determine colors and label based on role
-	var roleColor lipgloss.Color
-	var roleLabel string
+	// Determine border color based on role
+	var borderColor lipgloss.Color
 
 	switch role {
 	case "user":
-		roleColor = m.theme.Colors.Orange // Accent Coral
-		roleLabel = "YOU"
+		borderColor = m.theme.Colors.Orange // Orange for user
 	case "assistant":
-		roleColor = m.theme.Colors.Green // Accent Sage
-		roleLabel = "ASSISTANT"
+		borderColor = m.theme.Colors.Green // Green for Hex/assistant
 	case "system":
-		roleColor = m.theme.Colors.Cyan // Accent Sky
-		roleLabel = "SYSTEM"
+		borderColor = m.theme.Colors.Cyan // Cyan for system
 	default:
-		roleColor = m.theme.Colors.Comment
-		roleLabel = "MESSAGE"
+		borderColor = m.theme.Colors.Comment
 	}
 
-	// Format timestamp
-	timeStr := timestamp.Format("15:04")
+	// Create border style
+	borderStyle := lipgloss.NewStyle().Foreground(borderColor)
+	border := borderStyle.Render("┃")
 
-	// Create styles
-	roleStyle := lipgloss.NewStyle().Foreground(roleColor).Bold(true)
-	timeStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
-
-	// Header line: ROLE [TIME]
-	header := roleStyle.Render(roleLabel) + " " + timeStyle.Render("["+timeStr+"]")
-	b.WriteString(header + "\n")
-
-	// Content with simple prefix
-	prefix := "  " // Simple indent
-
-	// Split on existing newlines (glamour/user input preserves formatting)
 	// Trim trailing empty lines to avoid excessive spacing
 	content = strings.TrimRight(content, "\n")
 	if content == "" {
-		// If content is completely empty, just show header
-		return b.String()
+		// Empty message - just return empty string
+		return ""
 	}
 
 	lines := strings.Split(content, "\n")
 
 	for _, line := range lines {
-		if line == "" {
-			b.WriteString("\n")
-		} else {
-			// Don't add extra styling - content is already styled (glamour) or plain (user)
-			b.WriteString(prefix + line + "\n")
-		}
+		// Every line gets the colored border prefix
+		b.WriteString(border + " " + line + "\n")
 	}
 
 	return b.String()
