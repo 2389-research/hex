@@ -1,0 +1,7 @@
+- a "what's happening" line (while assistant and all subtasks are busy 
+explaining what's happening, as well as `esc to interrupt` or the like 
+- we have a few things with a highlight - like the "Send a message..." which is 
+hard to read.. kill the highlight and let it just be subtle. 
+- shrink the input box
+- support shift+enter for new lines
+

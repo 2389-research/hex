@@ -378,9 +378,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quickActionsMode = false
 				return m, nil
 			}
-			// Dismiss autocomplete dropdown
-			if m.autocomplete != nil && m.autocomplete.IsActive() {
-				m.autocomplete.Hide()
+			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
+			if m.overlayManager != nil && m.overlayManager.HandleEscape() {
 				return m, nil
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
@@ -421,12 +420,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			// If in tool approval mode, first Ctrl+C cancels it (denies the tool)
-			if m.toolApprovalMode {
-				m.toolApprovalMode = false
-				m.toolApprovalForm = nil
-				m.pendingToolUses = nil
-				m.Status = StatusIdle
+			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
+			if m.overlayManager != nil && m.overlayManager.HandleCtrlC() {
+				m.pendingQuit = false
+				return m, nil
+			}
+
+			// If in quick actions mode, first Ctrl+C cancels it
+			if m.quickActionsMode {
+				m.quickActionsMode = false
+				m.pendingQuit = false
+				return m, nil
+			}
+
+			// If in search mode, first Ctrl+C cancels it
+			if m.SearchMode {
+				m.ExitSearchMode()
 				m.pendingQuit = false
 				return m, nil
 			}
@@ -744,8 +753,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Phase 6C Task 4: Update autocomplete as user types
 			if m.autocomplete != nil {
 				if m.autocomplete.IsActive() {
-					// Already active - just update with new input
-					m.autocomplete.Update(newValue)
+					// If the input no longer starts with /, hide autocomplete
+					if !strings.HasPrefix(strings.TrimSpace(newValue), "/") {
+						m.autocomplete.Hide()
+					} else {
+						// Already active - just update with new input
+						m.autocomplete.Update(newValue)
+					}
 				} else if strings.HasPrefix(strings.TrimSpace(newValue), "/") {
 					// Auto-show autocomplete when typing starts with /
 					provider := DetectProvider(newValue)

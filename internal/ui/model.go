@@ -216,6 +216,9 @@ type Model struct {
 	toolLogOverlay     bool     // Whether overlay is visible
 	currentToolLogName  string   // Name of currently logging tool
 	currentToolLogParam string   // Parameter preview of current tool
+
+	// TUI Polish: Overlay Management
+	overlayManager *OverlayManager // Centralized overlay management
 }
 
 // ToolResult represents a tool execution result for the API
@@ -283,7 +286,8 @@ func NewModel(conversationID, model string) *Model {
 	// TUI Polish: Initialize Neo-Terminal theme
 	neoTerminalTheme := theme.NeoTerminalTheme()
 
-	return &Model{
+	// Initialize Model
+	m := &Model{
 		ConversationID:       conversationID,
 		Model:                model,
 		Messages:             []Message{},
@@ -315,6 +319,13 @@ func NewModel(conversationID, model string) *Model {
 		inputHistory:         []string{},
 		inputHistoryIndex:    -1, // -1 means at current input, not browsing history
 	}
+
+	// Initialize overlay manager and register overlays
+	m.overlayManager = NewOverlayManager()
+	m.overlayManager.Register(NewToolApprovalOverlay(m))
+	m.overlayManager.Register(NewAutocompleteOverlay(m))
+
+	return m
 }
 
 // Init initializes the model

@@ -78,17 +78,15 @@ func (m *Model) View() string {
 
 		// Add bottom border for input
 		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
-
-		// Phase 6C Task 4: Render autocomplete dropdown
-		if m.autocomplete != nil && m.autocomplete.IsActive() {
-			b.WriteString(m.renderAutocompleteDropdown() + "\n")
-		}
 	}
 
-	// Then render modals/overlays on top of input
-	// Phase 6C: Tool approval prompt (renders after input)
-	if m.toolApprovalMode {
-		b.WriteString(m.renderToolApprovalPromptEnhanced() + "\n")
+	// Then render modals/overlays on top of input using overlay manager
+	// This handles autocomplete, tool approval, and any future overlays
+	if m.overlayManager != nil && m.overlayManager.HasActive() {
+		overlayContent := m.overlayManager.Render()
+		if overlayContent != "" {
+			b.WriteString(overlayContent + "\n")
+		}
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
