@@ -240,6 +240,47 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
+		// PRIORITY 1: Route input to overlay manager FIRST (modal behavior)
+		// Overlays capture ALL input when active, except special global hotkeys
+		if m.overlayManager != nil && m.overlayManager.HasActive() {
+			// Check for special global hotkeys that should always work
+			isGlobalHotkey := false
+			switch msg.Type {
+			case tea.KeyCtrlO, tea.KeyCtrlH, tea.KeyCtrlR:
+				// Global overlay toggle hotkeys - process below
+				isGlobalHotkey = true
+			}
+
+			if !isGlobalHotkey {
+				// Let overlay handle the key first
+				handled, cmd := m.overlayManager.HandleKey(msg)
+				if handled {
+					// Check if this should also pop the overlay
+					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
+						// Pop the overlay after it handled the key
+						m.overlayManager.Pop()
+					}
+
+					// Update scrollable overlays with viewport messages
+					active := m.overlayManager.GetActive()
+					if active != nil {
+						if scrollable, ok := active.(Scrollable); ok {
+							scrollCmd := scrollable.Update(msg)
+							if scrollCmd != nil {
+								// Combine commands if both exist
+								if cmd != nil {
+									return m, tea.Batch(cmd, scrollCmd)
+								}
+								return m, scrollCmd
+							}
+						}
+					}
+
+					return m, cmd
+				}
+			}
+		}
+
 		// Handle custom approval menu navigation
 		if m.toolApprovalMode {
 			switch msg.Type {
@@ -398,23 +439,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Esc key - clear priority order:
-		// 1. Close overlays via overlay manager (tool log, tool approval, autocomplete, etc.)
-		// 2. Close help (modal overlay)
-		// 3. Exit search mode (active editing state)
-		// 4. Dismiss suggestions (transient UI)
-		// 5. Clear quick actions (transient UI)
-		// Does NOT quit - use Ctrl+C for that
+		// Handle Esc key - fallback handling for when no overlay is active
+		// Overlays are handled at the top of KeyMsg processing
+		// This only handles Esc when no overlay is active
 		if msg.Type == tea.KeyEsc {
-			// Use overlay manager for Escape handling (handles tool log, tool approval, autocomplete, etc.)
-			if m.overlayManager != nil && m.overlayManager.HasActive() {
-				handled, cmd := m.overlayManager.HandleKey(msg)
-				if handled {
-					// Pop the overlay
-					m.overlayManager.Pop()
-					return m, cmd
-				}
-			}
 			if m.helpVisible {
 				m.ToggleHelp()
 				return m, nil
@@ -432,6 +460,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle Ctrl+C: cancel active work on first press, quit on second press when idle
+		// Note: Overlay Ctrl+C is handled at the top of KeyMsg processing
 		if msg.Type == tea.KeyCtrlC {
 			// First priority: if input box has content, clear it
 			if strings.TrimSpace(m.Input.Value()) != "" {
@@ -463,17 +492,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Status = StatusIdle
 				m.pendingQuit = false
 				return m, nil
-			}
-
-			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil && m.overlayManager.HasActive() {
-				handled, cmd := m.overlayManager.HandleKey(msg)
-				if handled {
-					// Pop the overlay
-					m.overlayManager.Pop()
-					m.pendingQuit = false
-					return m, cmd
-				}
 			}
 
 			// If in quick actions mode, first Ctrl+C cancels it
