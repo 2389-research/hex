@@ -340,12 +340,12 @@ func (m *Model) Init() tea.Cmd {
 		return tea.Batch(
 			textarea.Blink,
 			m.StartEventSubscriptions(),
-			tea.EnableMouseCellMotion, // Enable mouse with button press (allows text selection)
+			tea.EnableMouseAllMotion, // Enable mouse (use Shift for text selection)
 		)
 	}
 	return tea.Batch(
 		textarea.Blink,
-		tea.EnableMouseCellMotion, // Enable mouse with button press (allows text selection)
+		tea.EnableMouseAllMotion, // Enable mouse (use Shift for text selection)
 	)
 }
 

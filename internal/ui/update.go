@@ -42,6 +42,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	// Handle mouse events
 	case tea.MouseMsg:
+		// If Shift is held, pass through to terminal for text selection
+		if msg.Shift {
+			return m, nil
+		}
+
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
 			m.Viewport.ScrollUp(3)
@@ -49,9 +54,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.MouseButtonWheelDown:
 			m.Viewport.ScrollDown(3)
 			return m, nil
-		case tea.MouseButtonLeft:
-			// On left click, update message hover to show timestamp
-			if msg.Action == tea.MouseActionPress {
+		case tea.MouseButtonNone:
+			// Handle mouse hover
+			if msg.Action == tea.MouseActionMotion {
 				m.updateHoveredMessage(msg.X, msg.Y)
 				return m, nil
 			}
