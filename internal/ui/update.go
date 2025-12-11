@@ -389,12 +389,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quickActionsMode = false
 				return m, nil
 			}
+			// TODO(Task 2): Restore overlay manager Escape handling
 			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil {
-				if overlayCmd := m.overlayManager.HandleEscape(); overlayCmd != nil {
-					return m, overlayCmd
-				}
-			}
+			// if m.overlayManager != nil {
+			// 	if overlayCmd := m.overlayManager.HandleEscape(); overlayCmd != nil {
+			// 		return m, overlayCmd
+			// 	}
+			// }
 			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
 		}
@@ -433,13 +434,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
+			// TODO(Task 2): Restore overlay manager Ctrl+C handling
 			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil {
-				if overlayCmd := m.overlayManager.HandleCtrlC(); overlayCmd != nil {
-					m.pendingQuit = false
-					return m, overlayCmd
-				}
-			}
+			// if m.overlayManager != nil {
+			// 	if overlayCmd := m.overlayManager.HandleCtrlC(); overlayCmd != nil {
+			// 		m.pendingQuit = false
+			// 		return m, overlayCmd
+			// 	}
+			// }
 
 			// If in quick actions mode, first Ctrl+C cancels it
 			if m.quickActionsMode {
