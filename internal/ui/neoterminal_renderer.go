@@ -74,7 +74,8 @@ func (m *Model) renderNeoTerminalMessage(role, content string, timestamp time.Ti
 
 // renderNeoTerminalStatusBar creates the heavy-bordered top status bar
 func (m *Model) renderNeoTerminalStatusBar() string {
-	// Format: ┏━━ ⬡ HEX ━━━━━━━━━━━━━━━━ ◆ tokens: 1.2k in · 890 out ━━┓
+	// Format: ┏━ ⬡ HEX ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ◆ tokens: 1.2k in · 890 out ━┓
+	// Total width = m.Width exactly
 
 	// View mode indicator
 	viewSymbol := "⬡"
@@ -104,30 +105,51 @@ func (m *Model) renderNeoTerminalStatusBar() string {
 		rightPart = ""
 	}
 
-	// Calculate fill
-	leftLen := lipgloss.Width(leftPart)
-	rightLen := lipgloss.Width(rightPart)
-	fillLen := m.Width - leftLen - rightLen - 8 // Account for borders and padding
-	if fillLen < 0 {
-		fillLen = 0
-	}
-
 	// Create styles
 	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
 	textStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Foreground).Bold(true)
 	tokenStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 
-	bar := "┏━━ " +
-		textStyle.Render(leftPart) +
-		" " + strings.Repeat("━", fillLen) + " " +
-		tokenStyle.Render(rightPart) +
-		" ━━┓"
+	// Build bar content first to measure
+	leftLen := lipgloss.Width(leftPart)
+	rightLen := lipgloss.Width(rightPart)
 
-	return borderStyle.Render(bar)
+	// Structure: ┏━ (2) + space + leftPart + space + fill + [space + rightPart + space] + ━┓ (2)
+	// With rightPart: ┏━ (2) + sp (1) + left + sp (1) + fill + sp (1) + right + sp (1) + ━┓ (2) = 8 fixed
+	// Without rightPart: ┏━ (2) + sp (1) + left + sp (1) + fill + ━┓ (2) = 6 fixed (no trailing space before ━┓)
+	var fixedChars int
+	if rightPart != "" {
+		fixedChars = 8
+	} else {
+		fixedChars = 6
+	}
+	fillLen := m.Width - leftLen - rightLen - fixedChars
+	if fillLen < 0 {
+		fillLen = 0
+	}
+
+	var bar string
+	if rightPart != "" {
+		bar = borderStyle.Render("┏━") + " " +
+			textStyle.Render(leftPart) +
+			" " + borderStyle.Render(strings.Repeat("━", fillLen)) + " " +
+			tokenStyle.Render(rightPart) +
+			" " + borderStyle.Render("━┓")
+	} else {
+		// No trailing space when no rightPart - fill goes directly to corner
+		bar = borderStyle.Render("┏━") + " " +
+			textStyle.Render(leftPart) +
+			" " + borderStyle.Render(strings.Repeat("━", fillLen)+"━┓")
+	}
+
+	return bar
 }
 
 // renderNeoTerminalBottomBar creates the heavy-bordered bottom status bar with shortcuts
 func (m *Model) renderNeoTerminalBottomBar() string {
+	// Format: ┗━ ● status │ model │ cwd │ ⌃C quit ━━━━━━━━━━━━━━━━━━━━━━━━ ━┛
+	// Total width = m.Width exactly (matches top bar structure)
+
 	// Status indicator
 	var statusText string
 	statusStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
@@ -147,7 +169,6 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 	// CWD (shortened)
 	cwd := m.getShortCwd()
 
-	// Format: ┗━━ ● status │ model │ cwd │ ⌃C quit ━━┛
 	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
 	separatorStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 	modelStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan)
@@ -167,29 +188,30 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
 	}
 
-	leftLen := lipgloss.Width(leftPart)
-	modelLen := lipgloss.Width(modelPart)
-	cwdLen := lipgloss.Width(cwdPart)
-	rightLen := lipgloss.Width(rightPart)
-
-	// Calculate spacing - 12 for separators and borders
-	totalContentLen := leftLen + modelLen + cwdLen + rightLen + 16
-	fillLen := m.Width - totalContentLen
-	if fillLen < 0 {
-		fillLen = 0
-	}
-
-	bar := "┗━━ " +
-		leftPart +
+	// Build the content part
+	contentPart := leftPart +
 		separatorStyle.Render(" │ ") +
 		modelPart +
 		separatorStyle.Render(" │ ") +
 		cwdPart +
 		separatorStyle.Render(" │ ") +
-		rightPart +
-		" " + strings.Repeat("━", fillLen) + " ━━┛"
+		rightPart
 
-	return borderStyle.Render(bar)
+	contentLen := lipgloss.Width(contentPart)
+
+	// Structure: ┗━ (2) + space + content + space + fill + ━┛ (2)
+	// That's: ┗━ (2) + sp (1) + content + sp (1) + fill + ━┛ (2) = 6 fixed (no extra space before corner)
+	fixedChars := 6
+	fillLen := m.Width - contentLen - fixedChars
+	if fillLen < 0 {
+		fillLen = 0
+	}
+
+	bar := borderStyle.Render("┗━") + " " +
+		contentPart +
+		" " + borderStyle.Render(strings.Repeat("━", fillLen)+"━┛")
+
+	return bar
 }
 
 // getShortModelName extracts a short, readable model name from the full model ID

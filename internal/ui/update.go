@@ -21,6 +21,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// truncateDebug truncates string for debug logging
+func truncateDebug(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen]
+}
+
 // Update handles Bubbletea messages
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -381,6 +389,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle Ctrl+C: cancel active work on first press, quit on second press when idle
 		if msg.Type == tea.KeyCtrlC {
+			// First priority: if input box has content, clear it
+			if strings.TrimSpace(m.Input.Value()) != "" {
+				m.Input.Reset()
+				m.updateInputHeight()
+				m.pendingQuit = false // Reset quit state
+				return m, nil
+			}
+
 			// If streaming, first Ctrl+C cancels the stream
 			if m.Streaming {
 				m.cancelStream()
@@ -481,6 +497,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle Shift+Enter: insert newline in textarea for multi-line input
+		// Most terminals send Ctrl+J (ASCII 10, line feed) for Shift+Enter
+		if msg.Type == tea.KeyCtrlJ {
+			m.Input.InsertString("\n")
+			m.updateInputHeight()
+			return m, nil
+		}
+
 		// Handle Enter key
 		if msg.Type == tea.KeyEnter {
 			if m.SearchMode {
@@ -488,68 +512,74 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.ExitSearchMode()
 				return m, nil
 			}
-			// Only send message on plain Enter
-			// Alt+Enter is passed to textarea for multi-line input
-			if !msg.Alt {
-				// Send message
-				input := strings.TrimSpace(m.Input.Value())
+			// Handle Alt+Enter as fallback: insert newline in textarea
+			// This supports terminals that don't send Ctrl+J for Shift+Enter
+			if msg.Alt {
+				// Insert a newline at cursor position
+				m.Input.InsertString("\n")
+				m.updateInputHeight()
+				return m, nil
+			}
+			// Plain Enter sends the message
+			input := strings.TrimSpace(m.Input.Value())
 
-				// Check for exit commands
-				if input == "exit" || input == "/exit" {
-					// Cancel any active stream before quitting
-					m.cancelStream()
-					// Cancel event subscriptions before quitting
-					if m.eventCancel != nil {
-						m.eventCancel()
-					}
-					return m, tea.Quit
+			// Check for exit commands
+			if input == "exit" || input == "/exit" {
+				// Cancel any active stream before quitting
+				m.cancelStream()
+				// Cancel event subscriptions before quitting
+				if m.eventCancel != nil {
+					m.eventCancel()
 				}
+				return m, tea.Quit
+			}
 
-				// Check for clear command
-				if input == "/clear" {
-					m.ClearContext()
+			// Check for clear command
+			if input == "/clear" {
+				m.ClearContext()
+				return m, nil
+			}
+
+			if input != "" {
+				// Add to input history
+				m.addToInputHistory(input)
+
+				// Check if waiting for response - if so, queue the message
+				if m.waitingForResponse {
+					// Only allow one queued message
+					if m.queuedMessage != "" {
+						// Already have a queued message - ignore
+						return m, nil
+					}
+					m.queuedMessage = input
+					m.Input.Reset()
+					m.updateInputHeight() // Reset height to 1 line after clearing
+					m.updateViewportPreserveScroll()
 					return m, nil
 				}
 
-				if input != "" {
-					// Add to input history
-					m.addToInputHistory(input)
+				// Not waiting - process immediately
+				m.AddMessage("user", input)
+				m.Input.Reset()
+				m.updateInputHeight() // Reset height to 1 line after clearing
+				m.waitingForResponse = true // Block further input until response complete
+				m.updateViewport()
 
-					// Check if waiting for response - if so, queue the message
-					if m.waitingForResponse {
-						// Only allow one queued message
-						if m.queuedMessage != "" {
-							// Already have a queued message - ignore
-							return m, nil
-						}
-						m.queuedMessage = input
-						m.Input.Reset()
-						m.updateViewportPreserveScroll()
-						return m, nil
-					}
+				// Task 7: Save user message to database
+				if err := m.saveMessage("user", input); err != nil {
+					// Log error but don't block user
+					m.ErrorMessage = "Failed to save message: " + err.Error()
+				}
 
-					// Not waiting - process immediately
-					m.AddMessage("user", input)
-					m.Input.Reset()
-					m.waitingForResponse = true // Block further input until response complete
-					m.updateViewport()
+				// Task 7: Update conversation title from first message
+				if len(m.Messages) == 1 {
+					title := generateConversationTitle(input)
+					_ = m.updateConversationTitle(title)
+				}
 
-					// Task 7: Save user message to database
-					if err := m.saveMessage("user", input); err != nil {
-						// Log error but don't block user
-						m.ErrorMessage = "Failed to save message: " + err.Error()
-					}
-
-					// Task 7: Update conversation title from first message
-					if len(m.Messages) == 1 {
-						title := generateConversationTitle(input)
-						_ = m.updateConversationTitle(title)
-					}
-
-					// Task 6: Trigger streaming
-					if m.apiClient != nil {
-						return m, m.streamMessage(input)
-					}
+				// Task 6: Trigger streaming
+				if m.apiClient != nil {
+					return m, m.streamMessage(input)
 				}
 			}
 		}
@@ -588,16 +618,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle up/down arrows for input history navigation
-		// Only when textarea is focused and cursor is at the start/end of input
+		// Only when textarea is focused and cursor is on first/last visual row
+		// This allows Up/Down to scroll within multiline input normally
 		if m.Input.Focused() && len(m.inputHistory) > 0 {
-			if msg.Type == tea.KeyUp {
-				// Navigate to older history
+			lineInfo := m.Input.LineInfo()
+			cursorOnFirstRow := lineInfo.RowOffset == 0
+			cursorOnLastRow := lineInfo.RowOffset == lineInfo.Height-1
+
+			if msg.Type == tea.KeyUp && cursorOnFirstRow {
+				// Navigate to older history only when on first row
 				if m.navigateHistoryUp() {
 					return m, nil
 				}
 			}
-			if msg.Type == tea.KeyDown {
-				// Navigate to newer history
+			if msg.Type == tea.KeyDown && cursorOnLastRow {
+				// Navigate to newer history only when on last row
 				if m.navigateHistoryDown() {
 					return m, nil
 				}
@@ -717,12 +752,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.autocomplete.Show(newValue, provider)
 				}
 			}
+
+			// Auto-grow input height based on content (up to MaxHeight)
+			m.updateInputHeight()
 		}
 	}
 
-	// Update viewport
-	m.Viewport, cmd = m.Viewport.Update(msg)
-	cmds = append(cmds, cmd)
+	// Update viewport - but don't pass key messages when input is focused
+	// This prevents arrow keys from scrolling the conversation while typing
+	shouldUpdateViewport := true
+	if _, isKeyMsg := msg.(tea.KeyMsg); isKeyMsg && m.Input.Focused() {
+		shouldUpdateViewport = false
+	}
+	if shouldUpdateViewport {
+		m.Viewport, cmd = m.Viewport.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 
 	return m, tea.Batch(cmds...)
 }
@@ -759,8 +804,21 @@ func (m *Model) updateViewportInternal(scrollToBottom bool) {
 
 	// Prepend intro screen if ShowIntro is true
 	if m.ShowIntro {
-		content.WriteString(m.renderIntroView())
+		introContent := m.renderIntroView()
+		content.WriteString(introContent)
 		content.WriteString("\n\n")
+		// Debug: Log intro content
+		if os.Getenv("HEX_VIEW_DEBUG") != "" {
+			f, _ := os.OpenFile("/tmp/hex-view-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if f != nil {
+				introLines := strings.Split(introContent, "\n")
+				fmt.Fprintf(f, "DEBUG intro: %d lines\n", len(introLines))
+				for i := 0; i < min(5, len(introLines)); i++ {
+					fmt.Fprintf(f, "DEBUG intro[%d]='%s'\n", i, truncateDebug(introLines[i], 50))
+				}
+				f.Close()
+			}
+		}
 	}
 
 	// Render messages with Neo-Terminal style
@@ -840,7 +898,9 @@ func (m *Model) updateViewportInternal(scrollToBottom bool) {
 	}
 
 	m.Viewport.SetContent(content.String())
-	if scrollToBottom {
+	// Only scroll to bottom if we have messages (not just intro)
+	// When only intro is shown, keep scroll at top so full logo is visible
+	if scrollToBottom && len(m.Messages) > 0 {
 		m.Viewport.GotoBottom()
 	}
 }
