@@ -75,8 +75,6 @@ func (m *Model) renderNeoTerminalStatusBar() string {
 		viewText = "SEARCH"
 	}
 
-	leftPart := fmt.Sprintf("%s %s", viewSymbol, viewText)
-
 	// Token counter
 	var rightPart string
 	if m.TokensInput > 0 || m.TokensOutput > 0 {
@@ -87,8 +85,23 @@ func (m *Model) renderNeoTerminalStatusBar() string {
 
 	// Create styles
 	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
+	symbolStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Foreground).Bold(true)
+	hexStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green).Bold(true) // Hex green!
 	textStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Foreground).Bold(true)
 	tokenStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+
+	// Build styled left part (symbol + HEX in green + any suffix)
+	var leftPart string
+	if viewText == "HEX" {
+		leftPart = symbolStyle.Render(viewSymbol) + " " + hexStyle.Render("HEX")
+	} else if strings.HasPrefix(viewText, "HEX › ") {
+		// For "HEX › HISTORY", "HEX › TOOLS", etc.
+		suffix := strings.TrimPrefix(viewText, "HEX › ")
+		leftPart = symbolStyle.Render(viewSymbol) + " " + hexStyle.Render("HEX") + " " + textStyle.Render("› "+suffix)
+	} else {
+		// For "SEARCH" and other non-HEX modes
+		leftPart = symbolStyle.Render(viewSymbol) + " " + textStyle.Render(viewText)
+	}
 
 	// Build bar content first to measure
 	leftLen := lipgloss.Width(leftPart)
@@ -111,14 +124,14 @@ func (m *Model) renderNeoTerminalStatusBar() string {
 	var bar string
 	if rightPart != "" {
 		bar = borderStyle.Render("┏━") + " " +
-			textStyle.Render(leftPart) +
+			leftPart +
 			" " + borderStyle.Render(strings.Repeat("━", fillLen)) + " " +
 			tokenStyle.Render(rightPart) +
 			" " + borderStyle.Render("━┓")
 	} else {
 		// No trailing space when no rightPart - fill goes directly to corner
 		bar = borderStyle.Render("┏━") + " " +
-			textStyle.Render(leftPart) +
+			leftPart +
 			" " + borderStyle.Render(strings.Repeat("━", fillLen)+"━┓")
 	}
 
