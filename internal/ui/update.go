@@ -372,6 +372,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle Ctrl+H: toggle help overlay
+		if msg.Type == tea.KeyCtrlH {
+			if m.overlayManager.GetActive() == m.helpOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+			} else {
+				// Open help
+				m.overlayManager.Push(m.helpOverlay)
+				m.helpOverlay.OnPush(m.Width, m.Height)
+			}
+			return m, nil
+		}
+
 		// Handle Esc key - clear priority order:
 		// 1. Close overlays via overlay manager (tool log, tool approval, autocomplete, etc.)
 		// 2. Close help (modal overlay)

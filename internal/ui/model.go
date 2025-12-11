@@ -221,6 +221,7 @@ type Model struct {
 	toolApprovalOverlay *ToolApprovalOverlay  // Tool approval overlay instance
 	autocompleteOverlay *AutocompleteOverlay  // Autocomplete overlay instance
 	toolLogOverlay      *ToolLogOverlay       // Tool log overlay instance
+	helpOverlay         *HelpOverlay          // Help overlay instance
 
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
@@ -332,6 +333,7 @@ func NewModel(conversationID, model string) *Model {
 	m.toolApprovalOverlay = NewToolApprovalOverlay(m)
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
 	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
+	m.helpOverlay = NewHelpOverlay()
 
 	return m
 }
