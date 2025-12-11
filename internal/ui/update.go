@@ -51,16 +51,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case tea.MouseButtonNone:
 			// Handle mouse movement (hover)
-			if msg.Type == tea.MouseMotion {
+			if msg.Action == tea.MouseActionMotion {
 				m.updateHoveredMessage(msg.X, msg.Y)
 				return m, nil
 			}
-		}
-
-		// Clear hover when mouse leaves or clicks
-		if msg.Type == tea.MouseLeft {
-			m.hoveredMessageIndex = -1
-			return m, nil
 		}
 
 	// Phase 4 Task 3: Handle conversation events
@@ -392,8 +386,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
 			if m.overlayManager != nil {
-				if cmd := m.overlayManager.HandleEscape(); cmd != nil {
-					return m, cmd
+				if overlayCmd := m.overlayManager.HandleEscape(); overlayCmd != nil {
+					return m, overlayCmd
 				}
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
@@ -436,9 +430,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
 			if m.overlayManager != nil {
-				if cmd := m.overlayManager.HandleCtrlC(); cmd != nil {
+				if overlayCmd := m.overlayManager.HandleCtrlC(); overlayCmd != nil {
 					m.pendingQuit = false
-					return m, cmd
+					return m, overlayCmd
 				}
 			}
 

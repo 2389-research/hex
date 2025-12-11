@@ -182,7 +182,7 @@ func TestMouseMotionHandling(t *testing.T) {
 	msg := tea.MouseMsg{
 		X:      10,
 		Y:      5,
-		Type:   tea.MouseMotion,
+		Action: tea.MouseActionMotion,
 		Button: tea.MouseButtonNone,
 	}
 
