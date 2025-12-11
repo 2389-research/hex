@@ -385,6 +385,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle Ctrl+R: toggle history overlay
+		if msg.Type == tea.KeyCtrlR {
+			if m.overlayManager.GetActive() == m.historyOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+			} else {
+				// Open history
+				m.overlayManager.Push(m.historyOverlay)
+				m.historyOverlay.OnPush(m.Width, m.Height)
+			}
+			return m, nil
+		}
+
 		// Handle Esc key - clear priority order:
 		// 1. Close overlays via overlay manager (tool log, tool approval, autocomplete, etc.)
 		// 2. Close help (modal overlay)
