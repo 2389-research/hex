@@ -1,11 +1,64 @@
 package ui
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/2389-research/hex/internal/core"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/stretchr/testify/assert"
 )
+
+// mockOverlay is a test overlay implementation
+type mockOverlay struct {
+	header        string
+	content       string
+	footer        string
+	desiredHeight int
+	onPushCalled  bool
+	onPopCalled   bool
+	lastWidth     int
+	lastHeight    int
+	keyHandler    func(tea.KeyMsg) (bool, tea.Cmd)
+}
+
+func newMockOverlay(header, content, footer string, height int) *mockOverlay {
+	return &mockOverlay{
+		header:        header,
+		content:       content,
+		footer:        footer,
+		desiredHeight: height,
+	}
+}
+
+func (m *mockOverlay) GetHeader() string              { return m.header }
+func (m *mockOverlay) GetContent() string             { return m.content }
+func (m *mockOverlay) GetFooter() string              { return m.footer }
+func (m *mockOverlay) GetDesiredHeight() int          { return m.desiredHeight }
+func (m *mockOverlay) Render(width, height int) string {
+	return fmt.Sprintf("%s\n%s\n%s", m.header, m.content, m.footer)
+}
+
+func (m *mockOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
+	if m.keyHandler != nil {
+		return m.keyHandler(msg)
+	}
+	// Default: handle Escape to pop
+	if msg.Type == tea.KeyEsc {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (m *mockOverlay) OnPush(width, height int) {
+	m.onPushCalled = true
+	m.lastWidth = width
+	m.lastHeight = height
+}
+
+func (m *mockOverlay) OnPop() {
+	m.onPopCalled = true
+}
 
 // TestOverlayManager tests the overlay manager functionality
 func TestOverlayManager(t *testing.T) {
@@ -262,4 +315,92 @@ func TestOverlayManagerCancelAll(t *testing.T) {
 	if m.overlayManager.HasActive() {
 		t.Error("Expected no active overlays after CancelAll")
 	}
+}
+
+func TestOverlayManager_StackOperations(t *testing.T) {
+	om := NewOverlayManager()
+
+	// Empty stack
+	assert.Nil(t, om.Peek())
+	assert.Nil(t, om.GetActive())
+	assert.False(t, om.HasActive())
+
+	// Push first overlay
+	overlay1 := newMockOverlay("Header 1", "Content 1", "Footer 1", 5)
+	om.Push(overlay1)
+
+	assert.Equal(t, overlay1, om.Peek())
+	assert.Equal(t, overlay1, om.GetActive())
+	assert.True(t, om.HasActive())
+
+	// Push second overlay
+	overlay2 := newMockOverlay("Header 2", "Content 2", "Footer 2", 10)
+	om.Push(overlay2)
+
+	assert.Equal(t, overlay2, om.Peek()) // Top of stack
+	assert.Equal(t, overlay2, om.GetActive())
+
+	// Pop should return top
+	popped := om.Pop()
+	assert.Equal(t, overlay2, popped)
+	assert.True(t, overlay2.onPopCalled)
+	assert.Equal(t, overlay1, om.Peek()) // Back to first
+
+	// Pop last overlay
+	om.Pop()
+	assert.Nil(t, om.Peek())
+	assert.False(t, om.HasActive())
+}
+
+func TestOverlayManager_Clear(t *testing.T) {
+	om := NewOverlayManager()
+
+	overlay1 := newMockOverlay("H1", "C1", "F1", 5)
+	overlay2 := newMockOverlay("H2", "C2", "F2", 10)
+	overlay3 := newMockOverlay("H3", "C3", "F3", 15)
+
+	om.Push(overlay1)
+	om.Push(overlay2)
+	om.Push(overlay3)
+
+	assert.True(t, om.HasActive())
+
+	om.Clear()
+
+	assert.False(t, om.HasActive())
+	assert.Nil(t, om.Peek())
+	assert.True(t, overlay1.onPopCalled)
+	assert.True(t, overlay2.onPopCalled)
+	assert.True(t, overlay3.onPopCalled)
+}
+
+func TestOverlayManager_HandleKeyModalCapture(t *testing.T) {
+	om := NewOverlayManager()
+
+	// No overlay - not handled
+	handled, cmd := om.HandleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.False(t, handled)
+	assert.Nil(t, cmd)
+
+	// Push overlay that handles Enter
+	keyCaptured := false
+	overlay := newMockOverlay("H", "C", "F", 5)
+	overlay.keyHandler = func(msg tea.KeyMsg) (bool, tea.Cmd) {
+		if msg.Type == tea.KeyEnter {
+			keyCaptured = true
+			return true, nil
+		}
+		return false, nil
+	}
+	om.Push(overlay)
+
+	// Overlay captures Enter
+	handled, cmd = om.HandleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.True(t, handled)
+	assert.True(t, keyCaptured)
+	assert.Nil(t, cmd)
+
+	// Overlay doesn't handle other keys but still captures (modal)
+	handled, _ = om.HandleKey(tea.KeyMsg{Type: tea.KeyCtrlA})
+	assert.False(t, handled) // Overlay didn't handle it
 }
