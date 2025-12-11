@@ -530,11 +530,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if selected != nil {
 					m.Input.SetValue(selected.Value)
 					m.autocomplete.Hide()
+					// Pop the overlay from stack
+					if m.overlayManager.GetActive() == m.autocompleteOverlay {
+						m.overlayManager.Pop()
+					}
 				}
 				return m, nil
 			case tea.KeyEsc:
 				// Cancel autocomplete
 				m.autocomplete.Hide()
+				// Pop the overlay from stack
+				if m.overlayManager.GetActive() == m.autocompleteOverlay {
+					m.overlayManager.Pop()
+				}
 				return m, nil
 			}
 		}
