@@ -13,7 +13,8 @@ func TestToolLogInitialization(t *testing.T) {
 
 	// Tool log should start empty
 	assert.Empty(t, model.toolLogLines)
-	assert.False(t, model.toolLogOverlay)
+	// Tool log overlay should not be active
+	assert.NotEqual(t, model.toolLogOverlay, model.overlayManager.GetActive())
 }
 
 func TestToolLogAppendLines(t *testing.T) {
@@ -66,31 +67,40 @@ func TestToolLogClearChunk(t *testing.T) {
 func TestToolLogOverlayToggle(t *testing.T) {
 	model := NewModel("test-conv", "test-model")
 	model.Ready = true
+	model.Width = 80
+	model.Height = 24
 
-	assert.False(t, model.toolLogOverlay)
+	// Tool log overlay should not be active initially
+	assert.NotEqual(t, model.toolLogOverlay, model.overlayManager.GetActive())
 
 	// Ctrl+O should toggle overlay on
 	ctrlO := tea.KeyMsg{Type: tea.KeyCtrlO}
 	newModel, _ := model.Update(ctrlO)
 	m := newModel.(*Model)
-	assert.True(t, m.toolLogOverlay)
+	assert.Equal(t, m.toolLogOverlay, m.overlayManager.GetActive())
 
 	// Ctrl+O again should toggle off
 	newModel, _ = m.Update(ctrlO)
 	m = newModel.(*Model)
-	assert.False(t, m.toolLogOverlay)
+	assert.NotEqual(t, m.toolLogOverlay, m.overlayManager.GetActive())
 }
 
 func TestToolLogOverlayEscapeCloses(t *testing.T) {
 	model := NewModel("test-conv", "test-model")
 	model.Ready = true
-	model.toolLogOverlay = true
+	model.Width = 80
+	model.Height = 24
+
+	// Open the tool log overlay
+	model.overlayManager.Push(model.toolLogOverlay)
+	model.toolLogOverlay.OnPush(model.Width, model.Height)
+	assert.Equal(t, model.toolLogOverlay, model.overlayManager.GetActive())
 
 	// Escape should close overlay
 	esc := tea.KeyMsg{Type: tea.KeyEsc}
 	newModel, _ := model.Update(esc)
 	m := newModel.(*Model)
-	assert.False(t, m.toolLogOverlay)
+	assert.NotEqual(t, m.toolLogOverlay, m.overlayManager.GetActive())
 }
 
 func TestRenderCollapsedToolLog(t *testing.T) {
@@ -133,7 +143,9 @@ func TestRenderToolLogOverlay(t *testing.T) {
 	model.appendToolLogLine("Line 2")
 	model.appendToolLogLine("Line 3")
 
-	rendered := model.renderToolLogOverlay()
+	// Initialize the overlay
+	model.toolLogOverlay.OnPush(model.Width, model.Height)
+	rendered := model.toolLogOverlay.Render(model.Width, model.Height)
 
 	// Should have header
 	assert.Contains(t, rendered, "Tool Output Log")
@@ -151,7 +163,9 @@ func TestRenderToolLogOverlayEmpty(t *testing.T) {
 	model.Width = 80
 	model.Height = 24
 
-	rendered := model.renderToolLogOverlay()
+	// Initialize the overlay
+	model.toolLogOverlay.OnPush(model.Width, model.Height)
+	rendered := model.toolLogOverlay.Render(model.Width, model.Height)
 
 	// Should show empty message
 	assert.Contains(t, rendered, "No tool output")

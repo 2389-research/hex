@@ -361,21 +361,33 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle Ctrl+O: toggle tool log overlay
 		if msg.Type == tea.KeyCtrlO {
-			m.toggleToolLogOverlay()
+			if m.overlayManager.GetActive() == m.toolLogOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+			} else {
+				// Open tool log
+				m.overlayManager.Push(m.toolLogOverlay)
+				m.toolLogOverlay.OnPush(m.Width, m.Height)
+			}
 			return m, nil
 		}
 
 		// Handle Esc key - clear priority order:
-		// 1. Close tool log overlay (highest priority - modal overlay)
+		// 1. Close overlays via overlay manager (tool log, tool approval, autocomplete, etc.)
 		// 2. Close help (modal overlay)
 		// 3. Exit search mode (active editing state)
 		// 4. Dismiss suggestions (transient UI)
 		// 5. Clear quick actions (transient UI)
 		// Does NOT quit - use Ctrl+C for that
 		if msg.Type == tea.KeyEsc {
-			if m.toolLogOverlay {
-				m.toolLogOverlay = false
-				return m, nil
+			// Use overlay manager for Escape handling (handles tool log, tool approval, autocomplete, etc.)
+			if m.overlayManager != nil && m.overlayManager.HasActive() {
+				handled, cmd := m.overlayManager.HandleKey(msg)
+				if handled {
+					// Pop the overlay
+					m.overlayManager.Pop()
+					return m, cmd
+				}
 			}
 			if m.helpVisible {
 				m.ToggleHelp()
@@ -388,15 +400,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.quickActionsMode {
 				m.quickActionsMode = false
 				return m, nil
-			}
-			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil && m.overlayManager.HasActive() {
-				handled, cmd := m.overlayManager.HandleKey(msg)
-				if handled {
-					// Pop the overlay
-					m.overlayManager.Pop()
-					return m, cmd
-				}
 			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil

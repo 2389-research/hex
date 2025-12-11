@@ -213,7 +213,6 @@ type Model struct {
 
 	// TUI Polish: Tool output log
 	toolLogLines       []string // Accumulated output lines for current chunk
-	toolLogOverlay     bool     // Whether overlay is visible
 	currentToolLogName  string   // Name of currently logging tool
 	currentToolLogParam string   // Parameter preview of current tool
 
@@ -221,6 +220,7 @@ type Model struct {
 	overlayManager      *OverlayManager       // Centralized overlay management
 	toolApprovalOverlay *ToolApprovalOverlay  // Tool approval overlay instance
 	autocompleteOverlay *AutocompleteOverlay  // Autocomplete overlay instance
+	toolLogOverlay      *ToolLogOverlay       // Tool log overlay instance
 
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
@@ -331,6 +331,7 @@ func NewModel(conversationID, model string) *Model {
 	m.overlayManager = NewOverlayManager()
 	m.toolApprovalOverlay = NewToolApprovalOverlay(m)
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
+	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
 
 	return m
 }
@@ -718,7 +719,11 @@ func (m *Model) ClearContext() {
 
 	// Clear tool log state
 	m.clearToolLogChunk()
-	m.toolLogOverlay = false
+
+	// Close any active overlays (tool log, tool approval, autocomplete, etc.)
+	if m.overlayManager != nil {
+		m.overlayManager.CancelAll()
+	}
 
 	// Hide autocomplete if active
 	if m.autocomplete != nil {

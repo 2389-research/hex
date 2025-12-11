@@ -18,9 +18,9 @@ func (m *Model) View() string {
 		return "\n  Initializing..."
 	}
 
-	// Tool log overlay takes precedence over everything
-	if m.toolLogOverlay {
-		return m.renderToolLogOverlay()
+	// Check for fullscreen overlay first (tool log, help, etc.)
+	if m.overlayManager.IsFullscreen() {
+		return m.overlayManager.Render(m.Width, m.Height)
 	}
 
 	var b strings.Builder

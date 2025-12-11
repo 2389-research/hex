@@ -56,11 +56,6 @@ func (m *Model) startToolLogEntry(toolName, paramPreview string) {
 	m.toolLogLines = append(m.toolLogLines, header)
 }
 
-// toggleToolLogOverlay toggles the tool log overlay visibility
-func (m *Model) toggleToolLogOverlay() {
-	m.toolLogOverlay = !m.toolLogOverlay
-}
-
 // renderCollapsedToolLog renders the last 3 lines of tool output with dimmed style
 // Returns the rendered string and the number of hidden lines (for combining with hint)
 func (m *Model) renderCollapsedToolLog() (string, int) {
@@ -89,54 +84,4 @@ func (m *Model) renderCollapsedToolLog() (string, int) {
 	}
 
 	return b.String(), hiddenLines
-}
-
-// renderToolLogOverlay renders the full tool log overlay
-func (m *Model) renderToolLogOverlay() string {
-	var b strings.Builder
-
-	// Calculate dimensions
-	width := m.Width - 4 // Leave some margin
-	if width < 40 {
-		width = 40
-	}
-
-	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(m.theme.Colors.Cyan)
-
-	closeHint := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Comment).
-		Render("Ctrl+O or Esc to close")
-
-	header := headerStyle.Render("Tool Output Log")
-	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
-		header,
-		strings.Repeat("━", width-len("Tool Output Log")-len("Ctrl+O or Esc to close")-12),
-		closeHint)
-	b.WriteString(headerLine)
-	b.WriteString("\n\n")
-
-	// Content
-	if len(m.toolLogLines) == 0 {
-		emptyMsg := lipgloss.NewStyle().
-			Foreground(m.theme.Colors.Comment).
-			Italic(true).
-			Render("No tool output in current chunk")
-		b.WriteString(emptyMsg)
-		b.WriteString("\n")
-	} else {
-		for _, line := range m.toolLogLines {
-			b.WriteString(line)
-			b.WriteString("\n")
-		}
-	}
-
-	// Footer
-	b.WriteString("\n")
-	footerLine := fmt.Sprintf("┗%s┛", strings.Repeat("━", width))
-	b.WriteString(footerLine)
-
-	return b.String()
 }
