@@ -3,42 +3,36 @@ package ui
 
 import tea "github.com/charmbracelet/bubbletea"
 
-// OverlayType represents different types of overlays
-type OverlayType int
-
-const (
-	OverlayNone OverlayType = iota
-	OverlayToolApproval
-	OverlayQuickActions
-	OverlaySearch
-	OverlayAutocomplete
-)
-
-// Overlay represents a modal/popup interface that appears over the main content
+// Overlay represents a modal interface that appears over the main content
 type Overlay interface {
-	// Type returns the overlay type
-	Type() OverlayType
+	// Structured rendering
+	GetHeader() string
+	GetContent() string
+	GetFooter() string
+	Render(width, height int) string
 
-	// IsActive returns whether this overlay is currently shown
-	IsActive() bool
+	// Input handling
+	HandleKey(msg tea.KeyMsg) (handled bool, cmd tea.Cmd)
 
-	// Render returns the string content to display
-	Render() string
+	// Lifecycle
+	OnPush(width, height int)
+	OnPop()
 
-	// HandleKey processes a key press and returns whether it was handled
-	HandleKey(msg tea.KeyMsg) bool
+	// Height management
+	GetDesiredHeight() int
+}
 
-	// Cancel closes/dismisses the overlay
-	Cancel()
+// Scrollable adds viewport scrolling capability to any overlay
+type Scrollable interface {
+	Overlay
+	Update(msg tea.Msg) tea.Cmd
+}
 
-	// HandleEscape processes Escape key and returns optional command (nil = just cancel)
-	HandleEscape() tea.Cmd
-
-	// HandleCtrlC processes Ctrl+C and returns optional command (nil = just cancel)
-	HandleCtrlC() tea.Cmd
-
-	// Priority returns the precedence level (higher = shown on top)
-	Priority() int
+// FullscreenOverlay represents a fullscreen modal with viewport
+type FullscreenOverlay interface {
+	Scrollable
+	SetHeight(height int)
+	IsFullscreen() bool
 }
 
 // OverlayManager manages multiple overlays with automatic priority handling
