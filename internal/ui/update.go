@@ -49,6 +49,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.MouseButtonWheelDown:
 			m.Viewport.ScrollDown(3)
 			return m, nil
+		case tea.MouseButtonNone:
+			// Handle mouse movement (hover)
+			if msg.Type == tea.MouseMotion {
+				m.updateHoveredMessage(msg.X, msg.Y)
+				return m, nil
+			}
+		}
+
+		// Clear hover when mouse leaves or clicks
+		if msg.Type == tea.MouseLeft {
+			m.hoveredMessageIndex = -1
+			return m, nil
 		}
 
 	// Phase 4 Task 3: Handle conversation events
@@ -1678,4 +1690,115 @@ func (m *Model) handleMessageEvent(msg messageEventMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// updateHoveredMessage determines which message (if any) the mouse is hovering over
+func (m *Model) updateHoveredMessage(x, y int) {
+	// The viewport starts after the top status bar (1 line)
+	// Y coordinate 0 = top status bar, Y coordinate 1+ = viewport content
+	
+	// Check if mouse is in the viewport area (not in header/footer/input)
+	// Rough layout: top bar (1), viewport (most), input area (~3-5), footer (1)
+	viewportStartY := 1
+	viewportEndY := m.Height - 6 // Approximate, leaves room for input and footer
+	
+	if y < viewportStartY || y > viewportEndY {
+		// Mouse is outside viewport
+		m.hoveredMessageIndex = -1
+		return
+	}
+	
+	// Get the viewport's current scroll position
+	viewportY := y - viewportStartY + m.Viewport.YOffset
+	
+	// Now we need to map viewportY to a message index
+	// This requires knowing the line-by-line layout of the viewport content
+	// For now, we'll do a simple approach: parse the current viewport content
+	
+	// Get all visible messages (excluding tool-only messages)
+	var visibleMessages []struct {
+		index     int
+		timestamp time.Time
+		startLine int
+		endLine   int
+	}
+	
+	currentLine := 0
+	
+	// Account for intro screen if showing
+	if m.ShowIntro {
+		introContent := m.renderIntroView()
+		introLines := strings.Count(introContent, "\n") + 2 // +2 for spacing
+		currentLine += introLines
+	}
+	
+	// Process each message to determine its line range
+	for i := range m.Messages {
+		msg := &m.Messages[i]
+		
+		// Skip internal messages
+		if msg.Role == "tool" {
+			continue
+		}
+		if msg.Role == "user" && msg.Content == "" && len(msg.ContentBlock) > 0 {
+			allToolResults := true
+			for _, block := range msg.ContentBlock {
+				if block.Type != "tool_result" {
+					allToolResults = false
+					break
+				}
+			}
+			if allToolResults {
+				continue
+			}
+		}
+		
+		startLine := currentLine
+		
+		// Count lines in this message
+		var messageContent string
+		if msg.Content == "" && len(msg.ContentBlock) > 0 {
+			messageContent = m.renderContentBlocks(msg.ContentBlock)
+		} else {
+			messageContent = msg.Content
+			if msg.Role == "assistant" {
+				rendered, err := m.RenderMessage(msg)
+				if err == nil {
+					messageContent = strings.TrimSpace(rendered)
+				}
+			}
+		}
+		
+		if messageContent != "" {
+			messageLines := strings.Count(messageContent, "\n") + 1
+			currentLine += messageLines
+			
+			// Add spacing between messages
+			if i < len(m.Messages)-1 {
+				currentLine += 1
+			}
+			
+			visibleMessages = append(visibleMessages, struct {
+				index     int
+				timestamp time.Time
+				startLine int
+				endLine   int
+			}{
+				index:     i,
+				timestamp: msg.Timestamp,
+				startLine: startLine,
+				endLine:   currentLine - 1,
+			})
+		}
+	}
+	
+	// Find which message the mouse is hovering over
+	m.hoveredMessageIndex = -1
+	for _, vm := range visibleMessages {
+		if viewportY >= vm.startLine && viewportY <= vm.endLine {
+			m.hoveredMessageIndex = vm.index
+			m.hoveredMessageTime = vm.timestamp
+			return
+		}
+	}
 }

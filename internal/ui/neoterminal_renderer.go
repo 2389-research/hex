@@ -173,10 +173,17 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 	modelPart := modelStyle.Render(modelName)
 	cwdPart := cwdStyle.Render(cwd)
 
-	// Show quit confirmation warning if pending
+	// Show quit confirmation warning if pending, or timestamp if hovering over a message
 	var rightPart string
+	var timestampSuffix string
 	if m.pendingQuit && time.Since(m.pendingQuitTime) < 2*time.Second {
 		rightPart = warningStyle.Render("⌃C again to quit")
+	} else if m.hoveredMessageIndex >= 0 && !m.hoveredMessageTime.IsZero() {
+		// Show timestamp when hovering over a message
+		timeStr := m.hoveredMessageTime.Format("15:04")
+		timestampStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+		timestampSuffix = timestampStyle.Render("sent at " + timeStr)
+		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
 	} else {
 		rightPart = bindingsStyle.Render("⌃C quit · ⇥ views")
 	}
@@ -191,18 +198,35 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 		rightPart
 
 	contentLen := lipgloss.Width(contentPart)
+	timestampLen := lipgloss.Width(timestampSuffix)
 
-	// Structure: ┗━ (2) + space + content + space + fill + ━┛ (2)
-	// That's: ┗━ (2) + sp (1) + content + sp (1) + fill + ━┛ (2) = 6 fixed (no extra space before corner)
-	fixedChars := 6
-	fillLen := m.Width - contentLen - fixedChars
+	// Structure: ┗━ (2) + space + content + space + fill + [timestamp] + ━┛ (2)
+	// With timestamp: ┗━ (2) + sp (1) + content + sp (1) + fill + sp (1) + timestamp + sp (1) + ━┛ (2) = 8 fixed
+	// Without timestamp: ┗━ (2) + sp (1) + content + sp (1) + fill + ━┛ (2) = 6 fixed
+	var fillLen int
+	if timestampSuffix != "" {
+		fixedChars := 8
+		fillLen = m.Width - contentLen - timestampLen - fixedChars
+	} else {
+		fixedChars := 6
+		fillLen = m.Width - contentLen - fixedChars
+	}
 	if fillLen < 0 {
 		fillLen = 0
 	}
 
-	bar := borderStyle.Render("┗━") + " " +
-		contentPart +
-		" " + borderStyle.Render(strings.Repeat("━", fillLen)+"━┛")
+	var bar string
+	if timestampSuffix != "" {
+		bar = borderStyle.Render("┗━") + " " +
+			contentPart +
+			" " + borderStyle.Render(strings.Repeat("━", fillLen)) + " " +
+			timestampSuffix +
+			" " + borderStyle.Render("━┛")
+	} else {
+		bar = borderStyle.Render("┗━") + " " +
+			contentPart +
+			" " + borderStyle.Render(strings.Repeat("━", fillLen)+"━┛")
+	}
 
 	return bar
 }

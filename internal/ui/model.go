@@ -219,6 +219,10 @@ type Model struct {
 
 	// TUI Polish: Overlay Management
 	overlayManager *OverlayManager // Centralized overlay management
+
+	// TUI Polish: Message hover for timestamp display
+	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
+	hoveredMessageTime  time.Time // Timestamp of hovered message
 }
 
 // ToolResult represents a tool execution result for the API
@@ -318,6 +322,7 @@ func NewModel(conversationID, model string) *Model {
 		approvalRules:        approvalRules,
 		inputHistory:         []string{},
 		inputHistoryIndex:    -1, // -1 means at current input, not browsing history
+		hoveredMessageIndex:  -1, // -1 means no message hovered
 	}
 
 	// Initialize overlay manager and register overlays
