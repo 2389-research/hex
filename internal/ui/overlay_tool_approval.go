@@ -151,8 +151,26 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 		return true, nil // Handled - caller should call DenyToolUse and Pop
 	}
-	// Other tool approval navigation (up/down/enter) is handled in main Update
-	// Modal: capture all input, even if not specifically handled
+
+	// Handle navigation keys
+	switch msg.Type {
+	case tea.KeyUp:
+		if o.model.selectedApprovalOpt > 0 {
+			o.model.selectedApprovalOpt--
+		}
+		return true, nil
+	case tea.KeyDown:
+		if o.model.selectedApprovalOpt < 3 { // 4 options: 0-3
+			o.model.selectedApprovalOpt++
+		}
+		return true, nil
+	case tea.KeyEnter:
+		// The actual approval logic is handled in update.go
+		// Return false to let it through to the main handler
+		return false, nil
+	}
+
+	// Modal: capture all other input to prevent leakage
 	return true, nil
 }
 

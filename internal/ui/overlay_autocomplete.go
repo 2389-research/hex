@@ -166,8 +166,24 @@ func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 		return true, nil // Handled - caller should Pop
 	}
-	// Other autocomplete navigation is already handled in main Update
-	// Modal: capture all input, even if not specifically handled
+
+	// Pass navigation keys to autocomplete model
+	if o.model.autocomplete != nil {
+		switch msg.Type {
+		case tea.KeyUp:
+			o.model.autocomplete.Previous()
+			return true, nil
+		case tea.KeyDown:
+			o.model.autocomplete.Next()
+			return true, nil
+		case tea.KeyEnter, tea.KeyTab:
+			// The actual completion logic is handled in update.go
+			// Return false to let it through to the main handler
+			return false, nil
+		}
+	}
+
+	// Modal: capture all other input to prevent leakage
 	return true, nil
 }
 
