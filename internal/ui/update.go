@@ -281,19 +281,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Handle custom approval menu navigation
+		// Handle custom approval menu Enter submission
+		// (Up/Down navigation now handled in ToolApprovalOverlay)
 		if m.toolApprovalMode {
 			switch msg.Type {
-			case tea.KeyUp:
-				if m.selectedApprovalOpt > 0 {
-					m.selectedApprovalOpt--
-				}
-				return m, nil
-			case tea.KeyDown:
-				if m.selectedApprovalOpt < 3 {
-					m.selectedApprovalOpt++
-				}
-				return m, nil
 			case tea.KeyEnter:
 				// Map selected option to decision
 				var decision forms.ApprovalDecision
@@ -529,25 +520,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pendingQuit = false
 		}
 
-		// Phase 6C Task 4: Handle autocomplete navigation
+		// Handle autocomplete completion acceptance
+		// (Up/Down navigation now handled in AutocompleteOverlay)
 		if m.autocomplete != nil && m.autocomplete.IsActive() {
 			switch msg.Type {
-			case tea.KeyTab:
-				// FIX: Accept autocomplete selection with Tab
-				selected := m.autocomplete.GetSelected()
-				if selected != nil {
-					m.Input.SetValue(selected.Value)
-					m.autocomplete.Hide()
-				}
-				return m, nil
-			case tea.KeyDown:
-				m.autocomplete.Next()
-				return m, nil
-			case tea.KeyUp:
-				m.autocomplete.Previous()
-				return m, nil
-			case tea.KeyEnter:
-				// Accept completion
+			case tea.KeyTab, tea.KeyEnter:
+				// Accept autocomplete selection
 				selected := m.autocomplete.GetSelected()
 				if selected != nil {
 					m.Input.SetValue(selected.Value)
