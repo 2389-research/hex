@@ -45,8 +45,11 @@ func (o *ToolApprovalOverlay) Render(width, height int) string {
 
 // HandleKey processes key presses for tool approval
 func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
-	// Tool approval handles its own up/down/enter navigation
-	// Return false to let the main Update handle it
+	// Handle Escape and Ctrl+C to trigger denial
+	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
+		return true, nil // Handled - caller should call DenyToolUse and Pop
+	}
+	// Other tool approval navigation (up/down/enter) is handled in main Update
 	return false, nil
 }
 

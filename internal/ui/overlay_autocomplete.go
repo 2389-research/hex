@@ -45,7 +45,11 @@ func (o *AutocompleteOverlay) Render(width, height int) string {
 
 // HandleKey processes key presses for autocomplete
 func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
-	// Autocomplete navigation is already handled in main Update
+	// Handle Escape and Ctrl+C to dismiss
+	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
+		return true, nil // Handled - caller should Pop
+	}
+	// Other autocomplete navigation is already handled in main Update
 	return false, nil
 }
 

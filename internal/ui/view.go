@@ -80,15 +80,14 @@ func (m *Model) View() string {
 		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
 	}
 
-	// TODO(Task 2): Restore overlay manager rendering
-	// Then render modals/overlays on top of input using overlay manager
+	// Render modals/overlays on top of input using overlay manager
 	// This handles autocomplete, tool approval, and any future overlays
-	// if m.overlayManager != nil && m.overlayManager.HasActive() {
-	// 	overlayContent := m.overlayManager.Render()
-	// 	if overlayContent != "" {
-	// 		b.WriteString(overlayContent + "\n")
-	// 	}
-	// } else
+	if m.overlayManager != nil && m.overlayManager.HasActive() {
+		overlayContent := m.overlayManager.Render(m.Width, m.Height)
+		if overlayContent != "" {
+			b.WriteString(overlayContent + "\n")
+		}
+	} else
 	if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")

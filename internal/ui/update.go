@@ -389,13 +389,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quickActionsMode = false
 				return m, nil
 			}
-			// TODO(Task 2): Restore overlay manager Escape handling
 			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
-			// if m.overlayManager != nil {
-			// 	if overlayCmd := m.overlayManager.HandleEscape(); overlayCmd != nil {
-			// 		return m, overlayCmd
-			// 	}
-			// }
+			if m.overlayManager != nil && m.overlayManager.HasActive() {
+				handled, cmd := m.overlayManager.HandleKey(msg)
+				if handled {
+					// Pop the overlay
+					m.overlayManager.Pop()
+					return m, cmd
+				}
+			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
 		}
@@ -434,14 +436,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			// TODO(Task 2): Restore overlay manager Ctrl+C handling
 			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
-			// if m.overlayManager != nil {
-			// 	if overlayCmd := m.overlayManager.HandleCtrlC(); overlayCmd != nil {
-			// 		m.pendingQuit = false
-			// 		return m, overlayCmd
-			// 	}
-			// }
+			if m.overlayManager != nil && m.overlayManager.HasActive() {
+				handled, cmd := m.overlayManager.HandleKey(msg)
+				if handled {
+					// Pop the overlay
+					m.overlayManager.Pop()
+					m.pendingQuit = false
+					return m, cmd
+				}
+			}
 
 			// If in quick actions mode, first Ctrl+C cancels it
 			if m.quickActionsMode {
@@ -516,6 +520,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Input.Focused() && m.Input.Value() != "" {
 				provider := DetectProvider(m.Input.Value())
 				m.autocomplete.Show(m.Input.Value(), provider)
+				// Push autocomplete overlay if not already active
+				if m.overlayManager.GetActive() != m.autocompleteOverlay {
+					m.overlayManager.Push(m.autocompleteOverlay)
+					m.autocompleteOverlay.OnPush(m.Width, m.Height)
+				}
 				return m, nil
 			}
 			// Otherwise, switch views
@@ -773,6 +782,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// If the input no longer starts with /, hide autocomplete
 					if !strings.HasPrefix(strings.TrimSpace(newValue), "/") {
 						m.autocomplete.Hide()
+						// Pop overlay if active
+						if m.overlayManager.GetActive() == m.autocompleteOverlay {
+							m.overlayManager.Pop()
+						}
 					} else {
 						// Already active - just update with new input
 						m.autocomplete.Update(newValue)
@@ -781,6 +794,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Auto-show autocomplete when typing starts with /
 					provider := DetectProvider(newValue)
 					m.autocomplete.Show(newValue, provider)
+					// Push overlay if not already active
+					if m.overlayManager.GetActive() != m.autocompleteOverlay {
+						m.overlayManager.Push(m.autocompleteOverlay)
+						m.autocompleteOverlay.OnPush(m.Width, m.Height)
+					}
 				}
 			}
 
@@ -1190,6 +1208,11 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		// Show tool approval dialog using embedded huh form
 		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
 		m.toolApprovalMode = true
+		// Push tool approval overlay
+		if m.overlayManager.GetActive() != m.toolApprovalOverlay {
+			m.overlayManager.Push(m.toolApprovalOverlay)
+			m.toolApprovalOverlay.OnPush(m.Width, m.Height)
+		}
 		m.updateViewport()
 
 		// Create embedded form for the first pending tool

@@ -35,90 +35,120 @@ type FullscreenOverlay interface {
 	IsFullscreen() bool
 }
 
-// OverlayManager manages multiple overlays with automatic priority handling
+// OverlayManager manages a stack of overlays
 type OverlayManager struct {
-	overlays []Overlay
+	stack []Overlay
 }
 
 // NewOverlayManager creates a new overlay manager
 func NewOverlayManager() *OverlayManager {
 	return &OverlayManager{
-		overlays: make([]Overlay, 0),
+		stack: make([]Overlay, 0, 4), // Pre-allocate for common case
 	}
 }
 
-// Register adds an overlay to be managed
-func (om *OverlayManager) Register(overlay Overlay) {
-	om.overlays = append(om.overlays, overlay)
+// Push adds an overlay to the top of the stack
+func (om *OverlayManager) Push(overlay Overlay) {
+	om.stack = append(om.stack, overlay)
+	// OnPush will be called by Model with width/height
 }
 
-// TODO(Task 2): Restore overlay manager methods with stack-based approach
-// The following methods are commented out until Task 2 implements the overlay stack
+// Pop removes and returns the top overlay from the stack
+func (om *OverlayManager) Pop() Overlay {
+	if len(om.stack) == 0 {
+		return nil
+	}
+	overlay := om.stack[len(om.stack)-1]
+	om.stack = om.stack[:len(om.stack)-1]
+	overlay.OnPop()
+	return overlay
+}
 
-// GetActive returns the highest priority active overlay, or nil if none
-// func (om *OverlayManager) GetActive() Overlay {
-// 	var active Overlay
-// 	highestPriority := -1
-//
-// 	for _, overlay := range om.overlays {
-// 		if overlay.IsActive() && overlay.Priority() > highestPriority {
-// 			active = overlay
-// 			highestPriority = overlay.Priority()
-// 		}
-// 	}
-//
-// 	return active
-// }
+// Peek returns the top overlay without removing it
+func (om *OverlayManager) Peek() Overlay {
+	if len(om.stack) == 0 {
+		return nil
+	}
+	return om.stack[len(om.stack)-1]
+}
+
+// Clear removes all overlays from the stack
+func (om *OverlayManager) Clear() {
+	for len(om.stack) > 0 {
+		om.Pop()
+	}
+}
+
+// GetActive returns the top overlay on the stack, or nil if empty
+func (om *OverlayManager) GetActive() Overlay {
+	return om.Peek()
+}
 
 // HasActive returns whether any overlay is currently active
-// func (om *OverlayManager) HasActive() bool {
-// 	return om.GetActive() != nil
-// }
+func (om *OverlayManager) HasActive() bool {
+	return om.GetActive() != nil
+}
 
 // HandleKey passes a key event to the active overlay
-// Returns true if the key was handled
-// func (om *OverlayManager) HandleKey(msg tea.KeyMsg) bool {
-// 	active := om.GetActive()
-// 	if active == nil {
-// 		return false
-// 	}
-// 	return active.HandleKey(msg)
-// }
+// Returns (true, cmd) if key was handled, (false, nil) if no active overlay
+func (om *OverlayManager) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
+	active := om.GetActive()
+	if active == nil {
+		return false, nil
+	}
+	// Modal behavior: overlay always captures input
+	return active.HandleKey(msg)
+}
 
-// HandleEscape cancels the active overlay if Escape is pressed
-// Returns a command if the overlay needs to perform an action, or nil
-// func (om *OverlayManager) HandleEscape() tea.Cmd {
-// 	active := om.GetActive()
-// 	if active != nil {
-// 		return active.HandleEscape()
-// 	}
-// 	return nil
-// }
+// HandleEscape is deprecated - use HandleKey instead
+// Kept for backward compatibility during migration
+func (om *OverlayManager) HandleEscape() tea.Cmd {
+	active := om.GetActive()
+	if active != nil {
+		handled, cmd := active.HandleKey(tea.KeyMsg{Type: tea.KeyEsc})
+		if handled {
+			return cmd
+		}
+	}
+	return nil
+}
 
-// HandleCtrlC cancels the active overlay if Ctrl+C is pressed
-// Returns a command if the overlay needs to perform an action, or nil
-// func (om *OverlayManager) HandleCtrlC() tea.Cmd {
-// 	active := om.GetActive()
-// 	if active != nil {
-// 		return active.HandleCtrlC()
-// 	}
-// 	return nil
-// }
+// HandleCtrlC is deprecated - use HandleKey instead
+// Kept for backward compatibility during migration
+func (om *OverlayManager) HandleCtrlC() tea.Cmd {
+	active := om.GetActive()
+	if active != nil {
+		handled, cmd := active.HandleKey(tea.KeyMsg{Type: tea.KeyCtrlC})
+		if handled {
+			return cmd
+		}
+	}
+	return nil
+}
 
-// Render returns the content of the highest priority active overlay
-// func (om *OverlayManager) Render() string {
-// 	active := om.GetActive()
-// 	if active == nil {
-// 		return ""
-// 	}
-// 	return active.Render()
-// }
+// Render returns the content of the top overlay
+// Returns empty string if no active overlay
+func (om *OverlayManager) Render(width, height int) string {
+	active := om.GetActive()
+	if active == nil {
+		return ""
+	}
+	return active.Render(width, height)
+}
+
+// IsFullscreen returns true if the active overlay is fullscreen
+func (om *OverlayManager) IsFullscreen() bool {
+	active := om.GetActive()
+	if active == nil {
+		return false
+	}
+	if fs, ok := active.(FullscreenOverlay); ok {
+		return fs.IsFullscreen()
+	}
+	return false
+}
 
 // CancelAll dismisses all active overlays
-// func (om *OverlayManager) CancelAll() {
-// 	for _, overlay := range om.overlays {
-// 		if overlay.IsActive() {
-// 			overlay.Cancel()
-// 		}
-// 	}
-// }
+func (om *OverlayManager) CancelAll() {
+	om.Clear()
+}

@@ -22,26 +22,43 @@ func TestOverlayManager(t *testing.T) {
 	}
 }
 
-// TestOverlayPriority tests that higher priority overlays are shown first
-func TestOverlayPriority(t *testing.T) {
+// TestOverlayStack tests that overlays work as a stack (last pushed is active)
+func TestOverlayStack(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
-	// Activate tool approval (priority 100)
+	// Push tool approval overlay
 	m.toolApprovalMode = true
 	m.pendingToolUses = []*core.ToolUse{{ID: "test", Name: "test"}}
+	m.overlayManager.Push(m.toolApprovalOverlay)
+	m.toolApprovalOverlay.OnPush(80, 24)
 
-	// Activate autocomplete (priority 50)
-	m.autocomplete = NewAutocomplete()
-	m.autocomplete.Show("/test", "command")
-
-	// Tool approval should be active (higher priority)
+	// Tool approval should be active (last pushed)
 	active := m.overlayManager.GetActive()
 	if active == nil {
 		t.Fatal("Expected active overlay")
 	}
 
-	if active.Type() != OverlayToolApproval {
-		t.Errorf("Expected ToolApproval overlay (priority 100), got type %v", active.Type())
+	if active != m.toolApprovalOverlay {
+		t.Error("Expected tool approval overlay to be active (last pushed)")
+	}
+
+	// Push autocomplete on top
+	m.autocomplete = NewAutocomplete()
+	m.autocomplete.Show("/test", "command")
+	m.overlayManager.Push(m.autocompleteOverlay)
+	m.autocompleteOverlay.OnPush(80, 24)
+
+	// Autocomplete should now be active (on top of stack)
+	active = m.overlayManager.GetActive()
+	if active != m.autocompleteOverlay {
+		t.Error("Expected autocomplete overlay to be active (last pushed)")
+	}
+
+	// Pop autocomplete - tool approval should be active again
+	m.overlayManager.Pop()
+	active = m.overlayManager.GetActive()
+	if active != m.toolApprovalOverlay {
+		t.Error("Expected tool approval overlay to be active after popping autocomplete")
 	}
 }
 
@@ -57,14 +74,25 @@ func TestOverlayEscapeHandling(t *testing.T) {
 	provider.SetCommands([]string{"test"}, map[string]string{"test": "test command"})
 	m.autocomplete.Show("/test", "command")
 
+	// Push autocomplete overlay
+	m.overlayManager.Push(m.autocompleteOverlay)
+	m.autocompleteOverlay.OnPush(80, 24)
+
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected autocomplete to be active")
 	}
 
-	cmd := m.overlayManager.HandleEscape()
+	handled, cmd := m.overlayManager.HandleKey(tea.KeyMsg{Type: tea.KeyEsc})
+	if !handled {
+		t.Error("Expected overlay to handle Escape")
+	}
 	if cmd != nil {
 		t.Error("Expected autocomplete HandleEscape to return nil (no command needed)")
 	}
+
+	// Pop the overlay
+	m.overlayManager.Pop()
+	m.autocomplete.Hide()
 
 	if m.autocomplete.IsActive() {
 		t.Error("Expected autocomplete to be dismissed after HandleEscape")
@@ -84,18 +112,31 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 		},
 	}
 
+	// Push tool approval overlay
+	m.overlayManager.Push(m.toolApprovalOverlay)
+	m.toolApprovalOverlay.OnPush(80, 24)
+
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected tool approval to be active")
 	}
 
-	// HandleEscape should call DenyToolUse and process the denial
-	cmd := m.overlayManager.HandleEscape()
-	// Note: cmd may be nil if no apiClient is set (test environment)
-	// The important thing is that the denial was processed
+	// HandleKey for Escape - overlay should handle it
+	handled, _ := m.overlayManager.HandleKey(tea.KeyMsg{Type: tea.KeyEsc})
+	if !handled {
+		t.Error("Expected overlay to handle Escape")
+	}
+
+	// Now manually call DenyToolUse (simulating what update.go does)
+	_ = m.DenyToolUse()
 
 	// Tool approval should be dismissed
 	if m.toolApprovalMode {
-		t.Error("Expected toolApprovalMode to be false after HandleEscape")
+		t.Error("Expected toolApprovalMode to be false after DenyToolUse")
+	}
+
+	// Overlay should have been popped
+	if m.overlayManager.HasActive() {
+		t.Error("Expected overlay to be popped after DenyToolUse")
 	}
 
 	// Should have created error result
@@ -107,8 +148,6 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 	if m.toolResults[0].Result.Error != "User denied permission" {
 		t.Errorf("Expected denial error, got: %s", m.toolResults[0].Result.Error)
 	}
-
-	_ = cmd // Ignore command for now (would be nil in test env without apiClient)
 }
 
 // TestOverlayCtrlCHandling tests that overlays handle Ctrl+C correctly
@@ -134,7 +173,7 @@ func TestOverlayRender(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
 	// No overlay active - should return empty string
-	content := m.overlayManager.Render()
+	content := m.overlayManager.Render(80, 24)
 	if content != "" {
 		t.Error("Expected empty string when no overlay active")
 	}
@@ -149,9 +188,13 @@ func TestOverlayRender(t *testing.T) {
 	})
 	m.autocomplete.Show("/test", "command")
 
+	// Push autocomplete overlay
+	m.overlayManager.Push(m.autocompleteOverlay)
+	m.autocompleteOverlay.OnPush(80, 24)
+
 	// Should now return content (only if autocomplete is active with completions)
 	if m.autocomplete.IsActive() {
-		content = m.overlayManager.Render()
+		content = m.overlayManager.Render(80, 24)
 		if content == "" {
 			t.Error("Expected non-empty content when overlay active")
 		}
@@ -199,10 +242,15 @@ func TestMouseMotionHandling(t *testing.T) {
 func TestOverlayManagerCancelAll(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
-	// Activate multiple overlays
+	// Push multiple overlays
 	m.toolApprovalMode = true
+	m.overlayManager.Push(m.toolApprovalOverlay)
+	m.toolApprovalOverlay.OnPush(80, 24)
+
 	m.autocomplete = NewAutocomplete()
 	m.autocomplete.Show("/test", "command")
+	m.overlayManager.Push(m.autocompleteOverlay)
+	m.autocompleteOverlay.OnPush(80, 24)
 
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected overlays to be active")

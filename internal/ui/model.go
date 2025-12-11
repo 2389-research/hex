@@ -218,7 +218,9 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager *OverlayManager // Centralized overlay management
+	overlayManager      *OverlayManager       // Centralized overlay management
+	toolApprovalOverlay *ToolApprovalOverlay  // Tool approval overlay instance
+	autocompleteOverlay *AutocompleteOverlay  // Autocomplete overlay instance
 
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
@@ -325,10 +327,10 @@ func NewModel(conversationID, model string) *Model {
 		hoveredMessageIndex:  -1, // -1 means no message hovered
 	}
 
-	// Initialize overlay manager and register overlays
+	// Initialize overlay manager and overlay instances
 	m.overlayManager = NewOverlayManager()
-	m.overlayManager.Register(NewToolApprovalOverlay(m))
-	m.overlayManager.Register(NewAutocompleteOverlay(m))
+	m.toolApprovalOverlay = NewToolApprovalOverlay(m)
+	m.autocompleteOverlay = NewAutocompleteOverlay(m)
 
 	return m
 }
@@ -685,6 +687,11 @@ func (m *Model) ClearContext() {
 	m.currentToolID = ""
 	m.toolResults = nil
 
+	// Clear any active overlays
+	if m.overlayManager != nil {
+		m.overlayManager.CancelAll()
+	}
+
 	// Clear streaming display
 	if m.streamingDisplay != nil {
 		m.streamingDisplay.Reset()
@@ -899,6 +906,10 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 
 	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
 		m.toolApprovalMode = false
+		// Pop tool approval overlay if active
+		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+			m.overlayManager.Pop()
+		}
 		return nil
 	}
 
@@ -916,6 +927,10 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.toolApprovalMode = false
 	m.toolApprovalForm = nil
 	m.approvalPrompt = nil // Clear approval prompt for next time
+	// Pop tool approval overlay if active
+	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+		m.overlayManager.Pop()
+	}
 	m.executingTool = true
 
 	// Clear previous tool log chunk - output will be added when results come back
@@ -948,6 +963,10 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 func (m *Model) DenyToolUse() tea.Cmd {
 	if len(m.pendingToolUses) == 0 {
 		m.toolApprovalMode = false
+		// Pop tool approval overlay if active
+		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+			m.overlayManager.Pop()
+		}
 		return nil
 	}
 
@@ -975,6 +994,10 @@ func (m *Model) DenyToolUse() tea.Cmd {
 	m.pendingToolUses = nil
 	m.toolApprovalMode = false
 	m.toolApprovalForm = nil
+	// Pop tool approval overlay if active
+	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+		m.overlayManager.Pop()
+	}
 	m.updateViewport()
 
 	// Send all denial results back to API
@@ -1439,6 +1462,10 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
+		// Pop tool approval overlay if active
+		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+			m.overlayManager.Pop()
+		}
 		return m, m.DenyToolUse()
 	}
 
@@ -1446,6 +1473,10 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	m.toolApprovalMode = false
 	m.toolApprovalForm = nil
 	m.approvalPrompt = nil
+	// Pop tool approval overlay if active
+	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+		m.overlayManager.Pop()
+	}
 
 	// Process the decision
 	switch msg.Result.Decision {
