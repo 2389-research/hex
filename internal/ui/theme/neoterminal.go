@@ -89,15 +89,10 @@ func NewNeoTerminalTheme() *Theme {
 		BorderForeground(t.Colors.Cyan).
 		Padding(0, 1)
 
-	t.Input = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(t.Colors.Comment).
-		Padding(0, 1)
+	// Input - borderless, minimal
+	t.Input = lipgloss.NewStyle()
 
-	t.InputFocused = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(t.Colors.Cyan).
-		Padding(0, 1)
+	t.InputFocused = lipgloss.NewStyle()
 
 	t.Button = lipgloss.NewStyle().
 		Foreground(t.Colors.Foreground).

@@ -685,13 +685,28 @@ func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
 
 	bashID := result.Metadata["bash_id"].(string)
 
-	// Wait and retrieve output
-	time.Sleep(1 * time.Second)
-	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
-		"bash_id": bashID,
-	})
-	require.NoError(t, err)
-	assert.True(t, outputResult.Success)
+	// Poll until process completes (with timeout)
+	var outputResult *tools.Result
+	maxAttempts := 50 // 5 seconds max
+	for i := 0; i < maxAttempts; i++ {
+		time.Sleep(100 * time.Millisecond)
+		outputResult, err = outputTool.Execute(context.Background(), map[string]interface{}{
+			"bash_id": bashID,
+		})
+		require.NoError(t, err)
+		assert.True(t, outputResult.Success)
+
+		// Check if process is done
+		if done, ok := outputResult.Metadata["done"].(bool); ok && done {
+			break
+		}
+	}
+
+	// Verify the process completed
+	done, _ := outputResult.Metadata["done"].(bool)
+	require.True(t, done, "process should have completed within timeout")
+
+	// Verify output contains working directory
 	assert.Contains(t, outputResult.Output, workingDir)
 
 	// Clean up
@@ -712,13 +727,28 @@ func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
 
 	bashID := result.Metadata["bash_id"].(string)
 
-	// Wait and retrieve output
-	time.Sleep(1 * time.Second)
-	outputResult, err := outputTool.Execute(context.Background(), map[string]interface{}{
-		"bash_id": bashID,
-	})
-	require.NoError(t, err)
-	assert.True(t, outputResult.Success)
+	// Poll until process completes (with timeout)
+	var outputResult *tools.Result
+	maxAttempts := 50 // 5 seconds max
+	for i := 0; i < maxAttempts; i++ {
+		time.Sleep(100 * time.Millisecond)
+		outputResult, err = outputTool.Execute(context.Background(), map[string]interface{}{
+			"bash_id": bashID,
+		})
+		require.NoError(t, err)
+		assert.True(t, outputResult.Success)
+
+		// Check if process is done
+		if done, ok := outputResult.Metadata["done"].(bool); ok && done {
+			break
+		}
+	}
+
+	// Verify the process completed
+	done, _ := outputResult.Metadata["done"].(bool)
+	require.True(t, done, "process should have completed within timeout")
+
+	// Verify both stdout and stderr were captured
 	assert.Contains(t, outputResult.Output, "to stdout")
 	assert.Contains(t, outputResult.Output, "to stderr")
 	assert.Contains(t, outputResult.Output, "STDOUT:")

@@ -216,6 +216,13 @@ type Model struct {
 	toolLogOverlay     bool     // Whether overlay is visible
 	currentToolLogName  string   // Name of currently logging tool
 	currentToolLogParam string   // Parameter preview of current tool
+
+	// TUI Polish: Overlay Management
+	overlayManager *OverlayManager // Centralized overlay management
+
+	// TUI Polish: Message hover for timestamp display
+	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
+	hoveredMessageTime  time.Time // Timestamp of hovered message
 }
 
 // ToolResult represents a tool execution result for the API
@@ -229,22 +236,27 @@ func NewModel(conversationID, model string) *Model {
 	ta := textarea.New()
 	ta.Placeholder = "Send a message..."
 	ta.Focus()
-	ta.Prompt = "┃ "
+	ta.Prompt = "> "
 	ta.CharLimit = 10000
 	ta.SetWidth(80)
-	ta.SetHeight(3)
+	ta.SetHeight(1)  // Start with 1 line
+	ta.MaxHeight = 3 // Can grow up to 3 lines
 	ta.ShowLineNumbers = false
 
-	// Apply Neo-Terminal theme colors for sophisticated aesthetics
-	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Background(lipgloss.Color(theme.Ghost))
+	// Minimal styling - no borders, no cursor line highlight
+	ta.FocusedStyle.Base = lipgloss.NewStyle() // No border on container
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle() // No highlight
 	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.AccentSky))
 	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
 	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
+	ta.BlurredStyle.Base = lipgloss.NewStyle() // No border on container
+	ta.BlurredStyle.CursorLine = lipgloss.NewStyle() // No highlight
 	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
 	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
 	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
 
-	vp := viewport.New(80, 20)
+	// Start with a larger default height to prevent content clipping before WindowSizeMsg
+	vp := viewport.New(80, 40)
 	vp.SetContent("Welcome to Hex! Type your message below.")
 
 	// Initialize glamour renderer for markdown
@@ -278,7 +290,8 @@ func NewModel(conversationID, model string) *Model {
 	// TUI Polish: Initialize Neo-Terminal theme
 	neoTerminalTheme := theme.NeoTerminalTheme()
 
-	return &Model{
+	// Initialize Model
+	m := &Model{
 		ConversationID:       conversationID,
 		Model:                model,
 		Messages:             []Message{},
@@ -309,7 +322,15 @@ func NewModel(conversationID, model string) *Model {
 		approvalRules:        approvalRules,
 		inputHistory:         []string{},
 		inputHistoryIndex:    -1, // -1 means at current input, not browsing history
+		hoveredMessageIndex:  -1, // -1 means no message hovered
 	}
+
+	// Initialize overlay manager and register overlays
+	m.overlayManager = NewOverlayManager()
+	m.overlayManager.Register(NewToolApprovalOverlay(m))
+	m.overlayManager.Register(NewAutocompleteOverlay(m))
+
+	return m
 }
 
 // Init initializes the model
@@ -319,12 +340,12 @@ func (m *Model) Init() tea.Cmd {
 		return tea.Batch(
 			textarea.Blink,
 			m.StartEventSubscriptions(),
-			tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
+			tea.EnableMouseAllMotion, // Enable mouse (use Shift for text selection)
 		)
 	}
 	return tea.Batch(
 		textarea.Blink,
-		tea.EnableMouseCellMotion, // Enable mouse wheel scrolling
+		tea.EnableMouseAllMotion, // Enable mouse (use Shift for text selection)
 	)
 }
 
@@ -369,6 +390,51 @@ func (m *Model) SetStatus(status Status) {
 	m.Status = status
 	// Note: Caller should set ErrorMessage explicitly when using StatusError
 	// This allows for specific error messages rather than generic ones
+}
+
+// updateInputHeight adjusts the textarea height based on content lines
+// The input grows from 1 line up to MaxHeight (3) as needed
+func (m *Model) updateInputHeight() {
+	value := m.Input.Value()
+	if value == "" {
+		m.Input.SetHeight(1)
+		return
+	}
+
+	// Count visual lines based on content and wrapping
+	// Use the textarea's reported Width() which is the actual wrap width
+	// (don't subtract for prompt - textarea handles that internally)
+	inputWidth := m.Input.Width()
+	if inputWidth <= 0 {
+		inputWidth = 80 // fallback
+	}
+
+	// Simple line counting: actual newlines plus wrapped lines
+	lines := strings.Split(value, "\n")
+	totalLines := 0
+	for _, line := range lines {
+		// Each line takes at least 1 row
+		lineLen := len([]rune(line))
+		wrappedLines := 1
+		if lineLen > 0 && inputWidth > 0 {
+			wrappedLines = (lineLen + inputWidth - 1) / inputWidth
+			if wrappedLines < 1 {
+				wrappedLines = 1
+			}
+		}
+		totalLines += wrappedLines
+	}
+
+	// Clamp to 1-3 lines
+	height := totalLines
+	if height < 1 {
+		height = 1
+	}
+	if height > 3 {
+		height = 3
+	}
+
+	m.Input.SetHeight(height)
 }
 
 // RenderMessage renders a message using glamour for assistant messages with caching
@@ -588,6 +654,7 @@ func (m *Model) ClearContext() {
 
 	// Reset input
 	m.Input.Reset()
+	m.updateInputHeight() // Reset height to 1 line after clearing
 
 	// Reset status and errors
 	m.Status = StatusIdle
@@ -753,6 +820,12 @@ func (m *Model) SetContextManager(manager *ctxmgr.Manager) {
 // SetSystemPrompt sets the system prompt for this conversation
 func (m *Model) SetSystemPrompt(prompt string) {
 	m.systemPrompt = prompt
+}
+
+// SetInputValue sets the value of the input textarea (for testing)
+func (m *Model) SetInputValue(value string) {
+	m.Input.SetValue(value)
+	m.updateInputHeight()
 }
 
 // updateContextUsage updates the context usage statistics and status bar

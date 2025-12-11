@@ -56,9 +56,37 @@ func (m *Model) View() string {
 		return b.String()
 	}
 
-	// Phase 6C: Tool approval prompt (takes precedence over everything)
-	if m.toolApprovalMode {
-		b.WriteString(m.renderToolApprovalPromptEnhanced() + "\n")
+	// Input (only in chat view) - always render in chat mode
+	if m.CurrentView == ViewModeChat {
+		// Show queued message above input if one exists
+		if m.queuedMessage != "" {
+			queuedStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#6272A4")).
+				Italic(true)
+			b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued · ↑ to edit)") + "\n")
+		}
+
+		// Add top border for input
+		inputWidth := m.Width - 2 // Account for side borders
+		if inputWidth < 10 {
+			inputWidth = 10
+		}
+		borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
+
+		b.WriteString(m.theme.Input.Render(m.Input.View()) + "\n")
+
+		// Add bottom border for input
+		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
+	}
+
+	// Then render modals/overlays on top of input using overlay manager
+	// This handles autocomplete, tool approval, and any future overlays
+	if m.overlayManager != nil && m.overlayManager.HasActive() {
+		overlayContent := m.overlayManager.Render()
+		if overlayContent != "" {
+			b.WriteString(overlayContent + "\n")
+		}
 	} else if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
@@ -70,24 +98,6 @@ func (m *Model) View() string {
 		// Search mode indicator
 		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
 		b.WriteString(searchPrompt + "\n")
-	} else {
-		// Input (only in chat view)
-		if m.CurrentView == ViewModeChat {
-			// Show queued message above input if one exists
-			if m.queuedMessage != "" {
-				queuedStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("#6272A4")).
-					Italic(true)
-				b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued · ↑ to edit)") + "\n")
-			}
-
-			b.WriteString(m.theme.Input.Render(m.Input.View()) + "\n")
-
-			// Phase 6C Task 4: Render autocomplete dropdown
-			if m.autocomplete != nil && m.autocomplete.IsActive() {
-				b.WriteString(m.renderAutocompleteDropdown() + "\n")
-			}
-		}
 	}
 
 	// Display error message if present
@@ -95,10 +105,80 @@ func (m *Model) View() string {
 		b.WriteString(m.renderErrorMessage() + "\n")
 	}
 
-	// Neo-Terminal bottom status bar
-	b.WriteString("\n" + m.renderNeoTerminalBottomBar())
+	// Neo-Terminal bottom status bar (no extra newline before it)
+	b.WriteString(m.renderNeoTerminalBottomBar())
 
-	return b.String()
+	result := m.wrapContentWithBorders(b.String())
+
+	// Ensure the total output doesn't exceed terminal height
+	// This prevents the top frame from being pushed out of view
+	lines := strings.Split(result, "\n")
+	if len(lines) > m.Height && m.Height > 10 {
+		// Keep top frame (line 0) and bottom frame (last line)
+		// Truncate viewport content in the middle
+		topFrame := lines[0]
+		bottomFrame := lines[len(lines)-1]
+
+		// Calculate how many middle lines we can keep
+		middleAllowed := m.Height - 2 // Reserve space for top and bottom frames
+
+		// Find where to split: keep some viewport and all of input/overlay/footer
+		// For now, keep the last (middleAllowed) lines before the bottom frame
+		// This ensures input/overlays are always visible
+		startIdx := len(lines) - 1 - middleAllowed
+		if startIdx < 1 {
+			startIdx = 1
+		}
+
+		middleLines := lines[startIdx : len(lines)-1]
+
+		// Reconstruct with top frame, truncated middle, and bottom frame
+		newLines := []string{topFrame}
+		newLines = append(newLines, middleLines...)
+		newLines = append(newLines, bottomFrame)
+		result = strings.Join(newLines, "\n")
+	}
+
+	return result
+}
+
+// wrapContentWithBorders adds side borders (┃) to each line of content
+// This completes the Neo-Terminal frame started by the top/bottom status bars
+func (m *Model) wrapContentWithBorders(content string) string {
+	borderStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Bold(true)
+	leftBorder := borderStyle.Render("┃")
+	rightBorder := borderStyle.Render("┃")
+
+	lines := strings.Split(content, "\n")
+	var result strings.Builder
+
+	// Width available for content (total width minus 2 for borders)
+	contentWidth := m.Width - 2
+	if contentWidth < 10 {
+		contentWidth = 10
+	}
+
+	for i, line := range lines {
+		// Skip adding borders to the top and bottom status bars (they already have corners)
+		if i == 0 || (i == len(lines)-1 && strings.Contains(line, "┗━")) {
+			result.WriteString(line)
+		} else {
+			// Pad or truncate line to exact content width
+			lineWidth := lipgloss.Width(line)
+			if lineWidth < contentWidth {
+				line = line + strings.Repeat(" ", contentWidth-lineWidth)
+			} else if lineWidth > contentWidth {
+				// Truncate if too long
+				line = line[:contentWidth]
+			}
+			result.WriteString(leftBorder + line + rightBorder)
+		}
+		if i < len(lines)-1 {
+			result.WriteString("\n")
+		}
+	}
+
+	return result.String()
 }
 
 // renderIntroView renders the startup welcome screen
