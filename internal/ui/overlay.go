@@ -93,6 +93,11 @@ func (om *OverlayManager) HasActive() bool {
 	return om.GetActive() != nil
 }
 
+// Size returns the number of overlays on the stack
+func (om *OverlayManager) Size() int {
+	return len(om.stack)
+}
+
 // HandleKey passes a key event to the active overlay
 // Returns (true, cmd) if key was handled, (false, nil) if no active overlay
 func (om *OverlayManager) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {

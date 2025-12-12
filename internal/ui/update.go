@@ -271,11 +271,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 						// Call Cancel() on the overlay for cleanup
 						active := m.overlayManager.GetActive()
+						stackSizeBefore := m.overlayManager.Size()
 						if active != nil {
 							cmd = active.Cancel()
 						}
-						// Only pop if Cancel() didn't already do it (e.g., tool approval pops via DenyToolUse)
-						if m.overlayManager.GetActive() == active {
+						// Only pop if Cancel() didn't modify the stack
+						// (e.g., tool approval modifies stack via DenyToolUse when there are more tools)
+						stackSizeAfter := m.overlayManager.Size()
+						if stackSizeAfter == stackSizeBefore && m.overlayManager.GetActive() == active {
 							m.overlayManager.Pop()
 							m.adjustViewportForOverlay()
 						}
