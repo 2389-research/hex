@@ -83,10 +83,12 @@ func TestOverlayManager(t *testing.T) {
 func TestOverlayStack(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
-	// Push tool approval overlay
+	// Push tool approval overlay (create one dynamically)
 	m.toolApprovalMode = true
-	m.pendingToolUses = []*core.ToolUse{{ID: "test", Name: "test"}}
-	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
+	testTool := &core.ToolUse{ID: "test", Name: "test"}
+	m.pendingToolUses = []*core.ToolUse{testTool}
+	toolApprovalOverlay := NewToolApprovalOverlay(m, testTool, 0)
+	m.overlayManager.Push(toolApprovalOverlay, 80, 24)
 
 	// Tool approval should be active (last pushed)
 	active := m.overlayManager.GetActive()
@@ -94,7 +96,7 @@ func TestOverlayStack(t *testing.T) {
 		t.Fatal("Expected active overlay")
 	}
 
-	if active != m.toolApprovalOverlay {
+	if _, ok := active.(*ToolApprovalOverlay); !ok {
 		t.Error("Expected tool approval overlay to be active (last pushed)")
 	}
 
@@ -112,7 +114,7 @@ func TestOverlayStack(t *testing.T) {
 	// Pop autocomplete - tool approval should be active again
 	m.overlayManager.Pop()
 	active = m.overlayManager.GetActive()
-	if active != m.toolApprovalOverlay {
+	if _, ok := active.(*ToolApprovalOverlay); !ok {
 		t.Error("Expected tool approval overlay to be active after popping autocomplete")
 	}
 }
@@ -159,15 +161,15 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 
 	// Setup a pending tool
 	m.toolApprovalMode = true
-	m.pendingToolUses = []*core.ToolUse{
-		{
-			ID:   "test-tool-1",
-			Name: "test_tool",
-		},
+	testTool := &core.ToolUse{
+		ID:   "test-tool-1",
+		Name: "test_tool",
 	}
+	m.pendingToolUses = []*core.ToolUse{testTool}
 
-	// Push tool approval overlay
-	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
+	// Push tool approval overlay (create one dynamically)
+	toolApprovalOverlay := NewToolApprovalOverlay(m, testTool, 0)
+	m.overlayManager.Push(toolApprovalOverlay, 80, 24)
 
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected tool approval to be active")
@@ -179,18 +181,9 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 		t.Error("Expected overlay to handle Escape")
 	}
 
-	// Now manually call DenyToolUse (simulating what update.go does)
-	_ = m.DenyToolUse()
-
-	// Tool approval should be dismissed
-	if m.toolApprovalMode {
-		t.Error("Expected toolApprovalMode to be false after DenyToolUse")
-	}
-
-	// Overlay should have been popped
-	if m.overlayManager.HasActive() {
-		t.Error("Expected overlay to be popped after DenyToolUse")
-	}
+	// Now call Cancel (which calls DenySpecificTool) and then pop
+	_ = toolApprovalOverlay.Cancel()
+	m.overlayManager.Pop()
 
 	// Should have created error result
 	if len(m.toolResults) == 0 {
@@ -200,6 +193,11 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 	// Verify the result is actually a denial
 	if m.toolResults[0].Result.Error != "User denied permission" {
 		t.Errorf("Expected denial error, got: %s", m.toolResults[0].Result.Error)
+	}
+
+	// Tool should have been removed from pending
+	if len(m.pendingToolUses) != 0 {
+		t.Error("Expected pendingToolUses to be empty after denial")
 	}
 }
 
@@ -296,7 +294,9 @@ func TestOverlayManagerCancelAll(t *testing.T) {
 
 	// Push multiple overlays
 	m.toolApprovalMode = true
-	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
+	testTool := &core.ToolUse{ID: "test", Name: "test"}
+	toolApprovalOverlay := NewToolApprovalOverlay(m, testTool, 0)
+	m.overlayManager.Push(toolApprovalOverlay, 80, 24)
 
 	m.autocomplete = NewAutocomplete()
 	m.autocomplete.Show("/test", "command")

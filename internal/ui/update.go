@@ -229,12 +229,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Only send results if no more tools are pending approval
 		if len(m.pendingToolUses) > 0 {
-			// More tools pending - push a new overlay for the next tool
+			// More tools pending - push overlays for remaining tools
 			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
 				len(m.toolResults), len(m.pendingToolUses))
 			m.toolApprovalMode = true
-			m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
-			m.adjustViewportForOverlay()
+			m.PushToolApprovalOverlays()
 			return m, nil
 		}
 
@@ -269,18 +268,34 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if handled {
 					// Check if this should also pop the overlay
 					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
-						// Call Cancel() on the overlay for cleanup
+						// Get active overlay before calling Cancel
 						active := m.overlayManager.GetActive()
-						stackSizeBefore := m.overlayManager.Size()
+						wasToolApproval := false
+						if _, ok := active.(*ToolApprovalOverlay); ok {
+							wasToolApproval = true
+						}
+
+						// Call Cancel() for cleanup (e.g., deny tool)
 						if active != nil {
 							cmd = active.Cancel()
 						}
-						// Only pop if Cancel() didn't modify the stack
-						// (e.g., tool approval modifies stack via DenyToolUse when there are more tools)
-						stackSizeAfter := m.overlayManager.Size()
-						if stackSizeAfter == stackSizeBefore && m.overlayManager.GetActive() == active {
-							m.overlayManager.Pop()
-							m.adjustViewportForOverlay()
+
+						// Pop the overlay
+						m.overlayManager.Pop()
+						m.adjustViewportForOverlay()
+
+						// If it was a tool approval, check if there are more
+						if wasToolApproval {
+							if !m.IsToolApprovalOverlayActive() {
+								// No more tool approvals - finalize and send results
+								finalizeCmd := m.FinalizeToolApproval()
+								if cmd != nil && finalizeCmd != nil {
+									return m, tea.Batch(cmd, finalizeCmd)
+								}
+								if finalizeCmd != nil {
+									cmd = finalizeCmd
+								}
+							}
 						}
 					}
 
@@ -1304,27 +1319,12 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Show tool approval dialog using embedded huh form
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
+		// Show tool approval dialog - create one overlay per pending tool
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching tool approval overlays for %d tools\n", len(m.pendingToolUses))
 		m.toolApprovalMode = true
-		// Push tool approval overlay
-		if m.overlayManager.GetActive() != m.toolApprovalOverlay {
-			m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
-			m.adjustViewportForOverlay()
-		}
+		// Push one overlay per tool (first tool ends up on top)
+		m.PushToolApprovalOverlays()
 		m.updateViewport()
-
-		// Create embedded form for the first pending tool
-		// Note: For now, only handle single tool approval. Batch approval needs refactoring.
-		if len(m.pendingToolUses) > 0 {
-			approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
-			m.toolApprovalForm = approvalForm
-
-			// Initialize the form
-			initCmd := approvalForm.Init()
-
-			return m, initCmd
-		}
 		return m, nil
 	}
 

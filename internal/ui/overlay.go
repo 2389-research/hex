@@ -41,7 +41,8 @@ type FullscreenOverlay interface {
 
 // OverlayManager manages a stack of overlays
 type OverlayManager struct {
-	stack []Overlay
+	stack   []Overlay
+	version int // Increments on every Push/Pop for change detection
 }
 
 // NewOverlayManager creates a new overlay manager
@@ -54,6 +55,7 @@ func NewOverlayManager() *OverlayManager {
 // Push adds an overlay to the top of the stack and initializes it
 func (om *OverlayManager) Push(overlay Overlay, width, height int) {
 	om.stack = append(om.stack, overlay)
+	om.version++
 	overlay.OnPush(width, height)
 }
 
@@ -64,6 +66,7 @@ func (om *OverlayManager) Pop() Overlay {
 	}
 	overlay := om.stack[len(om.stack)-1]
 	om.stack = om.stack[:len(om.stack)-1]
+	om.version++
 	overlay.OnPop()
 	return overlay
 }
@@ -96,6 +99,12 @@ func (om *OverlayManager) HasActive() bool {
 // Size returns the number of overlays on the stack
 func (om *OverlayManager) Size() int {
 	return len(om.stack)
+}
+
+// Version returns a counter that increments on every Push/Pop.
+// Used to detect if the stack was modified (even if size unchanged).
+func (om *OverlayManager) Version() int {
+	return om.version
 }
 
 // HandleKey passes a key event to the active overlay

@@ -217,13 +217,13 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager       *OverlayManager       // Centralized overlay management
-	baseViewportHeight   int                   // Base viewport height before overlay adjustments
-	toolApprovalOverlay *ToolApprovalOverlay  // Tool approval overlay instance
-	autocompleteOverlay *AutocompleteOverlay  // Autocomplete overlay instance
-	toolLogOverlay      *ToolLogOverlay       // Tool log overlay instance
-	helpOverlay         *HelpOverlay          // Help overlay instance
-	historyOverlay      *HistoryOverlay       // History overlay instance
+	overlayManager      *OverlayManager      // Centralized overlay management
+	baseViewportHeight  int                  // Base viewport height before overlay adjustments
+	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
+	toolLogOverlay      *ToolLogOverlay      // Tool log overlay instance
+	helpOverlay         *HelpOverlay         // Help overlay instance
+	historyOverlay      *HistoryOverlay      // History overlay instance
+	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
@@ -332,7 +332,7 @@ func NewModel(conversationID, model string) *Model {
 
 	// Initialize overlay manager and overlay instances
 	m.overlayManager = NewOverlayManager()
-	m.toolApprovalOverlay = NewToolApprovalOverlay(m)
+	// Note: ToolApprovalOverlay instances are created dynamically per tool via PushToolApprovalOverlays
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
 	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
 	m.helpOverlay = NewHelpOverlay()
@@ -902,49 +902,48 @@ func (m *Model) GetPrunedMessages() []core.Message {
 	return coreMessages
 }
 
-// ApproveToolUse executes the first pending tool (individual approval)
+// ApproveToolUse executes the tool from the active approval overlay
 func (m *Model) ApproveToolUse() tea.Cmd {
 	// Guard against double-execution from button mashing
 	if m.executingTool {
 		return nil
 	}
 
-	if len(m.pendingToolUses) == 0 || m.toolExecutor == nil {
-		m.toolApprovalMode = false
-		// Pop tool approval overlay if active
-		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
-			m.overlayManager.Pop()
-			m.adjustViewportForOverlay()
-		}
+	// Get the current tool from the active overlay
+	active := m.overlayManager.GetActive()
+	if active == nil {
+		return nil
+	}
+	toolOverlay, ok := active.(*ToolApprovalOverlay)
+	if !ok || toolOverlay.GetTool() == nil {
 		return nil
 	}
 
-	// Only handle the first tool (individual approval)
-	currentTool := m.pendingToolUses[0]
+	currentTool := toolOverlay.GetTool()
 	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_APPROVAL] approving tool: %s\n", currentTool.Name)
 
 	// Validate that the tool_use block exists in message history
 	m.validateToolUseExists(currentTool.ID)
 
-	// Remove the current tool from pending and execute it
-	m.pendingToolUses = m.pendingToolUses[1:] // Remove first tool
+	// Remove this tool from pending
+	for i, pending := range m.pendingToolUses {
+		if pending.ID == currentTool.ID {
+			m.pendingToolUses = append(m.pendingToolUses[:i], m.pendingToolUses[i+1:]...)
+			break
+		}
+	}
+
 	toolUses := []*core.ToolUse{currentTool}
 	m.executingToolUses = toolUses // Save for status display
 
-	// Pop the current approval overlay
-	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
-		m.overlayManager.Pop()
-		m.adjustViewportForOverlay()
-	}
+	// Pop the current approval overlay - next one (if any) is already on stack
+	m.overlayManager.Pop()
+	m.adjustViewportForOverlay()
 
-	// Check if more tools are pending - if so, push a NEW overlay for the next tool
-	if len(m.pendingToolUses) > 0 {
-		// More tools pending - push a new overlay for the next tool
-		m.toolApprovalMode = true // Keep approval mode active
-		m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
-		m.adjustViewportForOverlay()
-	} else {
-		// No more tools - close approval mode
+	// Check if more tool approval overlays remain
+	nextActive := m.overlayManager.GetActive()
+	if _, isToolApproval := nextActive.(*ToolApprovalOverlay); !isToolApproval {
+		// No more tool approvals - close approval mode
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
 		m.approvalPrompt = nil
@@ -953,7 +952,6 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	m.executingTool = true
 
 	// Clear previous tool log chunk - output will be added when results come back
-	// This preserves the previous chunk until a new tool use begins
 	m.clearToolLogChunk()
 
 	// Phase 6C: Start spinner for tool execution
@@ -975,64 +973,92 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 }
 
 // DenyToolUse rejects the first pending tool (individual denial)
+// DEPRECATED: Use DenySpecificTool with the overlay's tool instead
 func (m *Model) DenyToolUse() tea.Cmd {
-	if len(m.pendingToolUses) == 0 {
-		m.toolApprovalMode = false
-		// Pop tool approval overlay if active
-		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
-			m.overlayManager.Pop()
-			m.adjustViewportForOverlay()
+	// Get the current tool approval overlay and use its tool
+	if active := m.overlayManager.GetActive(); active != nil {
+		if toolOverlay, ok := active.(*ToolApprovalOverlay); ok {
+			return m.DenySpecificTool(toolOverlay.GetTool())
 		}
+	}
+	return nil
+}
+
+// DenySpecificTool rejects a specific tool
+func (m *Model) DenySpecificTool(tool *core.ToolUse) tea.Cmd {
+	if tool == nil {
 		return nil
 	}
 
-	// Only handle the first tool (individual denial)
-	currentTool := m.pendingToolUses[0]
-	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying tool: %s\n", currentTool.Name)
+	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying tool: %s\n", tool.Name)
 
 	// Create error result for the denied tool
 	result := &tools.Result{
-		ToolName: currentTool.Name,
+		ToolName: tool.Name,
 		Success:  false,
 		Error:    "User denied permission",
 	}
 
 	// Validate that tool_use exists in message history
-	m.validateToolUseExists(currentTool.ID)
+	m.validateToolUseExists(tool.ID)
 
 	m.toolResults = append(m.toolResults, ToolResult{
-		ToolUseID: currentTool.ID,
+		ToolUseID: tool.ID,
 		Result:    result,
 	})
 
-	m.AddMessage("tool", "Tool denied: "+currentTool.Name)
+	m.AddMessage("tool", "Tool denied: "+tool.Name)
 
-	// Remove the current tool from pending
-	m.pendingToolUses = m.pendingToolUses[1:] // Remove first tool
-
-	// Pop the current approval overlay
-	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
-		m.overlayManager.Pop()
-		m.adjustViewportForOverlay()
+	// Remove this tool from pendingToolUses
+	for i, pending := range m.pendingToolUses {
+		if pending.ID == tool.ID {
+			m.pendingToolUses = append(m.pendingToolUses[:i], m.pendingToolUses[i+1:]...)
+			break
+		}
 	}
 
-	// Check if more tools are pending - if so, push a NEW overlay for the next tool
-	if len(m.pendingToolUses) > 0 {
-		// More tools pending - push a new overlay for the next tool
-		m.toolApprovalMode = true // Keep approval mode active
-		m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
-		m.adjustViewportForOverlay()
-		m.updateViewport()
-		// Don't send results yet - accumulate them until all tools are processed
-		return nil
-	}
+	// NOTE: We don't pop here - the caller (Cancel flow in update.go) handles popping
+	// After pop, if no more tool approval overlays, finalize results
 
-	// No more tools - close approval mode and send all accumulated results
+	m.updateViewport()
+	return nil
+}
+
+// FinalizeToolApproval is called when the last tool approval overlay is popped
+func (m *Model) FinalizeToolApproval() tea.Cmd {
 	m.toolApprovalMode = false
 	m.toolApprovalForm = nil
+	m.Status = StatusIdle
 	m.updateViewport()
 	// Send all accumulated tool results back to API
 	return m.sendToolResults()
+}
+
+// PushToolApprovalOverlays creates and pushes one overlay per pending tool.
+// Overlays are pushed in reverse order so the first tool is on top of the stack.
+func (m *Model) PushToolApprovalOverlays() {
+	if len(m.pendingToolUses) == 0 {
+		return
+	}
+
+	// Push in reverse order so first tool ends up on top
+	for i := len(m.pendingToolUses) - 1; i >= 0; i-- {
+		tool := m.pendingToolUses[i]
+		remaining := len(m.pendingToolUses) - 1 - i // Tools that come AFTER this one
+		overlay := NewToolApprovalOverlay(m, tool, remaining)
+		m.overlayManager.Push(overlay, m.Width, m.Height)
+	}
+	m.adjustViewportForOverlay()
+}
+
+// IsToolApprovalOverlayActive returns true if the active overlay is a tool approval
+func (m *Model) IsToolApprovalOverlayActive() bool {
+	active := m.overlayManager.GetActive()
+	if active == nil {
+		return false
+	}
+	_, ok := active.(*ToolApprovalOverlay)
+	return ok
 }
 
 // toolExecutionMsg is sent when a single tool finishes executing
@@ -1494,7 +1520,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
 		// Pop tool approval overlay if active
-		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+		if m.IsToolApprovalOverlayActive() {
 			m.overlayManager.Pop()
 			m.adjustViewportForOverlay()
 		}
@@ -1506,7 +1532,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	m.toolApprovalForm = nil
 	m.approvalPrompt = nil
 	// Pop tool approval overlay if active
-	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
+	if m.IsToolApprovalOverlayActive() {
 		m.overlayManager.Pop()
 		m.adjustViewportForOverlay()
 	}
