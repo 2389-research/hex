@@ -941,7 +941,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	if len(m.pendingToolUses) > 0 {
 		// More tools pending - push a new overlay for the next tool
 		m.toolApprovalMode = true // Keep approval mode active
-		m.overlayManager.Push(m.toolApprovalOverlay)
+		m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
 		m.adjustViewportForOverlay()
 	} else {
 		// No more tools - close approval mode
@@ -1020,7 +1020,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 	if len(m.pendingToolUses) > 0 {
 		// More tools pending - push a new overlay for the next tool
 		m.toolApprovalMode = true // Keep approval mode active
-		m.overlayManager.Push(m.toolApprovalOverlay)
+		m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
 		m.adjustViewportForOverlay()
 		m.updateViewport()
 		// Don't send results yet - accumulate them until all tools are processed

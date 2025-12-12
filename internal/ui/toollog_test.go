@@ -92,8 +92,7 @@ func TestToolLogOverlayEscapeCloses(t *testing.T) {
 	model.Height = 24
 
 	// Open the tool log overlay
-	model.overlayManager.Push(model.toolLogOverlay)
-	model.toolLogOverlay.OnPush(model.Width, model.Height)
+	model.overlayManager.Push(model.toolLogOverlay, model.Width, model.Height)
 	assert.Equal(t, model.toolLogOverlay, model.overlayManager.GetActive())
 
 	// Escape should close overlay

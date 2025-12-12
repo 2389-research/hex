@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -71,10 +72,11 @@ func (o *HistoryOverlay) GetContent() string {
 		}
 		b.WriteString("\n")
 
-		// Content (truncate long messages)
+		// Content (truncate long messages with rune-aware truncation)
 		content := msg.Content
-		if len(content) > 500 {
-			content = content[:497] + "..."
+		if utf8.RuneCountInString(content) > 500 {
+			runes := []rune(content)
+			content = string(runes[:497]) + "..."
 		}
 		b.WriteString(content)
 		b.WriteString("\n")
@@ -102,7 +104,16 @@ func (o *HistoryOverlay) GetFooter() string {
 func (o *HistoryOverlay) OnPush(width, height int) {
 	o.width = width
 	o.height = height
-	o.viewport = viewport.New(width-4, height-6)
+	// Guard against negative dimensions on small terminals
+	vw := width - 4
+	vh := height - 6
+	if vw < 1 {
+		vw = 1
+	}
+	if vh < 1 {
+		vh = 1
+	}
+	o.viewport = viewport.New(vw, vh)
 	o.viewport.SetContent(o.GetContent())
 	o.viewport.GotoBottom() // Start at most recent
 }
@@ -113,7 +124,11 @@ func (o *HistoryOverlay) OnPop() {}
 // SetHeight updates viewport height
 func (o *HistoryOverlay) SetHeight(height int) {
 	o.height = height
-	o.viewport.Height = height - 6
+	vh := height - 6
+	if vh < 1 {
+		vh = 1
+	}
+	o.viewport.Height = vh
 }
 
 // Update handles messages
@@ -121,8 +136,20 @@ func (o *HistoryOverlay) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	o.viewport, cmd = o.viewport.Update(msg)
 
-	// Update content on window size changes
-	if _, ok := msg.(tea.WindowSizeMsg); ok {
+	// Update viewport dimensions and content on window size changes
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		o.width = wsm.Width
+		o.height = wsm.Height
+		vw := wsm.Width - 4
+		vh := wsm.Height - 6
+		if vw < 1 {
+			vw = 1
+		}
+		if vh < 1 {
+			vh = 1
+		}
+		o.viewport.Width = vw
+		o.viewport.Height = vh
 		o.viewport.SetContent(o.GetContent())
 	}
 
@@ -162,9 +189,13 @@ func (o *HistoryOverlay) Render(width, height int) string {
 		Render("Ctrl+R or Esc to close")
 
 	header := headerStyle.Render(o.GetHeader())
+	// Use lipgloss.Width for accurate visual width calculation
+	headerWidth := lipgloss.Width(header)
+	closeHintWidth := lipgloss.Width(closeHint)
+	padding := max(0, width-headerWidth-closeHintWidth-8)
 	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
 		header,
-		strings.Repeat("━", max(0, width-len(o.GetHeader())-len("Ctrl+R or Esc to close")-12)),
+		strings.Repeat("━", padding),
 		closeHint)
 	b.WriteString(headerLine)
 	b.WriteString("\n\n")

@@ -19,7 +19,7 @@ func (m *Model) View() string {
 	}
 
 	// Check for fullscreen overlay first (tool log, help, etc.)
-	if m.overlayManager.IsFullscreen() {
+	if m.overlayManager != nil && m.overlayManager.IsFullscreen() {
 		return m.overlayManager.Render(m.Width, m.Height)
 	}
 
@@ -40,13 +40,16 @@ func (m *Model) View() string {
 	if m.overlayManager != nil && m.overlayManager.HasActive() && !m.overlayManager.IsFullscreen() {
 		active := m.overlayManager.GetActive()
 
-		// Calculate desired height with 40% cap
+		// Calculate desired height with 50% cap (consistent with adjustViewportForOverlay)
 		desiredHeight := active.GetDesiredHeight()
-		maxAllowed := int(float64(m.Height) * 0.4)
+		maxAllowed := m.Height / 2
 		if desiredHeight > maxAllowed {
 			bottomOverlayHeight = maxAllowed
 		} else {
 			bottomOverlayHeight = desiredHeight
+		}
+		if bottomOverlayHeight < 1 {
+			bottomOverlayHeight = 1
 		}
 
 		// Render overlay
@@ -69,8 +72,8 @@ func (m *Model) View() string {
 
 	b.WriteString("\n")
 
-	// Render bottom overlay between viewport and input (if not fullscreen)
-	if bottomOverlayContent != "" {
+	// Render bottom overlay between viewport and input (if not fullscreen or quick actions)
+	if !m.quickActionsMode && bottomOverlayContent != "" {
 		b.WriteString(bottomOverlayContent + "\n")
 	}
 

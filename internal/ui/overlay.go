@@ -51,10 +51,10 @@ func NewOverlayManager() *OverlayManager {
 	}
 }
 
-// Push adds an overlay to the top of the stack
-func (om *OverlayManager) Push(overlay Overlay) {
+// Push adds an overlay to the top of the stack and initializes it
+func (om *OverlayManager) Push(overlay Overlay, width, height int) {
 	om.stack = append(om.stack, overlay)
-	// OnPush will be called by Model with width/height
+	overlay.OnPush(width, height)
 }
 
 // Pop removes and returns the top overlay from the stack
@@ -152,7 +152,18 @@ func (om *OverlayManager) IsFullscreen() bool {
 	return false
 }
 
-// CancelAll dismisses all active overlays
+// CancelAll dismisses all active overlays, calling Cancel() on each
 func (om *OverlayManager) CancelAll() {
-	om.Clear()
+	// Collect overlays first - Cancel() callbacks may pop from stack
+	overlays := make([]Overlay, len(om.stack))
+	copy(overlays, om.stack)
+
+	// Clear the stack before calling callbacks to prevent re-entrancy issues
+	om.stack = om.stack[:0]
+
+	// Call Cancel() and OnPop() on each overlay (in reverse order - top first)
+	for i := len(overlays) - 1; i >= 0; i-- {
+		overlays[i].Cancel()
+		overlays[i].OnPop()
+	}
 }

@@ -22,9 +22,7 @@ func NewToolApprovalOverlay(m *Model) *ToolApprovalOverlay {
 // GetHeader returns the overlay header
 func (o *ToolApprovalOverlay) GetHeader() string {
 	if len(o.model.pendingToolUses) > 1 {
-		// Calculate current position (total - remaining + 1)
-		// This shows which tool we're on in the sequence
-		return fmt.Sprintf("Tool Approval Required (Tool 1 of %d)", len(o.model.pendingToolUses))
+		return fmt.Sprintf("Tool Approval Required (%d remaining)", len(o.model.pendingToolUses))
 	}
 	return "Tool Approval Required"
 }
@@ -80,12 +78,9 @@ func (o *ToolApprovalOverlay) GetFooter() string {
 // GetDesiredHeight returns the desired height for this overlay
 func (o *ToolApprovalOverlay) GetDesiredHeight() int {
 	// Base height: header + footer + content
-	// Content: tool description (1-5 lines) + options (4 lines) + spacing
-	baseHeight := 10
-	if len(o.model.pendingToolUses) > 1 {
-		baseHeight += len(o.model.pendingToolUses) // Additional lines for multiple tools
-	}
-	return baseHeight
+	// Content: tool description (1-2 lines) + options (4 lines) + spacing
+	// We only render one tool at a time, so no extra height for multiple tools
+	return 10
 }
 
 // OnPush is called when the overlay is pushed onto the stack

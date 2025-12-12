@@ -65,7 +65,7 @@ func (o *HelpOverlay) GetContent() string {
 
 ## Other
 - **Ctrl+L**: Clear screen
-- **Ctrl+Q**: Quit application
+- **Ctrl+C twice**: Quit application (when idle)
 
 # Tips
 
@@ -85,7 +85,16 @@ func (o *HelpOverlay) GetFooter() string {
 func (o *HelpOverlay) OnPush(width, height int) {
 	o.width = width
 	o.height = height
-	o.viewport = viewport.New(width-4, height-6)
+	// Guard against negative dimensions on small terminals
+	vw := width - 4
+	vh := height - 6
+	if vw < 1 {
+		vw = 1
+	}
+	if vh < 1 {
+		vh = 1
+	}
+	o.viewport = viewport.New(vw, vh)
 	o.viewport.SetContent(o.GetContent())
 }
 
@@ -95,7 +104,11 @@ func (o *HelpOverlay) OnPop() {}
 // SetHeight updates viewport height
 func (o *HelpOverlay) SetHeight(height int) {
 	o.height = height
-	o.viewport.Height = height - 6
+	vh := height - 6
+	if vh < 1 {
+		vh = 1
+	}
+	o.viewport.Height = vh
 }
 
 // Update handles messages
@@ -135,9 +148,13 @@ func (o *HelpOverlay) Render(width, height int) string {
 		Render("Ctrl+H or Esc to close")
 
 	header := headerStyle.Render(o.GetHeader())
+	// Use lipgloss.Width for accurate visual width calculation
+	headerWidth := lipgloss.Width(header)
+	closeHintWidth := lipgloss.Width(closeHint)
+	padding := max(0, width-headerWidth-closeHintWidth-8)
 	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
 		header,
-		strings.Repeat("━", max(0, width-len(o.GetHeader())-len("Ctrl+H or Esc to close")-12)),
+		strings.Repeat("━", padding),
 		closeHint)
 	b.WriteString(headerLine)
 	b.WriteString("\n\n")

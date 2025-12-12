@@ -86,8 +86,7 @@ func TestOverlayStack(t *testing.T) {
 	// Push tool approval overlay
 	m.toolApprovalMode = true
 	m.pendingToolUses = []*core.ToolUse{{ID: "test", Name: "test"}}
-	m.overlayManager.Push(m.toolApprovalOverlay)
-	m.toolApprovalOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
 
 	// Tool approval should be active (last pushed)
 	active := m.overlayManager.GetActive()
@@ -102,8 +101,7 @@ func TestOverlayStack(t *testing.T) {
 	// Push autocomplete on top
 	m.autocomplete = NewAutocomplete()
 	m.autocomplete.Show("/test", "command")
-	m.overlayManager.Push(m.autocompleteOverlay)
-	m.autocompleteOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.autocompleteOverlay, 80, 24)
 
 	// Autocomplete should now be active (on top of stack)
 	active = m.overlayManager.GetActive()
@@ -132,8 +130,7 @@ func TestOverlayEscapeHandling(t *testing.T) {
 	m.autocomplete.Show("/test", "command")
 
 	// Push autocomplete overlay
-	m.overlayManager.Push(m.autocompleteOverlay)
-	m.autocompleteOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.autocompleteOverlay, 80, 24)
 
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected autocomplete to be active")
@@ -170,8 +167,7 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 	}
 
 	// Push tool approval overlay
-	m.overlayManager.Push(m.toolApprovalOverlay)
-	m.toolApprovalOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
 
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected tool approval to be active")
@@ -246,8 +242,7 @@ func TestOverlayRender(t *testing.T) {
 	m.autocomplete.Show("/test", "command")
 
 	// Push autocomplete overlay
-	m.overlayManager.Push(m.autocompleteOverlay)
-	m.autocompleteOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.autocompleteOverlay, 80, 24)
 
 	// Should now return content (only if autocomplete is active with completions)
 	if m.autocomplete.IsActive() {
@@ -301,13 +296,11 @@ func TestOverlayManagerCancelAll(t *testing.T) {
 
 	// Push multiple overlays
 	m.toolApprovalMode = true
-	m.overlayManager.Push(m.toolApprovalOverlay)
-	m.toolApprovalOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.toolApprovalOverlay, 80, 24)
 
 	m.autocomplete = NewAutocomplete()
 	m.autocomplete.Show("/test", "command")
-	m.overlayManager.Push(m.autocompleteOverlay)
-	m.autocompleteOverlay.OnPush(80, 24)
+	m.overlayManager.Push(m.autocompleteOverlay, 80, 24)
 
 	if !m.overlayManager.HasActive() {
 		t.Fatal("Expected overlays to be active")
@@ -331,7 +324,7 @@ func TestOverlayManager_StackOperations(t *testing.T) {
 
 	// Push first overlay
 	overlay1 := newMockOverlay("Header 1", "Content 1", "Footer 1", 5)
-	om.Push(overlay1)
+	om.Push(overlay1, 80, 24)
 
 	assert.Equal(t, overlay1, om.Peek())
 	assert.Equal(t, overlay1, om.GetActive())
@@ -339,7 +332,7 @@ func TestOverlayManager_StackOperations(t *testing.T) {
 
 	// Push second overlay
 	overlay2 := newMockOverlay("Header 2", "Content 2", "Footer 2", 10)
-	om.Push(overlay2)
+	om.Push(overlay2, 80, 24)
 
 	assert.Equal(t, overlay2, om.Peek()) // Top of stack
 	assert.Equal(t, overlay2, om.GetActive())
@@ -363,9 +356,9 @@ func TestOverlayManager_Clear(t *testing.T) {
 	overlay2 := newMockOverlay("H2", "C2", "F2", 10)
 	overlay3 := newMockOverlay("H3", "C3", "F3", 15)
 
-	om.Push(overlay1)
-	om.Push(overlay2)
-	om.Push(overlay3)
+	om.Push(overlay1, 80, 24)
+	om.Push(overlay2, 80, 24)
+	om.Push(overlay3, 80, 24)
 
 	assert.True(t, om.HasActive())
 
@@ -396,7 +389,7 @@ func TestOverlayManager_HandleKeyModalCapture(t *testing.T) {
 		}
 		return false, nil
 	}
-	om.Push(overlay)
+	om.Push(overlay, 80, 24)
 
 	// Overlay captures Enter
 	handled, cmd = om.HandleKey(tea.KeyMsg{Type: tea.KeyEnter})

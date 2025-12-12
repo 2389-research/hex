@@ -40,16 +40,18 @@ func (o *ToolLogOverlay) GetHeader() string {
 	return "Tool Output Log"
 }
 
+const toolLogMaxLines = 10000
+
 // GetContent returns the current tool log lines
 func (o *ToolLogOverlay) GetContent() string {
-	if len(*o.lines) == 0 {
+	if o.lines == nil || len(*o.lines) == 0 {
 		return "No tool output in current chunk"
 	}
 
 	// Apply 10k line limit
 	lines := *o.lines
-	if len(lines) > 10000 {
-		lines = lines[len(lines)-10000:]
+	if len(lines) > toolLogMaxLines {
+		lines = lines[len(lines)-toolLogMaxLines:]
 	}
 
 	return strings.Join(lines, "\n")
@@ -57,8 +59,11 @@ func (o *ToolLogOverlay) GetContent() string {
 
 // GetFooter returns the overlay footer with line count
 func (o *ToolLogOverlay) GetFooter() string {
-	totalLines := len(*o.lines)
-	if totalLines > 10000 {
+	totalLines := 0
+	if o.lines != nil {
+		totalLines = len(*o.lines)
+	}
+	if totalLines > toolLogMaxLines {
 		return fmt.Sprintf("Showing last 10,000 of %d lines • Esc to close", totalLines)
 	}
 	return fmt.Sprintf("%d lines • Esc to close", totalLines)
@@ -69,8 +74,18 @@ func (o *ToolLogOverlay) OnPush(width, height int) {
 	o.width = width
 	o.height = height
 
+	// Guard against negative dimensions on small terminals
+	vw := width - 4
+	vh := height - 6
+	if vw < 1 {
+		vw = 1
+	}
+	if vh < 1 {
+		vh = 1
+	}
+
 	// Initialize viewport (leave space for header and footer)
-	o.viewport = viewport.New(width-4, height-6)
+	o.viewport = viewport.New(vw, vh)
 	o.viewport.SetContent(o.GetContent())
 
 	// Auto-scroll to bottom
@@ -85,7 +100,11 @@ func (o *ToolLogOverlay) OnPop() {
 // SetHeight updates the viewport height
 func (o *ToolLogOverlay) SetHeight(height int) {
 	o.height = height
-	o.viewport.Height = height - 6
+	vh := height - 6
+	if vh < 1 {
+		vh = 1
+	}
+	o.viewport.Height = vh
 	o.viewport.SetContent(o.GetContent())
 }
 
@@ -94,8 +113,20 @@ func (o *ToolLogOverlay) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	o.viewport, cmd = o.viewport.Update(msg)
 
-	// Update content on window size changes
-	if _, ok := msg.(tea.WindowSizeMsg); ok {
+	// Update viewport dimensions and content on window size changes
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		o.width = wsm.Width
+		o.height = wsm.Height
+		vw := wsm.Width - 4
+		vh := wsm.Height - 6
+		if vw < 1 {
+			vw = 1
+		}
+		if vh < 1 {
+			vh = 1
+		}
+		o.viewport.Width = vw
+		o.viewport.Height = vh
 		o.viewport.SetContent(o.GetContent())
 	}
 
@@ -139,9 +170,13 @@ func (o *ToolLogOverlay) Render(width, height int) string {
 		Render("Ctrl+O or Esc to close")
 
 	header := headerStyle.Render(o.GetHeader())
+	// Use lipgloss.Width for accurate visual width calculation
+	headerWidth := lipgloss.Width(header)
+	closeHintWidth := lipgloss.Width(closeHint)
+	padding := max(0, width-headerWidth-closeHintWidth-8)
 	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
 		header,
-		strings.Repeat("━", width-len(o.GetHeader())-len("Ctrl+O or Esc to close")-12),
+		strings.Repeat("━", padding),
 		closeHint)
 	b.WriteString(headerLine)
 	b.WriteString("\n\n")

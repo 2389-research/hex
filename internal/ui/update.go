@@ -233,7 +233,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
 				len(m.toolResults), len(m.pendingToolUses))
 			m.toolApprovalMode = true
-			m.overlayManager.Push(m.toolApprovalOverlay)
+			m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
 			m.adjustViewportForOverlay()
 			return m, nil
 		}
@@ -421,8 +421,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.adjustViewportForOverlay()
 			} else {
 				// Open tool log
-				m.overlayManager.Push(m.toolLogOverlay)
-				m.toolLogOverlay.OnPush(m.Width, m.Height)
+				m.overlayManager.Push(m.toolLogOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
 			return m, nil
@@ -436,8 +435,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.adjustViewportForOverlay()
 			} else {
 				// Open help
-				m.overlayManager.Push(m.helpOverlay)
-				m.helpOverlay.OnPush(m.Width, m.Height)
+				m.overlayManager.Push(m.helpOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
 			return m, nil
@@ -451,8 +449,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.adjustViewportForOverlay()
 			} else {
 				// Open history
-				m.overlayManager.Push(m.historyOverlay)
-				m.historyOverlay.OnPush(m.Width, m.Height)
+				m.overlayManager.Push(m.historyOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
 			return m, nil
@@ -585,8 +582,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.autocomplete.Show(m.Input.Value(), provider)
 				// Push autocomplete overlay if not already active
 				if m.overlayManager.GetActive() != m.autocompleteOverlay {
-					m.overlayManager.Push(m.autocompleteOverlay)
-					m.autocompleteOverlay.OnPush(m.Width, m.Height)
+					m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
 					m.adjustViewportForOverlay()
 				}
 				return m, nil
@@ -862,8 +858,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.autocomplete.Show(newValue, provider)
 					// Push overlay if not already active
 					if m.overlayManager.GetActive() != m.autocompleteOverlay {
-						m.overlayManager.Push(m.autocompleteOverlay)
-						m.autocompleteOverlay.OnPush(m.Width, m.Height)
+						m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
 						m.adjustViewportForOverlay()
 					}
 				}
@@ -903,7 +898,7 @@ func (m *Model) updateViewportPreserveScroll() {
 // adjustViewportForOverlay recalculates viewport height based on active bottom overlay
 // This should be called when overlays are pushed/popped, not during View()
 func (m *Model) adjustViewportForOverlay() {
-	if m.baseViewportHeight == 0 {
+	if m.baseViewportHeight == 0 || m.overlayManager == nil {
 		return // Not initialized yet
 	}
 
@@ -1311,8 +1306,7 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		m.toolApprovalMode = true
 		// Push tool approval overlay
 		if m.overlayManager.GetActive() != m.toolApprovalOverlay {
-			m.overlayManager.Push(m.toolApprovalOverlay)
-			m.toolApprovalOverlay.OnPush(m.Width, m.Height)
+			m.overlayManager.Push(m.toolApprovalOverlay, m.Width, m.Height)
 			m.adjustViewportForOverlay()
 		}
 		m.updateViewport()
