@@ -14,9 +14,8 @@ func TestHistoryOverlay_IsFullscreen(t *testing.T) {
 }
 
 func TestHistoryOverlay_RefersToModelMessages(t *testing.T) {
-	messages := []Message{
-		{Role: "user", Content: "Hello", Timestamp: time.Now()},
-	}
+	messages := make([]Message, 1, 10) // Pre-allocate capacity to avoid reallocation
+	messages[0] = Message{Role: "user", Content: "Hello", Timestamp: time.Now()}
 	overlay := NewHistoryOverlay(&messages)
 
 	// Should reference messages, not copy

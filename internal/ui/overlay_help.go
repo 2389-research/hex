@@ -113,6 +113,22 @@ func (o *HelpOverlay) SetHeight(height int) {
 
 // Update handles messages
 func (o *HelpOverlay) Update(msg tea.Msg) tea.Cmd {
+	// Handle window resize
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		o.width = wsm.Width
+		o.height = wsm.Height
+		vw := wsm.Width - 4
+		vh := wsm.Height - 6
+		if vw < 1 {
+			vw = 1
+		}
+		if vh < 1 {
+			vh = 1
+		}
+		o.viewport.Width = vw
+		o.viewport.Height = vh
+	}
+
 	var cmd tea.Cmd
 	o.viewport, cmd = o.viewport.Update(msg)
 	return cmd
@@ -175,12 +191,4 @@ func (o *HelpOverlay) Render(width, height int) string {
 // Cancel dismisses the help overlay (no cleanup needed)
 func (o *HelpOverlay) Cancel() tea.Cmd {
 	return nil
-}
-
-// max returns the maximum of two integers
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

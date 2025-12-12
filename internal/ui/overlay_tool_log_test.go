@@ -22,7 +22,8 @@ func TestToolLogOverlay_GetDesiredHeight(t *testing.T) {
 }
 
 func TestToolLogOverlay_RefersToModelData(t *testing.T) {
-	lines := []string{"initial"}
+	lines := make([]string, 1, 10) // Pre-allocate capacity to avoid reallocation
+	lines[0] = "initial"
 	overlay := NewToolLogOverlay(&lines)
 
 	// Should reference lines, not copy

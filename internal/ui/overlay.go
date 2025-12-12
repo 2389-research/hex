@@ -167,17 +167,23 @@ func (om *OverlayManager) IsFullscreen() bool {
 }
 
 // CancelAll dismisses all active overlays, calling Cancel() on each
-func (om *OverlayManager) CancelAll() {
+// Returns a batched command from all Cancel() calls
+func (om *OverlayManager) CancelAll() tea.Cmd {
 	// Collect overlays first - Cancel() callbacks may pop from stack
 	overlays := make([]Overlay, len(om.stack))
 	copy(overlays, om.stack)
 
 	// Clear the stack before calling callbacks to prevent re-entrancy issues
 	om.stack = om.stack[:0]
+	om.version++
 
+	var cmds []tea.Cmd
 	// Call Cancel() and OnPop() on each overlay (in reverse order - top first)
 	for i := len(overlays) - 1; i >= 0; i-- {
-		overlays[i].Cancel()
+		if cmd := overlays[i].Cancel(); cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 		overlays[i].OnPop()
 	}
+	return tea.Batch(cmds...)
 }

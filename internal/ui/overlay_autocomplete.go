@@ -135,8 +135,14 @@ func (o *AutocompleteOverlay) Render(width, height int) string {
 	var b strings.Builder
 
 	// Use full width minus some padding for the dropdown
+	// Clamp to available space - don't force minimum that exceeds terminal width
 	dropdownWidth := width - 4
-	if dropdownWidth < 40 {
+	if dropdownWidth < 1 {
+		dropdownWidth = 1
+	}
+	// Only enforce minimum if terminal is wide enough
+	const minDropdownWidth = 40
+	if width >= minDropdownWidth+4 && dropdownWidth < minDropdownWidth {
 		dropdownWidth = 40
 	}
 	boxStyle := o.model.theme.AutocompleteDropdown.Width(dropdownWidth)
