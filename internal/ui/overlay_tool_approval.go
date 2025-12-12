@@ -21,6 +21,11 @@ func NewToolApprovalOverlay(m *Model) *ToolApprovalOverlay {
 
 // GetHeader returns the overlay header
 func (o *ToolApprovalOverlay) GetHeader() string {
+	if len(o.model.pendingToolUses) > 1 {
+		// Calculate current position (total - remaining + 1)
+		// This shows which tool we're on in the sequence
+		return fmt.Sprintf("Tool Approval Required (Tool 1 of %d)", len(o.model.pendingToolUses))
+	}
 	return "Tool Approval Required"
 }
 
@@ -32,33 +37,19 @@ func (o *ToolApprovalOverlay) GetContent() string {
 
 	var b strings.Builder
 
-	// Tool description - compact format
-	if len(o.model.pendingToolUses) == 1 {
-		tool := o.model.pendingToolUses[0]
-		riskLevel := forms.AssessRiskLevel(tool)
-		coloredRisk := o.model.renderColoredRiskEmoji(riskLevel)
-		paramPreview := o.model.getToolParamPreview(tool)
-		if paramPreview != "" {
-			b.WriteString(fmt.Sprintf("%s %s(%s)", coloredRisk, tool.Name, paramPreview))
-		} else {
-			b.WriteString(fmt.Sprintf("%s %s()", coloredRisk, tool.Name))
-		}
+	// Always show only the first tool (individual approval)
+	tool := o.model.pendingToolUses[0]
+	riskLevel := forms.AssessRiskLevel(tool)
+	coloredRisk := o.model.renderColoredRiskEmoji(riskLevel)
+	paramPreview := o.model.getToolParamPreview(tool)
+	if paramPreview != "" {
+		b.WriteString(fmt.Sprintf("%s %s(%s)", coloredRisk, tool.Name, paramPreview))
 	} else {
-		b.WriteString(fmt.Sprintf("%s %d tools:", o.model.renderColoredRiskEmoji(forms.RiskCaution), len(o.model.pendingToolUses)))
-		for _, tool := range o.model.pendingToolUses {
-			riskLevel := forms.AssessRiskLevel(tool)
-			coloredRisk := o.model.renderColoredRiskEmoji(riskLevel)
-			paramPreview := o.model.getToolParamPreview(tool)
-			if paramPreview != "" {
-				b.WriteString(fmt.Sprintf("\n  %s %s(%s)", coloredRisk, tool.Name, paramPreview))
-			} else {
-				b.WriteString(fmt.Sprintf("\n  %s %s()", coloredRisk, tool.Name))
-			}
-		}
+		b.WriteString(fmt.Sprintf("%s %s()", coloredRisk, tool.Name))
 	}
 	b.WriteString("\n\n")
 
-	// Options - all visible, highlight selected with autocomplete style
+	// Options - always singular since we show one tool at a time
 	options := []string{
 		"✓ Approve (run this time)",
 		"✗ Deny (skip this time)",
@@ -107,7 +98,8 @@ func (o *ToolApprovalOverlay) OnPop() {
 	// Clear state when dismissed
 	o.model.toolApprovalMode = false
 	o.model.toolApprovalForm = nil
-	o.model.pendingToolUses = nil
+	// NOTE: Don't clear pendingToolUses here! ApproveToolUse/DenyToolUse need it.
+	// They will clear it after processing the approval decision.
 	o.model.Status = StatusIdle
 }
 

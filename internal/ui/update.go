@@ -227,7 +227,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.updateViewport()
 
-		// Send ALL tool results back to API in one user message
+		// Only send results if no more tools are pending approval
+		if len(m.pendingToolUses) > 0 {
+			// More tools pending - push a new overlay for the next tool
+			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
+				len(m.toolResults), len(m.pendingToolUses))
+			m.toolApprovalMode = true
+			m.overlayManager.Push(m.toolApprovalOverlay)
+			return m, nil
+		}
+
+		// All tools processed - send ALL accumulated tool results back to API
 		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
@@ -298,8 +308,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 3:
 					decision = forms.DecisionNeverAllow
 				}
+
 				// Reset selection for next time
 				m.selectedApprovalOpt = 0
+
 				return m.handleApprovalResult(&forms.ApprovalResultMsg{
 					Result: forms.ApprovalFormResult{
 						Decision: decision,
