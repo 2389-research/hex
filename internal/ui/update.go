@@ -263,7 +263,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if !isGlobalHotkey {
 				// Let overlay handle the key first
-				handled, cmd := m.overlayManager.HandleKey(msg)
+				var handled bool
+				handled, cmd = m.overlayManager.HandleKey(msg)
 				if handled {
 					// Check if this should also pop the overlay
 					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
