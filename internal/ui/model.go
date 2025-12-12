@@ -987,17 +987,22 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 // DenyToolUse rejects the first pending tool (individual denial)
 // DEPRECATED: Use DenySpecificTool with the overlay's tool instead
 func (m *Model) DenyToolUse() tea.Cmd {
+	return m.DenyToolUseWithType(DenialManual)
+}
+
+// DenyToolUseWithType denies the currently pending tool with specified approval type
+func (m *Model) DenyToolUseWithType(approvalType ApprovalType) tea.Cmd {
 	// Get the current tool approval overlay and use its tool
 	if active := m.overlayManager.GetActive(); active != nil {
 		if toolOverlay, ok := active.(*ToolApprovalOverlay); ok {
-			return m.DenySpecificTool(toolOverlay.GetTool())
+			return m.DenySpecificTool(toolOverlay.GetTool(), approvalType)
 		}
 	}
 	return nil
 }
 
 // DenySpecificTool rejects a specific tool
-func (m *Model) DenySpecificTool(tool *core.ToolUse) tea.Cmd {
+func (m *Model) DenySpecificTool(tool *core.ToolUse, approvalType ApprovalType) tea.Cmd {
 	if tool == nil {
 		return nil
 	}
@@ -1015,8 +1020,9 @@ func (m *Model) DenySpecificTool(tool *core.ToolUse) tea.Cmd {
 	m.validateToolUseExists(tool.ID)
 
 	m.toolResults = append(m.toolResults, ToolResult{
-		ToolUseID: tool.ID,
-		Result:    result,
+		ToolUseID:    tool.ID,
+		Result:       result,
+		ApprovalType: approvalType,
 	})
 
 	m.AddMessage("tool", "Tool denied: "+tool.Name)
@@ -1106,12 +1112,14 @@ func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
 						Success:  false,
 						Error:    err.Error(),
 					},
+					ApprovalType: ApprovalAlwaysAllow,
 				})
 			} else {
 				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
 				results = append(results, ToolResult{
-					ToolUseID: toolUse.ID,
-					Result:    result,
+					ToolUseID:    toolUse.ID,
+					Result:       result,
+					ApprovalType: ApprovalAlwaysAllow,
 				})
 			}
 		}
@@ -1577,7 +1585,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist never-allow rule: %v\n", err)
 			}
 		}
-		return m, m.DenyToolUse()
+		return m, m.DenyToolUseWithType(DenialNeverAllow)
 
 	default:
 		// Unknown decision, deny by default

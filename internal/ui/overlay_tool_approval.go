@@ -177,5 +177,5 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 // Cancel dismisses the tool approval and sends denial to API for THIS tool only
 func (o *ToolApprovalOverlay) Cancel() tea.Cmd {
-	return o.model.DenySpecificTool(o.tool)
+	return o.model.DenySpecificTool(o.tool, DenialManual)
 }

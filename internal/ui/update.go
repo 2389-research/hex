@@ -141,8 +141,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Store result
 			m.toolResults = append(m.toolResults, ToolResult{
-				ToolUseID: msg.toolUseID,
-				Result:    msg.result,
+				ToolUseID:    msg.toolUseID,
+				Result:       msg.result,
+				ApprovalType: ApprovalManual,
 			})
 
 			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
@@ -1315,7 +1316,7 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 			case approval.RuleNeverAllow:
 				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
 				m.updateViewport()
-				return m, m.DenyToolUse()
+				return m, m.DenyToolUseWithType(DenialNeverAllow)
 			}
 		}
 
