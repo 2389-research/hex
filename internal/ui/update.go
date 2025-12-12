@@ -1622,11 +1622,12 @@ func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
 			}
 
 		case "tool_use":
-			// Render compact tool use indicator (just the tool name and params)
+			// Render compact tool use indicator with status-aware icon and color
 			// The collapsed log view is rendered once at the end of all tool_use blocks
 			paramPreview := getToolParamPreview(block.Name, block.Input)
-			toolLine := fmt.Sprintf("🛠 %s(%s)", block.Name, paramPreview)
-			b.WriteString(m.theme.ToolCall.Render(toolLine))
+			icon, style := m.getToolStatus(block.ID)
+			toolLine := fmt.Sprintf("%s %s(%s)", icon, block.Name, paramPreview)
+			b.WriteString(style.Render(toolLine))
 
 		case "text":
 			// Regular text block
