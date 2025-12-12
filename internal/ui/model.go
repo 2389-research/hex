@@ -220,7 +220,6 @@ type Model struct {
 	overlayManager       *OverlayManager       // Centralized overlay management
 	baseViewportHeight   int                   // Base viewport height before overlay adjustments
 	autocompleteOverlay  *AutocompleteOverlay  // Autocomplete overlay instance
-	toolLogOverlay       *ToolLogOverlay       // Tool log overlay instance
 	toolTimelineOverlay  *ToolTimelineOverlay  // Tool timeline overlay instance
 	helpOverlay          *HelpOverlay          // Help overlay instance
 	historyOverlay       *HistoryOverlay       // History overlay instance
@@ -350,7 +349,6 @@ func NewModel(conversationID, model string) *Model {
 	m.overlayManager = NewOverlayManager()
 	// Note: ToolApprovalOverlay instances are created dynamically per tool via PushToolApprovalOverlays
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
-	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
 	m.toolTimelineOverlay = NewToolTimelineOverlay(m)
 	m.helpOverlay = NewHelpOverlay()
 	m.historyOverlay = NewHistoryOverlay(&m.Messages)
