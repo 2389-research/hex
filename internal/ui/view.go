@@ -114,10 +114,8 @@ func (m *Model) View() string {
 	if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
-		// TUI Polish: Show collapsed tool log (last 3 lines)
-		if collapsedLog, _ := m.renderCollapsedToolLog(); collapsedLog != "" {
-			b.WriteString(collapsedLog)
-		}
+		// Task 7: Don't show collapsed preview for pending tools (no result yet)
+		// The collapsed preview is only shown for the most recent tool with a result
 	} else if m.SearchMode {
 		// Search mode indicator
 		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))

@@ -1640,15 +1640,20 @@ func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
 		}
 	}
 
-	// After all blocks, add collapsed tool log if there were any tool_use blocks
-	hasToolUse := false
-	for _, block := range blocks {
-		if block.Type == "tool_use" {
-			hasToolUse = true
-			break
+	// Task 7: Only show collapsed preview on the most recent tool with a result
+	// Check if any of these blocks contains the most recent tool
+	mostRecentToolID := m.getMostRecentToolWithResult()
+	hasMostRecentTool := false
+	if mostRecentToolID != "" {
+		for _, block := range blocks {
+			if block.Type == "tool_use" && block.ID == mostRecentToolID {
+				hasMostRecentTool = true
+				break
+			}
 		}
 	}
-	if hasToolUse {
+
+	if hasMostRecentTool {
 		b.WriteString("\n")
 		// Add collapsed tool log (last 3 lines of chunk output)
 		collapsedLog, hiddenLines := m.renderCollapsedToolLog()
