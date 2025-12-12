@@ -146,6 +146,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				ApprovalType: ApprovalManual,
 			})
 
+			// Update cached most recent tool ID
+			m.updateMostRecentToolID()
+
 			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
 
 			// Display result in UI
@@ -178,6 +181,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Store all results
 		m.toolResults = append(m.toolResults, msg.results...)
+
+		// Update cached most recent tool ID
+		m.updateMostRecentToolID()
 
 		// Display results in UI and add to tool log
 		// Each tool result gets a header followed by its output to keep them grouped
@@ -1641,12 +1647,11 @@ func (m *Model) renderContentBlocks(blocks []core.ContentBlock) string {
 	}
 
 	// Task 7: Only show collapsed preview on the most recent tool with a result
-	// Check if any of these blocks contains the most recent tool
-	mostRecentToolID := m.getMostRecentToolWithResult()
+	// Check if any of these blocks contains the most recent tool (cached for performance)
 	hasMostRecentTool := false
-	if mostRecentToolID != "" {
+	if m.mostRecentToolID != "" {
 		for _, block := range blocks {
-			if block.Type == "tool_use" && block.ID == mostRecentToolID {
+			if block.Type == "tool_use" && block.ID == m.mostRecentToolID {
 				hasMostRecentTool = true
 				break
 			}

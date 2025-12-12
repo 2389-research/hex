@@ -229,6 +229,9 @@ type Model struct {
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
 	hoveredMessageTime  time.Time // Timestamp of hovered message
+
+	// Performance: Cache most recent tool ID to avoid O(n²) scans during rendering
+	mostRecentToolID string // ID of most recent tool with result (updated when tool results change)
 }
 
 // ApprovalType represents how a tool was approved or denied
@@ -1026,6 +1029,9 @@ func (m *Model) DenySpecificTool(tool *core.ToolUse, approvalType ApprovalType) 
 		Result:       result,
 		ApprovalType: approvalType,
 	})
+
+	// Update cached most recent tool ID
+	m.updateMostRecentToolID()
 
 	m.AddMessage("tool", "Tool denied: "+tool.Name)
 
