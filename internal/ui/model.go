@@ -725,11 +725,6 @@ func (m *Model) ClearContext() {
 	// Clear tool log state
 	m.clearToolLogChunk()
 
-	// Close any active overlays (tool log, tool approval, autocomplete, etc.)
-	if m.overlayManager != nil {
-		m.overlayManager.CancelAll()
-	}
-
 	// Hide autocomplete if active
 	if m.autocomplete != nil {
 		m.autocomplete.Hide()
