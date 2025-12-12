@@ -1557,21 +1557,27 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	m.toolApprovalMode = false
 	m.toolApprovalForm = nil
 	m.approvalPrompt = nil
-	// Pop tool approval overlay if active
-	if m.IsToolApprovalOverlayActive() {
-		m.overlayManager.Pop()
-		m.adjustViewportForOverlay()
-	}
+
+	// NOTE: Do NOT pop the overlay here for approve/deny cases.
+	// ApproveToolUse() and DenyToolUse*() need the overlay to be active
+	// to get the current tool. They handle popping themselves.
 
 	// Process the decision
 	switch msg.Result.Decision {
 	case forms.DecisionApprove:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User approved tool: %s\n", msg.Result.ToolUse.Name)
+		// ApproveToolUse gets tool from overlay, then pops it
 		return m, m.ApproveToolUse()
 
 	case forms.DecisionDeny:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User denied tool: %s\n", msg.Result.ToolUse.Name)
-		return m, m.DenyToolUse()
+		// DenyToolUse gets tool from overlay; we pop after
+		cmd := m.DenyToolUse()
+		if m.IsToolApprovalOverlayActive() {
+			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
+		}
+		return m, cmd
 
 	case forms.DecisionAlwaysAllow:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User always allowed tool: %s\n", msg.Result.ToolUse.Name)
@@ -1581,6 +1587,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist always-allow rule: %v\n", err)
 			}
 		}
+		// ApproveToolUse gets tool from overlay, then pops it
 		return m, m.ApproveToolUse()
 
 	case forms.DecisionNeverAllow:
@@ -1591,12 +1598,23 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist never-allow rule: %v\n", err)
 			}
 		}
-		return m, m.DenyToolUseWithType(DenialNeverAllow)
+		// DenyToolUseWithType gets tool from overlay; we pop after
+		cmd := m.DenyToolUseWithType(DenialNeverAllow)
+		if m.IsToolApprovalOverlayActive() {
+			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
+		}
+		return m, cmd
 
 	default:
 		// Unknown decision, deny by default
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] Unknown decision, denying tool\n")
-		return m, m.DenyToolUse()
+		cmd := m.DenyToolUse()
+		if m.IsToolApprovalOverlayActive() {
+			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
+		}
+		return m, cmd
 	}
 }
 

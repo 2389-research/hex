@@ -158,14 +158,18 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	case tea.KeyUp:
 		if o.selectedOpt > 0 {
 			o.selectedOpt--
+			o.model.selectedApprovalOpt = o.selectedOpt // Sync to model
 		}
 		return true, nil
 	case tea.KeyDown:
 		if o.selectedOpt < 3 { // 4 options: 0-3
 			o.selectedOpt++
+			o.model.selectedApprovalOpt = o.selectedOpt // Sync to model
 		}
 		return true, nil
 	case tea.KeyEnter:
+		// Sync selection to model before letting update.go handle it
+		o.model.selectedApprovalOpt = o.selectedOpt
 		// The actual approval logic is handled in update.go
 		// Return false to let it through to the main handler
 		return false, nil
