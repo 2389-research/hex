@@ -217,7 +217,8 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager      *OverlayManager       // Centralized overlay management
+	overlayManager       *OverlayManager       // Centralized overlay management
+	baseViewportHeight   int                   // Base viewport height before overlay adjustments
 	toolApprovalOverlay *ToolApprovalOverlay  // Tool approval overlay instance
 	autocompleteOverlay *AutocompleteOverlay  // Autocomplete overlay instance
 	toolLogOverlay      *ToolLogOverlay       // Tool log overlay instance
@@ -918,6 +919,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 		// Pop tool approval overlay if active
 		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
 		}
 		return nil
 	}
@@ -937,6 +939,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 	// Pop the current approval overlay
 	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 		m.overlayManager.Pop()
+		m.adjustViewportForOverlay()
 	}
 
 	// Check if more tools are pending - if so, push a NEW overlay for the next tool
@@ -944,6 +947,7 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 		// More tools pending - push a new overlay for the next tool
 		m.toolApprovalMode = true // Keep approval mode active
 		m.overlayManager.Push(m.toolApprovalOverlay)
+		m.adjustViewportForOverlay()
 	} else {
 		// No more tools - close approval mode
 		m.toolApprovalMode = false
@@ -982,6 +986,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 		// Pop tool approval overlay if active
 		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
 		}
 		return nil
 	}
@@ -1013,6 +1018,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 	// Pop the current approval overlay
 	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 		m.overlayManager.Pop()
+		m.adjustViewportForOverlay()
 	}
 
 	// Check if more tools are pending - if so, push a NEW overlay for the next tool
@@ -1020,6 +1026,7 @@ func (m *Model) DenyToolUse() tea.Cmd {
 		// More tools pending - push a new overlay for the next tool
 		m.toolApprovalMode = true // Keep approval mode active
 		m.overlayManager.Push(m.toolApprovalOverlay)
+		m.adjustViewportForOverlay()
 		m.updateViewport()
 		// Don't send results yet - accumulate them until all tools are processed
 		return nil
@@ -1494,6 +1501,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		// Pop tool approval overlay if active
 		if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 			m.overlayManager.Pop()
+			m.adjustViewportForOverlay()
 		}
 		return m, m.DenyToolUse()
 	}
@@ -1505,6 +1513,7 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 	// Pop tool approval overlay if active
 	if m.overlayManager.GetActive() == m.toolApprovalOverlay {
 		m.overlayManager.Pop()
+		m.adjustViewportForOverlay()
 	}
 
 	// Process the decision

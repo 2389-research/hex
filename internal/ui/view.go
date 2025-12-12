@@ -51,20 +51,8 @@ func (m *Model) View() string {
 
 		// Render overlay
 		bottomOverlayContent = active.Render(m.Width, bottomOverlayHeight)
-
-		// Adjust viewport height to account for bottom overlay
-		// Note: This temporarily adjusts viewport for rendering
-		// The viewport height should be restored in Update when overlay is dismissed
-		originalHeight := m.Viewport.Height
-		adjustedHeight := originalHeight - bottomOverlayHeight
-		if adjustedHeight < 5 {
-			adjustedHeight = 5 // Minimum height for viewport
-		}
-		m.Viewport.Height = adjustedHeight
-		defer func() {
-			// Restore original height after rendering
-			m.Viewport.Height = originalHeight
-		}()
+		// Note: Viewport height is adjusted in Update via adjustViewportForOverlay()
+		// when overlays are pushed/popped - no mutation needed here
 	}
 
 	// Render different views based on CurrentView

@@ -234,6 +234,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				len(m.toolResults), len(m.pendingToolUses))
 			m.toolApprovalMode = true
 			m.overlayManager.Push(m.toolApprovalOverlay)
+			m.adjustViewportForOverlay()
 			return m, nil
 		}
 
@@ -270,6 +271,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 						// Pop the overlay after it handled the key
 						m.overlayManager.Pop()
+						m.adjustViewportForOverlay()
 					}
 
 					// Update scrollable overlays with viewport messages
@@ -409,10 +411,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.overlayManager.GetActive() == m.toolLogOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
 			} else {
 				// Open tool log
 				m.overlayManager.Push(m.toolLogOverlay)
 				m.toolLogOverlay.OnPush(m.Width, m.Height)
+				m.adjustViewportForOverlay()
 			}
 			return m, nil
 		}
@@ -422,10 +426,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.overlayManager.GetActive() == m.helpOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
 			} else {
 				// Open help
 				m.overlayManager.Push(m.helpOverlay)
 				m.helpOverlay.OnPush(m.Width, m.Height)
+				m.adjustViewportForOverlay()
 			}
 			return m, nil
 		}
@@ -435,10 +441,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.overlayManager.GetActive() == m.historyOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
 			} else {
 				// Open history
 				m.overlayManager.Push(m.historyOverlay)
 				m.historyOverlay.OnPush(m.Width, m.Height)
+				m.adjustViewportForOverlay()
 			}
 			return m, nil
 		}
@@ -546,6 +554,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Pop the overlay from stack
 					if m.overlayManager.GetActive() == m.autocompleteOverlay {
 						m.overlayManager.Pop()
+						m.adjustViewportForOverlay()
 					}
 				}
 				return m, nil
@@ -555,6 +564,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Pop the overlay from stack
 				if m.overlayManager.GetActive() == m.autocompleteOverlay {
 					m.overlayManager.Pop()
+					m.adjustViewportForOverlay()
 				}
 				return m, nil
 			}
@@ -570,6 +580,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.overlayManager.GetActive() != m.autocompleteOverlay {
 					m.overlayManager.Push(m.autocompleteOverlay)
 					m.autocompleteOverlay.OnPush(m.Width, m.Height)
+					m.adjustViewportForOverlay()
 				}
 				return m, nil
 			}
@@ -791,7 +802,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Height = msg.Height
 		m.Input.SetWidth(msg.Width - 4)
 		m.Viewport.Width = msg.Width - 4
-		m.Viewport.Height = msg.Height - 8
+		m.baseViewportHeight = msg.Height - 8 // Store base height
+		m.adjustViewportForOverlay()          // Set actual height based on active overlay
 		if !m.Ready {
 			m.Ready = true
 			m.updateViewport()
@@ -831,6 +843,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						// Pop overlay if active
 						if m.overlayManager.GetActive() == m.autocompleteOverlay {
 							m.overlayManager.Pop()
+							m.adjustViewportForOverlay()
 						}
 					} else {
 						// Already active - just update with new input
@@ -844,6 +857,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if m.overlayManager.GetActive() != m.autocompleteOverlay {
 						m.overlayManager.Push(m.autocompleteOverlay)
 						m.autocompleteOverlay.OnPush(m.Width, m.Height)
+						m.adjustViewportForOverlay()
 					}
 				}
 			}
@@ -877,6 +891,40 @@ func (m *Model) updateViewport() {
 // updateViewportPreserveScroll renders messages without scrolling to bottom
 func (m *Model) updateViewportPreserveScroll() {
 	m.updateViewportInternal(false)
+}
+
+// adjustViewportForOverlay recalculates viewport height based on active bottom overlay
+// This should be called when overlays are pushed/popped, not during View()
+func (m *Model) adjustViewportForOverlay() {
+	if m.baseViewportHeight == 0 {
+		return // Not initialized yet
+	}
+
+	// Check for active bottom (non-fullscreen) overlay
+	active := m.overlayManager.GetActive()
+	if active == nil {
+		// No overlay - use base height
+		m.Viewport.Height = m.baseViewportHeight
+		return
+	}
+
+	// Fullscreen overlays don't affect viewport height (they replace viewport entirely)
+	if _, isFullscreen := active.(FullscreenOverlay); isFullscreen {
+		m.Viewport.Height = m.baseViewportHeight
+		return
+	}
+
+	// Bottom overlay - reduce viewport height
+	bottomOverlayHeight := active.GetDesiredHeight()
+	if bottomOverlayHeight > m.Height/2 {
+		bottomOverlayHeight = m.Height / 2 // Cap at half screen
+	}
+
+	adjustedHeight := m.baseViewportHeight - bottomOverlayHeight
+	if adjustedHeight < 5 {
+		adjustedHeight = 5 // Minimum height for viewport
+	}
+	m.Viewport.Height = adjustedHeight
 }
 
 // updateViewportInternal is the shared implementation
@@ -1258,6 +1306,7 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		if m.overlayManager.GetActive() != m.toolApprovalOverlay {
 			m.overlayManager.Push(m.toolApprovalOverlay)
 			m.toolApprovalOverlay.OnPush(m.Width, m.Height)
+			m.adjustViewportForOverlay()
 		}
 		m.updateViewport()
 
