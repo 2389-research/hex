@@ -166,10 +166,7 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	return true, nil
 }
 
-// Cancel dismisses the tool approval (cleanup only, no API calls)
-func (o *ToolApprovalOverlay) Cancel() {
-	o.model.toolApprovalMode = false
-	o.model.toolApprovalForm = nil
-	o.model.pendingToolUses = nil
-	o.model.Status = StatusIdle
+// Cancel dismisses the tool approval and sends denial to API
+func (o *ToolApprovalOverlay) Cancel() tea.Cmd {
+	return o.model.DenyToolUse()
 }

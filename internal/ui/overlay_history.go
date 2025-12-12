@@ -181,3 +181,8 @@ func (o *HistoryOverlay) Render(width, height int) string {
 
 	return b.String()
 }
+
+// Cancel dismisses the history overlay (no cleanup needed)
+func (o *HistoryOverlay) Cancel() tea.Cmd {
+	return nil
+}

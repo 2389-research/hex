@@ -269,9 +269,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if handled {
 					// Check if this should also pop the overlay
 					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
-						// Pop the overlay after it handled the key
-						m.overlayManager.Pop()
-						m.adjustViewportForOverlay()
+						// Call Cancel() on the overlay for cleanup
+						active := m.overlayManager.GetActive()
+						if active != nil {
+							cmd = active.Cancel()
+						}
+						// Only pop if Cancel() didn't already do it (e.g., tool approval pops via DenyToolUse)
+						if m.overlayManager.GetActive() == active {
+							m.overlayManager.Pop()
+							m.adjustViewportForOverlay()
+						}
 					}
 
 					// Update scrollable overlays with viewport messages

@@ -155,6 +155,11 @@ func (o *HelpOverlay) Render(width, height int) string {
 	return b.String()
 }
 
+// Cancel dismisses the help overlay (no cleanup needed)
+func (o *HelpOverlay) Cancel() tea.Cmd {
+	return nil
+}
+
 // max returns the maximum of two integers
 func max(a, b int) int {
 	if a > b {

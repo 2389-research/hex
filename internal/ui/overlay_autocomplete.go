@@ -189,8 +189,9 @@ func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 }
 
 // Cancel dismisses the autocomplete
-func (o *AutocompleteOverlay) Cancel() {
+func (o *AutocompleteOverlay) Cancel() tea.Cmd {
 	if o.model.autocomplete != nil {
 		o.model.autocomplete.Hide()
 	}
+	return nil
 }

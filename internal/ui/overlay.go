@@ -18,6 +18,10 @@ type Overlay interface {
 	OnPush(width, height int)
 	OnPop()
 
+	// Cancel is called when the overlay is dismissed via Escape/Ctrl+C.
+	// Returns a command for any cleanup actions (e.g., sending denial to API).
+	Cancel() tea.Cmd
+
 	// Height management
 	GetDesiredHeight() int
 }

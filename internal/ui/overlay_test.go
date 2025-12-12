@@ -60,6 +60,10 @@ func (m *mockOverlay) OnPop() {
 	m.onPopCalled = true
 }
 
+func (m *mockOverlay) Cancel() tea.Cmd {
+	return nil
+}
+
 // TestOverlayManager tests the overlay manager functionality
 func TestOverlayManager(t *testing.T) {
 	m := NewModel("test-conv", "test-model")

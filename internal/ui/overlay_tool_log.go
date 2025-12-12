@@ -160,3 +160,8 @@ func (o *ToolLogOverlay) Render(width, height int) string {
 
 	return b.String()
 }
+
+// Cancel dismisses the tool log overlay (no cleanup needed)
+func (o *ToolLogOverlay) Cancel() tea.Cmd {
+	return nil
+}
