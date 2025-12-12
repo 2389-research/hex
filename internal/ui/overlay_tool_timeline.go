@@ -77,10 +77,10 @@ func (o *ToolTimelineOverlay) GetContent() string {
 				b.WriteString(style.Render(toolLine))
 				b.WriteString("\n")
 
-				// Find the corresponding tool result
+				// Find the corresponding tool result in history
 				var toolOutput string
 				var hasResult bool
-				for _, tr := range o.model.toolResults {
+				for _, tr := range o.model.toolResultHistory {
 					if tr.ToolUseID == block.ID {
 						hasResult = true
 						if tr.Result != nil {

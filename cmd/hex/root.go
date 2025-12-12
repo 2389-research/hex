@@ -603,13 +603,13 @@ func runInteractive(prompt string) error {
 
 	p := tea.NewProgram(uiModel, opts...)
 	if _, err := p.Run(); err != nil {
-		os.Stderr = origStderr // Restore stderr for error reporting
+		// os.Stderr = origStderr // Restore stderr for error reporting (DEBUG)
 		logging.ErrorWithErr("Failed to run UI", err)
 		return fmt.Errorf("run UI: %w", err)
 	}
 
 	// Restore stderr before printing cost summary
-	os.Stderr = origStderr
+	// os.Stderr = origStderr // DEBUG
 
 	// Print cost summary if agent ID is set
 	agentID := os.Getenv("HEX_AGENT_ID")

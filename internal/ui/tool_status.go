@@ -14,8 +14,8 @@ import "github.com/charmbracelet/lipgloss"
 // - Manual Deny: ✗ (gray)
 // - Never Allow: ✗✗ (gray)
 func (m *Model) getToolStatus(toolUseID string) (icon string, style lipgloss.Style) {
-	// Look up the tool result by ID
-	for _, tr := range m.toolResults {
+	// Look up in historical results (toolResultHistory persists for UI display)
+	for _, tr := range m.toolResultHistory {
 		if tr.ToolUseID == toolUseID {
 			// Determine icon based on ApprovalType
 			switch tr.ApprovalType {

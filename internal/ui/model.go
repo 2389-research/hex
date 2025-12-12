@@ -152,7 +152,8 @@ type Model struct {
 	selectedApprovalOpt  int       // Currently highlighted approval option (0-3)
 	executingTool    bool      // Tool is running
 	currentToolID     string          // ID of currently executing tool
-	toolResults       []ToolResult    // Results to send back to API
+	toolResults       []ToolResult    // Results to send back to API (cleared after sending)
+	toolResultHistory []ToolResult    // Historical results for UI status display (never cleared)
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
 	// Phase 6C: Enhanced UI Components
@@ -917,8 +918,13 @@ func (m *Model) GetPrunedMessages() []core.Message {
 	return coreMessages
 }
 
-// ApproveToolUse executes the tool from the active approval overlay
+// ApproveToolUse executes the tool from the active approval overlay (manual approval)
 func (m *Model) ApproveToolUse() tea.Cmd {
+	return m.ApproveToolUseWithType(ApprovalManual)
+}
+
+// ApproveToolUseWithType executes the tool with specified approval type
+func (m *Model) ApproveToolUseWithType(approvalType ApprovalType) tea.Cmd {
 	// Guard against double-execution from button mashing
 	if m.executingTool {
 		return nil
@@ -977,8 +983,8 @@ func (m *Model) ApproveToolUse() tea.Cmd {
 
 	m.updateViewport()
 
-	// Execute the single tool
-	toolCmd := m.executeToolsBatch(toolUses)
+	// Execute the single tool with the specified approval type
+	toolCmd := m.executeToolsBatch(toolUses, approvalType)
 
 	// Return batch of spinner start and tool execution
 	if spinnerCmd != nil {
@@ -1098,7 +1104,7 @@ type toolBatchExecutionMsg struct {
 }
 
 // executeToolsBatch executes multiple tools sequentially and collects all results
-func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
+func (m *Model) executeToolsBatch(toolUses []*core.ToolUse, approvalType ApprovalType) tea.Cmd {
 	return func() tea.Msg {
 		results := make([]ToolResult, 0, len(toolUses))
 
@@ -1118,14 +1124,14 @@ func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
 						Success:  false,
 						Error:    err.Error(),
 					},
-					ApprovalType: ApprovalAlwaysAllow,
+					ApprovalType: approvalType,
 				})
 			} else {
 				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
 				results = append(results, ToolResult{
 					ToolUseID:    toolUse.ID,
 					Result:       result,
-					ApprovalType: ApprovalAlwaysAllow,
+					ApprovalType: approvalType,
 				})
 			}
 		}
@@ -1340,9 +1346,11 @@ func (m *Model) sendToolResults() tea.Cmd {
 	// Dump messages BEFORE adding tool results
 	m.dumpMessages("BEFORE adding tool results")
 
-	// Capture tool results before clearing
+	// Capture tool results for sending to API
 	results := m.toolResults
-	m.toolResults = nil // Clear results
+	// Copy to history for UI status display before clearing
+	m.toolResultHistory = append(m.toolResultHistory, results...)
+	m.toolResults = nil // Clear after copying to history
 
 	// Build tool_result content blocks for the API
 	// According to Anthropic API spec, tool results must be sent as content blocks
@@ -1545,12 +1553,23 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
 		m.toolApprovalMode = false
 		m.toolApprovalForm = nil
-		// Pop tool approval overlay if active
+		// DenyToolUse needs overlay active; pop after
+		cmd := m.DenyToolUse()
 		if m.IsToolApprovalOverlayActive() {
 			m.overlayManager.Pop()
 			m.adjustViewportForOverlay()
 		}
-		return m, m.DenyToolUse()
+		// Check if there are no more tool approval overlays - finalize results
+		if !m.IsToolApprovalOverlayActive() {
+			finalizeCmd := m.FinalizeToolApproval()
+			if cmd != nil && finalizeCmd != nil {
+				return m, tea.Batch(cmd, finalizeCmd)
+			}
+			if finalizeCmd != nil {
+				return m, finalizeCmd
+			}
+		}
+		return m, cmd
 	}
 
 	// Exit approval mode
@@ -1577,6 +1596,16 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 			m.overlayManager.Pop()
 			m.adjustViewportForOverlay()
 		}
+		// Check if there are no more tool approval overlays - finalize results
+		if !m.IsToolApprovalOverlayActive() {
+			finalizeCmd := m.FinalizeToolApproval()
+			if cmd != nil && finalizeCmd != nil {
+				return m, tea.Batch(cmd, finalizeCmd)
+			}
+			if finalizeCmd != nil {
+				return m, finalizeCmd
+			}
+		}
 		return m, cmd
 
 	case forms.DecisionAlwaysAllow:
@@ -1587,8 +1616,8 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist always-allow rule: %v\n", err)
 			}
 		}
-		// ApproveToolUse gets tool from overlay, then pops it
-		return m, m.ApproveToolUse()
+		// ApproveToolUseWithType gets tool from overlay, then pops it
+		return m, m.ApproveToolUseWithType(ApprovalAlwaysAllow)
 
 	case forms.DecisionNeverAllow:
 		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User never allowed tool: %s\n", msg.Result.ToolUse.Name)
@@ -1604,6 +1633,16 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 			m.overlayManager.Pop()
 			m.adjustViewportForOverlay()
 		}
+		// Check if there are no more tool approval overlays - finalize results
+		if !m.IsToolApprovalOverlayActive() {
+			finalizeCmd := m.FinalizeToolApproval()
+			if cmd != nil && finalizeCmd != nil {
+				return m, tea.Batch(cmd, finalizeCmd)
+			}
+			if finalizeCmd != nil {
+				return m, finalizeCmd
+			}
+		}
 		return m, cmd
 
 	default:
@@ -1613,6 +1652,16 @@ func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, t
 		if m.IsToolApprovalOverlayActive() {
 			m.overlayManager.Pop()
 			m.adjustViewportForOverlay()
+		}
+		// Check if there are no more tool approval overlays - finalize results
+		if !m.IsToolApprovalOverlayActive() {
+			finalizeCmd := m.FinalizeToolApproval()
+			if cmd != nil && finalizeCmd != nil {
+				return m, tea.Batch(cmd, finalizeCmd)
+			}
+			if finalizeCmd != nil {
+				return m, finalizeCmd
+			}
 		}
 		return m, cmd
 	}

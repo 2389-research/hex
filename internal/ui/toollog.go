@@ -66,8 +66,8 @@ func (m *Model) updateMostRecentToolID() {
 		for j := len(msg.ContentBlock) - 1; j >= 0; j-- {
 			block := msg.ContentBlock[j]
 			if block.Type == "tool_use" {
-				// Check if this tool has a result
-				for _, tr := range m.toolResults {
+				// Check if this tool has a result in history
+				for _, tr := range m.toolResultHistory {
 					if tr.ToolUseID == block.ID {
 						// Found a tool with a result - cache it
 						m.mostRecentToolID = block.ID
@@ -92,8 +92,8 @@ func (m *Model) getMostRecentToolWithResult() string {
 		for j := len(msg.ContentBlock) - 1; j >= 0; j-- {
 			block := msg.ContentBlock[j]
 			if block.Type == "tool_use" {
-				// Check if this tool has a result
-				for _, tr := range m.toolResults {
+				// Check if this tool has a result in history
+				for _, tr := range m.toolResultHistory {
 					if tr.ToolUseID == block.ID {
 						// Found a tool with a result
 						return block.ID
