@@ -230,10 +230,22 @@ type Model struct {
 	hoveredMessageTime  time.Time // Timestamp of hovered message
 }
 
+// ApprovalType represents how a tool was approved or denied
+type ApprovalType int
+
+const (
+	ApprovalPending     ApprovalType = iota
+	ApprovalManual
+	ApprovalAlwaysAllow
+	DenialManual
+	DenialNeverAllow
+)
+
 // ToolResult represents a tool execution result for the API
 type ToolResult struct {
-	ToolUseID string
-	Result    *tools.Result
+	ToolUseID    string
+	Result       *tools.Result
+	ApprovalType ApprovalType
 }
 
 // NewModel creates a new UI model
