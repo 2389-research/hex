@@ -432,15 +432,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Handle Ctrl+O: toggle tool log overlay
+		// Handle Ctrl+O: toggle tool timeline overlay
 		if msg.Type == tea.KeyCtrlO {
-			if m.overlayManager.GetActive() == m.toolLogOverlay {
+			if m.overlayManager.GetActive() == m.toolTimelineOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
 				m.adjustViewportForOverlay()
 			} else {
-				// Open tool log
-				m.overlayManager.Push(m.toolLogOverlay, m.Width, m.Height)
+				// Open tool timeline
+				m.overlayManager.Push(m.toolTimelineOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
 			return m, nil

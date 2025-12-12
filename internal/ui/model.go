@@ -217,12 +217,13 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager      *OverlayManager      // Centralized overlay management
-	baseViewportHeight  int                  // Base viewport height before overlay adjustments
-	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
-	toolLogOverlay      *ToolLogOverlay      // Tool log overlay instance
-	helpOverlay         *HelpOverlay         // Help overlay instance
-	historyOverlay      *HistoryOverlay      // History overlay instance
+	overlayManager       *OverlayManager       // Centralized overlay management
+	baseViewportHeight   int                   // Base viewport height before overlay adjustments
+	autocompleteOverlay  *AutocompleteOverlay  // Autocomplete overlay instance
+	toolLogOverlay       *ToolLogOverlay       // Tool log overlay instance
+	toolTimelineOverlay  *ToolTimelineOverlay  // Tool timeline overlay instance
+	helpOverlay          *HelpOverlay          // Help overlay instance
+	historyOverlay       *HistoryOverlay       // History overlay instance
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
@@ -347,6 +348,7 @@ func NewModel(conversationID, model string) *Model {
 	// Note: ToolApprovalOverlay instances are created dynamically per tool via PushToolApprovalOverlays
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
 	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
+	m.toolTimelineOverlay = NewToolTimelineOverlay(m)
 	m.helpOverlay = NewHelpOverlay()
 	m.historyOverlay = NewHistoryOverlay(&m.Messages)
 

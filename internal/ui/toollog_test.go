@@ -70,19 +70,19 @@ func TestToolLogOverlayToggle(t *testing.T) {
 	model.Width = 80
 	model.Height = 24
 
-	// Tool log overlay should not be active initially
-	assert.NotEqual(t, model.toolLogOverlay, model.overlayManager.GetActive())
+	// Tool timeline overlay should not be active initially
+	assert.NotEqual(t, model.toolTimelineOverlay, model.overlayManager.GetActive())
 
 	// Ctrl+O should toggle overlay on
 	ctrlO := tea.KeyMsg{Type: tea.KeyCtrlO}
 	newModel, _ := model.Update(ctrlO)
 	m := newModel.(*Model)
-	assert.Equal(t, m.toolLogOverlay, m.overlayManager.GetActive())
+	assert.Equal(t, m.toolTimelineOverlay, m.overlayManager.GetActive())
 
 	// Ctrl+O again should toggle off
 	newModel, _ = m.Update(ctrlO)
 	m = newModel.(*Model)
-	assert.NotEqual(t, m.toolLogOverlay, m.overlayManager.GetActive())
+	assert.NotEqual(t, m.toolTimelineOverlay, m.overlayManager.GetActive())
 }
 
 func TestToolLogOverlayEscapeCloses(t *testing.T) {
