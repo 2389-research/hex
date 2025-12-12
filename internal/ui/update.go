@@ -227,7 +227,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.updateViewport()
 
-		// Send ALL tool results back to API in one user message
+		// Only send results if no more tools are pending approval
+		if len(m.pendingToolUses) > 0 {
+			// More tools pending - push overlays for remaining tools
+			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
+				len(m.toolResults), len(m.pendingToolUses))
+			m.toolApprovalMode = true
+			m.PushToolApprovalOverlays()
+			return m, nil
+		}
+
+		// All tools processed - send ALL accumulated tool results back to API
 		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
 		return m, m.sendToolResults()
 
@@ -240,19 +250,79 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleQuickActionsResult(msg), nil
 
 	case tea.KeyMsg:
-		// Handle custom approval menu navigation
+		// PRIORITY 1: Route input to overlay manager FIRST (modal behavior)
+		// Overlays capture ALL input when active, except special global hotkeys
+		if m.overlayManager != nil && m.overlayManager.HasActive() {
+			// Check for special global hotkeys that should always work
+			isGlobalHotkey := false
+			switch msg.Type {
+			case tea.KeyCtrlO, tea.KeyCtrlH, tea.KeyCtrlR:
+				// Global overlay toggle hotkeys - process below
+				isGlobalHotkey = true
+			}
+
+			if !isGlobalHotkey {
+				// Let overlay handle the key first
+				var handled bool
+				handled, cmd = m.overlayManager.HandleKey(msg)
+				if handled {
+					// Check if this should also pop the overlay
+					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
+						// Get active overlay before calling Cancel
+						active := m.overlayManager.GetActive()
+						wasToolApproval := false
+						if _, ok := active.(*ToolApprovalOverlay); ok {
+							wasToolApproval = true
+						}
+
+						// Call Cancel() for cleanup (e.g., deny tool)
+						if active != nil {
+							cmd = active.Cancel()
+						}
+
+						// Pop the overlay
+						m.overlayManager.Pop()
+						m.adjustViewportForOverlay()
+
+						// If it was a tool approval, check if there are more
+						if wasToolApproval {
+							if !m.IsToolApprovalOverlayActive() {
+								// No more tool approvals - finalize and send results
+								finalizeCmd := m.FinalizeToolApproval()
+								if cmd != nil && finalizeCmd != nil {
+									return m, tea.Batch(cmd, finalizeCmd)
+								}
+								if finalizeCmd != nil {
+									cmd = finalizeCmd
+								}
+							}
+						}
+					}
+
+					// Update scrollable overlays with viewport messages
+					active := m.overlayManager.GetActive()
+					if active != nil {
+						if scrollable, ok := active.(Scrollable); ok {
+							scrollCmd := scrollable.Update(msg)
+							if scrollCmd != nil {
+								// Combine commands if both exist
+								if cmd != nil {
+									return m, tea.Batch(cmd, scrollCmd)
+								}
+								return m, scrollCmd
+							}
+						}
+					}
+
+					return m, cmd
+				}
+			}
+		}
+
+		// Handle custom approval menu Enter submission
+		// (Up/Down navigation now handled in ToolApprovalOverlay)
 		if m.toolApprovalMode {
 			switch msg.Type {
-			case tea.KeyUp:
-				if m.selectedApprovalOpt > 0 {
-					m.selectedApprovalOpt--
-				}
-				return m, nil
-			case tea.KeyDown:
-				if m.selectedApprovalOpt < 3 {
-					m.selectedApprovalOpt++
-				}
-				return m, nil
 			case tea.KeyEnter:
 				// Map selected option to decision
 				var decision forms.ApprovalDecision
@@ -266,8 +336,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case 3:
 					decision = forms.DecisionNeverAllow
 				}
+
 				// Reset selection for next time
 				m.selectedApprovalOpt = 0
+
 				return m.handleApprovalResult(&forms.ApprovalResultMsg{
 					Result: forms.ApprovalFormResult{
 						Decision: decision,
@@ -361,22 +433,50 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle Ctrl+O: toggle tool log overlay
 		if msg.Type == tea.KeyCtrlO {
-			m.toggleToolLogOverlay()
+			if m.overlayManager.GetActive() == m.toolLogOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
+			} else {
+				// Open tool log
+				m.overlayManager.Push(m.toolLogOverlay, m.Width, m.Height)
+				m.adjustViewportForOverlay()
+			}
 			return m, nil
 		}
 
-		// Handle Esc key - clear priority order:
-		// 1. Close tool log overlay (highest priority - modal overlay)
-		// 2. Close help (modal overlay)
-		// 3. Exit search mode (active editing state)
-		// 4. Dismiss suggestions (transient UI)
-		// 5. Clear quick actions (transient UI)
-		// Does NOT quit - use Ctrl+C for that
-		if msg.Type == tea.KeyEsc {
-			if m.toolLogOverlay {
-				m.toolLogOverlay = false
-				return m, nil
+		// Handle Ctrl+H: toggle help overlay
+		if msg.Type == tea.KeyCtrlH {
+			if m.overlayManager.GetActive() == m.helpOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
+			} else {
+				// Open help
+				m.overlayManager.Push(m.helpOverlay, m.Width, m.Height)
+				m.adjustViewportForOverlay()
 			}
+			return m, nil
+		}
+
+		// Handle Ctrl+R: toggle history overlay
+		if msg.Type == tea.KeyCtrlR {
+			if m.overlayManager.GetActive() == m.historyOverlay {
+				// Already open, close it
+				m.overlayManager.Pop()
+				m.adjustViewportForOverlay()
+			} else {
+				// Open history
+				m.overlayManager.Push(m.historyOverlay, m.Width, m.Height)
+				m.adjustViewportForOverlay()
+			}
+			return m, nil
+		}
+
+		// Handle Esc key - fallback handling for when no overlay is active
+		// Overlays are handled at the top of KeyMsg processing
+		// This only handles Esc when no overlay is active
+		if msg.Type == tea.KeyEsc {
 			if m.helpVisible {
 				m.ToggleHelp()
 				return m, nil
@@ -389,17 +489,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quickActionsMode = false
 				return m, nil
 			}
-			// Use overlay manager for Escape handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil {
-				if overlayCmd := m.overlayManager.HandleEscape(); overlayCmd != nil {
-					return m, overlayCmd
-				}
-			}
 			// Escape doesn't quit - user must use Ctrl+C or exit command
 			return m, nil
 		}
 
 		// Handle Ctrl+C: cancel active work on first press, quit on second press when idle
+		// Note: Overlay Ctrl+C is handled at the top of KeyMsg processing
 		if msg.Type == tea.KeyCtrlC {
 			// First priority: if input box has content, clear it
 			if strings.TrimSpace(m.Input.Value()) != "" {
@@ -431,14 +526,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Status = StatusIdle
 				m.pendingQuit = false
 				return m, nil
-			}
-
-			// Use overlay manager for Ctrl+C handling (handles tool approval, autocomplete, etc.)
-			if m.overlayManager != nil {
-				if overlayCmd := m.overlayManager.HandleCtrlC(); overlayCmd != nil {
-					m.pendingQuit = false
-					return m, overlayCmd
-				}
 			}
 
 			// If in quick actions mode, first Ctrl+C cancels it
@@ -476,34 +563,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pendingQuit = false
 		}
 
-		// Phase 6C Task 4: Handle autocomplete navigation
+		// Handle autocomplete completion acceptance
+		// (Up/Down navigation now handled in AutocompleteOverlay)
 		if m.autocomplete != nil && m.autocomplete.IsActive() {
 			switch msg.Type {
-			case tea.KeyTab:
-				// FIX: Accept autocomplete selection with Tab
+			case tea.KeyTab, tea.KeyEnter:
+				// Accept autocomplete selection
 				selected := m.autocomplete.GetSelected()
 				if selected != nil {
 					m.Input.SetValue(selected.Value)
 					m.autocomplete.Hide()
-				}
-				return m, nil
-			case tea.KeyDown:
-				m.autocomplete.Next()
-				return m, nil
-			case tea.KeyUp:
-				m.autocomplete.Previous()
-				return m, nil
-			case tea.KeyEnter:
-				// Accept completion
-				selected := m.autocomplete.GetSelected()
-				if selected != nil {
-					m.Input.SetValue(selected.Value)
-					m.autocomplete.Hide()
+					// Pop the overlay from stack
+					if m.overlayManager.GetActive() == m.autocompleteOverlay {
+						m.overlayManager.Pop()
+						m.adjustViewportForOverlay()
+					}
 				}
 				return m, nil
 			case tea.KeyEsc:
 				// Cancel autocomplete
 				m.autocomplete.Hide()
+				// Pop the overlay from stack
+				if m.overlayManager.GetActive() == m.autocompleteOverlay {
+					m.overlayManager.Pop()
+					m.adjustViewportForOverlay()
+				}
 				return m, nil
 			}
 		}
@@ -514,6 +598,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Input.Focused() && m.Input.Value() != "" {
 				provider := DetectProvider(m.Input.Value())
 				m.autocomplete.Show(m.Input.Value(), provider)
+				// Push autocomplete overlay if not already active
+				if m.overlayManager.GetActive() != m.autocompleteOverlay {
+					m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
+					m.adjustViewportForOverlay()
+				}
 				return m, nil
 			}
 			// Otherwise, switch views
@@ -734,7 +823,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Height = msg.Height
 		m.Input.SetWidth(msg.Width - 4)
 		m.Viewport.Width = msg.Width - 4
-		m.Viewport.Height = msg.Height - 8
+		m.baseViewportHeight = msg.Height - 8 // Store base height
+		m.adjustViewportForOverlay()          // Set actual height based on active overlay
 		if !m.Ready {
 			m.Ready = true
 			m.updateViewport()
@@ -771,6 +861,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// If the input no longer starts with /, hide autocomplete
 					if !strings.HasPrefix(strings.TrimSpace(newValue), "/") {
 						m.autocomplete.Hide()
+						// Pop overlay if active
+						if m.overlayManager.GetActive() == m.autocompleteOverlay {
+							m.overlayManager.Pop()
+							m.adjustViewportForOverlay()
+						}
 					} else {
 						// Already active - just update with new input
 						m.autocomplete.Update(newValue)
@@ -779,6 +874,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Auto-show autocomplete when typing starts with /
 					provider := DetectProvider(newValue)
 					m.autocomplete.Show(newValue, provider)
+					// Push overlay if not already active
+					if m.overlayManager.GetActive() != m.autocompleteOverlay {
+						m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
+						m.adjustViewportForOverlay()
+					}
 				}
 			}
 
@@ -811,6 +911,40 @@ func (m *Model) updateViewport() {
 // updateViewportPreserveScroll renders messages without scrolling to bottom
 func (m *Model) updateViewportPreserveScroll() {
 	m.updateViewportInternal(false)
+}
+
+// adjustViewportForOverlay recalculates viewport height based on active bottom overlay
+// This should be called when overlays are pushed/popped, not during View()
+func (m *Model) adjustViewportForOverlay() {
+	if m.baseViewportHeight == 0 || m.overlayManager == nil {
+		return // Not initialized yet
+	}
+
+	// Check for active bottom (non-fullscreen) overlay
+	active := m.overlayManager.GetActive()
+	if active == nil {
+		// No overlay - use base height
+		m.Viewport.Height = m.baseViewportHeight
+		return
+	}
+
+	// Fullscreen overlays don't affect viewport height (they replace viewport entirely)
+	if _, isFullscreen := active.(FullscreenOverlay); isFullscreen {
+		m.Viewport.Height = m.baseViewportHeight
+		return
+	}
+
+	// Bottom overlay - reduce viewport height
+	bottomOverlayHeight := active.GetDesiredHeight()
+	if bottomOverlayHeight > m.Height/2 {
+		bottomOverlayHeight = m.Height / 2 // Cap at half screen
+	}
+
+	adjustedHeight := m.baseViewportHeight - bottomOverlayHeight
+	if adjustedHeight < 5 {
+		adjustedHeight = 5 // Minimum height for viewport
+	}
+	m.Viewport.Height = adjustedHeight
 }
 
 // updateViewportInternal is the shared implementation
@@ -1185,22 +1319,12 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Show tool approval dialog using embedded huh form
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching embedded approval form\n")
+		// Show tool approval dialog - create one overlay per pending tool
+		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching tool approval overlays for %d tools\n", len(m.pendingToolUses))
 		m.toolApprovalMode = true
+		// Push one overlay per tool (first tool ends up on top)
+		m.PushToolApprovalOverlays()
 		m.updateViewport()
-
-		// Create embedded form for the first pending tool
-		// Note: For now, only handle single tool approval. Batch approval needs refactoring.
-		if len(m.pendingToolUses) > 0 {
-			approvalForm := forms.NewToolApprovalForm(m.pendingToolUses[0])
-			m.toolApprovalForm = approvalForm
-
-			// Initialize the form
-			initCmd := approvalForm.Init()
-
-			return m, initCmd
-		}
 		return m, nil
 	}
 

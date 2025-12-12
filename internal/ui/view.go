@@ -18,9 +18,9 @@ func (m *Model) View() string {
 		return "\n  Initializing..."
 	}
 
-	// Tool log overlay takes precedence over everything
-	if m.toolLogOverlay {
-		return m.renderToolLogOverlay()
+	// Check for fullscreen overlay first (tool log, help, etc.)
+	if m.overlayManager != nil && m.overlayManager.IsFullscreen() {
+		return m.overlayManager.Render(m.Width, m.Height)
 	}
 
 	var b strings.Builder
@@ -32,6 +32,30 @@ func (m *Model) View() string {
 	// Phase 6C: Show help if toggled
 	if m.helpVisible {
 		b.WriteString(m.renderHelpPanel() + "\n\n")
+	}
+
+	// Calculate bottom overlay height if present (for viewport adjustment)
+	var bottomOverlayContent string
+	var bottomOverlayHeight int
+	if m.overlayManager != nil && m.overlayManager.HasActive() && !m.overlayManager.IsFullscreen() {
+		active := m.overlayManager.GetActive()
+
+		// Calculate desired height with 50% cap (consistent with adjustViewportForOverlay)
+		desiredHeight := active.GetDesiredHeight()
+		maxAllowed := m.Height / 2
+		if desiredHeight > maxAllowed {
+			bottomOverlayHeight = maxAllowed
+		} else {
+			bottomOverlayHeight = desiredHeight
+		}
+		if bottomOverlayHeight < 1 {
+			bottomOverlayHeight = 1
+		}
+
+		// Render overlay
+		bottomOverlayContent = active.Render(m.Width, bottomOverlayHeight)
+		// Note: Viewport height is adjusted in Update via adjustViewportForOverlay()
+		// when overlays are pushed/popped - no mutation needed here
 	}
 
 	// Render different views based on CurrentView
@@ -47,6 +71,11 @@ func (m *Model) View() string {
 	}
 
 	b.WriteString("\n")
+
+	// Render bottom overlay between viewport and input (if not fullscreen or quick actions)
+	if !m.quickActionsMode && bottomOverlayContent != "" {
+		b.WriteString(bottomOverlayContent + "\n")
+	}
 
 	// Phase 6C Task 6: Quick actions modal (takes precedence over everything except tool approval)
 	if m.quickActionsMode {
@@ -80,14 +109,9 @@ func (m *Model) View() string {
 		b.WriteString(borderStyle.Render(strings.Repeat("─", inputWidth)) + "\n")
 	}
 
-	// Then render modals/overlays on top of input using overlay manager
-	// This handles autocomplete, tool approval, and any future overlays
-	if m.overlayManager != nil && m.overlayManager.HasActive() {
-		overlayContent := m.overlayManager.Render()
-		if overlayContent != "" {
-			b.WriteString(overlayContent + "\n")
-		}
-	} else if m.executingTool {
+	// Note: Bottom overlays are rendered above, between viewport and input
+	// Fullscreen overlays are handled at the top of View() function
+	if m.executingTool {
 		// Task 12: Tool execution indicator
 		b.WriteString(m.renderToolStatus() + "\n")
 		// TUI Polish: Show collapsed tool log (last 3 lines)
@@ -472,82 +496,6 @@ func (m *Model) renderHelpPanel() string {
 	return helpStyle.Render(m.statusBar.GetFullHelp())
 }
 
-// renderToolApprovalPromptEnhanced renders enhanced tool approval UI with custom menu
-// Uses autocomplete-style highlighting for consistent UX
-func (m *Model) renderToolApprovalPromptEnhanced() string {
-	if !m.toolApprovalMode || len(m.pendingToolUses) == 0 {
-		return ""
-	}
-
-	var b strings.Builder
-
-	// Use autocomplete styles for consistent look
-	dropdownWidth := m.Width - 4
-	if dropdownWidth < 40 {
-		dropdownWidth = 40
-	}
-	boxStyle := m.theme.AutocompleteDropdown.Width(dropdownWidth)
-	selectedStyle := m.theme.AutocompleteSelected
-	normalStyle := m.theme.AutocompleteItem
-	helpStyle := m.theme.AutocompleteHelp
-
-	titleStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Colors.Purple).
-		Bold(true)
-
-	// Title
-	b.WriteString(titleStyle.Render("🛠  Tool Approval Required"))
-	b.WriteString("\n")
-
-	// Tool description - compact format
-	if len(m.pendingToolUses) == 1 {
-		tool := m.pendingToolUses[0]
-		riskLevel := forms.AssessRiskLevel(tool)
-		coloredRisk := m.renderColoredRiskEmoji(riskLevel)
-		paramPreview := m.getToolParamPreview(tool)
-		if paramPreview != "" {
-			b.WriteString(fmt.Sprintf("%s %s(%s)", coloredRisk, tool.Name, paramPreview))
-		} else {
-			b.WriteString(fmt.Sprintf("%s %s()", coloredRisk, tool.Name))
-		}
-	} else {
-		b.WriteString(fmt.Sprintf("%s %d tools:", m.renderColoredRiskEmoji(forms.RiskCaution), len(m.pendingToolUses)))
-		for _, tool := range m.pendingToolUses {
-			riskLevel := forms.AssessRiskLevel(tool)
-			coloredRisk := m.renderColoredRiskEmoji(riskLevel)
-			paramPreview := m.getToolParamPreview(tool)
-			if paramPreview != "" {
-				b.WriteString(fmt.Sprintf("\n  %s %s(%s)", coloredRisk, tool.Name, paramPreview))
-			} else {
-				b.WriteString(fmt.Sprintf("\n  %s %s()", coloredRisk, tool.Name))
-			}
-		}
-	}
-	b.WriteString("\n")
-
-	// Options - all visible, highlight selected with autocomplete style
-	options := []string{
-		"✓ Approve (run this time)",
-		"✗ Deny (skip this time)",
-		"✓✓ Always Allow (never ask again)",
-		"✗✗ Never Allow (block permanently)",
-	}
-
-	for i, opt := range options {
-		if i == m.selectedApprovalOpt {
-			b.WriteString(selectedStyle.Render("▸ " + opt))
-		} else {
-			b.WriteString(normalStyle.Render("  " + opt))
-		}
-		b.WriteString("\n")
-	}
-
-	// Hint
-	b.WriteString("\n")
-	b.WriteString(helpStyle.Render("↑↓: navigate • Enter: submit"))
-
-	return boxStyle.Render(b.String())
-}
 
 // renderStatusBarEnhanced renders the enhanced status bar
 func (m *Model) renderStatusBarEnhanced() string {
@@ -671,76 +619,6 @@ func (m *Model) renderQuickActionsModal() string {
 	content.WriteString(helpStyle.Render(helpText))
 
 	return modalStyle.Render(content.String())
-}
-
-// Phase 6C Task 4: Autocomplete Rendering
-
-// renderAutocompleteDropdown renders the autocomplete suggestions dropdown
-func (m *Model) renderAutocompleteDropdown() string {
-	if m.autocomplete == nil || !m.autocomplete.IsActive() {
-		return ""
-	}
-
-	completions := m.autocomplete.GetCompletions()
-	if len(completions) == 0 {
-		return ""
-	}
-
-	// Use dedicated autocomplete styles for high contrast
-	// Use full width minus some padding for the dropdown
-	dropdownWidth := m.Width - 4
-	if dropdownWidth < 40 {
-		dropdownWidth = 40
-	}
-	dropdownStyle := m.theme.AutocompleteDropdown.Width(dropdownWidth)
-	selectedStyle := m.theme.AutocompleteSelected
-	normalStyle := m.theme.AutocompleteItem
-	helpStyle := m.theme.AutocompleteHelp
-
-	// Build dropdown content
-	var content strings.Builder
-
-	selectedIndex := m.autocomplete.GetSelectedIndex()
-
-	// Description style - slightly dimmer than main text but still readable
-	descStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
-
-	for i, completion := range completions {
-		var line strings.Builder
-
-		// Selection indicator and styling
-		if i == selectedIndex {
-			line.WriteString("▸ ")
-			line.WriteString(completion.Display)
-
-			// Add description if available
-			if completion.Description != "" {
-				line.WriteString(" (" + completion.Description + ")")
-			}
-
-			content.WriteString(selectedStyle.Render(line.String()))
-		} else {
-			line.WriteString("  ")
-			line.WriteString(completion.Display)
-
-			// Add description if available (dimmed but readable)
-			if completion.Description != "" {
-				line.WriteString(" ")
-				line.WriteString(descStyle.Render("(" + completion.Description + ")"))
-			}
-
-			content.WriteString(normalStyle.Render(line.String()))
-		}
-
-		content.WriteString("\n")
-	}
-
-	// Add help text
-	helpText := helpStyle.Render("↑↓: navigate • Enter: accept • Esc: cancel")
-	content.WriteString("\n")
-	content.WriteString(helpText)
-
-	return dropdownStyle.Render(content.String())
 }
 
 // renderErrorMessage renders error messages prominently
