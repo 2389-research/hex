@@ -440,43 +440,49 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle Ctrl+O: toggle tool timeline overlay
 		if msg.Type == tea.KeyCtrlO {
-			if m.overlayManager.GetActive() == m.toolTimelineOverlay {
+			active := m.overlayManager.GetActive()
+			if active == m.toolTimelineOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
 				m.adjustViewportForOverlay()
-			} else {
-				// Open tool timeline
+			} else if active == nil {
+				// No overlay open, open timeline
 				m.overlayManager.Push(m.toolTimelineOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
+			// If another overlay is open, do nothing (don't interrupt it)
 			return m, nil
 		}
 
 		// Handle Ctrl+H: toggle help overlay
 		if msg.Type == tea.KeyCtrlH {
-			if m.overlayManager.GetActive() == m.helpOverlay {
+			active := m.overlayManager.GetActive()
+			if active == m.helpOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
 				m.adjustViewportForOverlay()
-			} else {
-				// Open help
+			} else if active == nil {
+				// No overlay open, open help
 				m.overlayManager.Push(m.helpOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
+			// If another overlay is open, do nothing (don't interrupt it)
 			return m, nil
 		}
 
 		// Handle Ctrl+R: toggle history overlay
 		if msg.Type == tea.KeyCtrlR {
-			if m.overlayManager.GetActive() == m.historyOverlay {
+			active := m.overlayManager.GetActive()
+			if active == m.historyOverlay {
 				// Already open, close it
 				m.overlayManager.Pop()
 				m.adjustViewportForOverlay()
-			} else {
-				// Open history
+			} else if active == nil {
+				// No overlay open, open history
 				m.overlayManager.Push(m.historyOverlay, m.Width, m.Height)
 				m.adjustViewportForOverlay()
 			}
+			// If another overlay is open, do nothing (don't interrupt it)
 			return m, nil
 		}
 
