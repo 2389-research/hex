@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/ui/forms"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // ToolApprovalOverlay implements the Overlay interface for tool approval.

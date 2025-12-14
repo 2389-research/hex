@@ -424,7 +424,6 @@ func (m *Model) renderHelpPanel() string {
 	return helpStyle.Render(m.statusBar.GetFullHelp())
 }
 
-
 // renderStatusBarEnhanced renders the enhanced status bar
 func (m *Model) renderStatusBarEnhanced() string {
 	if m.statusBar == nil {

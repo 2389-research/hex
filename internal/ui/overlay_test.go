@@ -31,10 +31,10 @@ func newMockOverlay(header, content, footer string, height int) *mockOverlay {
 	}
 }
 
-func (m *mockOverlay) GetHeader() string              { return m.header }
-func (m *mockOverlay) GetContent() string             { return m.content }
-func (m *mockOverlay) GetFooter() string              { return m.footer }
-func (m *mockOverlay) GetDesiredHeight() int          { return m.desiredHeight }
+func (m *mockOverlay) GetHeader() string     { return m.header }
+func (m *mockOverlay) GetContent() string    { return m.content }
+func (m *mockOverlay) GetFooter() string     { return m.footer }
+func (m *mockOverlay) GetDesiredHeight() int { return m.desiredHeight }
 func (m *mockOverlay) Render(width, height int) string {
 	return fmt.Sprintf("%s\n%s\n%s", m.header, m.content, m.footer)
 }

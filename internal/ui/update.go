@@ -531,7 +531,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Not waiting - process immediately
 				m.AddMessage("user", input)
 				m.Input.Reset()
-				m.updateInputHeight() // Reset height to 1 line after clearing
+				m.updateInputHeight()       // Reset height to 1 line after clearing
 				m.waitingForResponse = true // Block further input until response complete
 				m.updateViewport()
 
@@ -832,11 +832,11 @@ func (m *Model) updateViewportInternal(scrollToBottom bool) {
 			f, _ := os.OpenFile("/tmp/hex-view-debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if f != nil {
 				introLines := strings.Split(introContent, "\n")
-				fmt.Fprintf(f, "DEBUG intro: %d lines\n", len(introLines))
+				_, _ = fmt.Fprintf(f, "DEBUG intro: %d lines\n", len(introLines))
 				for i := 0; i < min(5, len(introLines)); i++ {
-					fmt.Fprintf(f, "DEBUG intro[%d]='%s'\n", i, truncateDebug(introLines[i], 50))
+					_, _ = fmt.Fprintf(f, "DEBUG intro[%d]='%s'\n", i, truncateDebug(introLines[i], 50))
 				}
-				f.Close()
+				_ = f.Close()
 			}
 		}
 	}
@@ -1671,25 +1671,25 @@ func (m *Model) handleMessageEvent(msg messageEventMsg) (tea.Model, tea.Cmd) {
 func (m *Model) updateHoveredMessage(x, y int) {
 	// The viewport starts after the top status bar (1 line)
 	// Y coordinate 0 = top status bar, Y coordinate 1+ = viewport content
-	
+
 	// Check if mouse is in the viewport area (not in header/footer/input)
 	// Rough layout: top bar (1), viewport (most), input area (~3-5), footer (1)
 	viewportStartY := 1
 	viewportEndY := m.Height - 6 // Approximate, leaves room for input and footer
-	
+
 	if y < viewportStartY || y > viewportEndY {
 		// Mouse is outside viewport
 		m.hoveredMessageIndex = -1
 		return
 	}
-	
+
 	// Get the viewport's current scroll position
 	viewportY := y - viewportStartY + m.Viewport.YOffset
-	
+
 	// Now we need to map viewportY to a message index
 	// This requires knowing the line-by-line layout of the viewport content
 	// For now, we'll do a simple approach: parse the current viewport content
-	
+
 	// Get all visible messages (excluding tool-only messages)
 	var visibleMessages []struct {
 		index     int
@@ -1697,20 +1697,20 @@ func (m *Model) updateHoveredMessage(x, y int) {
 		startLine int
 		endLine   int
 	}
-	
+
 	currentLine := 0
-	
+
 	// Account for intro screen if showing
 	if m.ShowIntro {
 		introContent := m.renderIntroView()
 		introLines := strings.Count(introContent, "\n") + 2 // +2 for spacing
 		currentLine += introLines
 	}
-	
+
 	// Process each message to determine its line range
 	for i := range m.Messages {
 		msg := &m.Messages[i]
-		
+
 		// Skip internal messages
 		if msg.Role == "tool" {
 			continue
@@ -1727,9 +1727,9 @@ func (m *Model) updateHoveredMessage(x, y int) {
 				continue
 			}
 		}
-		
+
 		startLine := currentLine
-		
+
 		// Count lines in this message
 		var messageContent string
 		if msg.Content == "" && len(msg.ContentBlock) > 0 {
@@ -1743,16 +1743,16 @@ func (m *Model) updateHoveredMessage(x, y int) {
 				}
 			}
 		}
-		
+
 		if messageContent != "" {
 			messageLines := strings.Count(messageContent, "\n") + 1
 			currentLine += messageLines
-			
+
 			// Add spacing between messages
 			if i < len(m.Messages)-1 {
 				currentLine += 1
 			}
-			
+
 			visibleMessages = append(visibleMessages, struct {
 				index     int
 				timestamp time.Time
@@ -1766,7 +1766,7 @@ func (m *Model) updateHoveredMessage(x, y int) {
 			})
 		}
 	}
-	
+
 	// Find which message the mouse is hovering over
 	m.hoveredMessageIndex = -1
 	for _, vm := range visibleMessages {
