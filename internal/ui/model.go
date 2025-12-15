@@ -714,6 +714,16 @@ func (m *Model) ClearContext() {
 	m.currentToolID = ""
 	m.toolResults = nil
 
+	// Clear tool queue state (new queue-based system)
+	m.activeToolQueue = nil
+	m.toolResultHistory = nil
+	m.mostRecentToolID = ""
+
+	// Clear tool log state
+	m.toolLogLines = nil
+	m.currentToolLogName = ""
+	m.currentToolLogParam = ""
+
 	// Clear any active overlays
 	if m.overlayManager != nil {
 		m.overlayManager.CancelAll()
