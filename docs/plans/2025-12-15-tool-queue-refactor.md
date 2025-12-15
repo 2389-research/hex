@@ -124,7 +124,7 @@ func (m *Model) ProcessNextTool() tea.Cmd {
 
 Compact visual showing queue status:
 
-```
+```text
 [.✓✗?]  = "you are here, then approve, deny, ask"
 [✓✓✗.]  = "approved, approved, denied, you are here"
 ```
