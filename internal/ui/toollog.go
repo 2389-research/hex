@@ -81,30 +81,6 @@ func (m *Model) updateMostRecentToolID() {
 	m.mostRecentToolID = ""
 }
 
-// getMostRecentToolWithResult finds the most recent tool_use ID that has a result (not pending)
-// Returns empty string if no tool with result is found
-// DEPRECATED: Use m.mostRecentToolID instead (updated via updateMostRecentToolID)
-func (m *Model) getMostRecentToolWithResult() string {
-	// Iterate through messages in reverse order to find most recent
-	for i := len(m.Messages) - 1; i >= 0; i-- {
-		msg := m.Messages[i]
-		// Check content blocks in reverse order within the message
-		for j := len(msg.ContentBlock) - 1; j >= 0; j-- {
-			block := msg.ContentBlock[j]
-			if block.Type == "tool_use" {
-				// Check if this tool has a result in history
-				for _, tr := range m.toolResultHistory {
-					if tr.ToolUseID == block.ID {
-						// Found a tool with a result
-						return block.ID
-					}
-				}
-			}
-		}
-	}
-	return ""
-}
-
 // renderCollapsedToolLog renders the last 3 lines of tool output with dimmed style
 // Returns the rendered string and the number of hidden lines (for combining with hint)
 func (m *Model) renderCollapsedToolLog() (string, int) {

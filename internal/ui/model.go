@@ -148,9 +148,8 @@ type Model struct {
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
 	// New tool queue system (replaces pendingToolUses, toolResults, toolApprovalMode, etc.)
-	streamingTools    []*core.ToolUse // Tools accumulated during streaming (converted to queue when stream ends)
-	activeToolQueue   *ToolQueue      // Active queue during tool processing (nil when not processing)
-	toolResultHistory []ToolResult    // Historical results for UI status display (persists after queue done)
+	activeToolQueue   *ToolQueue   // Active queue during tool processing (nil when not processing)
+	toolResultHistory []ToolResult // Historical results for UI status display (persists after queue done)
 
 	// Legacy fields (to be removed after refactor is complete)
 	pendingToolUses   []*core.ToolUse // LEGACY: Tools waiting for approval/execution
