@@ -116,145 +116,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateViewport()
 		return m, m.readStreamChunks(m.streamCtx, m.streamChan)
 
-	// Task 12: Handle tool execution results
-	case toolExecutionMsg:
-		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_RECEIVED] tool_use_id=%s, err=%v\n", msg.toolUseID, msg.err)
-
-		m.executingTool = false
-		m.currentToolID = ""
-
-		// Phase 6C: Stop spinner
-		if m.spinner != nil {
-			m.spinner.Stop()
-		}
-
-		if msg.err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_ERROR] tool_use_id=%s, error=%s\n", msg.toolUseID, msg.err.Error())
-			m.ErrorMessage = "Tool execution error: " + msg.err.Error()
-			m.AddMessage("tool", "Tool error: "+msg.err.Error())
-		} else {
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULT_SUCCESS] tool_use_id=%s, storing result\n", msg.toolUseID)
-
-			// Validate that tool_use exists in message history before storing result
-			m.validateToolUseExists(msg.toolUseID)
-
-			// Store result
-			m.toolResults = append(m.toolResults, ToolResult{
-				ToolUseID:    msg.toolUseID,
-				Result:       msg.result,
-				ApprovalType: ApprovalManual,
-			})
-
-			// Update cached most recent tool ID
-			m.updateMostRecentToolID()
-
-			_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_QUEUE] current queue length: %d\n", len(m.toolResults))
-
-			// Display result in UI
-			resultMsg := formatToolResult(msg.result)
-			m.AddMessage("tool", resultMsg)
-
-			// Save tool result to database
-			if err := m.saveMessage("tool", resultMsg); err != nil {
-				m.ErrorMessage = "Failed to save tool result: " + err.Error()
-			}
-		}
-
-		m.updateViewport()
-
-		// Send tool results back to API and continue conversation
-		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_RESULTS_SENDING] about to send %d tool results back to API\n", len(m.toolResults))
-		return m, m.sendToolResults()
-
-	// Handle batch tool execution results
-	case toolBatchExecutionMsg:
-		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULT_RECEIVED] received results for %d tool(s)\n", len(msg.results))
-
-		m.executingTool = false
-		m.executingToolUses = nil // Clear executing tools
-
-		// Phase 6C: Stop spinner
-		if m.spinner != nil {
-			m.spinner.Stop()
-		}
-
-		// Store all results
-		m.toolResults = append(m.toolResults, msg.results...)
-
-		// Update cached most recent tool ID
-		m.updateMostRecentToolID()
-
-		// Display results in UI and add to tool log
-		// Each tool result gets a header followed by its output to keep them grouped
-		for _, result := range msg.results {
-			resultMsg := formatToolResult(result.Result)
-			m.AddMessage("tool", resultMsg)
-
-			// Add tool header and output to tool log (keeps call and output together)
-			if result.Result != nil {
-				// Build header with tool name and parameter preview
-				toolName := result.Result.ToolName
-				if toolName == "" {
-					toolName = "unknown"
-				}
-				// Try to get a parameter preview from metadata
-				var paramPreview string
-				if cmd, ok := result.Result.Metadata["command"].(string); ok {
-					paramPreview = cmd
-				} else if path, ok := result.Result.Metadata["path"].(string); ok {
-					paramPreview = path
-				} else if pattern, ok := result.Result.Metadata["pattern"].(string); ok {
-					paramPreview = pattern
-				}
-				// Truncate and format the header
-				if paramPreview != "" {
-					paramPreview = strings.ReplaceAll(paramPreview, "\n", "\\n")
-					if len(paramPreview) > 40 {
-						paramPreview = paramPreview[:37] + "..."
-					}
-					m.appendToolLogLine(fmt.Sprintf("─── %s(%q) ───", toolName, paramPreview))
-				} else {
-					m.appendToolLogLine(fmt.Sprintf("─── %s ───", toolName))
-				}
-
-				// Add output or error
-				if result.Result.Output != "" {
-					m.appendToolLogOutput(result.Result.Output)
-				} else if result.Result.Error != "" {
-					m.appendToolLogLine("Error: " + result.Result.Error)
-				}
-			}
-
-			// Save tool result to database
-			if err := m.saveMessage("tool", resultMsg); err != nil {
-				m.ErrorMessage = "Failed to save tool result: " + err.Error()
-			}
-		}
-
-		m.updateViewport()
-
-		// Only send results if no more tools are pending approval
-		if len(m.pendingToolUses) > 0 {
-			// More tools pending - only push overlays if none are currently active
-			// (overlays may already be on the stack from initial stream stop)
-			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
-				len(m.toolResults), len(m.pendingToolUses))
-			if !m.IsToolApprovalOverlayActive() {
-				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] no active overlay, pushing new overlays\n")
-				m.toolApprovalMode = true
-				m.PushToolApprovalOverlays()
-			}
-			return m, nil
-		}
-
-		// All tools processed - send ALL accumulated tool results back to API
-		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_SENDING] sending %d tool results back to API\n", len(m.toolResults))
-		return m, m.sendToolResults()
-
-	// Handle approval form results from huh
-	case *forms.ApprovalResultMsg:
-		return m.handleApprovalResult(msg)
-
 	// Handle tool decision from queue-based approval overlay
 	case ToolDecisionMsg:
 		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DECISION] received decision=%d\n", msg.Decision)
@@ -317,46 +178,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var handled bool
 				handled, cmd = m.overlayManager.HandleKey(msg)
 				if handled {
-					// Check if this should also pop the overlay
-					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
-						// Get active overlay before calling Cancel
-						active := m.overlayManager.GetActive()
-						wasToolApproval := false
-						if _, ok := active.(*ToolApprovalOverlay); ok {
-							wasToolApproval = true
-						}
+					// For tool approval overlays, HandleKey returns ToolDecisionMsg
+					// which is processed by HandleToolDecision - it handles everything
+					// including popping the overlay. Don't interfere here.
+					active := m.overlayManager.GetActive()
+					if _, isToolApproval := active.(*ToolApprovalOverlay); isToolApproval {
+						// Just return the cmd (ToolDecisionMsg) - queue system handles the rest
+						return m, cmd
+					}
 
-						// Call Cancel() for cleanup (e.g., deny tool)
+					// For non-tool-approval overlays, handle Escape/CtrlC to pop them
+					if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 						if active != nil {
 							cmd = active.Cancel()
 						}
-
-						// Pop the overlay
 						m.overlayManager.Pop()
 						m.adjustViewportForOverlay()
-
-						// If it was a tool approval, check if there are more
-						if wasToolApproval {
-							if !m.IsToolApprovalOverlayActive() {
-								// No more tool approvals - finalize and send results
-								finalizeCmd := m.FinalizeToolApproval()
-								if cmd != nil && finalizeCmd != nil {
-									return m, tea.Batch(cmd, finalizeCmd)
-								}
-								if finalizeCmd != nil {
-									cmd = finalizeCmd
-								}
-							}
-						}
 					}
 
 					// Update scrollable overlays with viewport messages
-					active := m.overlayManager.GetActive()
+					active = m.overlayManager.GetActive()
 					if active != nil {
 						if scrollable, ok := active.(Scrollable); ok {
 							scrollCmd := scrollable.Update(msg)
 							if scrollCmd != nil {
-								// Combine commands if both exist
 								if cmd != nil {
 									return m, tea.Batch(cmd, scrollCmd)
 								}
@@ -367,50 +212,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					return m, cmd
 				}
-			}
-		}
-
-		// Handle custom approval menu Enter submission
-		// (Up/Down navigation now handled in ToolApprovalOverlay)
-		if m.toolApprovalMode {
-			switch msg.Type {
-			case tea.KeyEnter:
-				// Get the tool from the active overlay (not pendingToolUses)
-				var currentTool *core.ToolUse
-				if active := m.overlayManager.GetActive(); active != nil {
-					if toolOverlay, ok := active.(*ToolApprovalOverlay); ok {
-						currentTool = toolOverlay.GetTool()
-					}
-				}
-				if currentTool == nil {
-					// No tool in overlay - exit approval mode
-					m.toolApprovalMode = false
-					return m, nil
-				}
-
-				// Map selected option to decision
-				var decision forms.ApprovalDecision
-				switch m.selectedApprovalOpt {
-				case 0:
-					decision = forms.DecisionApprove
-				case 1:
-					decision = forms.DecisionDeny
-				case 2:
-					decision = forms.DecisionAlwaysAllow
-				case 3:
-					decision = forms.DecisionNeverAllow
-				}
-
-				// Reset selection for next time
-				m.selectedApprovalOpt = 0
-
-				return m.handleApprovalResult(&forms.ApprovalResultMsg{
-					Result: forms.ApprovalFormResult{
-						Decision: decision,
-						ToolUse:  currentTool,
-					},
-					Error: nil,
-				})
 			}
 		}
 
