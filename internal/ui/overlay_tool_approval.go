@@ -29,6 +29,21 @@ func NewToolApprovalOverlay(m *Model, tool *core.ToolUse, remaining int) *ToolAp
 	}
 }
 
+// NewToolApprovalOverlayFromQueue creates an overlay from a ToolDisposition in the queue
+func NewToolApprovalOverlayFromQueue(m *Model, item *ToolDisposition) *ToolApprovalOverlay {
+	// Calculate remaining from queue position
+	remaining := 0
+	if m.activeToolQueue != nil {
+		remaining = m.activeToolQueue.Remaining()
+	}
+	return &ToolApprovalOverlay{
+		model:       m,
+		tool:        item.Tool,
+		selectedOpt: 0,
+		remaining:   remaining,
+	}
+}
+
 // GetTool returns the tool this overlay is for
 func (o *ToolApprovalOverlay) GetTool() *core.ToolUse {
 	return o.tool
@@ -41,8 +56,12 @@ func (o *ToolApprovalOverlay) GetSelectedOption() int {
 
 // GetHeader returns the overlay header
 func (o *ToolApprovalOverlay) GetHeader() string {
-	if o.remaining > 0 {
-		return fmt.Sprintf("Tool Approval Required (%d more after this)", o.remaining)
+	// Show progress hint from queue if available
+	if o.model.activeToolQueue != nil {
+		hint := o.model.activeToolQueue.ProgressHint()
+		if hint != "" {
+			return fmt.Sprintf("Tool Approval %s", hint)
+		}
 	}
 	return "Tool Approval Required"
 }
@@ -148,9 +167,11 @@ func (o *ToolApprovalOverlay) Render(width, height int) string {
 
 // HandleKey processes key presses for tool approval
 func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
-	// Handle Escape and Ctrl+C to trigger denial
+	// Handle Escape and Ctrl+C to trigger denial via ToolDecisionMsg
 	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
-		return true, nil // Handled - caller will call Cancel() which denies this tool
+		return true, func() tea.Msg {
+			return ToolDecisionMsg{Decision: 1} // deny
+		}
 	}
 
 	// Handle navigation keys
@@ -158,28 +179,28 @@ func (o *ToolApprovalOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	case tea.KeyUp:
 		if o.selectedOpt > 0 {
 			o.selectedOpt--
-			o.model.selectedApprovalOpt = o.selectedOpt // Sync to model
 		}
 		return true, nil
 	case tea.KeyDown:
 		if o.selectedOpt < 3 { // 4 options: 0-3
 			o.selectedOpt++
-			o.model.selectedApprovalOpt = o.selectedOpt // Sync to model
 		}
 		return true, nil
 	case tea.KeyEnter:
-		// Sync selection to model before letting update.go handle it
-		o.model.selectedApprovalOpt = o.selectedOpt
-		// The actual approval logic is handled in update.go
-		// Return false to let it through to the main handler
-		return false, nil
+		// Emit decision message for the queue system to handle
+		decision := o.selectedOpt
+		return true, func() tea.Msg {
+			return ToolDecisionMsg{Decision: decision}
+		}
 	}
 
 	// Modal: capture all other input to prevent leakage
 	return true, nil
 }
 
-// Cancel dismisses the tool approval and sends denial to API for THIS tool only
+// Cancel dismisses the tool approval via ToolDecisionMsg
 func (o *ToolApprovalOverlay) Cancel() tea.Cmd {
-	return o.model.DenySpecificTool(o.tool, DenialManual)
+	return func() tea.Msg {
+		return ToolDecisionMsg{Decision: 1} // deny
+	}
 }

@@ -181,23 +181,47 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 		t.Error("Expected overlay to handle Escape")
 	}
 
-	// Now call Cancel (which calls DenySpecificTool) and then pop
-	_ = toolApprovalOverlay.Cancel()
+	// NEW QUEUE SYSTEM: Cancel() now returns a ToolDecisionMsg
+	// Set up the queue system first
+	m.activeToolQueue = NewToolQueue(m.pendingToolUses, nil, "ask")
+	m.pendingToolUses = nil // Queue owns them now
+
+	// Cancel should return a cmd that produces ToolDecisionMsg
+	cancelCmd := toolApprovalOverlay.Cancel()
+	if cancelCmd == nil {
+		t.Fatal("Expected Cancel to return a command")
+	}
+
+	// Execute the cmd to get the message
+	msg := cancelCmd()
+	decisionMsg, ok := msg.(ToolDecisionMsg)
+	if !ok {
+		t.Fatalf("Expected ToolDecisionMsg, got %T", msg)
+	}
+
+	// Decision should be 1 (deny)
+	if decisionMsg.Decision != 1 {
+		t.Errorf("Expected decision=1 (deny), got %d", decisionMsg.Decision)
+	}
+
+	// Process the decision through HandleToolDecision
+	// This will add the denial result and call ProcessNextTool which finalizes the queue
+	_ = m.HandleToolDecision(decisionMsg.Decision)
 	m.overlayManager.Pop()
 
-	// Should have created error result
-	if len(m.toolResults) == 0 {
+	// Should have created error result in toolResultHistory
+	if len(m.toolResultHistory) == 0 {
 		t.Error("Expected tool result to be created for denied tool")
 	}
 
 	// Verify the result is actually a denial
-	if m.toolResults[0].Result.Error != "User denied permission" {
-		t.Errorf("Expected denial error, got: %s", m.toolResults[0].Result.Error)
+	if m.toolResultHistory[0].Result.Error != "User denied permission" {
+		t.Errorf("Expected denial error, got: %s", m.toolResultHistory[0].Result.Error)
 	}
 
-	// Tool should have been removed from pending
-	if len(m.pendingToolUses) != 0 {
-		t.Error("Expected pendingToolUses to be empty after denial")
+	// Queue should be nil after finalization (single tool was denied, queue completed)
+	if m.activeToolQueue != nil {
+		t.Error("Expected activeToolQueue to be nil after finalization")
 	}
 }
 

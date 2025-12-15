@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/2389-research/hex/internal/approval"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/pubsub"
@@ -236,11 +235,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Only send results if no more tools are pending approval
 		if len(m.pendingToolUses) > 0 {
-			// More tools pending - push overlays for remaining tools
+			// More tools pending - only push overlays if none are currently active
+			// (overlays may already be on the stack from initial stream stop)
 			_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] %d tool results accumulated, %d tools still pending approval\n",
 				len(m.toolResults), len(m.pendingToolUses))
-			m.toolApprovalMode = true
-			m.PushToolApprovalOverlays()
+			if !m.IsToolApprovalOverlayActive() {
+				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_RESULTS_WAITING] no active overlay, pushing new overlays\n")
+				m.toolApprovalMode = true
+				m.PushToolApprovalOverlays()
+			}
 			return m, nil
 		}
 
@@ -251,6 +254,47 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle approval form results from huh
 	case *forms.ApprovalResultMsg:
 		return m.handleApprovalResult(msg)
+
+	// Handle tool decision from queue-based approval overlay
+	case ToolDecisionMsg:
+		_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DECISION] received decision=%d\n", msg.Decision)
+		return m, m.HandleToolDecision(msg.Decision)
+
+	// Handle completion of a single queued tool execution
+	case toolQueueExecutionMsg:
+		_, _ = fmt.Fprintf(os.Stderr, "[QUEUE_EXEC_DONE] tool_use_id=%s\n", msg.result.ToolUseID)
+
+		// Add result to queue and history
+		if m.activeToolQueue != nil {
+			m.activeToolQueue.AddResult(msg.result)
+		}
+		m.toolResultHistory = append(m.toolResultHistory, msg.result)
+
+		// Update cached most recent tool ID for tail preview display
+		m.updateMostRecentToolID()
+
+		// Display result in UI
+		resultText := formatToolResult(msg.result.Result)
+		m.AddMessage("tool", resultText)
+
+		// Update tool log
+		if msg.result.Result != nil {
+			toolName := msg.result.Result.ToolName
+			if toolName == "" {
+				toolName = "unknown"
+			}
+			m.appendToolLogLine(fmt.Sprintf("─── %s ───", toolName))
+			if msg.result.Result.Output != "" {
+				m.appendToolLogOutput(msg.result.Result.Output)
+			} else if msg.result.Result.Error != "" {
+				m.appendToolLogLine("Error: " + msg.result.Result.Error)
+			}
+		}
+
+		m.updateViewport()
+
+		// Continue processing next tool in queue
+		return m, m.ProcessNextTool()
 
 	// Handle quick actions form results from huh
 	case *forms.QuickActionsResultMsg:
@@ -331,6 +375,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.toolApprovalMode {
 			switch msg.Type {
 			case tea.KeyEnter:
+				// Get the tool from the active overlay (not pendingToolUses)
+				var currentTool *core.ToolUse
+				if active := m.overlayManager.GetActive(); active != nil {
+					if toolOverlay, ok := active.(*ToolApprovalOverlay); ok {
+						currentTool = toolOverlay.GetTool()
+					}
+				}
+				if currentTool == nil {
+					// No tool in overlay - exit approval mode
+					m.toolApprovalMode = false
+					return m, nil
+				}
+
 				// Map selected option to decision
 				var decision forms.ApprovalDecision
 				switch m.selectedApprovalOpt {
@@ -350,7 +407,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.handleApprovalResult(&forms.ApprovalResultMsg{
 					Result: forms.ApprovalFormResult{
 						Decision: decision,
-						ToolUse:  m.pendingToolUses[0],
+						ToolUse:  currentTool,
 					},
 					Error: nil,
 				})
@@ -1314,31 +1371,21 @@ func (m *Model) handleMessageStop() (tea.Model, tea.Cmd) {
 		// Dump messages after adding assistant message with tool_use blocks
 		m.dumpMessages("AFTER stream completion with tool_use blocks")
 
-		// Check approval rules BEFORE showing form
-		// If user has set "Always Allow" or "Never Allow" for this tool, apply it
-		if len(m.pendingToolUses) > 0 && m.approvalRules != nil {
-			toolName := m.pendingToolUses[0].Name
-			rule := m.approvalRules.Check(toolName)
-
-			switch rule {
-			case approval.RuleAlwaysAllow:
-				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-approving %s (always allow rule)\n", toolName)
-				m.updateViewport()
-				return m, m.ApproveToolUse()
-			case approval.RuleNeverAllow:
-				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] auto-denying %s (never allow rule)\n", toolName)
-				m.updateViewport()
-				return m, m.DenyToolUseWithType(DenialNeverAllow)
-			}
+		// NEW QUEUE SYSTEM: Create queue from pending tools and start processing
+		// Get permission mode from checker (default to "ask" if no checker)
+		permMode := "ask"
+		if m.toolExecutor != nil && m.toolExecutor.GetPermissionChecker() != nil {
+			permMode = m.toolExecutor.GetPermissionChecker().GetMode().String()
 		}
+		m.activeToolQueue = NewToolQueue(m.pendingToolUses, m.approvalRules, permMode)
+		m.pendingToolUses = nil // Clear - queue now owns them
 
-		// Show tool approval dialog - create one overlay per pending tool
-		_, _ = fmt.Fprintf(os.Stderr, "[STREAM_STOP_WITH_TOOLS] launching tool approval overlays for %d tools\n", len(m.pendingToolUses))
-		m.toolApprovalMode = true
-		// Push one overlay per tool (first tool ends up on top)
-		m.PushToolApprovalOverlays()
+		needsApproval, autoApprove, autoDeny := m.activeToolQueue.CountByAction()
+		_, _ = fmt.Fprintf(os.Stderr, "[QUEUE_CREATED] queue has %d tools: %d need approval, %d auto-approve, %d auto-deny\n",
+			m.activeToolQueue.Len(), needsApproval, autoApprove, autoDeny)
+
 		m.updateViewport()
-		return m, nil
+		return m, m.ProcessNextTool()
 	}
 
 	// Path 2: No tools, just commit regular text
