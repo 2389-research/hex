@@ -25,7 +25,7 @@ Improve tool use visibility in the TUI:
 | Never Allow | `✗✗` | Gray | Denied by rule |
 
 **Display:**
-```
+```text
 ✓✓ bash("echo hello")     # green
 ✓ bash("rm file")         # green
 ✗ bash("bad thing")       # gray
@@ -58,7 +58,7 @@ type ToolResult struct {
 
 Fullscreen overlay showing ALL tool calls in conversation:
 
-```
+```text
 ┏━━ Tool Timeline ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Ctrl+O or Esc to close ┓
 
 [12:34:56] ✓✓ bash("echo hello")
