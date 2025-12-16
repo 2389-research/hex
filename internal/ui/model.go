@@ -993,8 +993,10 @@ func (m *Model) ProcessNextTool() tea.Cmd {
 
 	case ActionAutoDeny:
 		item.Outcome = OutcomeDenied
-		m.activeToolQueue.AddResult(denialResult(item.Tool, DenialNeverAllow))
-		m.toolResultHistory = append(m.toolResultHistory, denialResult(item.Tool, DenialNeverAllow))
+		result := denialResult(item.Tool, DenialNeverAllow)
+		m.activeToolQueue.AddResult(result)
+		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
 		m.activeToolQueue.Advance()
 		// Immediately process next (no async needed for denial)
 		return m.ProcessNextTool()
@@ -1036,6 +1038,7 @@ func (m *Model) HandleToolDecision(decision int) tea.Cmd {
 		result := denialResult(item.Tool, DenialManual)
 		m.activeToolQueue.AddResult(result)
 		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
 		m.activeToolQueue.Advance()
 		return m.ProcessNextTool()
 
@@ -1055,6 +1058,7 @@ func (m *Model) HandleToolDecision(decision int) tea.Cmd {
 		result := denialResult(item.Tool, DenialNeverAllow)
 		m.activeToolQueue.AddResult(result)
 		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
 		m.activeToolQueue.Advance()
 		return m.ProcessNextTool()
 	}
