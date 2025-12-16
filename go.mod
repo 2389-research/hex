@@ -3,7 +3,7 @@ module github.com/2389-research/hex
 go 1.24.1
 
 require (
-	github.com/2389-research/mux v0.0.0-00010101000000-000000000000
+	github.com/2389-research/mux v0.2.0
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/charmbracelet/bubbles v0.21.1-0.20250623103423-23b8fd6302d7
@@ -86,5 +86,3 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
-
-replace github.com/2389-research/mux => ../mux
