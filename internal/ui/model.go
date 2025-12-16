@@ -147,18 +147,10 @@ type Model struct {
 	toolInputJSONBuf  string        // Buffer for accumulating input_json deltas
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
-	// New tool queue system (replaces pendingToolUses, toolResults, toolApprovalMode, etc.)
-	activeToolQueue   *ToolQueue   // Active queue during tool processing (nil when not processing)
-	toolResultHistory []ToolResult // Historical results for UI status display (persists after queue done)
-
-	// Legacy fields (still needed for streaming accumulation and UI state)
+	// Tool queue system
+	activeToolQueue   *ToolQueue      // Active queue during tool processing (nil when not processing)
+	toolResultHistory []ToolResult    // Historical results for UI status display (persists after queue done)
 	pendingToolUses   []*core.ToolUse // Tools accumulated during streaming, transferred to queue
-	executingToolUses []*core.ToolUse // Tools currently being executed (for UI display)
-	toolApprovalMode  bool            // Showing approval prompt
-	toolApprovalForm  tea.Model       // Embedded huh form
-	executingTool     bool            // Tool is running
-	currentToolID     string          // ID of currently executing tool
-	toolResults       []ToolResult    // Results to send back to API
 
 	// Phase 6C: Enhanced UI Components
 	spinner          *ToolSpinner
@@ -704,16 +696,10 @@ func (m *Model) ClearContext() {
 
 	// Clear tool execution state
 	m.pendingToolUses = nil
-	m.executingToolUses = nil
 	m.assemblingToolUse = nil
 	m.toolInputJSONBuf = ""
-	m.toolApprovalMode = false
-	m.toolApprovalForm = nil
-	m.executingTool = false
-	m.currentToolID = ""
-	m.toolResults = nil
 
-	// Clear tool queue state (new queue-based system)
+	// Clear tool queue state
 	m.activeToolQueue = nil
 	m.toolResultHistory = nil
 	m.mostRecentToolID = ""

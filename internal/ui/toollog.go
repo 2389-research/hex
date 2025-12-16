@@ -57,7 +57,7 @@ func (m *Model) startToolLogEntry(toolName, paramPreview string) {
 }
 
 // updateMostRecentToolID updates the cached most recent tool ID
-// This should be called whenever m.toolResults changes
+// This should be called whenever m.toolResultHistory changes
 func (m *Model) updateMostRecentToolID() {
 	// Iterate through messages in reverse order to find most recent
 	for i := len(m.Messages) - 1; i >= 0; i-- {

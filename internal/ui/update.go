@@ -385,20 +385,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			// If executing a tool, first Ctrl+C cancels it
-			if m.executingTool {
-				m.cancelStream() // Cancel any underlying stream
-				m.executingTool = false
-				m.executingToolUses = nil
-				m.currentToolID = ""
-				if m.spinner != nil {
-					m.spinner.Stop()
-				}
-				m.Status = StatusIdle
-				m.pendingQuit = false
-				return m, nil
-			}
-
 			// If in quick actions mode, first Ctrl+C cancels it
 			if m.quickActionsMode {
 				m.quickActionsMode = false

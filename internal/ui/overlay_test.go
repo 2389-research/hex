@@ -84,7 +84,6 @@ func TestOverlayStack(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
 	// Push tool approval overlay (create one dynamically)
-	m.toolApprovalMode = true
 	testTool := &core.ToolUse{ID: "test", Name: "test"}
 	m.pendingToolUses = []*core.ToolUse{testTool}
 	toolApprovalOverlay := NewToolApprovalOverlay(m, testTool, 0)
@@ -160,7 +159,6 @@ func TestOverlayToolApprovalEscape(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
 	// Setup a pending tool
-	m.toolApprovalMode = true
 	testTool := &core.ToolUse{
 		ID:   "test-tool-1",
 		Name: "test_tool",
@@ -317,7 +315,6 @@ func TestOverlayManagerCancelAll(t *testing.T) {
 	m := NewModel("test-conv", "test-model")
 
 	// Push multiple overlays
-	m.toolApprovalMode = true
 	testTool := &core.ToolUse{ID: "test", Name: "test"}
 	toolApprovalOverlay := NewToolApprovalOverlay(m, testTool, 0)
 	m.overlayManager.Push(toolApprovalOverlay, 80, 24)

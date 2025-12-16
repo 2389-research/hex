@@ -75,8 +75,7 @@ func TestClearScenario_WithToolApprovalPending(t *testing.T) {
 	model.AddMessage("user", "Use a tool")
 	model.AddMessage("assistant", "I'll use the bash tool")
 
-	// Simulate pending tool approval
-	model.toolApprovalMode = true
+	// Simulate pending tool approval using queue system
 	model.pendingToolUses = []*core.ToolUse{
 		{
 			ID:    "tool-1",
@@ -84,29 +83,23 @@ func TestClearScenario_WithToolApprovalPending(t *testing.T) {
 			Input: map[string]interface{}{"command": "ls"},
 		},
 	}
-	model.executingTool = false
-	model.currentToolID = ""
+	model.activeToolQueue = NewToolQueue(model.pendingToolUses, nil, "ask")
+	model.pendingToolUses = nil // Queue owns them now
 
 	// Verify tool state before clear
-	if !model.toolApprovalMode {
-		t.Fatal("toolApprovalMode should be true")
-	}
-	if len(model.pendingToolUses) == 0 {
-		t.Fatal("Should have pending tool uses")
+	if model.activeToolQueue == nil {
+		t.Fatal("Should have active tool queue")
 	}
 
 	// Execute /clear
 	model.ClearContext()
 
 	// Verify tool state cleared
-	if model.toolApprovalMode {
-		t.Error("toolApprovalMode should be false after clear")
+	if model.activeToolQueue != nil {
+		t.Error("activeToolQueue should be nil after clear")
 	}
 	if model.pendingToolUses != nil {
 		t.Error("pendingToolUses should be nil after clear")
-	}
-	if model.executingToolUses != nil {
-		t.Error("executingToolUses should be nil after clear")
 	}
 	if model.assemblingToolUse != nil {
 		t.Error("assemblingToolUse should be nil after clear")
