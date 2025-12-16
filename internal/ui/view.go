@@ -411,14 +411,6 @@ func truncateQuoted(s string, maxLen int) string {
 	return fmt.Sprintf("%q", s)
 }
 
-// truncateString truncates a string to maxLen, adding ellipsis if needed
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
 // Phase 6C: Enhanced rendering methods
 
 // renderHelpPanel renders the help panel when toggled
