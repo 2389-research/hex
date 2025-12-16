@@ -143,17 +143,14 @@ type Model struct {
 	// Task 12: Tool Execution UI
 	toolRegistry      *tools.Registry
 	toolExecutor      *tools.Executor
-	pendingToolUses   []*core.ToolUse // Tools waiting for approval/execution (can be multiple)
-	executingToolUses []*core.ToolUse // Tools currently being executed (for display)
-	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
-	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
-	toolApprovalMode     bool      // Showing approval prompt
-	toolApprovalForm     tea.Model // Embedded huh form for tool approval (deprecated)
-	selectedApprovalOpt  int       // Currently highlighted approval option (0-3)
-	executingTool    bool      // Tool is running
-	currentToolID     string          // ID of currently executing tool
-	toolResults       []ToolResult    // Results to send back to API
+	assemblingToolUse *core.ToolUse // Tool being assembled from streaming chunks
+	toolInputJSONBuf  string        // Buffer for accumulating input_json deltas
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
+
+	// Tool queue system
+	activeToolQueue   *ToolQueue      // Active queue during tool processing (nil when not processing)
+	toolResultHistory []ToolResult    // Historical results for UI status display (persists after queue done)
+	pendingToolUses   []*core.ToolUse // Tools accumulated during streaming, transferred to queue
 
 	// Phase 6C: Enhanced UI Components
 	spinner          *ToolSpinner
@@ -217,23 +214,38 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager      *OverlayManager      // Centralized overlay management
-	baseViewportHeight  int                  // Base viewport height before overlay adjustments
-	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
-	toolLogOverlay      *ToolLogOverlay      // Tool log overlay instance
-	helpOverlay         *HelpOverlay         // Help overlay instance
-	historyOverlay      *HistoryOverlay      // History overlay instance
+	overlayManager       *OverlayManager       // Centralized overlay management
+	baseViewportHeight   int                   // Base viewport height before overlay adjustments
+	autocompleteOverlay  *AutocompleteOverlay  // Autocomplete overlay instance
+	toolTimelineOverlay  *ToolTimelineOverlay  // Tool timeline overlay instance
+	helpOverlay          *HelpOverlay          // Help overlay instance
+	historyOverlay       *HistoryOverlay       // History overlay instance
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
 	hoveredMessageIndex int       // Index of message being hovered (-1 = none)
 	hoveredMessageTime  time.Time // Timestamp of hovered message
+
+	// Performance: Cache most recent tool ID to avoid O(n²) scans during rendering
+	mostRecentToolID string // ID of most recent tool with result (updated when tool results change)
 }
+
+// ApprovalType represents how a tool was approved or denied
+type ApprovalType int
+
+const (
+	ApprovalPending     ApprovalType = iota
+	ApprovalManual
+	ApprovalAlwaysAllow
+	DenialManual
+	DenialNeverAllow
+)
 
 // ToolResult represents a tool execution result for the API
 type ToolResult struct {
-	ToolUseID string
-	Result    *tools.Result
+	ToolUseID    string
+	Result       *tools.Result
+	ApprovalType ApprovalType
 }
 
 // NewModel creates a new UI model
@@ -334,7 +346,7 @@ func NewModel(conversationID, model string) *Model {
 	m.overlayManager = NewOverlayManager()
 	// Note: ToolApprovalOverlay instances are created dynamically per tool via PushToolApprovalOverlays
 	m.autocompleteOverlay = NewAutocompleteOverlay(m)
-	m.toolLogOverlay = NewToolLogOverlay(&m.toolLogLines)
+	m.toolTimelineOverlay = NewToolTimelineOverlay(m)
 	m.helpOverlay = NewHelpOverlay()
 	m.historyOverlay = NewHistoryOverlay(&m.Messages)
 
@@ -684,14 +696,18 @@ func (m *Model) ClearContext() {
 
 	// Clear tool execution state
 	m.pendingToolUses = nil
-	m.executingToolUses = nil
 	m.assemblingToolUse = nil
 	m.toolInputJSONBuf = ""
-	m.toolApprovalMode = false
-	m.toolApprovalForm = nil
-	m.executingTool = false
-	m.currentToolID = ""
-	m.toolResults = nil
+
+	// Clear tool queue state
+	m.activeToolQueue = nil
+	m.toolResultHistory = nil
+	m.mostRecentToolID = ""
+
+	// Clear tool log state
+	m.toolLogLines = nil
+	m.currentToolLogName = ""
+	m.currentToolLogParam = ""
 
 	// Clear any active overlays
 	if m.overlayManager != nil {
@@ -902,138 +918,6 @@ func (m *Model) GetPrunedMessages() []core.Message {
 	return coreMessages
 }
 
-// ApproveToolUse executes the tool from the active approval overlay
-func (m *Model) ApproveToolUse() tea.Cmd {
-	// Guard against double-execution from button mashing
-	if m.executingTool {
-		return nil
-	}
-
-	// Get the current tool from the active overlay
-	active := m.overlayManager.GetActive()
-	if active == nil {
-		return nil
-	}
-	toolOverlay, ok := active.(*ToolApprovalOverlay)
-	if !ok || toolOverlay.GetTool() == nil {
-		return nil
-	}
-
-	currentTool := toolOverlay.GetTool()
-	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_APPROVAL] approving tool: %s\n", currentTool.Name)
-
-	// Validate that the tool_use block exists in message history
-	m.validateToolUseExists(currentTool.ID)
-
-	// Remove this tool from pending
-	for i, pending := range m.pendingToolUses {
-		if pending.ID == currentTool.ID {
-			m.pendingToolUses = append(m.pendingToolUses[:i], m.pendingToolUses[i+1:]...)
-			break
-		}
-	}
-
-	toolUses := []*core.ToolUse{currentTool}
-	m.executingToolUses = toolUses // Save for status display
-
-	// Pop the current approval overlay - next one (if any) is already on stack
-	m.overlayManager.Pop()
-	m.adjustViewportForOverlay()
-
-	// Check if more tool approval overlays remain
-	nextActive := m.overlayManager.GetActive()
-	if _, isToolApproval := nextActive.(*ToolApprovalOverlay); !isToolApproval {
-		// No more tool approvals - close approval mode
-		m.toolApprovalMode = false
-		m.toolApprovalForm = nil
-		m.approvalPrompt = nil
-	}
-
-	m.executingTool = true
-
-	// Clear previous tool log chunk - output will be added when results come back
-	m.clearToolLogChunk()
-
-	// Phase 6C: Start spinner for tool execution
-	var spinnerCmd tea.Cmd
-	if m.spinner != nil {
-		spinnerCmd = m.spinner.Start(SpinnerTypeToolExecution, "Running "+currentTool.Name+"...")
-	}
-
-	m.updateViewport()
-
-	// Execute the single tool
-	toolCmd := m.executeToolsBatch(toolUses)
-
-	// Return batch of spinner start and tool execution
-	if spinnerCmd != nil {
-		return tea.Batch(spinnerCmd, toolCmd)
-	}
-	return toolCmd
-}
-
-// DenyToolUse rejects the first pending tool (individual denial)
-// DEPRECATED: Use DenySpecificTool with the overlay's tool instead
-func (m *Model) DenyToolUse() tea.Cmd {
-	// Get the current tool approval overlay and use its tool
-	if active := m.overlayManager.GetActive(); active != nil {
-		if toolOverlay, ok := active.(*ToolApprovalOverlay); ok {
-			return m.DenySpecificTool(toolOverlay.GetTool())
-		}
-	}
-	return nil
-}
-
-// DenySpecificTool rejects a specific tool
-func (m *Model) DenySpecificTool(tool *core.ToolUse) tea.Cmd {
-	if tool == nil {
-		return nil
-	}
-
-	_, _ = fmt.Fprintf(os.Stderr, "[TOOL_DENIAL] denying tool: %s\n", tool.Name)
-
-	// Create error result for the denied tool
-	result := &tools.Result{
-		ToolName: tool.Name,
-		Success:  false,
-		Error:    "User denied permission",
-	}
-
-	// Validate that tool_use exists in message history
-	m.validateToolUseExists(tool.ID)
-
-	m.toolResults = append(m.toolResults, ToolResult{
-		ToolUseID: tool.ID,
-		Result:    result,
-	})
-
-	m.AddMessage("tool", "Tool denied: "+tool.Name)
-
-	// Remove this tool from pendingToolUses
-	for i, pending := range m.pendingToolUses {
-		if pending.ID == tool.ID {
-			m.pendingToolUses = append(m.pendingToolUses[:i], m.pendingToolUses[i+1:]...)
-			break
-		}
-	}
-
-	// NOTE: We don't pop here - the caller (Cancel flow in update.go) handles popping
-	// After pop, if no more tool approval overlays, finalize results
-
-	m.updateViewport()
-	return nil
-}
-
-// FinalizeToolApproval is called when the last tool approval overlay is popped
-func (m *Model) FinalizeToolApproval() tea.Cmd {
-	m.toolApprovalMode = false
-	m.toolApprovalForm = nil
-	m.Status = StatusIdle
-	m.updateViewport()
-	// Send all accumulated tool results back to API
-	return m.sendToolResults()
-}
-
 // PushToolApprovalOverlays creates and pushes one overlay per pending tool.
 // Overlays are pushed in reverse order so the first tool is on top of the stack.
 func (m *Model) PushToolApprovalOverlays() {
@@ -1061,51 +945,227 @@ func (m *Model) IsToolApprovalOverlayActive() bool {
 	return ok
 }
 
-// toolExecutionMsg is sent when a single tool finishes executing
-type toolExecutionMsg struct {
-	toolUseID string
-	result    *tools.Result
-	err       error
+// ToolDecisionMsg is sent when user makes a decision on a tool approval overlay
+type ToolDecisionMsg struct {
+	Decision int // 0=approve, 1=deny, 2=always allow, 3=never allow
 }
 
-// toolBatchExecutionMsg is sent when a batch of tools finishes executing
-type toolBatchExecutionMsg struct {
-	results []ToolResult
+// toolQueueExecutionMsg is sent when a single tool from the queue finishes executing
+type toolQueueExecutionMsg struct {
+	result ToolResult
 }
 
-// executeToolsBatch executes multiple tools sequentially and collects all results
-func (m *Model) executeToolsBatch(toolUses []*core.ToolUse) tea.Cmd {
+// ProcessNextTool processes the next tool in the queue
+// Returns a command to execute the tool or show an overlay
+func (m *Model) ProcessNextTool() tea.Cmd {
+	if m.activeToolQueue == nil {
+		return nil
+	}
+
+	item := m.activeToolQueue.Current()
+	if item == nil {
+		// Queue done - send results to API
+		return m.finalizeToolQueue()
+	}
+
+	_, _ = fmt.Fprintf(os.Stderr, "[QUEUE] processing tool %d/%d: %s (action=%d)\n",
+		m.activeToolQueue.current+1, m.activeToolQueue.Len(), item.Tool.Name, item.Action)
+
+	switch item.Action {
+	case ActionAutoApprove:
+		item.Outcome = OutcomeApproved
+		m.activeToolQueue.Advance()
+		return m.executeQueuedTool(item.Tool, ApprovalAlwaysAllow)
+
+	case ActionAutoDeny:
+		item.Outcome = OutcomeDenied
+		result := denialResult(item.Tool, DenialNeverAllow)
+		m.activeToolQueue.AddResult(result)
+		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
+		m.activeToolQueue.Advance()
+		// Immediately process next (no async needed for denial)
+		return m.ProcessNextTool()
+
+	case ActionNeedsApproval:
+		// Push single overlay for this tool
+		overlay := NewToolApprovalOverlayFromQueue(m, item)
+		m.overlayManager.Push(overlay, m.Width, m.Height)
+		m.adjustViewportForOverlay()
+		return nil // wait for user input
+	}
+
+	return nil
+}
+
+// HandleToolDecision processes the user's decision from the approval overlay
+func (m *Model) HandleToolDecision(decision int) tea.Cmd {
+	if m.activeToolQueue == nil {
+		return nil
+	}
+
+	item := m.activeToolQueue.Current()
+	if item == nil {
+		return nil
+	}
+
+	// Pop the approval overlay
+	m.overlayManager.Pop()
+	m.adjustViewportForOverlay()
+
+	switch decision {
+	case 0: // Approve once
+		item.Outcome = OutcomeApproved
+		m.activeToolQueue.Advance()
+		return m.executeQueuedTool(item.Tool, ApprovalManual)
+
+	case 1: // Deny once
+		item.Outcome = OutcomeDenied
+		result := denialResult(item.Tool, DenialManual)
+		m.activeToolQueue.AddResult(result)
+		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
+		m.activeToolQueue.Advance()
+		return m.ProcessNextTool()
+
+	case 2: // Always allow
+		if m.approvalRules != nil {
+			_ = m.approvalRules.SetAlwaysAllow(item.Tool.Name)
+		}
+		item.Outcome = OutcomeApproved
+		m.activeToolQueue.Advance()
+		return m.executeQueuedTool(item.Tool, ApprovalAlwaysAllow)
+
+	case 3: // Never allow
+		if m.approvalRules != nil {
+			_ = m.approvalRules.SetNeverAllow(item.Tool.Name)
+		}
+		item.Outcome = OutcomeDenied
+		result := denialResult(item.Tool, DenialNeverAllow)
+		m.activeToolQueue.AddResult(result)
+		m.toolResultHistory = append(m.toolResultHistory, result)
+		m.updateMostRecentToolID()
+		m.activeToolQueue.Advance()
+		return m.ProcessNextTool()
+	}
+
+	return nil
+}
+
+// executeQueuedTool executes a single tool from the queue and returns a message when done
+func (m *Model) executeQueuedTool(tool *core.ToolUse, approvalType ApprovalType) tea.Cmd {
+	_, _ = fmt.Fprintf(os.Stderr, "[QUEUE_EXEC] executing tool: %s (id=%s)\n", tool.Name, tool.ID)
+
+	// Validate that the tool_use block exists in message history
+	m.validateToolUseExists(tool.ID)
+
 	return func() tea.Msg {
-		results := make([]ToolResult, 0, len(toolUses))
+		ctx := context.Background()
+		result, err := m.toolExecutor.Execute(ctx, tool.Name, tool.Input)
 
-		for i, toolUse := range toolUses {
-			fmt.Fprintf(os.Stderr, "[BATCH_EXEC] executing tool %d/%d: %s (id=%s)\n",
-				i+1, len(toolUses), toolUse.Name, toolUse.ID)
-
-			ctx := context.Background()
-			result, err := m.toolExecutor.Execute(ctx, toolUse.Name, toolUse.Input)
-
-			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_ERROR] tool %s failed: %v\n", toolUse.Name, err)
-				results = append(results, ToolResult{
-					ToolUseID: toolUse.ID,
-					Result: &tools.Result{
-						ToolName: toolUse.Name,
-						Success:  false,
-						Error:    err.Error(),
-					},
-				})
-			} else {
-				_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_SUCCESS] tool %s succeeded\n", toolUse.Name)
-				results = append(results, ToolResult{
-					ToolUseID: toolUse.ID,
-					Result:    result,
-				})
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "[QUEUE_EXEC] tool error: %v\n", err)
+			return toolQueueExecutionMsg{
+				result: ToolResult{
+					ToolUseID:    tool.ID,
+					Result:       &tools.Result{ToolName: tool.Name, Success: false, Error: err.Error()},
+					ApprovalType: approvalType,
+				},
 			}
 		}
 
-		_, _ = fmt.Fprintf(os.Stderr, "[BATCH_EXEC_DONE] executed %d tools\n", len(results))
-		return toolBatchExecutionMsg{results: results}
+		_, _ = fmt.Fprintf(os.Stderr, "[QUEUE_EXEC] tool success: %s\n", tool.Name)
+		return toolQueueExecutionMsg{
+			result: ToolResult{
+				ToolUseID:    tool.ID,
+				Result:       result,
+				ApprovalType: approvalType,
+			},
+		}
+	}
+}
+
+// finalizeToolQueue sends accumulated results to API and clears the queue
+func (m *Model) finalizeToolQueue() tea.Cmd {
+	if m.activeToolQueue == nil {
+		return nil
+	}
+
+	results := m.activeToolQueue.Results()
+	_, _ = fmt.Fprintf(os.Stderr, "[QUEUE] finalizing queue with %d results\n", len(results))
+
+	m.activeToolQueue = nil // clear ephemeral state
+
+	if len(results) == 0 {
+		return nil
+	}
+
+	return m.sendToolResultsFromQueue(results)
+}
+
+// sendToolResultsFromQueue sends tool results to the API (new queue-based version)
+func (m *Model) sendToolResultsFromQueue(results []ToolResult) tea.Cmd {
+	if len(results) == 0 || m.apiClient == nil {
+		return nil
+	}
+
+	_, _ = fmt.Fprintf(os.Stderr, "[QUEUE] sending %d tool results to API\n", len(results))
+
+	// Build tool_result content blocks for the API
+	toolResultBlocks := make([]core.ContentBlock, 0, len(results))
+	for _, result := range results {
+		content := formatToolResult(result.Result)
+		toolResultBlocks = append(toolResultBlocks, core.NewToolResultBlock(result.ToolUseID, content))
+	}
+
+	// Add a user message with tool_result content blocks
+	userMsg := Message{
+		Role:         "user",
+		ContentBlock: toolResultBlocks,
+	}
+	m.Messages = append(m.Messages, userMsg)
+
+	// Cancel any existing stream context before creating a new one
+	m.cancelStream()
+
+	// Create cancellable context for this stream
+	ctx, cancel := context.WithCancel(context.Background())
+	m.streamCtx = ctx
+	m.streamCancel = cancel
+
+	// Capture necessary state for the command
+	apiClient := m.apiClient
+	toolRegistry := m.toolRegistry
+	model := m.Model
+	apiMessages := m.GetPrunedMessages()
+	systemPrompt := m.systemPrompt
+
+	return func() tea.Msg {
+		var toolDefs []core.ToolDefinition
+		if toolRegistry != nil {
+			toolDefs = toolRegistry.GetDefinitions()
+		}
+
+		finalSystemPrompt := core.DefaultSystemPrompt
+		if systemPrompt != "" {
+			finalSystemPrompt = core.DefaultSystemPrompt + "\n\n" + systemPrompt
+		}
+
+		req := core.MessageRequest{
+			Model:     model,
+			Messages:  apiMessages,
+			MaxTokens: 8192,
+			System:    finalSystemPrompt,
+			Tools:     toolDefs,
+			Stream:    true,
+		}
+
+		streamChan, err := apiClient.CreateMessageStream(ctx, req)
+		if err != nil {
+			return &StreamChunkMsg{Error: err}
+		}
+
+		return &streamStartMsg{channel: streamChan}
 	}
 }
 
@@ -1302,102 +1362,6 @@ func (m *Model) validateToolUseExists(toolUseID string) {
 	_, _ = fmt.Fprintf(os.Stderr, "[VALIDATION] ✗ WARNING: tool_use with ID %s NOT FOUND in message history!\n", toolUseID)
 }
 
-// sendToolResults sends tool results back to the API and continues the conversation
-func (m *Model) sendToolResults() tea.Cmd {
-	if len(m.toolResults) == 0 || m.apiClient == nil {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: no results (%d) or no client (%v)\n", len(m.toolResults), m.apiClient != nil)
-		return nil
-	}
-
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: preparing to send %d tool result(s)\n", len(m.toolResults))
-
-	// Dump messages BEFORE adding tool results
-	m.dumpMessages("BEFORE adding tool results")
-
-	// Capture tool results before clearing
-	results := m.toolResults
-	m.toolResults = nil // Clear results
-
-	// Build tool_result content blocks for the API
-	// According to Anthropic API spec, tool results must be sent as content blocks
-	// in a user message, with type="tool_result" and tool_use_id matching the original request
-	toolResultBlocks := make([]core.ContentBlock, 0, len(results))
-	for _, result := range results {
-		content := formatToolResult(result.Result)
-		toolResultBlocks = append(toolResultBlocks, core.NewToolResultBlock(result.ToolUseID, content))
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created tool_result block for tool_use_id=%s\n", result.ToolUseID)
-	}
-
-	// Add a user message with tool_result content blocks
-	// The API requires tool results to be in this specific format
-	userMsg := Message{
-		Role:         "user",
-		ContentBlock: toolResultBlocks,
-	}
-	m.Messages = append(m.Messages, userMsg)
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: added user message with %d tool_result blocks, total messages now: %d\n", len(toolResultBlocks), len(m.Messages))
-
-	// Dump messages AFTER adding tool results
-	m.dumpMessages("AFTER adding tool results")
-
-	// Cancel any existing stream context before creating a new one
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: cancelling old context\n")
-	m.cancelStream()
-
-	// Create cancellable context for this stream BEFORE the async command
-	ctx, cancel := context.WithCancel(context.Background())
-	// Store these in the model NOW (synchronously)
-	m.streamCtx = ctx
-	m.streamCancel = cancel
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: created new context\n")
-
-	// Capture necessary state for the command
-	apiClient := m.apiClient
-	toolRegistry := m.toolRegistry
-	model := m.Model
-	// Get pruned messages (automatically compacts if near context limit)
-	apiMessages := m.GetPrunedMessages()
-	systemPrompt := m.systemPrompt
-	_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: captured %d pruned messages for API request\n", len(apiMessages))
-
-	return func() tea.Msg {
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: async command executing with %d messages\n", len(apiMessages))
-
-		// Get tool definitions from registry
-		var tools []core.ToolDefinition
-		if toolRegistry != nil {
-			tools = toolRegistry.GetDefinitions()
-		}
-
-		// Always include Hex identity in system prompt
-		finalSystemPrompt := core.DefaultSystemPrompt
-		if systemPrompt != "" {
-			finalSystemPrompt = core.DefaultSystemPrompt + "\n\n" + systemPrompt
-		}
-
-		// Create API request to continue conversation with tool results
-		req := core.MessageRequest{
-			Model:     model,
-			Messages:  apiMessages,
-			MaxTokens: 4096,
-			Stream:    true,
-			System:    finalSystemPrompt,
-			Tools:     tools, // Include tool definitions
-		}
-
-		// Start stream with the context we created
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: calling CreateMessageStream with %d messages\n", len(apiMessages))
-		streamChan, err := apiClient.CreateMessageStream(ctx, req)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: ERROR creating stream: %v\n", err)
-			return &StreamChunkMsg{Error: err}
-		}
-
-		_, _ = fmt.Fprintf(os.Stderr, "[DEBUG] sendToolResults: stream created successfully, returning streamStartMsg\n")
-		return &streamStartMsg{channel: streamChan}
-	}
-}
-
 // Phase 6C Task 8: Smart Suggestion Methods
 
 // AnalyzeSuggestions analyzes current input and updates suggestions
@@ -1510,68 +1474,6 @@ func (m *Model) RejectTopSuggestion() {
 // GetPendingToolUses returns the current pending tool uses for testing
 func (m *Model) GetPendingToolUses() []*core.ToolUse {
 	return m.pendingToolUses
-}
-
-// handleApprovalResult processes the result from the huh approval form
-func (m *Model) handleApprovalResult(msg *forms.ApprovalResultMsg) (tea.Model, tea.Cmd) {
-	// Check for errors
-	if msg.Error != nil {
-		m.ErrorMessage = "Approval form error: " + msg.Error.Error()
-		m.toolApprovalMode = false
-		m.toolApprovalForm = nil
-		// Pop tool approval overlay if active
-		if m.IsToolApprovalOverlayActive() {
-			m.overlayManager.Pop()
-			m.adjustViewportForOverlay()
-		}
-		return m, m.DenyToolUse()
-	}
-
-	// Exit approval mode
-	m.toolApprovalMode = false
-	m.toolApprovalForm = nil
-	m.approvalPrompt = nil
-	// Pop tool approval overlay if active
-	if m.IsToolApprovalOverlayActive() {
-		m.overlayManager.Pop()
-		m.adjustViewportForOverlay()
-	}
-
-	// Process the decision
-	switch msg.Result.Decision {
-	case forms.DecisionApprove:
-		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User approved tool: %s\n", msg.Result.ToolUse.Name)
-		return m, m.ApproveToolUse()
-
-	case forms.DecisionDeny:
-		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User denied tool: %s\n", msg.Result.ToolUse.Name)
-		return m, m.DenyToolUse()
-
-	case forms.DecisionAlwaysAllow:
-		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User always allowed tool: %s\n", msg.Result.ToolUse.Name)
-		// Store in persistent approval rules
-		if m.approvalRules != nil {
-			if err := m.approvalRules.SetAlwaysAllow(msg.Result.ToolUse.Name); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist always-allow rule: %v\n", err)
-			}
-		}
-		return m, m.ApproveToolUse()
-
-	case forms.DecisionNeverAllow:
-		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] User never allowed tool: %s\n", msg.Result.ToolUse.Name)
-		// Store in persistent approval rules
-		if m.approvalRules != nil {
-			if err := m.approvalRules.SetNeverAllow(msg.Result.ToolUse.Name); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_RULES] Failed to persist never-allow rule: %v\n", err)
-			}
-		}
-		return m, m.DenyToolUse()
-
-	default:
-		// Unknown decision, deny by default
-		_, _ = fmt.Fprintf(os.Stderr, "[APPROVAL_FORM] Unknown decision, denying tool\n")
-		return m, m.DenyToolUse()
-	}
 }
 
 // LaunchQuickActionsForm launches the quick actions form using huh

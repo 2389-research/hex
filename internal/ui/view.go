@@ -111,14 +111,7 @@ func (m *Model) View() string {
 
 	// Note: Bottom overlays are rendered above, between viewport and input
 	// Fullscreen overlays are handled at the top of View() function
-	if m.executingTool {
-		// Task 12: Tool execution indicator
-		b.WriteString(m.renderToolStatus() + "\n")
-		// TUI Polish: Show collapsed tool log (last 3 lines)
-		if collapsedLog, _ := m.renderCollapsedToolLog(); collapsedLog != "" {
-			b.WriteString(collapsedLog)
-		}
-	} else if m.SearchMode {
+	if m.SearchMode {
 		// Search mode indicator
 		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
 		b.WriteString(searchPrompt + "\n")
@@ -416,71 +409,6 @@ func truncateQuoted(s string, maxLen int) string {
 		return fmt.Sprintf("%q", s[:maxLen-3]+"...")
 	}
 	return fmt.Sprintf("%q", s)
-}
-
-// renderToolStatus renders the tool execution status indicator
-func (m *Model) renderToolStatus() string {
-	if !m.executingTool {
-		return ""
-	}
-
-	if len(m.executingToolUses) == 0 {
-		return m.theme.ToolExecuting.Render("⏳ Executing tool...")
-	}
-
-	if len(m.executingToolUses) > 1 {
-		return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ Executing %d tools...", len(m.executingToolUses)))
-	}
-
-	// Single tool - show name and key parameter
-	tool := m.executingToolUses[0]
-	toolName := tool.Name
-
-	// Extract key parameter based on tool type
-	var paramPreview string
-	switch toolName {
-	case "bash":
-		if cmd, ok := tool.Input["command"].(string); ok {
-			paramPreview = truncateString(cmd, 60)
-		}
-	case "read_file", "write_file":
-		if path, ok := tool.Input["file_path"].(string); ok {
-			paramPreview = truncateString(path, 60)
-		}
-	case "edit":
-		if path, ok := tool.Input["file_path"].(string); ok {
-			paramPreview = truncateString(path, 60)
-		}
-	case "grep":
-		if pattern, ok := tool.Input["pattern"].(string); ok {
-			paramPreview = truncateString(pattern, 40)
-		}
-	case "glob":
-		if pattern, ok := tool.Input["pattern"].(string); ok {
-			paramPreview = truncateString(pattern, 40)
-		}
-	default:
-		// For other tools, try to get a reasonable preview
-		for key, val := range tool.Input {
-			if str, ok := val.(string); ok && str != "" {
-				paramPreview = key + "=" + truncateString(str, 40)
-				break
-			}
-		}
-	}
-
-	if paramPreview != "" {
-		return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ %s: %s", toolName, paramPreview))
-	}
-	return m.theme.ToolExecuting.Render(fmt.Sprintf("⏳ Executing: %s...", toolName))
-}
-
-// truncateString truncates a string to maxLen, adding ellipsis if needed
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
 }
 
 // Phase 6C: Enhanced rendering methods

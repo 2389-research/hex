@@ -49,7 +49,7 @@ func (o *HelpOverlay) GetContent() string {
 - **Home/End**: Go to top/bottom
 
 ## Overlays
-- **Ctrl+O**: Toggle tool output log
+- **Ctrl+O**: Toggle tool timeline (all tool calls)
 - **Ctrl+H**: Toggle this help screen
 - **Ctrl+R**: Open conversation history
 - **Escape**: Close active overlay

@@ -56,6 +56,31 @@ func (m *Model) startToolLogEntry(toolName, paramPreview string) {
 	m.toolLogLines = append(m.toolLogLines, header)
 }
 
+// updateMostRecentToolID updates the cached most recent tool ID
+// This should be called whenever m.toolResultHistory changes
+func (m *Model) updateMostRecentToolID() {
+	// Iterate through messages in reverse order to find most recent
+	for i := len(m.Messages) - 1; i >= 0; i-- {
+		msg := m.Messages[i]
+		// Check content blocks in reverse order within the message
+		for j := len(msg.ContentBlock) - 1; j >= 0; j-- {
+			block := msg.ContentBlock[j]
+			if block.Type == "tool_use" {
+				// Check if this tool has a result in history
+				for _, tr := range m.toolResultHistory {
+					if tr.ToolUseID == block.ID {
+						// Found a tool with a result - cache it
+						m.mostRecentToolID = block.ID
+						return
+					}
+				}
+			}
+		}
+	}
+	// No tool with result found
+	m.mostRecentToolID = ""
+}
+
 // renderCollapsedToolLog renders the last 3 lines of tool output with dimmed style
 // Returns the rendered string and the number of hidden lines (for combining with hint)
 func (m *Model) renderCollapsedToolLog() (string, int) {
