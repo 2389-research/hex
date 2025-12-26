@@ -280,6 +280,54 @@ func TestReadTool_Execute_LimitBeyondFileSize(t *testing.T) {
 	assert.Equal(t, 5, result.Metadata["bytes_read"])
 }
 
+// TestReadTool_Execute_NegativeOffset tests that negative offset is clamped to 0
+func TestReadTool_Execute_NegativeOffset(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "test-*.txt")
+	require.NoError(t, err)
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+
+	content := "Hello"
+	_, err = tmpFile.WriteString(content)
+	require.NoError(t, err)
+	_ = tmpFile.Close()
+
+	tool := tools.NewReadTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"path":   tmpFile.Name(),
+		"offset": float64(-500), // Negative offset should be clamped to 0
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+	assert.Equal(t, content, result.Output) // Should read full content from start
+	assert.Equal(t, 0, result.Metadata["offset"])
+}
+
+// TestReadTool_Execute_NegativeLimit tests that negative limit is clamped to 0
+func TestReadTool_Execute_NegativeLimit(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "test-*.txt")
+	require.NoError(t, err)
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+
+	content := "Hello"
+	_, err = tmpFile.WriteString(content)
+	require.NoError(t, err)
+	_ = tmpFile.Close()
+
+	tool := tools.NewReadTool()
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{
+		"path":  tmpFile.Name(),
+		"limit": float64(-800), // Negative limit should be clamped to 0
+	})
+
+	require.NoError(t, err)
+	assert.True(t, result.Success)
+	assert.Equal(t, "", result.Output) // Empty output when limit is 0
+	assert.Equal(t, 0, result.Metadata["bytes_read"])
+}
+
 // TestReadTool_RequiresApproval_SensitivePaths tests approval for sensitive paths
 func TestReadTool_RequiresApproval_SensitivePaths(t *testing.T) {
 	tool := tools.NewReadTool()

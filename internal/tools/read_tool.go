@@ -155,6 +155,14 @@ func (t *ReadTool) Execute(_ context.Context, params map[string]interface{}) (*R
 		limit = int(limitParam)
 	}
 
+	// Validate offset and limit are non-negative
+	if offset < 0 {
+		offset = 0
+	}
+	if limit < 0 {
+		limit = 0
+	}
+
 	// Apply offset and limit
 	if offset >= len(content) {
 		offset = len(content)

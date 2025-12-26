@@ -73,5 +73,18 @@ func (a *adaptedTool) Execute(ctx context.Context, params map[string]any) (*muxt
 	}, nil
 }
 
-// Compile-time interface assertion.
+// InputSchema implements mux's tool.SchemaProvider interface.
+// This tells mux what parameters the tool accepts, so the LLM knows how to call it.
+func (a *adaptedTool) InputSchema() map[string]any {
+	schema := tools.GetToolSchema(a.hex.Name())
+	// Convert map[string]interface{} to map[string]any
+	result := make(map[string]any, len(schema))
+	for k, v := range schema {
+		result[k] = v
+	}
+	return result
+}
+
+// Compile-time interface assertions.
 var _ muxtool.Tool = (*adaptedTool)(nil)
+var _ muxtool.SchemaProvider = (*adaptedTool)(nil)
