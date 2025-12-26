@@ -3,6 +3,7 @@
 package adapter
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -33,12 +34,17 @@ func parseCSV(s string) []string {
 	return result
 }
 
+// ApprovalFunc is called when a tool requires approval before execution.
+// Returns true to approve, false to deny. Error indicates approval check failed.
+type ApprovalFunc func(ctx context.Context, toolName string, params map[string]any) (bool, error)
+
 // Config holds configuration for creating an agent.
 type Config struct {
 	APIKey       string
 	Model        string
 	SystemPrompt string
 	HexTools     []tools.Tool
+	ApprovalFunc ApprovalFunc // Optional: if nil, tools requiring approval will fail
 }
 
 // NewRootAgent creates a root agent with full tool access.
@@ -50,12 +56,21 @@ func NewRootAgent(cfg Config) *agent.Agent {
 		registry.Register(AdaptTool(hexTool))
 	}
 
-	return agent.New(agent.Config{
+	agentCfg := agent.Config{
 		Name:         "hex-root",
 		Registry:     registry,
 		LLMClient:    llmClient,
 		SystemPrompt: cfg.SystemPrompt,
-	})
+	}
+
+	// Wire up approval function if provided
+	if cfg.ApprovalFunc != nil {
+		agentCfg.ApprovalFunc = func(ctx context.Context, t muxtool.Tool, params map[string]any) (bool, error) {
+			return cfg.ApprovalFunc(ctx, t.Name(), params)
+		}
+	}
+
+	return agent.New(agentCfg)
 }
 
 // NewSubagent creates a subagent with filtered tool access based on env vars.
@@ -75,12 +90,21 @@ func NewSubagent(cfg Config) *agent.Agent {
 		agentID = "hex-subagent"
 	}
 
-	return agent.New(agent.Config{
+	agentCfg := agent.Config{
 		Name:         agentID,
 		Registry:     registry,
 		LLMClient:    llmClient,
 		SystemPrompt: cfg.SystemPrompt,
 		AllowedTools: allowed,
 		DeniedTools:  denied,
-	})
+	}
+
+	// Wire up approval function if provided
+	if cfg.ApprovalFunc != nil {
+		agentCfg.ApprovalFunc = func(ctx context.Context, t muxtool.Tool, params map[string]any) (bool, error) {
+			return cfg.ApprovalFunc(ctx, t.Name(), params)
+		}
+	}
+
+	return agent.New(agentCfg)
 }

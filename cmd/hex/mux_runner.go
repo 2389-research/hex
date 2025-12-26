@@ -11,6 +11,7 @@ import (
 	"github.com/2389-research/hex/internal/agentsmd"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/permissions"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/mux/orchestrator"
 )
@@ -75,12 +76,19 @@ func runPrintModeWithMux(prompt string) error {
 		sysPrompt = agentsContext + "\n\n" + sysPrompt
 	}
 
+	// Create approval function based on permission mode
+	approvalFunc, err := createMuxApprovalFunc()
+	if err != nil {
+		return fmt.Errorf("create approval function: %w", err)
+	}
+
 	// Create agent config
 	agentCfg := adapter.Config{
 		APIKey:       apiKey,
 		Model:        modelToUse,
 		SystemPrompt: sysPrompt,
 		HexTools:     hexTools,
+		ApprovalFunc: approvalFunc,
 	}
 
 	// Create agent (root or subagent based on environment)
@@ -178,4 +186,44 @@ func getHexTools() ([]tools.Tool, error) {
 	}
 
 	return hexTools, nil
+}
+
+// createMuxApprovalFunc creates an approval function for mux based on permission mode.
+func createMuxApprovalFunc() (adapter.ApprovalFunc, error) {
+	// Parse permission mode from flag
+	mode := permissionMode
+	if dangerouslySkipPermissions {
+		mode = "auto"
+	}
+
+	parsedMode, err := permissions.ParseMode(mode)
+	if err != nil {
+		return nil, fmt.Errorf("invalid permission mode: %w", err)
+	}
+
+	// Create permission rules from flags
+	rules := permissions.NewRules(allowedTools, disallowedTools)
+	checker := permissions.NewChecker(parsedMode, rules)
+
+	logging.InfoWith("Mux approval function created", "mode", parsedMode)
+
+	// Return approval function that uses the permission checker
+	return func(_ context.Context, toolName string, params map[string]any) (bool, error) {
+		// Convert params for checker (map[string]any to map[string]interface{})
+		converted := make(map[string]interface{}, len(params))
+		for k, v := range params {
+			converted[k] = v
+		}
+
+		result := checker.Check(toolName, converted)
+
+		// If requires prompt but we're in print mode, we can't ask interactively
+		if result.RequiresPrompt {
+			logging.WarnWith("Tool requires approval but running in non-interactive mode",
+				"tool", toolName, "reason", result.Reason)
+			return false, nil
+		}
+
+		return result.Allowed, nil
+	}, nil
 }
