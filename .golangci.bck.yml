@@ -1,0 +1,107 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - bodyclose
+    - unconvert
+    - copyloopvar
+  disable:
+    - revive      # Too many style issues, disabled temporarily
+    - gosec       # Too many false positives, disabled temporarily
+    - unparam     # Too many false positives, disabled temporarily
+    - prealloc    # Style issue, disabled temporarily
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+  govet:
+    enable:
+      - shadow
+
+  staticcheck:
+    checks:
+      - "all"
+      - "-QF1003"
+      - "-QF1012"
+
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+      - name: unexported-return
+        severity: warning
+
+  gosec:
+    excludes:
+      - G104
+      - G304  # File inclusion via variable - legitimate use case
+      - G302  # File permissions - legitimate use case
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - unparam
+
+    - path: vendor/
+      linters:
+        - all
+
+    # Exclude style-only issues that don't affect functionality
+    - linters:
+        - revive
+      text: "package-comments"
+
+    - linters:
+        - revive
+      text: "exported.*should have comment"
+
+    - linters:
+        - revive
+      text: "stutters"
+
+    - linters:
+        - revive
+      text: "unused-parameter"
+
+    - linters:
+        - gosec
+      text: "G304"
+
+    - linters:
+        - gosec
+      text: "G302"
+
+    - linters:
+        - prealloc
+      text: "Consider pre-allocating"
+
+    - linters:
+        - staticcheck
+      text: "QF1012.*Use fmt.Fprintf"
+
+    - linters:
+        - staticcheck
+      text: "QF1003"
+
+    - linters:
+        - unparam
+      text: "result.*is always nil"
+
+    - linters:
+        - revive
+      text: "redefines-builtin-id"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0

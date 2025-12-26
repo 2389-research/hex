@@ -11,8 +11,8 @@ import (
 
 // ToolTimelineOverlay displays all tool calls in the conversation in chronological order
 type ToolTimelineOverlay struct {
-	model    *Model          // Reference to get messages and results
-	viewport viewport.Model  // Embedded viewport for scrolling
+	model    *Model         // Reference to get messages and results
+	viewport viewport.Model // Embedded viewport for scrolling
 	width    int
 	height   int
 }

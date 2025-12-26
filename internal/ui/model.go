@@ -143,8 +143,8 @@ type Model struct {
 	// Task 12: Tool Execution UI
 	toolRegistry      *tools.Registry
 	toolExecutor      *tools.Executor
-	assemblingToolUse *core.ToolUse // Tool being assembled from streaming chunks
-	toolInputJSONBuf  string        // Buffer for accumulating input_json deltas
+	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
+	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
 	// Tool queue system
@@ -214,12 +214,12 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager       *OverlayManager       // Centralized overlay management
-	baseViewportHeight   int                   // Base viewport height before overlay adjustments
-	autocompleteOverlay  *AutocompleteOverlay  // Autocomplete overlay instance
-	toolTimelineOverlay  *ToolTimelineOverlay  // Tool timeline overlay instance
-	helpOverlay          *HelpOverlay          // Help overlay instance
-	historyOverlay       *HistoryOverlay       // History overlay instance
+	overlayManager      *OverlayManager      // Centralized overlay management
+	baseViewportHeight  int                  // Base viewport height before overlay adjustments
+	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
+	toolTimelineOverlay *ToolTimelineOverlay // Tool timeline overlay instance
+	helpOverlay         *HelpOverlay         // Help overlay instance
+	historyOverlay      *HistoryOverlay      // History overlay instance
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
@@ -234,7 +234,7 @@ type Model struct {
 type ApprovalType int
 
 const (
-	ApprovalPending     ApprovalType = iota
+	ApprovalPending ApprovalType = iota
 	ApprovalManual
 	ApprovalAlwaysAllow
 	DenialManual
