@@ -16,6 +16,11 @@ import (
 )
 
 func runPrintMode(prompt string) error {
+	// Check for experimental mux mode
+	if experimentalMux {
+		return runPrintModeWithMux(prompt)
+	}
+
 	if prompt == "" && len(imagePaths) == 0 {
 		return fmt.Errorf("prompt or image required in print mode")
 	}
