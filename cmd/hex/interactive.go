@@ -29,7 +29,7 @@ func disableMouseMode() {
 	// 1002 = Cell motion tracking (button events while pressed)
 	// 1003 = All motion tracking
 	// 1006 = SGR extended mode
-	fmt.Fprint(os.Stdout, "\033[?1000l\033[?1002l\033[?1003l\033[?1006l")
+	_, _ = fmt.Fprint(os.Stdout, "\033[?1000l\033[?1002l\033[?1003l\033[?1006l")
 }
 
 // setupTerminalCleanup sets up signal handlers and defer to ensure terminal is restored

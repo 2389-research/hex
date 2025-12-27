@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -386,6 +387,17 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 	// Pass depth+1 to child agent
 	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_DEPTH=%d", currentDepth+1))
 
+	// Get default tools for subagent type and pass tool restrictions
+	config := subagents.DefaultConfig(subagents.SubagentType(subagentType))
+	if len(config.AllowedTools) > 0 {
+		cmd.Env = append(cmd.Env,
+			fmt.Sprintf("HEX_ALLOWED_TOOLS=%s", strings.Join(config.AllowedTools, ",")),
+		)
+	}
+	// Note: hex's Config struct doesn't have DeniedTools yet, but we set the env var
+	// for future compatibility when DeniedTools is added to Config
+	cmd.Env = append(cmd.Env, "HEX_DENIED_TOOLS=")
+
 	// Set working directory to current directory
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -730,6 +742,17 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 
 	// Pass depth+1 to child agent
 	cmd.Env = append(cmd.Env, fmt.Sprintf("HEX_AGENT_DEPTH=%d", currentDepth+1))
+
+	// Get default tools for subagent type and pass tool restrictions
+	streamConfig := subagents.DefaultConfig(subagents.SubagentType(subagentType))
+	if len(streamConfig.AllowedTools) > 0 {
+		cmd.Env = append(cmd.Env,
+			fmt.Sprintf("HEX_ALLOWED_TOOLS=%s", strings.Join(streamConfig.AllowedTools, ",")),
+		)
+	}
+	// Note: hex's Config struct doesn't have DeniedTools yet, but we set the env var
+	// for future compatibility when DeniedTools is added to Config
+	cmd.Env = append(cmd.Env, "HEX_DENIED_TOOLS=")
 
 	// Set working directory to current directory
 	cwd, err := os.Getwd()

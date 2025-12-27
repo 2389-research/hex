@@ -84,6 +84,9 @@ var (
 	permissionMode  string
 	allowedTools    []string
 	disallowedTools []string
+
+	// Experimental: mux agent framework
+	experimentalMux bool
 )
 
 var rootCmd = &cobra.Command{
@@ -137,6 +140,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&permissionMode, "permission-mode", "ask", "Permission mode: auto (approve all), ask (prompt for each), deny (block all)")
 	rootCmd.PersistentFlags().StringSliceVar(&allowedTools, "allowed-tools", []string{}, "Whitelist of allowed tools (comma-separated). If set, only these tools are allowed.")
 	rootCmd.PersistentFlags().StringSliceVar(&disallowedTools, "disallowed-tools", []string{}, "Blacklist of disallowed tools (comma-separated). These tools are blocked.")
+
+	// Experimental: mux agent framework
+	rootCmd.PersistentFlags().BoolVar(&experimentalMux, "experimental-mux", false, "Use experimental mux agent framework instead of built-in orchestrator")
 
 	// Register subcommands
 	rootCmd.AddCommand(visualizeCmd)
@@ -231,6 +237,17 @@ func runRoot(_ *cobra.Command, args []string) error {
 	// Suppress unused context warning - ctx will be used in future tasks
 	_ = ctx
 
+	// Check for experimental mux flag from environment (for subagent inheritance)
+	if os.Getenv("HEX_EXPERIMENTAL_MUX") == "1" {
+		experimentalMux = true
+	}
+
+	// Propagate experimental mux flag to environment for subagents
+	if experimentalMux {
+		_ = os.Setenv("HEX_EXPERIMENTAL_MUX", "1")
+		logging.InfoWith("Using experimental mux agent framework", "mode", "mux")
+	}
+
 	if printMode {
 		return runPrintMode(prompt)
 	}
@@ -244,6 +261,12 @@ func joinArgs(args []string) string {
 
 func runInteractive(prompt string) error {
 	logging.Debug("Starting interactive mode")
+
+	// Experimental mux mode not yet supported in TUI - warn and continue with current orchestrator
+	if experimentalMux {
+		logging.WarnWith("--experimental-mux not yet supported in TUI mode, using built-in orchestrator", "mode", "interactive")
+		fmt.Fprintln(os.Stderr, "⚠️  --experimental-mux is only supported in print mode (-p). Using built-in orchestrator for TUI.")
+	}
 
 	// Validate flag conflicts
 	if continueFlag && resumeID != "" {

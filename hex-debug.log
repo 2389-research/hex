@@ -1,0 +1,4 @@
+📊 Recording events to: /var/folders/cy/z5g1jr9j0nld17ghctwp8s1h0000gn/T/hex_events_20251209_105012.jsonl
+   Replay: hex replay /var/folders/cy/z5g1jr9j0nld17ghctwp8s1h0000gn/T/hex_events_20251209_105012.jsonl
+   Visualize: hex visualize /var/folders/cy/z5g1jr9j0nld17ghctwp8s1h0000gn/T/hex_events_20251209_105012.jsonl
+Warning: failed to parse command commands/README.md: command missing required 'name' field

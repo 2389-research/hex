@@ -184,12 +184,12 @@ func TestOverflowDetectionLogic(t *testing.T) {
 	// Test the overflow detection calculation directly
 	// This mirrors the logic in view.go
 	testCases := []struct {
-		name            string
-		visibleRows     int
-		totalRows       int
-		cursorRow       int
-		expectAbove     bool
-		expectBelow     bool
+		name        string
+		visibleRows int
+		totalRows   int
+		cursorRow   int
+		expectAbove bool
+		expectBelow bool
 	}{
 		{"no overflow - cursor at start", 3, 3, 0, false, false},
 		{"no overflow - cursor at end", 3, 3, 2, false, false},

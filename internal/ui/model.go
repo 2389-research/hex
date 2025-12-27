@@ -128,10 +128,10 @@ type Model struct {
 	lastKeyWasG  bool // Track 'g' key for 'gg' navigation
 
 	// Task 6: Streaming Integration
-	apiClient    *core.Client
-	streamChan   <-chan *core.StreamChunk
-	streamCtx    context.Context
-	streamCancel context.CancelFunc
+	apiClient          *core.Client
+	streamChan         <-chan *core.StreamChunk
+	streamCtx          context.Context
+	streamCancel       context.CancelFunc
 	queuedMessage      string // Single queued message to process after current operation
 	waitingForResponse bool   // True from message send until response complete - blocks new input
 
@@ -143,8 +143,8 @@ type Model struct {
 	// Task 12: Tool Execution UI
 	toolRegistry      *tools.Registry
 	toolExecutor      *tools.Executor
-	assemblingToolUse *core.ToolUse // Tool being assembled from streaming chunks
-	toolInputJSONBuf  string        // Buffer for accumulating input_json deltas
+	assemblingToolUse *core.ToolUse   // Tool being assembled from streaming chunks
+	toolInputJSONBuf  string          // Buffer for accumulating input_json deltas
 	approvalRules     *approval.Rules // Persistent approval rules (always/never allow)
 
 	// Tool queue system
@@ -209,17 +209,17 @@ type Model struct {
 	inputHistorySaved string   // Saved current input when navigating history
 
 	// TUI Polish: Tool output log
-	toolLogLines       []string // Accumulated output lines for current chunk
+	toolLogLines        []string // Accumulated output lines for current chunk
 	currentToolLogName  string   // Name of currently logging tool
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager       *OverlayManager       // Centralized overlay management
-	baseViewportHeight   int                   // Base viewport height before overlay adjustments
-	autocompleteOverlay  *AutocompleteOverlay  // Autocomplete overlay instance
-	toolTimelineOverlay  *ToolTimelineOverlay  // Tool timeline overlay instance
-	helpOverlay          *HelpOverlay          // Help overlay instance
-	historyOverlay       *HistoryOverlay       // History overlay instance
+	overlayManager      *OverlayManager      // Centralized overlay management
+	baseViewportHeight  int                  // Base viewport height before overlay adjustments
+	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
+	toolTimelineOverlay *ToolTimelineOverlay // Tool timeline overlay instance
+	helpOverlay         *HelpOverlay         // Help overlay instance
+	historyOverlay      *HistoryOverlay      // History overlay instance
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
@@ -234,7 +234,7 @@ type Model struct {
 type ApprovalType int
 
 const (
-	ApprovalPending     ApprovalType = iota
+	ApprovalPending ApprovalType = iota
 	ApprovalManual
 	ApprovalAlwaysAllow
 	DenialManual
@@ -261,12 +261,12 @@ func NewModel(conversationID, model string) *Model {
 	ta.ShowLineNumbers = false
 
 	// Minimal styling - no borders, no cursor line highlight
-	ta.FocusedStyle.Base = lipgloss.NewStyle() // No border on container
+	ta.FocusedStyle.Base = lipgloss.NewStyle()       // No border on container
 	ta.FocusedStyle.CursorLine = lipgloss.NewStyle() // No highlight
 	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.AccentSky))
 	ta.FocusedStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))
 	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
-	ta.BlurredStyle.Base = lipgloss.NewStyle() // No border on container
+	ta.BlurredStyle.Base = lipgloss.NewStyle()       // No border on container
 	ta.BlurredStyle.CursorLine = lipgloss.NewStyle() // No highlight
 	ta.BlurredStyle.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.DimInk))
 	ta.BlurredStyle.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.SoftPaper))

@@ -73,15 +73,16 @@ func (r *Registry) GetDefinitions() []core.ToolDefinition {
 		def := core.ToolDefinition{
 			Name:        tool.Name(),
 			Description: tool.Description(),
-			InputSchema: getToolSchema(tool.Name()),
+			InputSchema: GetToolSchema(tool.Name()),
 		}
 		defs = append(defs, def)
 	}
 	return defs
 }
 
-// getToolSchema returns the JSON Schema for a specific tool's input parameters
-func getToolSchema(toolName string) map[string]interface{} {
+// GetToolSchema returns the JSON Schema for a specific tool's input parameters.
+// Exported for use by the mux adapter to implement SchemaProvider.
+func GetToolSchema(toolName string) map[string]interface{} {
 	switch toolName {
 	case "read_file":
 		return map[string]interface{}{
