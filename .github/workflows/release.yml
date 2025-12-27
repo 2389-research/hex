@@ -48,3 +48,18 @@ jobs:
           MACOS_NOTARY_KEY: ${{ secrets.MACOS_NOTARY_KEY }}
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy to Firebase Storage
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          npm install firebase-admin
+          echo "$FIREBASE_SERVICE_ACCOUNT" | base64 --decode > firebase-sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$PWD/firebase-sa.json"
+          node scripts/deploy-firebase.js "${{ github.ref_name }}" dist/
+          rm firebase-sa.json
