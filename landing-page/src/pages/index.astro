@@ -1,0 +1,85 @@
+---
+// ABOUTME: Hex landing page with download links
+// ABOUTME: Minimal stub page for distributing hex builds
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="hex - Claude CLI">
+  <div class="max-w-2xl w-full">
+    <!-- Header -->
+    <div class="tui-box mb-6 text-center">
+      <h1 class="text-3xl font-bold text-hex-primary mb-2">$ hex</h1>
+      <p class="text-tui-muted">Claude in your terminal</p>
+    </div>
+
+    <!-- Download Section -->
+    <div class="tui-box tui-box-highlight mb-6">
+      <h2 class="text-xl font-bold text-hex-primary mb-4">Downloads</h2>
+
+      <div class="space-y-3">
+        <!-- macOS -->
+        <div class="flex items-center justify-between py-2 border-b border-tui-border">
+          <div>
+            <span class="text-tui-text">macOS (Apple Silicon)</span>
+            <span class="text-tui-muted text-sm ml-2">arm64</span>
+          </div>
+          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
+        </div>
+
+        <div class="flex items-center justify-between py-2 border-b border-tui-border">
+          <div>
+            <span class="text-tui-text">macOS (Intel)</span>
+            <span class="text-tui-muted text-sm ml-2">amd64</span>
+          </div>
+          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
+        </div>
+
+        <!-- Linux -->
+        <div class="flex items-center justify-between py-2 border-b border-tui-border">
+          <div>
+            <span class="text-tui-text">Linux</span>
+            <span class="text-tui-muted text-sm ml-2">amd64</span>
+          </div>
+          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
+        </div>
+
+        <div class="flex items-center justify-between py-2 border-b border-tui-border">
+          <div>
+            <span class="text-tui-text">Linux</span>
+            <span class="text-tui-muted text-sm ml-2">arm64</span>
+          </div>
+          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
+        </div>
+
+        <!-- Windows -->
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <span class="text-tui-text">Windows</span>
+            <span class="text-tui-muted text-sm ml-2">amd64</span>
+          </div>
+          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="tui-box mb-6">
+      <h2 class="text-xl font-bold text-hex-primary mb-4">Quick Start</h2>
+      <div class="bg-tui-bg p-4 rounded border border-tui-border">
+        <code class="text-hex-secondary">
+          <span class="text-tui-muted"># Set your API key</span><br/>
+          export ANTHROPIC_API_KEY="sk-..."<br/><br/>
+          <span class="text-tui-muted"># Run hex</span><br/>
+          ./hex "explain this codebase"
+        </code>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-tui-muted text-sm">
+      <a href="https://github.com/2389-research/hex" class="hover:text-hex-primary">GitHub</a>
+      <span class="mx-2">|</span>
+      <span>Built with Claude</span>
+    </div>
+  </div>
+</Layout>

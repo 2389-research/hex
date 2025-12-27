@@ -1,0 +1,102 @@
+/* ABOUTME: Global TUI theme styles for hex landing page */
+/* ABOUTME: Terminal-inspired color scheme matching jeff-landing */
+
+@import "tailwindcss";
+
+@theme {
+  /* TUI Color Palette */
+  --color-tui-bg: #1e1e2e;
+  --color-tui-surface: #2a2a3e;
+  --color-tui-border: #3a3a5e;
+  --color-tui-text: #cdd6f4;
+  --color-tui-muted: #6c6c8a;
+  --color-tui-accent: #89b4fa;
+  --color-tui-success: #a6e3a1;
+  --color-tui-error: #f38ba8;
+  --color-tui-warning: #fab387;
+
+  /* Hex brand color - blue/cyan */
+  --color-hex-primary: #89b4fa;
+  --color-hex-secondary: #74c7ec;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+html {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  background-color: var(--color-tui-bg);
+  color: var(--color-tui-text);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* TUI Box styling */
+.tui-box {
+  border: 1px solid var(--color-tui-border);
+  background-color: var(--color-tui-surface);
+  padding: 1rem;
+}
+
+.tui-box-highlight {
+  border-color: var(--color-hex-primary);
+}
+
+/* Button styling */
+.tui-button {
+  border: 1px solid var(--color-tui-border);
+  background-color: var(--color-tui-surface);
+  color: var(--color-tui-text);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tui-button:hover {
+  border-color: var(--color-hex-primary);
+  color: var(--color-hex-primary);
+}
+
+.tui-button-primary {
+  border-color: var(--color-hex-primary);
+  color: var(--color-hex-primary);
+}
+
+.tui-button-primary:hover {
+  background-color: var(--color-hex-primary);
+  color: var(--color-tui-bg);
+}
+
+/* Link styling */
+a {
+  color: var(--color-hex-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-hex-primary);
+  color: var(--color-tui-bg);
+}
