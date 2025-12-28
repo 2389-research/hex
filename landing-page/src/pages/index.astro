@@ -1,7 +1,30 @@
 ---
 // ABOUTME: Hex landing page with download links
-// ABOUTME: Minimal stub page for distributing hex builds
+// ABOUTME: Fetches releases from Firebase Storage versions.json
 import Layout from '../layouts/Layout.astro';
+
+const VERSIONS_URL = 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
+
+let version = '';
+let downloads: Record<string, string> = {};
+
+try {
+  const res = await fetch(VERSIONS_URL);
+  const data = await res.json();
+  version = data.latest || '';
+  if (data.releases && data.releases.length > 0) {
+    downloads = data.releases[0].downloads || {};
+  }
+} catch (e) {
+  console.error('Failed to fetch versions:', e);
+}
+
+const platforms = [
+  { key: 'darwin_arm64', label: 'macOS (Apple Silicon)', arch: 'arm64' },
+  { key: 'darwin_x86_64', label: 'macOS (Intel)', arch: 'x86_64' },
+  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64' },
+  { key: 'linux_arm64', label: 'Linux', arch: 'arm64' },
+];
 ---
 
 <Layout title="hex - AI Code Agent">
@@ -10,6 +33,7 @@ import Layout from '../layouts/Layout.astro';
     <div class="tui-box mb-6 text-center">
       <h1 class="text-3xl font-bold text-hex-primary mb-2">$ hex</h1>
       <p class="text-tui-muted">A code agent for your terminal</p>
+      {version && <p class="text-tui-muted text-sm mt-2">v{version}</p>}
     </div>
 
     <!-- Download Section -->
@@ -17,48 +41,19 @@ import Layout from '../layouts/Layout.astro';
       <h2 class="text-xl font-bold text-hex-primary mb-4">Downloads</h2>
 
       <div class="space-y-3">
-        <!-- macOS -->
-        <div class="flex items-center justify-between py-2 border-b border-tui-border">
-          <div>
-            <span class="text-tui-text">macOS (Apple Silicon)</span>
-            <span class="text-tui-muted text-sm ml-2">arm64</span>
+        {platforms.map((p, i) => (
+          <div class={`flex items-center justify-between py-2 ${i < platforms.length - 1 ? 'border-b border-tui-border' : ''}`}>
+            <div>
+              <span class="text-tui-text">{p.label}</span>
+              <span class="text-tui-muted text-sm ml-2">{p.arch}</span>
+            </div>
+            {downloads[p.key] ? (
+              <a href={downloads[p.key]} class="tui-button tui-button-primary text-sm">Download</a>
+            ) : (
+              <span class="text-tui-muted text-sm">Coming soon</span>
+            )}
           </div>
-          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
-        </div>
-
-        <div class="flex items-center justify-between py-2 border-b border-tui-border">
-          <div>
-            <span class="text-tui-text">macOS (Intel)</span>
-            <span class="text-tui-muted text-sm ml-2">amd64</span>
-          </div>
-          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
-        </div>
-
-        <!-- Linux -->
-        <div class="flex items-center justify-between py-2 border-b border-tui-border">
-          <div>
-            <span class="text-tui-text">Linux</span>
-            <span class="text-tui-muted text-sm ml-2">amd64</span>
-          </div>
-          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
-        </div>
-
-        <div class="flex items-center justify-between py-2 border-b border-tui-border">
-          <div>
-            <span class="text-tui-text">Linux</span>
-            <span class="text-tui-muted text-sm ml-2">arm64</span>
-          </div>
-          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
-        </div>
-
-        <!-- Windows -->
-        <div class="flex items-center justify-between py-2">
-          <div>
-            <span class="text-tui-text">Windows</span>
-            <span class="text-tui-muted text-sm ml-2">amd64</span>
-          </div>
-          <a href="#" class="tui-button tui-button-primary text-sm">Download</a>
-        </div>
+        ))}
       </div>
     </div>
 
