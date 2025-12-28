@@ -1,87 +1,15 @@
 ---
-// ABOUTME: Hex landing page with download links
-// ABOUTME: Fetches releases from Firebase Storage versions.json
+// ABOUTME: Coming soon landing page for hex
+// ABOUTME: Simple placeholder redirecting interest to 2389 Research
 import Layout from '../layouts/Layout.astro';
-
-const VERSIONS_URL = 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
-
-let version = '';
-let downloads: Record<string, string> = {};
-
-try {
-  const res = await fetch(VERSIONS_URL);
-  const data = await res.json();
-  version = data.latest || '';
-  if (data.releases && data.releases.length > 0) {
-    downloads = data.releases[0].downloads || {};
-  }
-} catch (e) {
-  console.error('Failed to fetch versions:', e);
-}
-
-const platforms = [
-  { key: 'darwin_arm64', label: 'macOS (Apple Silicon)', arch: 'arm64' },
-  { key: 'darwin_x86_64', label: 'macOS (Intel)', arch: 'x86_64' },
-  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64' },
-  { key: 'linux_arm64', label: 'Linux', arch: 'arm64' },
-];
 ---
 
-<Layout title="hex - AI Code Agent">
-  <div class="max-w-2xl w-full">
-    <!-- Header -->
-    <div class="tui-box mb-6 text-center">
-      <h1 class="text-3xl font-bold text-hex-primary mb-2">$ hex</h1>
-      <p class="text-tui-muted">A code agent for your terminal</p>
-      {version && <p class="text-tui-muted text-sm mt-2">v{version}</p>}
-    </div>
-
-    <!-- Download Section -->
-    <div class="tui-box tui-box-highlight mb-6">
-      <h2 class="text-xl font-bold text-hex-primary mb-4">Downloads</h2>
-
-      <div class="space-y-3">
-        {platforms.map((p, i) => (
-          <div class={`flex items-center justify-between py-2 ${i < platforms.length - 1 ? 'border-b border-tui-border' : ''}`}>
-            <div>
-              <span class="text-tui-text">{p.label}</span>
-              <span class="text-tui-muted text-sm ml-2">{p.arch}</span>
-            </div>
-            {downloads[p.key] ? (
-              <a href={downloads[p.key]} class="tui-button tui-button-primary text-sm">Download</a>
-            ) : (
-              <span class="text-tui-muted text-sm">Coming soon</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <!-- Quick Start -->
-    <div class="tui-box mb-6">
-      <h2 class="text-xl font-bold text-hex-primary mb-4">Quick Start</h2>
-      <div class="bg-tui-bg p-4 rounded border border-tui-border">
-        <code class="text-hex-secondary">
-          <span class="text-tui-muted"># Set your API key</span><br/>
-          export ANTHROPIC_API_KEY="sk-..."<br/><br/>
-          <span class="text-tui-muted"># Run hex</span><br/>
-          ./hex "explain this codebase"
-        </code>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="text-center text-tui-muted text-sm space-y-2">
-      <div>
-        <a href="https://2389.ai" class="hover:text-hex-primary">2389.ai</a>
-        <span class="mx-2">|</span>
-        <a href="https://2389.ai/privacy" class="hover:text-hex-primary">Privacy</a>
-        <span class="mx-2">|</span>
-        <a href="https://2389.ai/terms" class="hover:text-hex-primary">Terms</a>
-        <span class="mx-2">|</span>
-        <a href="mailto:hello@2389.ai" class="hover:text-hex-primary">hello@2389.ai</a>
-      </div>
-      <div>&copy; 2389 Research Inc</div>
-    </div>
+<Layout title="hex">
+  <div class="text-center">
+    <h1 class="text-4xl font-bold text-hex-primary mb-4">$ hex</h1>
+    <p class="text-xl text-tui-text mb-8">Coming Soon</p>
+    <p class="text-tui-muted">
+      <a href="https://2389.ai" class="hover:text-hex-primary">2389 Research Inc</a>
+    </p>
   </div>
 </Layout>
