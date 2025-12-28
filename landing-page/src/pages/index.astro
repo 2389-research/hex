@@ -1,63 +1,103 @@
 ---
-// ABOUTME: Coming soon landing page for hex with mailing list signup
-// ABOUTME: Cyberpunk terminal aesthetic with CRT effects
+// ABOUTME: Tactical ops console landing page for hex with mailing list
+// ABOUTME: Radar sweep, coordinate grids, and classified interface aesthetics
 import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="hex">
-  <!-- Hexagon background pattern -->
-  <div class="hex-bg"></div>
+  <!-- Coordinate Grid Background -->
+  <div class="coord-grid"></div>
 
-  <!-- Floating particles -->
-  <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
-    {Array.from({ length: 20 }).map((_, i) => (
-      <div
-        class="particle"
-        style={`left: ${Math.random() * 100}%; animation-delay: ${Math.random() * 20}s; animation-duration: ${15 + Math.random() * 10}s;`}
-      />
-    ))}
+  <!-- Radar Scanner Effect -->
+  <div class="radar-container">
+    <div class="radar-rings"></div>
+    <div class="radar-crosshair"></div>
+    <div class="radar-sweep"></div>
   </div>
 
-  <div class="flex flex-col items-center justify-center min-h-screen px-4">
-    <!-- Main content -->
-    <div class="text-center max-w-xl w-full">
-      <!-- Prompt symbol -->
-      <div class="fade-in-up delay-1 mb-6">
-        <span class="text-text-ghost text-lg">$</span>
+  <!-- Edge Data Displays (hidden on mobile) -->
+  <div class="edge-data top-left hidden md:block fade-in delay-5">
+    <div>SYS.INIT</div>
+    <div class="text-signal-dim mt-1">2389.HEX.001</div>
+    <div class="text-text-data mt-2" id="timestamp">--:--:--</div>
+  </div>
+
+  <div class="edge-data top-right hidden md:block fade-in delay-5">
+    <div>SIGNAL.LOCK</div>
+    <div class="text-confirm mt-1">● ACTIVE</div>
+  </div>
+
+  <div class="edge-data bottom-left hidden md:block fade-in delay-5">
+    <div class="text-text-data">LAT 37.7749°</div>
+    <div class="text-text-data">LON -122.4194°</div>
+  </div>
+
+  <div class="edge-data bottom-right hidden md:block fade-in delay-5">
+    <div>CHANNEL.SECURE</div>
+    <div class="text-text-data mt-1">AES-256</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 py-16 relative">
+    <div class="w-full max-w-md relative">
+
+      <!-- Corner Brackets -->
+      <div class="corner-bracket top-left" style="top: -30px; left: -30px;"></div>
+      <div class="corner-bracket top-right" style="top: -30px; right: -30px;"></div>
+      <div class="corner-bracket bottom-left" style="bottom: -30px; left: -30px;"></div>
+      <div class="corner-bracket bottom-right" style="bottom: -30px; right: -30px;"></div>
+
+      <!-- Target Acquired Label -->
+      <div class="fade-up delay-1 text-center mb-6">
+        <span class="text-[10px] tracking-[0.3em] text-text-ghost uppercase">Target Acquired</span>
       </div>
 
-      <!-- Logo -->
-      <h1 class="fade-in-up delay-2 text-7xl md:text-9xl font-bold text-cyan glow tracking-tighter mb-16">
+      <!-- Logo with Glitch -->
+      <h1
+        class="fade-up delay-2 text-[100px] md:text-[140px] font-bold text-signal glow tracking-tighter text-center leading-none mb-4 glitch"
+        data-text="hex"
+      >
         hex
       </h1>
 
-      <!-- Mailing List Form -->
-      <div class="fade-in-up delay-3 mb-8">
-        <div class="terminal-box">
-          <div class="border-b border-border px-4 py-3 flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
-            <span class="w-3 h-3 rounded-full bg-amber/60"></span>
-            <span class="w-3 h-3 rounded-full bg-green/60"></span>
-            <span class="ml-4 text-text-ghost text-sm">notify.sh</span>
+      <!-- Subtitle -->
+      <div class="fade-up delay-3 text-center mb-12">
+        <p class="text-text-dim text-sm tracking-wide">
+          AI code agent for your terminal
+        </p>
+      </div>
+
+      <!-- Secure Channel Form -->
+      <div class="fade-up delay-4">
+        <div class="secure-channel">
+          <!-- Channel Header -->
+          <div class="channel-header">
+            <div class="channel-status">
+              <div class="status-indicator"></div>
+              <span class="channel-label">Secure Channel</span>
+            </div>
+            <span class="channel-id">#HEX-001</span>
           </div>
 
-          <div class="p-6 space-y-4">
-            <p class="text-text-dim text-sm text-center">
-              Get notified when hex is ready.
+          <!-- Form Content -->
+          <div class="p-6">
+            <p class="text-text-dim text-xs text-center mb-1 tracking-wide">
+              TRANSMIT COORDINATES FOR LAUNCH NOTIFICATION
             </p>
-            <p class="text-text-ghost text-xs text-center">
-              No spam. Unsubscribe anytime.
+            <p class="text-text-ghost text-[10px] text-center mb-6 tracking-wider">
+              ENCRYPTED • NO SPAM • UNSUBSCRIBE ANYTIME
             </p>
 
             <form id="mailing-form" class="space-y-4">
-              <div class="flex items-center gap-2">
-                <span class="text-cyan">&gt;</span>
-                <span class="text-text-ghost">email:</span>
+              <div>
+                <label class="text-[10px] text-text-ghost tracking-widest uppercase mb-2 block">
+                  Signal Address
+                </label>
                 <input
                   type="email"
                   id="email-input"
-                  placeholder="_"
-                  class="flex-1 bg-transparent border-none outline-none min-w-0 text-text placeholder:text-text-ghost placeholder:animate-pulse"
+                  placeholder="operator@domain.com"
+                  class="signal-input"
                   required
                 />
               </div>
@@ -65,57 +105,57 @@ import Layout from '../layouts/Layout.astro';
               <button
                 type="submit"
                 id="submit-btn"
-                class="w-full glitch-btn py-3"
+                class="action-btn"
               >
-                <span class="text-text-ghost">[</span>
-                <span id="btn-text">SUBSCRIBE</span>
-                <span class="text-text-ghost">]</span>
+                <span id="btn-text">Initialize Uplink</span>
               </button>
 
-              <p id="form-message" class="text-sm text-center hidden"></p>
+              <p id="form-message" class="text-xs text-center hidden"></p>
             </form>
           </div>
         </div>
       </div>
 
       <!-- Contact -->
-      <div class="fade-in-up delay-4">
-        <p class="text-text-ghost text-sm">
-          Questions? <a href="mailto:hello@2389.ai" class="text-cyan hover:underline">hello@2389.ai</a>
+      <div class="fade-up delay-5 mt-8 text-center">
+        <p class="text-text-ghost text-xs tracking-wide">
+          Signal Ops: <a href="mailto:hello@2389.ai" class="text-signal-dim hover:text-signal transition-colors">hello@2389.ai</a>
         </p>
       </div>
     </div>
 
     <!-- Footer -->
-    <div class="absolute bottom-8 left-0 right-0 text-center">
-      <p class="text-text-ghost text-sm">
-        <a href="https://2389.ai" class="hover:text-cyan transition-colors">2389 Research Inc</a>
-      </p>
+    <div class="absolute bottom-6 left-0 right-0 text-center">
+      <a href="https://2389.ai" class="text-text-ghost text-xs tracking-widest hover:text-signal-dim transition-colors">
+        2389 RESEARCH INC
+      </a>
     </div>
   </div>
 
-  <!-- ASCII art decoration (hidden on mobile) -->
-  <div class="hidden lg:block fixed bottom-8 left-8 text-text-ghost/20 text-xs font-mono leading-tight select-none">
-    <pre>{`
-  ╭─────────────────╮
-  │  ◆ hex v0.0.1  │
-  │  status: boot  │
-  ╰─────────────────╯
-    `}</pre>
-  </div>
-
-  <div class="hidden lg:block fixed bottom-8 right-8 text-text-ghost/20 text-xs font-mono leading-tight select-none text-right">
-    <pre>{`
-┌──────────────────┐
-│ SYS.READY        │
-│ MEM: ████████░░  │
-│ CPU: ██████░░░░  │
-└──────────────────┘
-    `}</pre>
+  <!-- Data Stream (bottom edge) -->
+  <div class="fixed bottom-0 left-0 right-0 h-5 overflow-hidden hidden md:block fade-in delay-5">
+    <div class="data-stream">
+      <span>
+        HEX.BOOT.SEQUENCE.INIT ━━━ CORE.SYSTEMS.ONLINE ━━━ AI.ENGINE.READY ━━━ SIGNAL.STRENGTH.NOMINAL ━━━ AWAITING.OPERATOR.INPUT ━━━ SECURE.CHANNEL.ACTIVE ━━━ ENCRYPTION.AES256.ENABLED ━━━ LAT.37.7749.LON.-122.4194 ━━━ UPLINK.STATUS.STANDBY ━━━
+        HEX.BOOT.SEQUENCE.INIT ━━━ CORE.SYSTEMS.ONLINE ━━━ AI.ENGINE.READY ━━━ SIGNAL.STRENGTH.NOMINAL ━━━ AWAITING.OPERATOR.INPUT ━━━ SECURE.CHANNEL.ACTIVE ━━━ ENCRYPTION.AES256.ENABLED ━━━ LAT.37.7749.LON.-122.4194 ━━━ UPLINK.STATUS.STANDBY ━━━
+      </span>
+    </div>
   </div>
 </Layout>
 
 <script>
+  // Update timestamp
+  function updateTimestamp() {
+    const el = document.getElementById('timestamp');
+    if (el) {
+      const now = new Date();
+      el.textContent = now.toTimeString().split(' ')[0];
+    }
+  }
+  updateTimestamp();
+  setInterval(updateTimestamp, 1000);
+
+  // Form handling
   const form = document.getElementById('mailing-form') as HTMLFormElement;
   const emailInput = document.getElementById('email-input') as HTMLInputElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -128,17 +168,15 @@ import Layout from '../layouts/Layout.astro';
     const email = emailInput.value.trim();
     if (!email) return;
 
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      formMessage.textContent = '✗ invalid email format';
-      formMessage.className = 'text-sm text-center text-red-400';
+      formMessage.textContent = '✗ INVALID SIGNAL FORMAT';
+      formMessage.className = 'text-xs text-center msg-error';
       formMessage.classList.remove('hidden');
       return;
     }
 
-    // Show loading state
-    btnText.textContent = '...';
+    btnText.textContent = 'ESTABLISHING UPLINK...';
     submitBtn.disabled = true;
 
     try {
@@ -151,23 +189,23 @@ import Layout from '../layouts/Layout.astro';
       });
 
       if (response.ok) {
-        formMessage.textContent = '✓ you\'re on the list';
-        formMessage.className = 'text-sm text-center text-green';
+        formMessage.textContent = '✓ UPLINK ESTABLISHED';
+        formMessage.className = 'text-xs text-center msg-success glow-confirm';
         formMessage.classList.remove('hidden');
         emailInput.value = '';
-        btnText.textContent = 'SUBSCRIBED';
+        btnText.textContent = 'SIGNAL CONFIRMED';
       } else {
-        formMessage.textContent = '✗ subscription failed';
-        formMessage.className = 'text-sm text-center text-red-400';
+        formMessage.textContent = '✗ TRANSMISSION FAILED';
+        formMessage.className = 'text-xs text-center msg-error';
         formMessage.classList.remove('hidden');
-        btnText.textContent = 'SUBSCRIBE';
+        btnText.textContent = 'Initialize Uplink';
         submitBtn.disabled = false;
       }
     } catch {
-      formMessage.textContent = '✗ network error';
-      formMessage.className = 'text-sm text-center text-red-400';
+      formMessage.textContent = '✗ NETWORK INTERFERENCE';
+      formMessage.className = 'text-xs text-center msg-error';
       formMessage.classList.remove('hidden');
-      btnText.textContent = 'SUBSCRIBE';
+      btnText.textContent = 'Initialize Uplink';
       submitBtn.disabled = false;
     }
   });

@@ -1,6 +1,6 @@
 ---
 // ABOUTME: Alpha downloads page for hex
-// ABOUTME: Fetches releases from Firebase with cyberpunk styling
+// ABOUTME: Fetches releases from Firebase with tactical ops styling
 import Layout from '../layouts/Layout.astro';
 
 const VERSIONS_URL = 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
@@ -20,23 +20,23 @@ try {
 }
 
 const platforms = [
-  { key: 'darwin_arm64', label: 'macOS', arch: 'Apple Silicon', icon: '' },
-  { key: 'darwin_x86_64', label: 'macOS', arch: 'Intel x64', icon: '' },
-  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64', icon: '🐧' },
-  { key: 'linux_arm64', label: 'Linux', arch: 'ARM64', icon: '🐧' },
+  { key: 'darwin_arm64', label: 'macOS', arch: 'ARM64', icon: '' },
+  { key: 'darwin_x86_64', label: 'macOS', arch: 'x86_64', icon: '' },
+  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64', icon: '' },
+  { key: 'linux_arm64', label: 'Linux', arch: 'ARM64', icon: '' },
 ];
 ---
 
 <Layout title="hex // alpha">
-  <!-- Hexagon background pattern -->
-  <div class="hex-bg"></div>
+  <!-- Coordinate Grid Background -->
+  <div class="coord-grid"></div>
 
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
     <header class="p-6 flex items-center justify-between border-b border-border">
-      <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <span class="text-text-ghost">$</span>
-        <span class="text-cyan font-bold text-xl glow-subtle">hex</span>
+      <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <span class="text-signal font-bold text-xl">hex</span>
+        <span class="text-text-ghost text-xs tracking-widest">// ALPHA</span>
       </a>
       {version && (
         <span class="version-badge">v{version}</span>
@@ -47,44 +47,49 @@ const platforms = [
     <main class="flex-1 flex items-center justify-center p-6">
       <div class="w-full max-w-2xl">
         <!-- Title section -->
-        <div class="fade-in-up delay-1 mb-12 text-center">
-          <div class="inline-flex items-center gap-2 px-4 py-2 border border-amber/30 bg-amber/5 text-amber text-sm mb-6">
-            <span class="w-2 h-2 bg-amber rounded-full pulse"></span>
+        <div class="fade-up delay-1 mb-12 text-center">
+          <div class="inline-flex items-center gap-3 px-4 py-2 border border-alert-dim/40 bg-alert/5 text-alert text-xs tracking-widest mb-6">
+            <span class="w-2 h-2 bg-alert rounded-full animate-pulse"></span>
             ALPHA RELEASE
           </div>
           <h1 class="text-4xl md:text-5xl font-bold text-text mb-4">
-            Download <span class="text-cyan glow-subtle">hex</span>
+            Download <span class="text-signal">hex</span>
           </h1>
-          <p class="text-text-dim">
+          <p class="text-text-dim text-sm">
             AI code agent for your terminal. Notarized builds.
           </p>
         </div>
 
         <!-- Downloads -->
-        <div class="fade-in-up delay-2 terminal-box mb-8">
-          <div class="border-b border-border px-4 py-3 flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
-            <span class="w-3 h-3 rounded-full bg-amber/60"></span>
-            <span class="w-3 h-3 rounded-full bg-green/60"></span>
-            <span class="ml-4 text-text-ghost text-sm">downloads</span>
+        <div class="fade-up delay-2 terminal-box mb-8">
+          <div class="border-b border-border px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-critical/60"></span>
+              <span class="w-2 h-2 rounded-full bg-alert/60"></span>
+              <span class="w-2 h-2 rounded-full bg-confirm/60"></span>
+              <span class="ml-3 text-text-ghost text-xs tracking-widest">BINARIES</span>
+            </div>
+            <span class="text-text-data text-xs">SIGNED + NOTARIZED</span>
           </div>
 
           <div>
             {platforms.map((p, i) => (
-              <div class={`download-row fade-in-up`} style={`animation-delay: ${0.3 + i * 0.1}s`}>
+              <div class={`download-row fade-up`} style={`animation-delay: ${0.3 + i * 0.1}s`}>
                 <div class="flex items-center gap-4">
-                  <span class="text-xl">{p.icon}</span>
+                  <div class="w-8 h-8 border border-border flex items-center justify-center text-text-ghost text-xs">
+                    {p.label === 'macOS' ? '' : ''}
+                  </div>
                   <div>
-                    <span class="text-text">{p.label}</span>
-                    <span class="text-text-ghost text-sm ml-2">// {p.arch}</span>
+                    <span class="text-text text-sm">{p.label}</span>
+                    <span class="text-text-data text-xs ml-2">{p.arch}</span>
                   </div>
                 </div>
                 {downloads[p.key] ? (
-                  <a href={downloads[p.key]} class="glitch-btn text-sm">
-                    ↓ Download
+                  <a href={downloads[p.key]} class="glitch-btn text-xs tracking-wider">
+                    DOWNLOAD
                   </a>
                 ) : (
-                  <span class="text-text-ghost text-sm">pending...</span>
+                  <span class="text-text-ghost text-xs tracking-wider">PENDING</span>
                 )}
               </div>
             ))}
@@ -92,12 +97,12 @@ const platforms = [
         </div>
 
         <!-- Quick Start -->
-        <div class="fade-in-up delay-4 terminal-box mb-8">
+        <div class="fade-up delay-3 terminal-box mb-8">
           <div class="border-b border-border px-4 py-3 flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
-            <span class="w-3 h-3 rounded-full bg-amber/60"></span>
-            <span class="w-3 h-3 rounded-full bg-green/60"></span>
-            <span class="ml-4 text-text-ghost text-sm">quickstart.sh</span>
+            <span class="w-2 h-2 rounded-full bg-critical/60"></span>
+            <span class="w-2 h-2 rounded-full bg-alert/60"></span>
+            <span class="w-2 h-2 rounded-full bg-confirm/60"></span>
+            <span class="ml-3 text-text-ghost text-xs tracking-widest">QUICKSTART.SH</span>
           </div>
 
           <div class="code-block">
@@ -121,14 +126,14 @@ const platforms = [
         </div>
 
         <!-- Links -->
-        <div class="fade-in-up delay-5 flex items-center justify-center gap-6 text-sm">
-          <a href="https://github.com/2389-research/hex" class="text-text-dim hover:text-cyan transition-colors flex items-center gap-2">
+        <div class="fade-up delay-4 flex items-center justify-center gap-6 text-xs">
+          <a href="https://github.com/2389-research/hex" class="text-text-dim hover:text-signal transition-colors flex items-center gap-2 tracking-wider">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            GitHub
+            GITHUB
           </a>
-          <span class="text-text-ghost">|</span>
-          <a href="/" class="text-text-dim hover:text-cyan transition-colors">
-            ← Back
+          <span class="text-border">|</span>
+          <a href="/" class="text-text-dim hover:text-signal transition-colors tracking-wider">
+            ← BACK
           </a>
         </div>
       </div>
@@ -136,16 +141,16 @@ const platforms = [
 
     <!-- Footer -->
     <footer class="p-6 border-t border-border">
-      <div class="max-w-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-text-ghost">
+      <div class="max-w-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-text-ghost tracking-wider">
         <div class="flex items-center gap-4">
-          <a href="https://2389.ai" class="hover:text-cyan transition-colors">2389.ai</a>
-          <span>|</span>
-          <a href="https://2389.ai/privacy" class="hover:text-cyan transition-colors">Privacy</a>
-          <span>|</span>
-          <a href="https://2389.ai/terms" class="hover:text-cyan transition-colors">Terms</a>
+          <a href="https://2389.ai" class="hover:text-signal transition-colors">2389.AI</a>
+          <span class="text-border">|</span>
+          <a href="https://2389.ai/privacy" class="hover:text-signal transition-colors">PRIVACY</a>
+          <span class="text-border">|</span>
+          <a href="https://2389.ai/terms" class="hover:text-signal transition-colors">TERMS</a>
         </div>
         <div>
-          © 2389 Research Inc
+          © 2389 RESEARCH INC
         </div>
       </div>
     </footer>
