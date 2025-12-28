@@ -1,15 +1,89 @@
 ---
-// ABOUTME: Coming soon landing page for hex
-// ABOUTME: Simple placeholder redirecting interest to 2389 Research
+// ABOUTME: Dramatic coming soon landing page for hex
+// ABOUTME: Cyberpunk terminal aesthetic with CRT effects
 import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="hex">
-  <div class="text-center">
-    <h1 class="text-4xl font-bold text-hex-primary mb-4">$ hex</h1>
-    <p class="text-xl text-tui-text mb-8">Coming Soon</p>
-    <p class="text-tui-muted">
-      <a href="https://2389.ai" class="hover:text-hex-primary">2389 Research Inc</a>
-    </p>
+  <!-- Hexagon background pattern -->
+  <div class="hex-bg"></div>
+
+  <!-- Floating particles -->
+  <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+    {Array.from({ length: 20 }).map((_, i) => (
+      <div
+        class="particle"
+        style={`left: ${Math.random() * 100}%; animation-delay: ${Math.random() * 20}s; animation-duration: ${15 + Math.random() * 10}s;`}
+      />
+    ))}
+  </div>
+
+  <div class="flex flex-col items-center justify-center min-h-screen px-4">
+    <!-- Main content -->
+    <div class="text-center max-w-2xl">
+      <!-- Prompt symbol -->
+      <div class="fade-in-up delay-1 mb-6">
+        <span class="text-text-ghost text-lg">$</span>
+      </div>
+
+      <!-- Logo -->
+      <h1 class="fade-in-up delay-2 text-7xl md:text-9xl font-bold text-cyan glow tracking-tighter mb-8">
+        hex
+      </h1>
+
+      <!-- Tagline with typewriter effect -->
+      <div class="fade-in-up delay-3 mb-12">
+        <p class="text-xl md:text-2xl text-text-dim">
+          <span class="text-green glow-green">AI code agent</span>
+          <span class="text-text-ghost mx-2">//</span>
+          <span class="text-text">your terminal</span>
+          <span class="cursor text-cyan">_</span>
+        </p>
+      </div>
+
+      <!-- Coming Soon badge -->
+      <div class="fade-in-up delay-4 mb-16">
+        <div class="inline-flex items-center gap-3 px-6 py-3 border border-border bg-surface/50 backdrop-blur">
+          <span class="w-2 h-2 bg-amber rounded-full pulse"></span>
+          <span class="text-text-dim text-sm uppercase tracking-widest">Initializing</span>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="fade-in-up delay-5">
+        <a href="/alpha" class="glitch-btn inline-block">
+          <span class="text-text-ghost">[</span>
+          <span>ACCESS ALPHA</span>
+          <span class="text-text-ghost">]</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="absolute bottom-8 left-0 right-0 text-center">
+      <p class="text-text-ghost text-sm">
+        <a href="https://2389.ai" class="hover:text-cyan transition-colors">2389 Research Inc</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ASCII art decoration (hidden on mobile) -->
+  <div class="hidden lg:block fixed bottom-8 left-8 text-text-ghost/20 text-xs font-mono leading-tight select-none">
+    <pre>{`
+  ╭─────────────────╮
+  │  ◆ hex v0.0.1  │
+  │  status: boot  │
+  ╰─────────────────╯
+    `}</pre>
+  </div>
+
+  <div class="hidden lg:block fixed bottom-8 right-8 text-text-ghost/20 text-xs font-mono leading-tight select-none text-right">
+    <pre>{`
+┌──────────────────┐
+│ SYS.READY        │
+│ MEM: ████████░░  │
+│ CPU: ██████░░░░  │
+└──────────────────┘
+    `}</pre>
   </div>
 </Layout>

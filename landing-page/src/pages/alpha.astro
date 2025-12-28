@@ -1,6 +1,6 @@
 ---
-// ABOUTME: Hex landing page with download links
-// ABOUTME: Fetches releases from Firebase Storage versions.json
+// ABOUTME: Alpha downloads page for hex
+// ABOUTME: Fetches releases from Firebase with cyberpunk styling
 import Layout from '../layouts/Layout.astro';
 
 const VERSIONS_URL = 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
@@ -20,68 +20,134 @@ try {
 }
 
 const platforms = [
-  { key: 'darwin_arm64', label: 'macOS (Apple Silicon)', arch: 'arm64' },
-  { key: 'darwin_x86_64', label: 'macOS (Intel)', arch: 'x86_64' },
-  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64' },
-  { key: 'linux_arm64', label: 'Linux', arch: 'arm64' },
+  { key: 'darwin_arm64', label: 'macOS', arch: 'Apple Silicon', icon: '' },
+  { key: 'darwin_x86_64', label: 'macOS', arch: 'Intel x64', icon: '' },
+  { key: 'linux_x86_64', label: 'Linux', arch: 'x86_64', icon: '🐧' },
+  { key: 'linux_arm64', label: 'Linux', arch: 'ARM64', icon: '🐧' },
 ];
 ---
 
-<Layout title="hex - AI Code Agent">
-  <div class="max-w-2xl w-full">
+<Layout title="hex // alpha">
+  <!-- Hexagon background pattern -->
+  <div class="hex-bg"></div>
+
+  <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <div class="tui-box mb-6 text-center">
-      <h1 class="text-3xl font-bold text-hex-primary mb-2">$ hex</h1>
-      <p class="text-tui-muted">A code agent for your terminal</p>
-      {version && <p class="text-tui-muted text-sm mt-2">v{version}</p>}
-    </div>
+    <header class="p-6 flex items-center justify-between border-b border-border">
+      <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <span class="text-text-ghost">$</span>
+        <span class="text-cyan font-bold text-xl glow-subtle">hex</span>
+      </a>
+      {version && (
+        <span class="version-badge">v{version}</span>
+      )}
+    </header>
 
-    <!-- Download Section -->
-    <div class="tui-box tui-box-highlight mb-6">
-      <h2 class="text-xl font-bold text-hex-primary mb-4">Downloads</h2>
-
-      <div class="space-y-3">
-        {platforms.map((p, i) => (
-          <div class={`flex items-center justify-between py-2 ${i < platforms.length - 1 ? 'border-b border-tui-border' : ''}`}>
-            <div>
-              <span class="text-tui-text">{p.label}</span>
-              <span class="text-tui-muted text-sm ml-2">{p.arch}</span>
-            </div>
-            {downloads[p.key] ? (
-              <a href={downloads[p.key]} class="tui-button tui-button-primary text-sm">Download</a>
-            ) : (
-              <span class="text-tui-muted text-sm">Coming soon</span>
-            )}
+    <!-- Main content -->
+    <main class="flex-1 flex items-center justify-center p-6">
+      <div class="w-full max-w-2xl">
+        <!-- Title section -->
+        <div class="fade-in-up delay-1 mb-12 text-center">
+          <div class="inline-flex items-center gap-2 px-4 py-2 border border-amber/30 bg-amber/5 text-amber text-sm mb-6">
+            <span class="w-2 h-2 bg-amber rounded-full pulse"></span>
+            ALPHA RELEASE
           </div>
-        ))}
-      </div>
-    </div>
+          <h1 class="text-4xl md:text-5xl font-bold text-text mb-4">
+            Download <span class="text-cyan glow-subtle">hex</span>
+          </h1>
+          <p class="text-text-dim">
+            AI code agent for your terminal. Notarized builds.
+          </p>
+        </div>
 
-    <!-- Quick Start -->
-    <div class="tui-box mb-6">
-      <h2 class="text-xl font-bold text-hex-primary mb-4">Quick Start</h2>
-      <div class="bg-tui-bg p-4 rounded border border-tui-border">
-        <code class="text-hex-secondary">
-          <span class="text-tui-muted"># Set your API key</span><br/>
-          export ANTHROPIC_API_KEY="sk-..."<br/><br/>
-          <span class="text-tui-muted"># Run hex</span><br/>
-          ./hex "explain this codebase"
-        </code>
+        <!-- Downloads -->
+        <div class="fade-in-up delay-2 terminal-box mb-8">
+          <div class="border-b border-border px-4 py-3 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
+            <span class="w-3 h-3 rounded-full bg-amber/60"></span>
+            <span class="w-3 h-3 rounded-full bg-green/60"></span>
+            <span class="ml-4 text-text-ghost text-sm">downloads</span>
+          </div>
+
+          <div>
+            {platforms.map((p, i) => (
+              <div class={`download-row fade-in-up`} style={`animation-delay: ${0.3 + i * 0.1}s`}>
+                <div class="flex items-center gap-4">
+                  <span class="text-xl">{p.icon}</span>
+                  <div>
+                    <span class="text-text">{p.label}</span>
+                    <span class="text-text-ghost text-sm ml-2">// {p.arch}</span>
+                  </div>
+                </div>
+                {downloads[p.key] ? (
+                  <a href={downloads[p.key]} class="glitch-btn text-sm">
+                    ↓ Download
+                  </a>
+                ) : (
+                  <span class="text-text-ghost text-sm">pending...</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Quick Start -->
+        <div class="fade-in-up delay-4 terminal-box mb-8">
+          <div class="border-b border-border px-4 py-3 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
+            <span class="w-3 h-3 rounded-full bg-amber/60"></span>
+            <span class="w-3 h-3 rounded-full bg-green/60"></span>
+            <span class="ml-4 text-text-ghost text-sm">quickstart.sh</span>
+          </div>
+
+          <div class="code-block">
+            <div class="mb-4">
+              <span class="comment"># Set your API key</span>
+            </div>
+            <div class="mb-4">
+              <span class="command">export</span>
+              <span class="text-text"> ANTHROPIC_API_KEY=</span>
+              <span class="string">"sk-ant-..."</span>
+            </div>
+            <div class="mb-4">
+              <span class="comment"># Run hex</span>
+            </div>
+            <div>
+              <span class="command">./hex</span>
+              <span class="text-text"> </span>
+              <span class="string">"explain this codebase"</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div class="fade-in-up delay-5 flex items-center justify-center gap-6 text-sm">
+          <a href="https://github.com/2389-research/hex" class="text-text-dim hover:text-cyan transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+          <span class="text-text-ghost">|</span>
+          <a href="/" class="text-text-dim hover:text-cyan transition-colors">
+            ← Back
+          </a>
+        </div>
       </div>
-    </div>
+    </main>
 
     <!-- Footer -->
-    <div class="text-center text-tui-muted text-sm space-y-2">
-      <div>
-        <a href="https://2389.ai" class="hover:text-hex-primary">2389.ai</a>
-        <span class="mx-2">|</span>
-        <a href="https://2389.ai/privacy" class="hover:text-hex-primary">Privacy</a>
-        <span class="mx-2">|</span>
-        <a href="https://2389.ai/terms" class="hover:text-hex-primary">Terms</a>
-        <span class="mx-2">|</span>
-        <a href="mailto:hello@2389.ai" class="hover:text-hex-primary">hello@2389.ai</a>
+    <footer class="p-6 border-t border-border">
+      <div class="max-w-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-text-ghost">
+        <div class="flex items-center gap-4">
+          <a href="https://2389.ai" class="hover:text-cyan transition-colors">2389.ai</a>
+          <span>|</span>
+          <a href="https://2389.ai/privacy" class="hover:text-cyan transition-colors">Privacy</a>
+          <span>|</span>
+          <a href="https://2389.ai/terms" class="hover:text-cyan transition-colors">Terms</a>
+        </div>
+        <div>
+          © 2389 Research Inc
+        </div>
       </div>
-      <div>&copy; 2389 Research Inc</div>
-    </div>
+    </footer>
   </div>
 </Layout>
