@@ -7,41 +7,37 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// AutocompleteOverlay implements the Overlay interface for autocomplete dropdown
-type AutocompleteOverlay struct {
+// AutocompleteProvider provides content for the autocomplete overlay.
+// It implements BottomContentProvider, BottomKeyHandler, BottomActivationHandler, and BottomCancelHandler.
+type AutocompleteProvider struct {
 	model *Model
 }
 
-// NewAutocompleteOverlay creates a new autocomplete overlay
-func NewAutocompleteOverlay(m *Model) *AutocompleteOverlay {
-	return &AutocompleteOverlay{model: m}
-}
-
-// GetHeader returns the header content
-func (o *AutocompleteOverlay) GetHeader() string {
+// Header implements BottomContentProvider
+func (p *AutocompleteProvider) Header() string {
 	// Autocomplete doesn't need a header
 	return ""
 }
 
-// GetContent returns the main content
-func (o *AutocompleteOverlay) GetContent() string {
-	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
+// Content implements BottomContentProvider
+func (p *AutocompleteProvider) Content() string {
+	if p.model.autocomplete == nil || !p.model.autocomplete.IsActive() {
 		return ""
 	}
 
-	completions := o.model.autocomplete.GetCompletions()
+	completions := p.model.autocomplete.GetCompletions()
 	if len(completions) == 0 {
 		return ""
 	}
 
 	var content strings.Builder
 
-	selectedIndex := o.model.autocomplete.GetSelectedIndex()
-	selectedStyle := o.model.theme.AutocompleteSelected
-	normalStyle := o.model.theme.AutocompleteItem
+	selectedIndex := p.model.autocomplete.GetSelectedIndex()
+	selectedStyle := p.model.theme.AutocompleteSelected
+	normalStyle := p.model.theme.AutocompleteItem
 
 	// Description style - slightly dimmer than main text but still readable
-	descStyle := lipgloss.NewStyle().Foreground(o.model.theme.Colors.Comment)
+	descStyle := lipgloss.NewStyle().Foreground(p.model.theme.Colors.Comment)
 
 	for i, completion := range completions {
 		var line strings.Builder
@@ -76,18 +72,18 @@ func (o *AutocompleteOverlay) GetContent() string {
 	return content.String()
 }
 
-// GetFooter returns the footer content
-func (o *AutocompleteOverlay) GetFooter() string {
+// Footer implements BottomContentProvider
+func (p *AutocompleteProvider) Footer() string {
 	return "↑↓: navigate • Enter: accept • Esc: cancel"
 }
 
-// GetDesiredHeight returns the desired height for this overlay
-func (o *AutocompleteOverlay) GetDesiredHeight() int {
-	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
+// DesiredHeight implements BottomContentProvider
+func (p *AutocompleteProvider) DesiredHeight() int {
+	if p.model.autocomplete == nil || !p.model.autocomplete.IsActive() {
 		return 0
 	}
 
-	completions := o.model.autocomplete.GetCompletions()
+	completions := p.model.autocomplete.GetCompletions()
 	if len(completions) == 0 {
 		return 0
 	}
@@ -98,8 +94,8 @@ func (o *AutocompleteOverlay) GetDesiredHeight() int {
 	totalHeight := itemHeight + footerHeight
 
 	// Cap at 40% of screen height
-	if o.model.Height > 0 {
-		maxHeight := int(float64(o.model.Height) * 0.4)
+	if p.model.Height > 0 {
+		maxHeight := int(float64(p.model.Height) * 0.4)
 		if totalHeight > maxHeight {
 			return maxHeight
 		}
@@ -108,79 +104,34 @@ func (o *AutocompleteOverlay) GetDesiredHeight() int {
 	return totalHeight
 }
 
-// OnPush is called when the overlay is pushed onto the stack
-func (o *AutocompleteOverlay) OnPush(width, height int) {
+// OnActivate implements BottomActivationHandler
+func (p *AutocompleteProvider) OnActivate(width, height int) {
 	// No special initialization needed
 }
 
-// OnPop is called when the overlay is popped from the stack
-func (o *AutocompleteOverlay) OnPop() {
+// OnDeactivate implements BottomActivationHandler
+func (p *AutocompleteProvider) OnDeactivate() {
 	// Clear autocomplete state when dismissed
-	if o.model.autocomplete != nil {
-		o.model.autocomplete.Hide()
+	if p.model.autocomplete != nil {
+		p.model.autocomplete.Hide()
 	}
 }
 
-// Render returns the complete overlay rendering
-func (o *AutocompleteOverlay) Render(width, height int) string {
-	if o.model.autocomplete == nil || !o.model.autocomplete.IsActive() {
-		return ""
-	}
-
-	completions := o.model.autocomplete.GetCompletions()
-	if len(completions) == 0 {
-		return ""
-	}
-
-	var b strings.Builder
-
-	// Use full width minus some padding for the dropdown
-	// Clamp to available space - don't force minimum that exceeds terminal width
-	dropdownWidth := width - 4
-	if dropdownWidth < 1 {
-		dropdownWidth = 1
-	}
-	// Only enforce minimum if terminal is wide enough
-	const minDropdownWidth = 40
-	if width >= minDropdownWidth+4 && dropdownWidth < minDropdownWidth {
-		dropdownWidth = 40
-	}
-	boxStyle := o.model.theme.AutocompleteDropdown.Width(dropdownWidth)
-	helpStyle := o.model.theme.AutocompleteHelp
-
-	// Header (autocomplete doesn't use header, but keep pattern consistent)
-	if header := o.GetHeader(); header != "" {
-		b.WriteString(header)
-		b.WriteString("\n")
-	}
-
-	// Content
-	b.WriteString(o.GetContent())
-
-	// Footer
-	b.WriteString("\n")
-	if footer := o.GetFooter(); footer != "" {
-		b.WriteString(helpStyle.Render(footer))
-	}
-
-	return boxStyle.Render(b.String())
-}
-
-// HandleKey processes key presses for autocomplete
-func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
+// HandleKey implements BottomKeyHandler
+func (p *AutocompleteProvider) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	// Handle Escape and Ctrl+C to dismiss
 	if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 		return true, nil // Handled - caller should Pop
 	}
 
 	// Pass navigation keys to autocomplete model
-	if o.model.autocomplete != nil {
+	if p.model.autocomplete != nil {
 		switch msg.Type {
 		case tea.KeyUp:
-			o.model.autocomplete.Previous()
+			p.model.autocomplete.Previous()
 			return true, nil
 		case tea.KeyDown:
-			o.model.autocomplete.Next()
+			p.model.autocomplete.Next()
 			return true, nil
 		case tea.KeyEnter, tea.KeyTab:
 			// The actual completion logic is handled in update.go
@@ -194,10 +145,25 @@ func (o *AutocompleteOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
 	return false, nil
 }
 
-// Cancel dismisses the autocomplete
-func (o *AutocompleteOverlay) Cancel() tea.Cmd {
-	if o.model.autocomplete != nil {
-		o.model.autocomplete.Hide()
+// Cancel implements BottomCancelHandler
+func (p *AutocompleteProvider) Cancel() tea.Cmd {
+	if p.model.autocomplete != nil {
+		p.model.autocomplete.Hide()
 	}
 	return nil
+}
+
+// AutocompleteOverlay wraps GenericBottomOverlay for autocomplete.
+type AutocompleteOverlay struct {
+	*GenericBottomOverlay
+	provider *AutocompleteProvider
+}
+
+// NewAutocompleteOverlay creates a new autocomplete overlay
+func NewAutocompleteOverlay(m *Model) *AutocompleteOverlay {
+	provider := &AutocompleteProvider{model: m}
+	return &AutocompleteOverlay{
+		GenericBottomOverlay: NewGenericBottomOverlay(provider, m.theme),
+		provider:             provider,
+	}
 }
