@@ -30,6 +30,7 @@ Activate the {{.action}} spell for this session.
 |-------|-------------|------|
 | `terse` | Minimal output, code-first | layer |
 | `teacher` | Educational, explains concepts | layer |
+| `codex` | OpenAI Codex style, minimal prompting | layer |
 | `claude-code` | Extreme brevity, direct answers | replace |
 | `devin` | Methodical planning-first | layer |
 | `cursor` | Context-aware, refactor-friendly | layer |
