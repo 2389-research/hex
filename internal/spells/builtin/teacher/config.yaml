@@ -1,0 +1,9 @@
+mode: layer
+
+response:
+  style: detailed
+  max_tokens: 4096
+
+reasoning:
+  effort: high
+  show_thinking: true

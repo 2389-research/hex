@@ -1,0 +1,8 @@
+mode: layer
+
+response:
+  style: concise
+  max_tokens: 2048
+
+reasoning:
+  effort: low
