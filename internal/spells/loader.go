@@ -5,6 +5,7 @@ package spells
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,9 +15,10 @@ import (
 
 // Loader discovers and loads spells from multiple directories
 type Loader struct {
-	UserDir    string // User-global spells directory (~/.hex/spells/)
-	ProjectDir string // Project-local spells directory (.hex/spells/)
-	BuiltinDir string // Built-in spells directory
+	UserDir     string // User-global spells directory (~/.hex/spells/)
+	ProjectDir  string // Project-local spells directory (.hex/spells/)
+	BuiltinDir  string // Built-in spells directory (deprecated, use BuiltinFS)
+	BuiltinFSys fs.FS  // Embedded filesystem for builtin spells
 }
 
 // NewLoader creates a loader with default directories
@@ -28,9 +30,9 @@ func NewLoader() *Loader {
 	projectDir := project.FindDir("spells")
 
 	return &Loader{
-		UserDir:    userDir,
-		ProjectDir: projectDir,
-		BuiltinDir: "", // Will be set by caller if builtin spells exist
+		UserDir:     userDir,
+		ProjectDir:  projectDir,
+		BuiltinFSys: BuiltinFS(), // Use embedded builtin spells
 	}
 }
 
@@ -40,12 +42,25 @@ func (l *Loader) LoadAll() ([]*Spell, error) {
 	spellsByName := make(map[string]*Spell)
 	var loadOrder []string
 
-	// Load in priority order: builtin -> user -> project
+	// First, load builtin spells from embedded filesystem
+	if l.BuiltinFSys != nil {
+		builtinSpells, err := l.loadFromFS(l.BuiltinFSys, "builtin")
+		if err != nil {
+			return nil, fmt.Errorf("load builtin spells: %w", err)
+		}
+		for _, spell := range builtinSpells {
+			if _, exists := spellsByName[spell.Name]; !exists {
+				loadOrder = append(loadOrder, spell.Name)
+			}
+			spellsByName[spell.Name] = spell
+		}
+	}
+
+	// Load from filesystem directories in priority order: user -> project
 	sources := []struct {
 		dir    string
 		source string
 	}{
-		{l.BuiltinDir, "builtin"},
 		{l.UserDir, "user"},
 		{l.ProjectDir, "project"},
 	}
@@ -83,6 +98,38 @@ func (l *Loader) LoadAll() ([]*Spell, error) {
 	})
 
 	return result, nil
+}
+
+// loadFromFS loads all spells from an embedded filesystem
+func (l *Loader) loadFromFS(fsys fs.FS, source string) ([]*Spell, error) {
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, fmt.Errorf("read embedded directory: %w", err)
+	}
+
+	var spells []*Spell
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Check if it has a system.md file
+		if _, err := fs.Stat(fsys, entry.Name()+"/system.md"); err != nil {
+			continue
+		}
+
+		spell, err := ParseSpellFromFS(fsys, entry.Name())
+		if err != nil {
+			// Log warning but continue loading other spells
+			fmt.Fprintf(os.Stderr, "Warning: failed to parse builtin spell %s: %v\n", entry.Name(), err)
+			continue
+		}
+
+		spell.Source = source
+		spells = append(spells, spell)
+	}
+
+	return spells, nil
 }
 
 // loadFromDir loads all spell directories from a parent directory
@@ -129,14 +176,13 @@ func (l *Loader) loadFromDir(dir, source string) ([]*Spell, error) {
 
 // LoadByName loads a specific spell by name from any directory
 func (l *Loader) LoadByName(name string) (*Spell, error) {
-	// Try project first, then user, then builtin
+	// Try project first, then user (filesystem directories)
 	sources := []struct {
 		dir    string
 		source string
 	}{
 		{l.ProjectDir, "project"},
 		{l.UserDir, "user"},
-		{l.BuiltinDir, "builtin"},
 	}
 
 	for _, src := range sources {
@@ -155,6 +201,18 @@ func (l *Loader) LoadByName(name string) (*Spell, error) {
 		}
 		spell.Source = src.source
 		return spell, nil
+	}
+
+	// Finally, try builtin spells from embedded filesystem
+	if l.BuiltinFSys != nil {
+		if _, err := fs.Stat(l.BuiltinFSys, name+"/system.md"); err == nil {
+			spell, err := ParseSpellFromFS(l.BuiltinFSys, name)
+			if err != nil {
+				return nil, fmt.Errorf("parse builtin spell: %w", err)
+			}
+			spell.Source = "builtin"
+			return spell, nil
+		}
 	}
 
 	return nil, fmt.Errorf("spell not found: %s", name)
