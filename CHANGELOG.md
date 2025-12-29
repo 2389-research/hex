@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.9.0] - 2025-12-29
+
+### ✨ UI Refactoring & Dependency Updates
+
 ### Added
 - **Codex spell**: OpenAI Codex CLI style - minimal prompting, built-in best practices
-- `/spell` with no arguments now shows all available spells
+- `/spell` with no arguments now shows all available spells with descriptions and modes
+- **GenericBottomOverlay**: Reusable bottom overlay component with content provider pattern
+- **Content provider pattern**: Fullscreen overlays now use composable provider interface
 
 ### Changed
+- Upgraded mux to v0.3.0 (adds `Continue()` API for multi-turn conversations)
 - Cleaned up root directory markdown files (moved to docs/ or deleted)
+- Refactored overlay system to use provider pattern for better composability
+
+### Dependencies
+- `github.com/2389-research/mux` v0.2.0 → v0.3.0
 
 ---
 
