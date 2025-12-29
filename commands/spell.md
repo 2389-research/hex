@@ -22,7 +22,26 @@ Disable the current spell and return to default behavior.
 
 Activate the {{.action}} spell for this session.
 {{else}}
-# Current Spell
+# Available Spells
 
-Show the currently active spell (if any).
+**Builtin spells you can cast:**
+
+| Spell | Description | Mode |
+|-------|-------------|------|
+| `terse` | Minimal output, code-first | layer |
+| `teacher` | Educational, explains concepts | layer |
+| `claude-code` | Extreme brevity, direct answers | replace |
+| `devin` | Methodical planning-first | layer |
+| `cursor` | Context-aware, refactor-friendly | layer |
+| `antigravity` | Design-focused, aesthetics-first | layer |
+
+**Usage:**
+- `/spell <name>` - Cast a spell (e.g., `/spell terse`)
+- `/spell reset` or `/spell off` - Return to default hex behavior
+
+**Modes:**
+- **layer** - Adds personality while keeping Hex identity
+- **replace** - Full identity override (e.g., claude-code identifies as Claude)
+
+**Print mode:** `hex -p --spell <name> "prompt"`
 {{end}}
