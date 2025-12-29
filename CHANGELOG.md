@@ -5,6 +5,316 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Codex spell**: OpenAI Codex CLI style - minimal prompting, built-in best practices
+- `/spell` with no arguments now shows all available spells
+
+### Changed
+- Cleaned up root directory markdown files (moved to docs/ or deleted)
+
+---
+
+## [1.8.0] - 2025-12-29
+
+### 🧙 Spells: Switchable Agent Personalities
+
+Major new feature allowing hex to emulate other codegen agents by swapping system prompts.
+
+### Added
+
+**Spells System**
+- New `internal/spells/` package with complete spell infrastructure
+- Directory-based spell structure: `system.md` + `config.yaml` + optional `tools/`
+- YAML frontmatter parsing for spell metadata
+- Cascade loading: builtin → user (`~/.hex/spells/`) → project (`.hex/spells/`)
+- Thread-safe spell registry with concurrent access support
+- Spell applicator with replace/layer modes
+- Embedded builtin spells using `go:embed` (work anywhere the binary runs)
+
+**7 Builtin Spells**
+| Spell | Description | Mode |
+|-------|-------------|------|
+| `terse` | Minimal output, code-first | layer |
+| `teacher` | Educational, explains concepts | layer |
+| `codex` | OpenAI Codex style, minimal prompting | layer |
+| `claude-code` | Extreme brevity, direct answers | replace |
+| `devin` | Methodical planning-first | layer |
+| `cursor` | Context-aware, refactor-friendly | layer |
+| `antigravity` | Design-focused, aesthetics-first | layer |
+
+**CLI Integration**
+- `--spell <name>` flag for print mode
+- `--spell-mode <replace|layer>` flag to override default mode
+- `/spell` interactive command
+- `/spell list`, `/spell reset`, `/spell off` subcommands
+
+**Spell Modes**
+- **layer**: Adds personality while keeping Hex identity
+- **replace**: Full identity override (e.g., claude-code identifies as Claude)
+
+### Fixed
+- Replace mode spells now correctly override Hex identity
+
+### Documentation
+- `docs/spells.md` - Comprehensive spell documentation
+- `docs/plans/2025-12-28-spells-design.md` - Design document
+
+---
+
+## [1.7.0] - 2025-12-27
+
+### 🎨 TUI Polish & Hex Identity
+
+Major TUI improvements, overlay system refactor, and hex gets its own identity.
+
+### Added
+
+**Hex Identity**
+- Hex now has its own identity separate from Claude
+- Custom system prompt establishing Hex as a powerful CLI coding assistant
+- Distinct personality focused on terminal/CLI workflows
+
+**TUI Improvements**
+- Stack-based overlay system with per-tool instances
+- Message styling improvements with visual indicators
+- Mouse hover support
+- Tool output log with detailed execution info
+- Compact approval dialogs
+- Improved status bar with real-time updates
+
+**Mux Agent Framework**
+- Experimental multi-agent orchestration framework
+- Agent lifecycle management
+- Inter-agent communication primitives
+
+### Fixed
+- Tool approval Enter key handling
+- Assistant response display after tool use
+- TUI stream hanging before tool approval dialog
+- Input queuing and scroll stability
+- Error display improvements
+
+---
+
+## [1.6.0] - 2025-12-08
+
+### 🌐 Multi-Provider Support
+
+Complete multi-provider architecture supporting OpenAI, Gemini, and OpenRouter alongside Anthropic.
+
+### Added
+
+**Provider System**
+- Provider interface and factory pattern
+- Anthropic provider (default)
+- OpenAI provider with GPT-4/GPT-5 support
+- Gemini provider with Gemini Pro/Flash support
+- OpenRouter provider for unified API access
+- `--provider` CLI flag with validation
+- Provider-specific pricing information
+
+**Configuration**
+- Migrated config from YAML to TOML format
+- Provider column in conversations table
+- Per-provider API key configuration
+
+**Distribution**
+- Homebrew tap for easy installation
+- Linux builds (.deb, .rpm) in releases
+
+### Fixed
+- Persist assistant and tool messages to database
+- TUI streaming completion and message queue
+- Correct message ordering in TUI
+- Streaming stuck on text content blocks
+- Debug logging corrupting TUI display
+- TUI launch in non-TTY environments
+
+### Performance
+- Animated thinking spinner
+- Event recording hooks for visualization
+
+---
+
+## [1.5.0] - 2025-12-04
+
+### ⚡ Event Architecture & Neo-Terminal Design
+
+Major architectural improvements with event-driven design and beautiful new UI.
+
+### Added
+
+**Event-Driven Architecture**
+- PubSub broker for event publishing/subscribing
+- Service layer (ConversationService, MessageService, AgentService)
+- Event subscriptions in UI for reactive updates
+- Database migration system with token tracking
+
+**Neo-Terminal Design**
+- Sophisticated UI improvements with modern aesthetics
+- Mouse wheel scrolling support
+- Message queue status display
+- Cleaner display with streaming progress
+
+**Commands**
+- `/clear` command to reset conversation context
+- `/exit` command (Escape no longer quits)
+
+### Changed
+- Removed database coupling from UI layer
+- Service layer injection to UI Model
+
+### Fixed
+- Schema type mismatches in migrations
+- Data race in MCP client tests
+
+---
+
+## [1.4.2] - 2025-12-03
+
+### Fixed
+- golangci-lint config updated to v2 format
+- Install ripgrep in CI for grep tool tests
+
+---
+
+## [1.4.0] - 2025-12-03
+
+### Added
+
+**Event Architecture Foundation**
+- PubSub broker implementation
+- Service interfaces for events
+- Database migration system
+- Token tracking in schema
+
+**UX Improvements**
+- Start in chat mode for immediate interaction
+- `/clear` command improvements
+- Exit command replacing Escape quit
+
+### Fixed
+- Message queue status display
+- Service layer integration
+
+---
+
+## [1.3.0] - 2025-12-03
+
+### 🔄 Project Rename & Core Features
+
+Renamed from "Clem" to "Hex" with major new features.
+
+### Added
+
+**Core Features**
+- AGENTS.md directory traversal system
+- Session resuming with interactive picker
+- Automatic context compaction
+- Persistent intro screen for first message
+
+### Changed
+- Complete rename from clem to hex
+- Module path updated to github.com/2389-research/hex
+- All documentation and scripts updated
+
+### Fixed
+- Network API tests skipped for CI stability
+- Intro screen ASCII art updated
+
+---
+
+## [1.2.1] - 2025-12-02
+
+### Added
+- Persistent approval rules for tool execution
+
+### Fixed
+- Forward ALL messages to approval form
+- Clear toolApprovalForm in all exit paths
+- Capture updated form state properly
+- WindowSizeMsg forwarding for tmux compatibility
+- Debug log suppression during TUI operation
+- Empty line handling in assistant messages
+- Logging disruption and approval form freezing
+- Multi-line message indentation
+- Glamour paragraph formatting
+- Double spacing after messages
+- Consistent user/assistant message spacing
+
+### Changed
+- Upgraded to BIGBOY bullet for assistant messages
+- Visual indicators for user vs assistant messages
+
+---
+
+## [1.2.0] - 2025-12-02
+
+### 🎨 TUI Polish Phase
+
+Comprehensive UI polish with new components and theming.
+
+### Added
+
+**UI Components**
+- Real-time token usage visualization
+- Plugin and MCP server status dashboard
+- Conversation browser with fuzzy search
+- Help system with context-aware key bindings
+- List component for browsing/selection
+- Progress bar component
+- Table component for structured data
+
+**Theming & Effects**
+- Dracula theme integration
+- Gradient and animation effects
+- Border styles and spacing layout system
+
+**Forms**
+- Onboarding flow with huh library
+- Settings wizard
+- Quick actions with huh select form
+- Beautiful tool approval forms
+
+### Changed
+- Hardcoded colors replaced with Dracula theme
+
+---
+
+## [1.1.0] - 2025-12-01
+
+### 🚀 Claude Code Alignment
+
+Major feature alignment with Claude Code, adding subagent framework and plugin system.
+
+### Added
+
+**Phases 1-4: Claude Code Alignment**
+- Feature parity with Claude Code patterns
+- Improved tool handling
+- Better error messages
+- Enhanced streaming
+
+**Phases 5-6: Advanced Features**
+- Subagent framework for complex task delegation
+- Plugin system foundation
+- Extended tool capabilities
+
+### Documentation
+- Claude Code feature audit
+- Alignment roadmap
+
+---
+
+## [1.0.1] - 2025-12-01
+
+### Fixed
+- Wait for Apple notarization to complete before releasing
+
+---
+
 ## [1.0.0] - 2025-11-28
 
 ### 🎉 First Production Release
