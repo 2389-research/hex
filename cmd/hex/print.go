@@ -114,9 +114,22 @@ func runPrintMode(prompt string) error {
 			Messages:  messages,
 		}
 
+		// Build effective system prompt
+		effectiveSystemPrompt := systemPrompt
+
+		// Apply spell if specified
+		if spellName != "" {
+			spellPrompt, err := getSpellSystemPrompt(spellName, effectiveSystemPrompt, spellMode)
+			if err != nil {
+				return fmt.Errorf("load spell %q: %w", spellName, err)
+			}
+			effectiveSystemPrompt = spellPrompt
+			logging.InfoWith("Applied spell", "name", spellName, "mode", spellMode)
+		}
+
 		// Always include Hex identity in system prompt
-		if systemPrompt != "" {
-			req.System = core.DefaultSystemPrompt + "\n\n" + systemPrompt
+		if effectiveSystemPrompt != "" {
+			req.System = core.DefaultSystemPrompt + "\n\n" + effectiveSystemPrompt
 		} else {
 			req.System = core.DefaultSystemPrompt
 		}

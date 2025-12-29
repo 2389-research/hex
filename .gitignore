@@ -20,6 +20,8 @@ vendor/
 *.swp
 *.swo
 *~
+*.bak*
+*.backup
 
 # OS
 .DS_Store
@@ -34,7 +36,8 @@ build/
 config.yaml
 .scratch/
 test-react/
-hex
+/bin/hex
+/hex
 reacttest/
 .worktrees/
 
