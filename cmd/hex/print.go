@@ -116,19 +116,24 @@ func runPrintMode(prompt string) error {
 
 		// Build effective system prompt
 		effectiveSystemPrompt := systemPrompt
+		var spellIsReplaceMode bool
 
 		// Apply spell if specified
 		if spellName != "" {
-			spellPrompt, err := getSpellSystemPrompt(spellName, effectiveSystemPrompt, spellMode)
+			spellPrompt, effectiveMode, err := getSpellWithMode(spellName, effectiveSystemPrompt, spellMode)
 			if err != nil {
 				return fmt.Errorf("load spell %q: %w", spellName, err)
 			}
 			effectiveSystemPrompt = spellPrompt
-			logging.InfoWith("Applied spell", "name", spellName, "mode", spellMode)
+			spellIsReplaceMode = effectiveMode == "replace"
+			logging.InfoWith("Applied spell", "name", spellName, "mode", string(effectiveMode))
 		}
 
-		// Always include Hex identity in system prompt
-		if effectiveSystemPrompt != "" {
+		// Include Hex identity in system prompt UNLESS spell is in replace mode
+		if spellIsReplaceMode {
+			// Replace mode: use only the spell's system prompt
+			req.System = effectiveSystemPrompt
+		} else if effectiveSystemPrompt != "" {
 			req.System = core.DefaultSystemPrompt + "\n\n" + effectiveSystemPrompt
 		} else {
 			req.System = core.DefaultSystemPrompt

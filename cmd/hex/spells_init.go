@@ -31,13 +31,6 @@ func initializeSpellsWithDir(dir string) *spells.Registry {
 	return registry
 }
 
-// getSpellSystemPrompt applies a spell and returns the effective system prompt
-// Uses default loader directories
-func getSpellSystemPrompt(spellName, basePrompt, modeOverride string) (string, error) {
-	loader := spells.NewLoader()
-	return getSpellSystemPromptWithLoader(loader, spellName, basePrompt, modeOverride)
-}
-
 // getSpellSystemPromptWithDir applies a spell from a specific directory (for testing)
 func getSpellSystemPromptWithDir(dir, spellName, basePrompt, modeOverride string) (string, error) {
 	loader := &spells.Loader{
@@ -48,9 +41,15 @@ func getSpellSystemPromptWithDir(dir, spellName, basePrompt, modeOverride string
 
 // getSpellSystemPromptWithLoader applies a spell using the provided loader
 func getSpellSystemPromptWithLoader(loader *spells.Loader, spellName, basePrompt, modeOverride string) (string, error) {
+	prompt, _, err := getSpellSystemPromptAndMode(loader, spellName, basePrompt, modeOverride)
+	return prompt, err
+}
+
+// getSpellSystemPromptAndMode applies a spell and returns both the system prompt and effective mode
+func getSpellSystemPromptAndMode(loader *spells.Loader, spellName, basePrompt, modeOverride string) (string, spells.LayerMode, error) {
 	spell, err := loader.LoadByName(spellName)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	var mode *spells.LayerMode
@@ -60,5 +59,18 @@ func getSpellSystemPromptWithLoader(loader *spells.Loader, spellName, basePrompt
 	}
 
 	applied := spells.ApplySpell(spell, basePrompt, mode)
-	return applied.SystemPrompt, nil
+
+	// Determine effective mode
+	effectiveMode := spell.Mode
+	if mode != nil {
+		effectiveMode = *mode
+	}
+
+	return applied.SystemPrompt, effectiveMode, nil
+}
+
+// getSpellWithMode loads a spell and applies it, returning prompt and mode
+func getSpellWithMode(spellName, basePrompt, modeOverride string) (string, spells.LayerMode, error) {
+	loader := spells.NewLoader()
+	return getSpellSystemPromptAndMode(loader, spellName, basePrompt, modeOverride)
 }
