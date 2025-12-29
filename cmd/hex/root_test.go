@@ -76,3 +76,25 @@ func TestFlagConflictValidation(t *testing.T) {
 	continueFlag = false
 	resumeID = ""
 }
+
+func TestSpellFlag(t *testing.T) {
+	flag := rootCmd.PersistentFlags().Lookup("spell")
+	if flag == nil {
+		t.Fatal("--spell flag not found")
+	}
+	if flag.Usage == "" {
+		t.Error("--spell flag has no usage description")
+	}
+	assert.Equal(t, "", flag.DefValue, "--spell should default to empty string")
+}
+
+func TestSpellModeFlag(t *testing.T) {
+	flag := rootCmd.PersistentFlags().Lookup("spell-mode")
+	if flag == nil {
+		t.Fatal("--spell-mode flag not found")
+	}
+	if flag.Usage == "" {
+		t.Error("--spell-mode flag has no usage description")
+	}
+	assert.Equal(t, "", flag.DefValue, "--spell-mode should default to empty string")
+}

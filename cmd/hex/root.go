@@ -87,6 +87,10 @@ var (
 
 	// Experimental: mux agent framework
 	experimentalMux bool
+
+	// Spell system flags
+	spellName string
+	spellMode string
 )
 
 var rootCmd = &cobra.Command{
@@ -143,6 +147,10 @@ func init() {
 
 	// Experimental: mux agent framework
 	rootCmd.PersistentFlags().BoolVar(&experimentalMux, "experimental-mux", false, "Use experimental mux agent framework instead of built-in orchestrator")
+
+	// Spell system flags
+	rootCmd.PersistentFlags().StringVar(&spellName, "spell", "", "Use a spell (agent personality)")
+	rootCmd.PersistentFlags().StringVar(&spellMode, "spell-mode", "", "Override spell mode: replace or layer")
 
 	// Register subcommands
 	rootCmd.AddCommand(visualizeCmd)
