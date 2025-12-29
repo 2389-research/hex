@@ -214,12 +214,12 @@ type Model struct {
 	currentToolLogParam string   // Parameter preview of current tool
 
 	// TUI Polish: Overlay Management
-	overlayManager      *OverlayManager      // Centralized overlay management
-	baseViewportHeight  int                  // Base viewport height before overlay adjustments
-	autocompleteOverlay *AutocompleteOverlay // Autocomplete overlay instance
-	toolTimelineOverlay *ToolTimelineOverlay // Tool timeline overlay instance
-	helpOverlay         *HelpOverlay         // Help overlay instance
-	historyOverlay      *HistoryOverlay      // History overlay instance
+	overlayManager      *OverlayManager            // Centralized overlay management
+	baseViewportHeight  int                        // Base viewport height before overlay adjustments
+	autocompleteOverlay *AutocompleteOverlay       // Autocomplete overlay instance
+	toolTimelineOverlay *GenericFullscreenOverlay  // Tool timeline overlay instance
+	helpOverlay         *GenericFullscreenOverlay  // Help overlay instance
+	historyOverlay      *GenericFullscreenOverlay  // History overlay instance
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display

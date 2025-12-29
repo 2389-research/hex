@@ -1,45 +1,17 @@
 package ui
 
-import (
-	"fmt"
-	"strings"
+import tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
+// HelpContentProvider provides content for the help overlay
+type HelpContentProvider struct{}
 
-// HelpOverlay displays keyboard shortcuts and features
-type HelpOverlay struct {
-	viewport viewport.Model
-	width    int
-	height   int
-}
-
-// NewHelpOverlay creates a new help overlay
-func NewHelpOverlay() *HelpOverlay {
-	return &HelpOverlay{
-		viewport: viewport.New(0, 0),
-	}
-}
-
-// IsFullscreen returns true
-func (o *HelpOverlay) IsFullscreen() bool {
-	return true
-}
-
-// GetDesiredHeight returns -1 (fullscreen)
-func (o *HelpOverlay) GetDesiredHeight() int {
-	return -1
-}
-
-// GetHeader returns the header
-func (o *HelpOverlay) GetHeader() string {
+// Header returns the help overlay header
+func (p *HelpContentProvider) Header() string {
 	return "Help & Keyboard Shortcuts"
 }
 
-// GetContent returns the help text
-func (o *HelpOverlay) GetContent() string {
+// Content returns the help text
+func (p *HelpContentProvider) Content() string {
 	return `# Keyboard Shortcuts
 
 ## Navigation
@@ -76,119 +48,14 @@ func (o *HelpOverlay) GetContent() string {
 `
 }
 
-// GetFooter returns the footer
-func (o *HelpOverlay) GetFooter() string {
-	return "Press Escape or Ctrl+H to close"
+// ToggleKeys returns the keys that toggle the help overlay
+// Both the header close hint AND footer are auto-generated from this
+func (p *HelpContentProvider) ToggleKeys() []tea.KeyType {
+	return []tea.KeyType{tea.KeyCtrlH}
 }
 
-// OnPush initializes viewport
-func (o *HelpOverlay) OnPush(width, height int) {
-	o.width = width
-	o.height = height
-	// Guard against negative dimensions on small terminals
-	vw := width - 4
-	vh := height - 6
-	if vw < 1 {
-		vw = 1
-	}
-	if vh < 1 {
-		vh = 1
-	}
-	o.viewport = viewport.New(vw, vh)
-	o.viewport.SetContent(o.GetContent())
-}
-
-// OnPop cleans up
-func (o *HelpOverlay) OnPop() {}
-
-// SetHeight updates viewport height
-func (o *HelpOverlay) SetHeight(height int) {
-	o.height = height
-	vh := height - 6
-	if vh < 1 {
-		vh = 1
-	}
-	o.viewport.Height = vh
-}
-
-// Update handles messages
-func (o *HelpOverlay) Update(msg tea.Msg) tea.Cmd {
-	// Handle window resize
-	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
-		o.width = wsm.Width
-		o.height = wsm.Height
-		vw := wsm.Width - 4
-		vh := wsm.Height - 6
-		if vw < 1 {
-			vw = 1
-		}
-		if vh < 1 {
-			vh = 1
-		}
-		o.viewport.Width = vw
-		o.viewport.Height = vh
-	}
-
-	var cmd tea.Cmd
-	o.viewport, cmd = o.viewport.Update(msg)
-	return cmd
-}
-
-// HandleKey processes input
-func (o *HelpOverlay) HandleKey(msg tea.KeyMsg) (bool, tea.Cmd) {
-	switch msg.Type {
-	case tea.KeyEsc, tea.KeyCtrlC, tea.KeyCtrlH:
-		return true, nil // Pop handled by caller
-
-	case tea.KeyUp, tea.KeyDown:
-		// Viewport navigation
-		cmd := o.Update(msg)
-		return true, cmd
-
-	default:
-		// Let viewport handle other keys (like PageUp/PageDown, Home/End, etc.)
-		// and capture them so they don't leak through
-		cmd := o.Update(msg)
-		return true, cmd
-	}
-}
-
-// Render returns the complete view
-func (o *HelpOverlay) Render(width, height int) string {
-	var b strings.Builder
-
-	// Header
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("cyan"))
-	closeHint := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")).
-		Render("Ctrl+H or Esc to close")
-
-	header := headerStyle.Render(o.GetHeader())
-	// Use lipgloss.Width for accurate visual width calculation
-	headerWidth := lipgloss.Width(header)
-	closeHintWidth := lipgloss.Width(closeHint)
-	padding := max(0, width-headerWidth-closeHintWidth-8)
-	headerLine := fmt.Sprintf("┏━━ %s %s %s ┓",
-		header,
-		strings.Repeat("━", padding),
-		closeHint)
-	b.WriteString(headerLine)
-	b.WriteString("\n\n")
-
-	// Content
-	b.WriteString(o.viewport.View())
-	b.WriteString("\n\n")
-
-	// Footer
-	footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	b.WriteString(footerStyle.Render(o.GetFooter()))
-	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("┗%s┛", strings.Repeat("━", max(0, width-2))))
-
-	return b.String()
-}
-
-// Cancel dismisses the help overlay (no cleanup needed)
-func (o *HelpOverlay) Cancel() tea.Cmd {
-	return nil
+// NewHelpOverlay creates a new help overlay using the generic fullscreen wrapper
+func NewHelpOverlay() *GenericFullscreenOverlay {
+	provider := &HelpContentProvider{}
+	return NewGenericFullscreenOverlay(provider)
 }
