@@ -69,7 +69,13 @@ async function updateFormula(octokit, version, versionsData) {
   // e.g., "hex_1.9.0_Darwin_arm64.tar.gz" -> { url: "https://...", checksum: "..." }
   const filenameMap = {};
   for (const [key, url] of Object.entries(release.downloads)) {
-    const filename = url.split('/').pop(); // Get filename from URL
+    // Firebase URLs are like: https://...app/o/releases%2Fv1.9.2%2Fhex_1.9.2_Darwin_arm64.tar.gz?alt=media
+    // Extract the filename from the URL-encoded path before the query string
+    const urlWithoutQuery = url.split('?')[0]; // Remove query params
+    const encodedPath = urlWithoutQuery.split('/o/')[1]; // Get the part after /o/
+    const decodedPath = decodeURIComponent(encodedPath); // Decode URL encoding
+    const filename = decodedPath.split('/').pop(); // Get filename from path
+
     filenameMap[filename] = {
       url: url,
       checksum: release.checksums[key]?.replace('sha256:', '') || ''

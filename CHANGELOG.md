@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.3] - 2025-12-31
+
+### 🔧 Distribution Fixes (Part 3)
+
+### Fixed
+- **Homebrew formula update script**: Fixed Firebase URL parsing to extract filename correctly
+  - Firebase URLs have URL-encoded paths like `releases%2Fv1.9.2%2Fhex_1.9.2_Darwin_arm64.tar.gz?alt=media`
+  - Script now properly decodes the path and extracts just the filename
+  - v1.9.2 release failed due to incorrect filename extraction
+
+---
+
 ## [1.9.2] - 2025-12-31
 
 ### 🔧 Distribution Fixes (Part 2)
