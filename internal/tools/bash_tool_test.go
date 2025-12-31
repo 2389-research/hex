@@ -728,6 +728,8 @@ func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
 	bashID := result.Metadata["bash_id"].(string)
 
 	// Poll until process completes (with timeout)
+	// Accumulate all output since GetNewOutput() is incremental
+	var allOutput strings.Builder
 	var outputResult *tools.Result
 	maxAttempts := 50 // 5 seconds max
 	for i := 0; i < maxAttempts; i++ {
@@ -737,6 +739,12 @@ func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, outputResult.Success)
+
+		// Accumulate output (excluding "(no new output)" messages)
+		if !strings.Contains(outputResult.Output, "(no new output)") {
+			allOutput.WriteString(outputResult.Output)
+			allOutput.WriteString("\n")
+		}
 
 		// Check if process is done
 		if done, ok := outputResult.Metadata["done"].(bool); ok && done {
@@ -748,11 +756,12 @@ func TestBashTool_Execute_Background_OutputCapturedCorrectly(t *testing.T) {
 	done, _ := outputResult.Metadata["done"].(bool)
 	require.True(t, done, "process should have completed within timeout")
 
-	// Verify both stdout and stderr were captured
-	assert.Contains(t, outputResult.Output, "to stdout")
-	assert.Contains(t, outputResult.Output, "to stderr")
-	assert.Contains(t, outputResult.Output, "STDOUT:")
-	assert.Contains(t, outputResult.Output, "STDERR:")
+	// Verify both stdout and stderr were captured (check accumulated output)
+	accumulatedOutput := allOutput.String()
+	assert.Contains(t, accumulatedOutput, "to stdout")
+	assert.Contains(t, accumulatedOutput, "to stderr")
+	assert.Contains(t, accumulatedOutput, "STDOUT:")
+	assert.Contains(t, accumulatedOutput, "STDERR:")
 
 	// Clean up
 	_ = tools.GetBackgroundRegistry().Remove(bashID)

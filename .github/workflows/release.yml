@@ -63,3 +63,10 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$PWD/firebase-sa.json"
           node scripts/deploy-firebase.js "${{ github.ref_name }}" dist/
           rm firebase-sa.json
+
+      - name: Update Homebrew Formula with Firebase URLs
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          npm install @octokit/rest
+          node scripts/update-homebrew-formula.js "${{ github.ref_name }}"

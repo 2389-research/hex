@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.1] - 2025-12-30
+
+### 🔧 Distribution Fixes
+
+### Fixed
+- **Homebrew formula URLs**: Fixed Homebrew formula to use public Firebase Storage URLs instead of private GitHub release URLs
+- Added `scripts/update-homebrew-formula.js` to automatically update homebrew-tap formula after releases
+- Users can now successfully install via `brew install 2389-research/tap/hex` without authentication errors
+
+### Changed
+- Release workflow now updates Homebrew formula with public download URLs after Firebase deployment
+
+---
+
 ## [1.9.0] - 2025-12-29
 
 ### ✨ UI Refactoring & Dependency Updates
