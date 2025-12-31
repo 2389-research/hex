@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.2] - 2025-12-31
+
+### 🔧 Distribution Fixes (Part 2)
+
+### Fixed
+- **Homebrew formula update script**: Fixed regex pattern to handle multi-line formula format
+  - Pattern now correctly matches URLs and SHA256s across newlines
+  - v1.9.1 release failed due to incorrect regex pattern
+
+---
+
 ## [1.9.1] - 2025-12-30
 
 ### 🔧 Distribution Fixes

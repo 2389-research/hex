@@ -79,9 +79,11 @@ async function updateFormula(octokit, version, versionsData) {
   console.log(`  Built map for ${Object.keys(filenameMap).length} artifacts`);
 
   // Replace URLs and SHA256s together in a single pass
-  // Match pattern: url "..." followed by sha256 "..."
-  // This ensures we replace the correct SHA256 for each URL
-  const urlShaPattern = /url\s+"https:\/\/github\.com\/[^"]+\/(hex_[^"]+\.tar\.gz)"\s+sha256\s+"[a-f0-9]{64}"/g;
+  // Match pattern: url "..." followed by sha256 "..." (with newlines/whitespace between)
+  // The formula has format like:
+  //   url "https://..."
+  //         sha256 "..."
+  const urlShaPattern = /url\s+"https:\/\/github\.com\/[^"]+\/(hex_[^"]+\.tar\.gz)"\s+sha256\s+"[a-f0-9]{64}"/gs;
 
   let replacementCount = 0;
   updatedFormula = updatedFormula.replace(urlShaPattern, (match, filename) => {
@@ -89,7 +91,8 @@ async function updateFormula(octokit, version, versionsData) {
       const { url, checksum } = filenameMap[filename];
       console.log(`  Replacing ${filename}`);
       replacementCount++;
-      return `url "${url}"\n    sha256 "${checksum}"`;
+      // Preserve the indentation style from the original
+      return `url "${url}"\n      sha256 "${checksum}"`;
     }
     return match; // Keep original if not found
   });
