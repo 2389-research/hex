@@ -16,8 +16,8 @@ import (
 )
 
 func runPrintMode(prompt string) error {
-	// Check for experimental mux mode
-	if experimentalMux {
+	// Use mux by default, fall back to legacy if requested
+	if !useLegacyMode {
 		return runPrintModeWithMux(prompt)
 	}
 

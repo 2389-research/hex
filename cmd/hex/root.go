@@ -12,6 +12,7 @@ import (
 
 	"github.com/2389-research/hex/internal/agentsmd"
 	ctxmgr "github.com/2389-research/hex/internal/convcontext"
+	"github.com/2389-research/hex/internal/coordinator"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/events"
@@ -83,8 +84,8 @@ var (
 	allowedTools    []string
 	disallowedTools []string
 
-	// Experimental: mux agent framework
-	experimentalMux bool
+	// Legacy mode: use built-in orchestrator instead of mux (for backwards compatibility)
+	useLegacyMode bool
 
 	// Spell system flags
 	spellName string
@@ -143,8 +144,8 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&allowedTools, "allowed-tools", []string{}, "Whitelist of allowed tools (comma-separated). If set, only these tools are allowed.")
 	rootCmd.PersistentFlags().StringSliceVar(&disallowedTools, "disallowed-tools", []string{}, "Blacklist of disallowed tools (comma-separated). These tools are blocked.")
 
-	// Experimental: mux agent framework
-	rootCmd.PersistentFlags().BoolVar(&experimentalMux, "experimental-mux", false, "Use experimental mux agent framework instead of built-in orchestrator")
+	// Legacy mode for backwards compatibility
+	rootCmd.PersistentFlags().BoolVar(&useLegacyMode, "legacy", false, "Use legacy built-in orchestrator instead of mux (for backwards compatibility)")
 
 	// Spell system flags
 	rootCmd.PersistentFlags().StringVar(&spellName, "spell", "", "Use a spell (agent personality)")
@@ -163,6 +164,10 @@ func runRoot(_ *cobra.Command, args []string) error {
 	// Initialize shutdown handler for cascading process cleanup
 	// This handles SIGINT/SIGTERM, releases file locks, stops child processes, and checks for orphans
 	shutdown.InitShutdownHandler()
+
+	// Initialize the global resource coordinator for multi-agent file locking
+	// Uses lazy initialization via sync.Once, but we trigger it early here
+	_ = coordinator.Global()
 
 	// Initialize logging
 	if err := initializeLogging(); err != nil {
@@ -243,15 +248,27 @@ func runRoot(_ *cobra.Command, args []string) error {
 	// Suppress unused context warning - ctx will be used in future tasks
 	_ = ctx
 
-	// Check for experimental mux flag from environment (for subagent inheritance)
-	if os.Getenv("HEX_EXPERIMENTAL_MUX") == "1" {
-		experimentalMux = true
+	// Check for legacy mode flag from environment (for subagent inheritance)
+	if os.Getenv("HEX_LEGACY_MODE") == "1" {
+		useLegacyMode = true
 	}
 
-	// Propagate experimental mux flag to environment for subagents
-	if experimentalMux {
-		_ = os.Setenv("HEX_EXPERIMENTAL_MUX", "1")
-		logging.InfoWith("Using experimental mux agent framework", "mode", "mux")
+	// Propagate legacy mode flag to environment for subagents
+	if useLegacyMode {
+		_ = os.Setenv("HEX_LEGACY_MODE", "1")
+		logging.InfoWith("Using legacy orchestrator mode", "mode", "legacy")
+	}
+
+	// First-run check - launch setup wizard if no config exists
+	// Skip in print mode since it may be used in scripts/automation
+	if IsFirstRun() && !printMode {
+		if err := RunWizard(); err != nil {
+			if err == ErrSetupCancelled {
+				return nil // User cancelled, exit gracefully
+			}
+			return fmt.Errorf("setup wizard: %w", err)
+		}
+		// Wizard completed successfully, continue to interactive mode
 	}
 
 	if printMode {
@@ -268,11 +285,8 @@ func joinArgs(args []string) string {
 func runInteractive(prompt string) error {
 	logging.Debug("Starting interactive mode")
 
-	// Experimental mux mode not yet supported in TUI - warn and continue with current orchestrator
-	if experimentalMux {
-		logging.WarnWith("--experimental-mux not yet supported in TUI mode, using built-in orchestrator", "mode", "interactive")
-		fmt.Fprintln(os.Stderr, "⚠️  --experimental-mux is only supported in print mode (-p). Using built-in orchestrator for TUI.")
-	}
+	// TUI mode uses the built-in orchestrator (mux integration for TUI is future work)
+	logging.DebugWith("TUI mode uses built-in orchestrator", "legacy", useLegacyMode)
 
 	// Validate flag conflicts
 	if continueFlag && resumeID != "" {

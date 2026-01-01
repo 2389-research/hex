@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/2389-research/hex/internal/coordinator"
 	"github.com/2389-research/hex/internal/registry"
 	"github.com/2389-research/hex/internal/subagents"
 )
@@ -63,12 +64,26 @@ func getMaxAgentDepth() int {
 	return maxDepth
 }
 
+// MuxAgentRunner is an interface for running a mux agent.
+// This interface breaks the import cycle between tools and adapter packages.
+type MuxAgentRunner interface {
+	// RunAgent executes a subagent with the given configuration and returns the output.
+	RunAgent(ctx context.Context, agentID, prompt, systemPrompt string, allowedTools []string) (output string, err error)
+}
+
+// MuxConfig holds configuration for spawning mux agents
+type MuxConfig struct {
+	AgentRunner MuxAgentRunner // Runner that creates and executes mux agents
+}
+
 // TaskTool implements sub-agent task delegation functionality
 type TaskTool struct {
-	DefaultTimeout time.Duration // Default timeout for tasks
-	HexBinPath     string        // Path to hex binary (empty = search PATH)
-	Executor       *subagents.Executor
-	UseFramework   bool // If true, use new subagent framework instead of direct subprocess
+	DefaultTimeout time.Duration       // Default timeout for tasks
+	HexBinPath     string              // Path to hex binary (empty = search PATH)
+	Executor       *subagents.Executor // Legacy subagent executor
+	UseFramework   bool                // If true, use new subagent framework instead of direct subprocess
+	UseMux         bool                // If true, use mux agents (Phase 2)
+	MuxConfig      *MuxConfig          // Configuration for mux agents
 }
 
 // generateAgentID creates a hierarchical agent ID based on parent ID
@@ -105,6 +120,28 @@ func NewTaskToolWithFramework() *TaskTool {
 	}
 }
 
+// NewTaskToolWithMux creates a task tool that uses mux agents (in-process)
+func NewTaskToolWithMux(runner MuxAgentRunner) *TaskTool {
+	return &TaskTool{
+		DefaultTimeout: DefaultTaskTimeout,
+		HexBinPath:     "",
+		UseMux:         true,
+		MuxConfig:      &MuxConfig{AgentRunner: runner},
+	}
+}
+
+// SetMuxRunner enables mux agent execution with the given runner.
+// This allows setting mux config after construction (useful when tools have circular dependencies).
+func (t *TaskTool) SetMuxRunner(runner MuxAgentRunner) {
+	if runner != nil {
+		t.MuxConfig = &MuxConfig{AgentRunner: runner}
+		t.UseMux = true
+	} else {
+		t.MuxConfig = nil
+		t.UseMux = false
+	}
+}
+
 // Name returns the tool name
 func (t *TaskTool) Name() string {
 	return "task"
@@ -126,7 +163,12 @@ func (t *TaskTool) RequiresApproval(_ map[string]interface{}) bool {
 
 // Execute launches a sub-agent and returns its output
 func (t *TaskTool) Execute(ctx context.Context, params map[string]interface{}) (*Result, error) {
-	// If using the new framework, delegate to it
+	// If using mux agents (Phase 2), delegate to mux executor
+	if t.UseMux && t.MuxConfig != nil {
+		return t.executeWithMux(ctx, params)
+	}
+
+	// If using the old subagent framework, delegate to it
 	if t.UseFramework && t.Executor != nil {
 		return t.executeWithFramework(ctx, params)
 	}
@@ -229,6 +271,113 @@ func (t *TaskTool) executeWithFramework(ctx context.Context, params map[string]i
 		Output:   result.Output,
 		Error:    result.Error,
 		Metadata: result.Metadata,
+	}, nil
+}
+
+// executeWithMux uses mux agents for in-process subagent execution (Phase 2)
+func (t *TaskTool) executeWithMux(ctx context.Context, params map[string]interface{}) (*Result, error) {
+	// Check recursion depth BEFORE doing anything else
+	currentDepth := getAgentDepth()
+	maxDepth := getMaxAgentDepth()
+
+	if currentDepth >= maxDepth {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error: fmt.Sprintf(
+				"max agent depth (%d) exceeded - this usually means:\n"+
+					"1. The task is too complex for recursive decomposition\n"+
+					"2. The agent is stuck in a loop\n"+
+					"3. You need to break down the task differently\n"+
+					"Set HEX_MAX_AGENT_DEPTH to increase limit (use with caution)",
+				maxDepth),
+		}, nil
+	}
+
+	if os.Getenv("HEX_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[TASK] Agent depth: %d/%d (mux)\n", currentDepth, maxDepth)
+	}
+
+	// Validate and extract parameters
+	prompt, ok := params["prompt"].(string)
+	if !ok || prompt == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'prompt' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	description, ok := params["description"].(string)
+	if !ok || description == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'description' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	subagentTypeStr, ok := params["subagent_type"].(string)
+	if !ok || subagentTypeStr == "" {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    "missing or invalid 'subagent_type' parameter (must be non-empty string)",
+		}, nil
+	}
+
+	// Validate subagent type
+	if !subagents.IsValid(subagentTypeStr) {
+		return &Result{
+			ToolName: "task",
+			Success:  false,
+			Error:    fmt.Sprintf("invalid subagent_type '%s', must be one of: %v", subagentTypeStr, subagents.ValidSubagentTypes()),
+		}, nil
+	}
+
+	// Generate agent ID
+	agentID := generateAgentID()
+	startTime := time.Now()
+
+	// Ensure coordinator cleanup on exit
+	defer coordinator.ReleaseAll(agentID)
+
+	// Get configuration for this subagent type
+	config := subagents.DefaultConfig(subagents.SubagentType(subagentTypeStr))
+
+	// Set environment for depth tracking
+	_ = os.Setenv("HEX_AGENT_DEPTH", strconv.Itoa(currentDepth+1))
+	defer func() {
+		_ = os.Setenv("HEX_AGENT_DEPTH", strconv.Itoa(currentDepth))
+	}()
+
+	// Run the agent via the runner interface
+	output, err := t.MuxConfig.AgentRunner.RunAgent(ctx, agentID, prompt, config.SystemPrompt, config.AllowedTools)
+
+	duration := time.Since(startTime)
+
+	if output == "" {
+		output = "(no output)"
+	}
+
+	errorMsg := ""
+	success := err == nil
+	if err != nil {
+		errorMsg = err.Error()
+	}
+
+	return &Result{
+		ToolName: "task",
+		Success:  success,
+		Output:   output,
+		Error:    errorMsg,
+		Metadata: map[string]interface{}{
+			"duration":      duration.Seconds(),
+			"agent_id":      agentID,
+			"subagent_type": subagentTypeStr,
+			"description":   description,
+			"executor":      "mux",
+		},
 	}, nil
 }
 
@@ -433,8 +582,9 @@ func (t *TaskTool) executeLegacy(ctx context.Context, params map[string]interfac
 		fmt.Fprintf(os.Stderr, "Warning: failed to register sub-agent %s: %v\n", agentID, err)
 	}
 
-	// Ensure cleanup on exit
+	// Ensure cleanup on exit - deregister from process registry and release coordinator locks
 	defer registry.Global().Deregister(agentID)
+	defer coordinator.ReleaseAll(agentID)
 
 	// Wait for command to complete
 	execErr := cmd.Wait()
@@ -820,6 +970,8 @@ func (t *TaskTool) ExecuteStreaming(ctx context.Context, params map[string]inter
 	go func() {
 		defer close(resultChan)
 		defer cancel()
+		defer registry.Global().Deregister(agentID)
+		defer coordinator.ReleaseAll(agentID)
 
 		var outputBuf bytes.Buffer
 		var bytesRead int64

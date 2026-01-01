@@ -1,69 +1,38 @@
+// ABOUTME: Manual setup subcommand to re-run the configuration wizard
+// ABOUTME: Allows users to reconfigure their LLM provider and API key at any time
+
 package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var setupCmd = &cobra.Command{
-	Use:   "setup-token [token]",
-	Short: "Configure API token",
-	Long: `Configure your Anthropic API token.
+	Use:   "setup",
+	Short: "Run the setup wizard to configure hex",
+	Long: `Run the interactive setup wizard to configure your LLM provider and API key.
 
-Get your API key from: https://console.anthropic.com/
+This wizard will help you:
+  - Choose an AI provider (Anthropic, OpenAI, Gemini, OpenRouter, Ollama)
+  - Configure your API key
+  - Save your configuration to ~/.hex/config.toml
 
-This command will save your API key to ~/.hex/config.yaml`,
-	Args: cobra.MaximumNArgs(1),
-	RunE: runSetup,
+You can run this command at any time to reconfigure hex.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := RunWizard(); err != nil {
+			if err == ErrSetupCancelled {
+				fmt.Println("Setup cancelled.")
+				return nil
+			}
+			return err
+		}
+		fmt.Println("Setup complete! Run 'hex' to start chatting.")
+		return nil
+	},
 }
 
 func init() {
 	rootCmd.AddCommand(setupCmd)
-}
-
-func runSetup(_ *cobra.Command, args []string) error {
-	var apiKey string
-
-	if len(args) > 0 {
-		apiKey = args[0]
-	} else {
-		fmt.Println("Usage: hex setup-token <your-api-key>")
-		fmt.Println("\nGet your API key from: https://console.anthropic.com/")
-		return nil
-	}
-
-	// Get home directory
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("get home dir: %w", err)
-	}
-
-	// Create .hex directory
-	hexDir := filepath.Join(home, ".hex")
-	if mkdirErr := os.MkdirAll(hexDir, 0750); mkdirErr != nil {
-		return fmt.Errorf("create .hex dir: %w", mkdirErr)
-	}
-
-	// Write config
-	configPath := filepath.Join(hexDir, "config.yaml")
-	config := map[string]string{
-		"api_key": apiKey,
-	}
-
-	data, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(configPath, data, 0600); err != nil {
-		return fmt.Errorf("write config: %w", err)
-	}
-
-	fmt.Printf("✓ API key configured successfully\n")
-	fmt.Printf("  Saved to: %s\n", configPath)
-	return nil
 }

@@ -91,6 +91,19 @@ deps:
 tidy:
 	go mod tidy
 
+## check-mux: Validate hex after mux library upgrade
+check-mux:
+	@echo "Running mux upgrade validation..."
+	./scripts/check-mux-upgrade.sh
+
+## upgrade-mux: Upgrade mux to latest and validate
+upgrade-mux:
+	@echo "Upgrading mux to latest version..."
+	go get -u github.com/2389-research/mux@latest
+	go mod tidy
+	@echo "Running validation..."
+	./scripts/check-mux-upgrade.sh
+
 ## verify: Run all verification steps (fmt, vet, lint, test)
 verify: fmt vet lint test
 	@echo "All checks passed!"
