@@ -1,28 +1,27 @@
 // ABOUTME: Adapter that wraps MCP tools to implement Hex's Tool interface
-// ABOUTME: Bridges MCP protocol tools with Hex's tool execution system
+// ABOUTME: Bridges mux MCP protocol tools with Hex's tool execution system
 
 package mcp
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/tools"
+	muxmcp "github.com/2389-research/mux/mcp"
 )
 
 // MCPToolAdapter wraps an MCP tool to implement Hex's Tool interface
 //
 //nolint:revive // MCP prefix clarifies this adapts MCP tools vs other tool types
 type MCPToolAdapter struct {
-	client  *Client
-	mcpTool Tool
+	client  muxmcp.Client
+	mcpTool muxmcp.ToolInfo
 }
 
 // NewMCPToolAdapter creates a new adapter for an MCP tool
-func NewMCPToolAdapter(client *Client, mcpTool Tool) *MCPToolAdapter {
+func NewMCPToolAdapter(client muxmcp.Client, mcpTool muxmcp.ToolInfo) *MCPToolAdapter {
 	return &MCPToolAdapter{
 		client:  client,
 		mcpTool: mcpTool,
@@ -77,50 +76,35 @@ func (a *MCPToolAdapter) Execute(ctx context.Context, params map[string]interfac
 	return result, nil
 }
 
-// convertMCPResult converts an MCP tool response to a Hex Result
-func (a *MCPToolAdapter) convertMCPResult(mcpResult map[string]interface{}) *tools.Result {
+// convertMCPResult converts an MCP ToolCallResult to a Hex Result
+func (a *MCPToolAdapter) convertMCPResult(mcpResult *muxmcp.ToolCallResult) *tools.Result {
 	result := &tools.Result{
 		ToolName: a.mcpTool.Name,
-		Success:  true,
+		Success:  !mcpResult.IsError,
 		Metadata: make(map[string]interface{}),
-	}
-
-	// Extract content array
-	content, ok := mcpResult["content"].([]interface{})
-	if !ok {
-		// No content or invalid format
-		result.Success = false
-		result.Error = "Invalid MCP response: missing or invalid content"
-		return result
 	}
 
 	// Process content blocks
 	var outputParts []string
-	for _, item := range content {
-		contentBlock, ok := item.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		contentType, _ := contentBlock["type"].(string)
-		switch contentType {
+	for _, block := range mcpResult.Content {
+		switch block.Type {
 		case "text":
-			if text, ok := contentBlock["text"].(string); ok {
-				outputParts = append(outputParts, text)
-			}
+			outputParts = append(outputParts, block.Text)
 		case "image":
-			// Future: handle image content
 			result.Metadata["has_image"] = true
+			if block.MimeType != "" {
+				result.Metadata["image_mime_type"] = block.MimeType
+			}
 		case "resource":
-			// Future: handle resource content
 			result.Metadata["has_resource"] = true
 		}
 	}
 
 	result.Output = strings.Join(outputParts, "\n")
 
-	// Store original MCP result in metadata for debugging
-	result.Metadata["mcp_result"] = mcpResult
+	if mcpResult.IsError && result.Output != "" {
+		result.Error = result.Output
+	}
 
 	return result
 }
@@ -138,72 +122,4 @@ func (a *MCPToolAdapter) AsToolDefinition() core.ToolDefinition {
 // GetInputSchema returns the tool's input schema
 func (a *MCPToolAdapter) GetInputSchema() map[string]interface{} {
 	return a.mcpTool.InputSchema
-}
-
-// MCPToolManager manages MCP tool adapters for a server
-//
-//nolint:revive // MCP prefix clarifies this manages MCP tools vs other tool types
-type MCPToolManager struct {
-	client *Client
-	tools  map[string]*MCPToolAdapter
-	mu     sync.RWMutex
-}
-
-// NewMCPToolManager creates a new tool manager for an MCP server
-func NewMCPToolManager(client *Client) *MCPToolManager {
-	return &MCPToolManager{
-		client: client,
-		tools:  make(map[string]*MCPToolAdapter),
-	}
-}
-
-// RefreshTools fetches the latest tool list from the MCP server
-func (m *MCPToolManager) RefreshTools(ctx context.Context) error {
-	mcpTools, err := m.client.ListTools(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to list tools: %w", err)
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// Clear existing tools
-	m.tools = make(map[string]*MCPToolAdapter)
-
-	// Create adapters for each tool
-	for _, mcpTool := range mcpTools {
-		adapter := NewMCPToolAdapter(m.client, mcpTool)
-		m.tools[mcpTool.Name] = adapter
-	}
-
-	return nil
-}
-
-// GetTools returns all available MCP tools as Hex tools
-func (m *MCPToolManager) GetTools() []tools.Tool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	result := make([]tools.Tool, 0, len(m.tools))
-	for _, adapter := range m.tools {
-		result = append(result, adapter)
-	}
-
-	return result
-}
-
-// GetTool returns a specific MCP tool by name
-func (m *MCPToolManager) GetTool(name string) tools.Tool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	return m.tools[name]
-}
-
-// Count returns the number of available tools
-func (m *MCPToolManager) Count() int {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	return len(m.tools)
 }

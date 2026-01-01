@@ -10,13 +10,15 @@ import (
 	"io"
 	"os"
 	"sync"
+
+	muxmcp "github.com/2389-research/mux/mcp"
 )
 
 // MockMCPServer simulates an MCP server for testing
 type MockMCPServer struct {
 	Name         string
 	Version      string
-	Tools        []Tool
+	Tools        []muxmcp.ToolInfo
 	stdin        io.Reader
 	stdout       io.Writer
 	stderr       io.Writer
@@ -26,7 +28,7 @@ type MockMCPServer struct {
 }
 
 // NewMockMCPServer creates a new mock server
-func NewMockMCPServer(name, version string, tools []Tool) *MockMCPServer {
+func NewMockMCPServer(name, version string, tools []muxmcp.ToolInfo) *MockMCPServer {
 	return &MockMCPServer{
 		Name:         name,
 		Version:      version,
@@ -229,11 +231,11 @@ func (s *MockMCPServer) sendErrorWithEncoder(encoder *json.Encoder, id interface
 type MockServerCommand struct {
 	Name    string
 	Version string
-	Tools   []Tool
+	Tools   []muxmcp.ToolInfo
 }
 
 // BuildMockServer creates a mock server command for testing
-func BuildMockServer(name, version string, tools []Tool) *MockServerCommand {
+func BuildMockServer(name, version string, tools []muxmcp.ToolInfo) *MockServerCommand {
 	return &MockServerCommand{
 		Name:    name,
 		Version: version,

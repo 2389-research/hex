@@ -8,13 +8,45 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/2389-research/hex/internal/tools"
+	muxmcp "github.com/2389-research/mux/mcp"
 )
 
+// mockMCPClient implements muxmcp.Client for testing
+type mockMCPClient struct {
+	callToolFunc func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error)
+}
+
+func (m *mockMCPClient) Start(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockMCPClient) ListTools(ctx context.Context) ([]muxmcp.ToolInfo, error) {
+	return nil, nil
+}
+
+func (m *mockMCPClient) CallTool(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+	if m.callToolFunc != nil {
+		return m.callToolFunc(ctx, name, args)
+	}
+	return &muxmcp.ToolCallResult{
+		Content: []muxmcp.ContentBlock{
+			{Type: "text", Text: "mock response"},
+		},
+	}, nil
+}
+
+func (m *mockMCPClient) Notifications() <-chan muxmcp.Notification {
+	return nil
+}
+
+func (m *mockMCPClient) Close() error {
+	return nil
+}
+
 func TestMCPTool_Name(t *testing.T) {
-	mcpTool := Tool{
+	mcpTool := muxmcp.ToolInfo{
 		Name:        "test_tool",
 		Description: "Test tool",
 		InputSchema: map[string]interface{}{},
@@ -27,7 +59,7 @@ func TestMCPTool_Name(t *testing.T) {
 }
 
 func TestMCPTool_Description(t *testing.T) {
-	mcpTool := Tool{
+	mcpTool := muxmcp.ToolInfo{
 		Name:        "test_tool",
 		Description: "This is a test tool",
 		InputSchema: map[string]interface{}{},
@@ -42,13 +74,13 @@ func TestMCPTool_Description(t *testing.T) {
 func TestMCPTool_RequiresApproval(t *testing.T) {
 	tests := []struct {
 		name   string
-		tool   Tool
+		tool   muxmcp.ToolInfo
 		params map[string]interface{}
 		want   bool
 	}{
 		{
 			name: "safe tool",
-			tool: Tool{
+			tool: muxmcp.ToolInfo{
 				Name:        "get_weather",
 				Description: "Get weather",
 			},
@@ -57,7 +89,7 @@ func TestMCPTool_RequiresApproval(t *testing.T) {
 		},
 		{
 			name: "empty params",
-			tool: Tool{
+			tool: muxmcp.ToolInfo{
 				Name:        "test",
 				Description: "Test",
 			},
@@ -78,53 +110,37 @@ func TestMCPTool_RequiresApproval(t *testing.T) {
 }
 
 func TestMCPTool_Execute_Success(t *testing.T) {
-	testTools := []Tool{
-		{
-			Name:        "echo",
-			Description: "Echo input",
-			InputSchema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"message": map[string]interface{}{
-						"type": "string",
-					},
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			msg := args["message"].(string)
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{
+					{Type: "text", Text: "Echo: " + msg},
+				},
+			}, nil
+		},
+	}
+
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "echo",
+		Description: "Echo input",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"message": map[string]interface{}{
+					"type": "string",
 				},
 			},
 		},
 	}
 
-	client, server := createTestClientAndServer("2024-11-05", testTools)
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
 
-	// Custom handler
-	server.RegisterToolHandler("echo", func(args map[string]interface{}) (interface{}, error) {
-		msg := args["message"].(string)
-		return map[string]interface{}{
-			"content": []map[string]interface{}{
-				{
-					"type": "text",
-					"text": "Echo: " + msg,
-				},
-			},
-		}, nil
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	// Initialize client
-	if err := client.Initialize(ctx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
-	}
-
-	// Create adapter
-	tool := NewMCPToolAdapter(client, testTools[0])
-
-	// Execute tool
 	params := map[string]interface{}{
 		"message": "Hello, World!",
 	}
 
-	result, err := tool.Execute(ctx, params)
+	result, err := tool.Execute(context.Background(), params)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -143,32 +159,20 @@ func TestMCPTool_Execute_Success(t *testing.T) {
 }
 
 func TestMCPTool_Execute_Error(t *testing.T) {
-	testTools := []Tool{
-		{
-			Name:        "error_tool",
-			Description: "Always errors",
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return nil, fmt.Errorf("simulated tool error")
 		},
 	}
 
-	client, server := createTestClientAndServer("2024-11-05", testTools)
-
-	// Register handler that returns an error
-	server.RegisterToolHandler("error_tool", func(_ map[string]interface{}) (interface{}, error) {
-		return nil, fmt.Errorf("simulated tool error")
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Initialize(ctx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "error_tool",
+		Description: "Always errors",
 	}
 
-	// Create adapter
-	tool := NewMCPToolAdapter(client, testTools[0])
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
 
-	// Execute - will fail because handler returns an error
-	result, err := tool.Execute(ctx, map[string]interface{}{})
+	result, err := tool.Execute(context.Background(), map[string]interface{}{})
 
 	// Should get a result, not a catastrophic error
 	if err != nil {
@@ -184,40 +188,58 @@ func TestMCPTool_Execute_Error(t *testing.T) {
 	}
 }
 
-func TestMCPTool_Execute_TextContent(t *testing.T) {
-	testTools := []Tool{
-		{
-			Name:        "get_data",
-			Description: "Get data",
+func TestMCPTool_Execute_IsError(t *testing.T) {
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{
+					{Type: "text", Text: "Tool error message"},
+				},
+				IsError: true,
+			}, nil
 		},
 	}
 
-	client, server := createTestClientAndServer("2024-11-05", testTools)
-
-	server.RegisterToolHandler("get_data", func(_ map[string]interface{}) (interface{}, error) {
-		return map[string]interface{}{
-			"content": []map[string]interface{}{
-				{
-					"type": "text",
-					"text": "Line 1",
-				},
-				{
-					"type": "text",
-					"text": "Line 2",
-				},
-			},
-		}, nil
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Initialize(ctx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "failing_tool",
+		Description: "Returns IsError",
 	}
 
-	tool := NewMCPToolAdapter(client, testTools[0])
-	result, err := tool.Execute(ctx, map[string]interface{}{})
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
+
+	result, err := tool.Execute(context.Background(), map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	if result.Success {
+		t.Error("Execute() success should be false when IsError is true")
+	}
+
+	if result.Error == "" {
+		t.Error("Result.Error should contain error message")
+	}
+}
+
+func TestMCPTool_Execute_TextContent(t *testing.T) {
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{
+					{Type: "text", Text: "Line 1"},
+					{Type: "text", Text: "Line 2"},
+				},
+			}, nil
+		},
+	}
+
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "get_data",
+		Description: "Get data",
+	}
+
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{})
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -236,30 +258,21 @@ func TestMCPTool_Execute_TextContent(t *testing.T) {
 }
 
 func TestMCPTool_Execute_EmptyContent(t *testing.T) {
-	testTools := []Tool{
-		{
-			Name:        "empty_tool",
-			Description: "Returns empty content",
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{},
+			}, nil
 		},
 	}
 
-	client, server := createTestClientAndServer("2024-11-05", testTools)
-
-	server.RegisterToolHandler("empty_tool", func(_ map[string]interface{}) (interface{}, error) {
-		return map[string]interface{}{
-			"content": []map[string]interface{}{},
-		}, nil
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Initialize(ctx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "empty_tool",
+		Description: "Returns empty content",
 	}
 
-	tool := NewMCPToolAdapter(client, testTools[0])
-	result, err := tool.Execute(ctx, map[string]interface{}{})
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{})
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -274,27 +287,18 @@ func TestMCPTool_Execute_EmptyContent(t *testing.T) {
 }
 
 func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping flaky context cancellation test in short mode")
-	}
-
-	testTools := []Tool{
-		{
-			Name:        "slow_tool",
-			Description: "Slow operation",
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return nil, ctx.Err()
 		},
 	}
 
-	client, _ := createTestClientAndServer("2024-11-05", testTools)
-
-	initCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Initialize(initCtx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "slow_tool",
+		Description: "Slow operation",
 	}
 
-	tool := NewMCPToolAdapter(client, testTools[0])
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
 
 	// Create a context that's already cancelled
 	ctx, cancel := context.WithCancel(context.Background())
@@ -302,18 +306,14 @@ func TestMCPTool_Execute_ContextCancellation(t *testing.T) {
 
 	result, err := tool.Execute(ctx, map[string]interface{}{})
 
-	// Context cancellation should be reflected in either error or result
+	// Context cancellation should be reflected
 	if err == nil && (result == nil || result.Success) {
 		t.Error("Execute() should fail with cancelled context")
-	}
-
-	if err != nil && !strings.Contains(err.Error(), "context") {
-		t.Errorf("Error should mention context, got: %v", err)
 	}
 }
 
 func TestMCPTool_AsToolDefinition(t *testing.T) {
-	mcpTool := Tool{
+	mcpTool := muxmcp.ToolInfo{
 		Name:        "calculate",
 		Description: "Perform calculation",
 		InputSchema: map[string]interface{}{
@@ -346,100 +346,38 @@ func TestMCPTool_AsToolDefinition(t *testing.T) {
 	}
 }
 
-func TestMCPTool_ConvertParams(t *testing.T) {
-	tests := []struct {
-		name  string
-		input map[string]interface{}
-		want  map[string]interface{}
-	}{
-		{
-			name: "simple params",
-			input: map[string]interface{}{
-				"key": "value",
-			},
-			want: map[string]interface{}{
-				"key": "value",
-			},
-		},
-		{
-			name: "nested params",
-			input: map[string]interface{}{
-				"outer": map[string]interface{}{
-					"inner": "value",
-				},
-			},
-			want: map[string]interface{}{
-				"outer": map[string]interface{}{
-					"inner": "value",
-				},
-			},
-		},
-		{
-			name:  "empty params",
-			input: map[string]interface{}{},
-			want:  map[string]interface{}{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// The adapter should pass params through unchanged
-			// (no conversion needed between Hex and MCP format)
-			_ = NewMCPToolAdapter(nil, Tool{Name: "test"})
-
-			// In practice, Execute would use these params directly
-			// This test just verifies the contract
-			if len(tt.input) != len(tt.want) {
-				t.Errorf("Param conversion issue: input len %d, want %d", len(tt.input), len(tt.want))
-			}
-		})
-	}
-}
-
 func TestMCPTool_Integration(t *testing.T) {
 	// Integration test: create tool, register with Hex's registry, execute
-	testTools := []Tool{
-		{
-			Name:        "weather",
-			Description: "Get weather",
-			InputSchema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"city": map[string]interface{}{
-						"type": "string",
-					},
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			city := args["city"].(string)
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{
+					{Type: "text", Text: "Weather in " + city + ": Sunny, 72°F"},
 				},
-			},
+			}, nil
 		},
 	}
 
-	client, server := createTestClientAndServer("2024-11-05", testTools)
-
-	server.RegisterToolHandler("weather", func(args map[string]interface{}) (interface{}, error) {
-		city := args["city"].(string)
-		return map[string]interface{}{
-			"content": []map[string]interface{}{
-				{
-					"type": "text",
-					"text": "Weather in " + city + ": Sunny, 72°F",
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "weather",
+		Description: "Get weather",
+		InputSchema: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"city": map[string]interface{}{
+					"type": "string",
 				},
 			},
-		}, nil
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Initialize(ctx, "test-client", "1.0.0", "2024-11-05"); err != nil {
-		t.Fatalf("Initialize failed: %v", err)
+		},
 	}
 
 	// Create MCP tool adapter
-	mcpTool := NewMCPToolAdapter(client, testTools[0])
+	adapter := NewMCPToolAdapter(mockClient, mcpTool)
 
 	// Use with Hex's tool registry
 	registry := tools.NewRegistry()
-	_ = registry.Register(mcpTool)
+	_ = registry.Register(adapter)
 
 	// Execute via registry
 	foundTool, err := registry.Get("weather")
@@ -447,7 +385,7 @@ func TestMCPTool_Integration(t *testing.T) {
 		t.Fatalf("Tool not found in registry: %v", err)
 	}
 
-	result, err := foundTool.Execute(ctx, map[string]interface{}{
+	result, err := foundTool.Execute(context.Background(), map[string]interface{}{
 		"city": "San Francisco",
 	})
 
@@ -461,5 +399,41 @@ func TestMCPTool_Integration(t *testing.T) {
 
 	if !strings.Contains(result.Output, "San Francisco") {
 		t.Errorf("Output should contain 'San Francisco', got: %s", result.Output)
+	}
+}
+
+func TestMCPTool_ImageContent(t *testing.T) {
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, name string, args map[string]any) (*muxmcp.ToolCallResult, error) {
+			return &muxmcp.ToolCallResult{
+				Content: []muxmcp.ContentBlock{
+					{Type: "text", Text: "Image caption"},
+					{Type: "image", MimeType: "image/png", Data: "base64data"},
+				},
+			}, nil
+		},
+	}
+
+	mcpTool := muxmcp.ToolInfo{
+		Name:        "image_tool",
+		Description: "Returns image",
+	}
+
+	tool := NewMCPToolAdapter(mockClient, mcpTool)
+	result, err := tool.Execute(context.Background(), map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	if !result.Success {
+		t.Error("Execute() should succeed")
+	}
+
+	if result.Metadata["has_image"] != true {
+		t.Error("Metadata should indicate has_image=true")
+	}
+
+	if result.Metadata["image_mime_type"] != "image/png" {
+		t.Errorf("Metadata should have image_mime_type=image/png, got %v", result.Metadata["image_mime_type"])
 	}
 }

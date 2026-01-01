@@ -1,5 +1,5 @@
 // ABOUTME: MCP tool loader that integrates MCP servers with Hex's tool registry
-// ABOUTME: Loads .mcp.json config and initializes MCP clients with their tools
+// ABOUTME: Loads .mcp.json config and initializes mux MCP clients with their tools
 
 package mcp
 
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/2389-research/hex/internal/tools"
+	muxmcp "github.com/2389-research/mux/mcp"
 )
 
 // LoadMCPTools loads MCP server configurations from .mcp.json and registers their tools
@@ -58,22 +59,30 @@ func loadServerTools(serverConfig ServerConfig, registry *tools.Registry) error 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Create MCP client
-	client, err := NewClient(serverConfig.Command, serverConfig.Args...)
+	// Convert hex config to mux config
+	muxConfig := muxmcp.ServerConfig{
+		Name:    serverConfig.Name,
+		Command: serverConfig.Command,
+		Args:    serverConfig.Args,
+		Env:     serverConfig.Env,
+	}
+
+	// Create mux MCP client
+	client, err := muxmcp.NewClient(muxConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 
-	// Initialize the client
-	if initErr := client.Initialize(ctx, "hex", "0.1.0", "2024-11-05"); initErr != nil {
-		_ = client.Shutdown()
-		return fmt.Errorf("failed to initialize: %w", initErr)
+	// Start the client (handles initialization handshake)
+	if startErr := client.Start(ctx); startErr != nil {
+		_ = client.Close()
+		return fmt.Errorf("failed to start: %w", startErr)
 	}
 
 	// List available tools
 	mcpTools, err := client.ListTools(ctx)
 	if err != nil {
-		_ = client.Shutdown()
+		_ = client.Close()
 		return fmt.Errorf("failed to list tools: %w", err)
 	}
 
@@ -87,9 +96,9 @@ func loadServerTools(serverConfig ServerConfig, registry *tools.Registry) error 
 		}
 	}
 
-	// Note: We don't shutdown the client here - it needs to stay alive
+	// Note: We don't close the client here - it needs to stay alive
 	// to handle tool executions. In a production system, we'd need
-	// proper lifecycle management to shut down clients on exit.
+	// proper lifecycle management to close clients on exit.
 
 	return nil
 }

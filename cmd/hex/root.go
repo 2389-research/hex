@@ -19,15 +19,13 @@ import (
 	"github.com/2389-research/hex/internal/mcp"
 	"github.com/2389-research/hex/internal/permissions"
 	"github.com/2389-research/hex/internal/providers"
-	"github.com/2389-research/hex/internal/providers/gemini"
-	"github.com/2389-research/hex/internal/providers/openai"
-	"github.com/2389-research/hex/internal/providers/openrouter"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/shutdown"
 	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/templates"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/ui"
+	"github.com/2389-research/mux/llm"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -313,9 +311,10 @@ func runInteractive(prompt string) error {
 		"openai":     true,
 		"gemini":     true,
 		"openrouter": true,
+		"ollama":     true,
 	}
 	if !validProviders[providerName] {
-		return fmt.Errorf("unknown provider '%s'. Supported providers: anthropic, openai, gemini, openrouter", providerName)
+		return fmt.Errorf("unknown provider '%s'. Supported providers: anthropic, openai, gemini, openrouter, ollama", providerName)
 	}
 	logging.InfoWith("Using provider", "provider", providerName)
 
@@ -355,7 +354,7 @@ func runInteractive(prompt string) error {
 			modelName = "claude-sonnet-4-5-20250929"
 		} else {
 			// Non-Anthropic providers require explicit --model flag
-			return fmt.Errorf("--model flag is required when using --provider=%s\n\nExample models:\n  anthropic: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101, claude-haiku-4-5-20251001\n  openai: gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini\n  gemini: gemini-2.5-pro, gemini-2.5-flash, gemini-pro-latest\n  openrouter: anthropic/claude-sonnet-4-5, openai/gpt-5.1, google/gemini-2.5-pro", providerName)
+			return fmt.Errorf("--model flag is required when using --provider=%s\n\nExample models:\n  anthropic: claude-sonnet-4-5-20250929, claude-opus-4-5-20251101, claude-haiku-4-5-20251001\n  openai: gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-mini\n  gemini: gemini-2.5-pro, gemini-2.5-flash, gemini-pro-latest\n  openrouter: anthropic/claude-sonnet-4-5, openai/gpt-5.1, google/gemini-2.5-pro\n  ollama: llama3.2, codellama, mistral, mixtral", providerName)
 		}
 	}
 
@@ -764,61 +763,71 @@ func createPermissionChecker() (*permissions.Checker, error) {
 }
 
 // createProvider creates the appropriate provider based on config and provider name
+// Uses mux's battle-tested LLM clients wrapped in MuxAdapter
 func createProvider(cfg *core.Config, providerName string) (providers.Provider, error) {
-	// Get provider-specific config
+	// Get provider-specific config (may not exist for ollama which is configless)
 	providerCfg, ok := cfg.ProviderConfigs[providerName]
 	if !ok {
-		return nil, fmt.Errorf("no configuration found for provider '%s'", providerName)
+		providerCfg = core.ProviderConfig{} // Use empty config
 	}
 
 	// Check for provider-specific environment variables
-	envKey := ""
 	switch providerName {
 	case "anthropic":
-		envKey = os.Getenv("ANTHROPIC_API_KEY")
+		if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
+			providerCfg.APIKey = envKey
+		}
 	case "openai":
-		envKey = os.Getenv("OPENAI_API_KEY")
+		if envKey := os.Getenv("OPENAI_API_KEY"); envKey != "" {
+			providerCfg.APIKey = envKey
+		}
 	case "gemini":
-		envKey = os.Getenv("GEMINI_API_KEY")
+		if envKey := os.Getenv("GEMINI_API_KEY"); envKey != "" {
+			providerCfg.APIKey = envKey
+		}
 	case "openrouter":
-		envKey = os.Getenv("OPENROUTER_API_KEY")
-	}
-	if envKey != "" {
-		providerCfg.APIKey = envKey
+		if envKey := os.Getenv("OPENROUTER_API_KEY"); envKey != "" {
+			providerCfg.APIKey = envKey
+		}
+	case "ollama":
+		// Ollama is local, no API key needed
+		// Use OLLAMA_HOST if set, otherwise default to localhost
+		if host := os.Getenv("OLLAMA_HOST"); host != "" {
+			providerCfg.BaseURL = host
+		} else if providerCfg.BaseURL == "" {
+			providerCfg.BaseURL = "http://localhost:11434/v1"
+		}
 	}
 
-	// Validate we have an API key
-	if providerCfg.APIKey == "" {
+	// Validate we have an API key (except for ollama which is local)
+	if providerName != "ollama" && providerCfg.APIKey == "" {
 		return nil, fmt.Errorf("API key not configured for provider '%s'. Set %s_API_KEY environment variable or add to config",
 			providerName, strings.ToUpper(providerName))
 	}
 
-	// Convert to providers.ProviderConfig
-	config := providers.ProviderConfig{
-		APIKey:  providerCfg.APIKey,
-		BaseURL: providerCfg.BaseURL,
-	}
-
-	// Create appropriate provider
-	var provider providers.Provider
+	// Create appropriate mux LLM client and wrap in adapter
+	// Note: model is passed per-request, not at client creation
+	var client llm.Client
 	switch providerName {
 	case "anthropic":
-		client := core.NewClient(config.APIKey)
-		provider = providers.NewAnthropicAdapter(client)
+		client = llm.NewAnthropicClient(providerCfg.APIKey, "")
 	case "openai":
-		provider = openai.NewProvider(config)
+		client = llm.NewOpenAIClient(providerCfg.APIKey, "")
 	case "gemini":
-		provider = gemini.NewProvider(config)
+		ctx := context.Background()
+		var err error
+		client, err = llm.NewGeminiClient(ctx, providerCfg.APIKey, "")
+		if err != nil {
+			return nil, fmt.Errorf("create gemini client: %w", err)
+		}
 	case "openrouter":
-		provider = openrouter.NewProvider(config)
+		client = llm.NewOpenRouterClient(providerCfg.APIKey, "")
+	case "ollama":
+		client = llm.NewOllamaClient(providerCfg.BaseURL, "")
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", providerName)
 	}
 
-	// Validate provider config
-	if err := provider.ValidateConfig(config); err != nil {
-		return nil, fmt.Errorf("invalid provider config: %w", err)
-	}
-
-	return provider, nil
+	// Wrap mux client in adapter to implement hex's Provider interface
+	return providers.NewMuxAdapter(providerName, client), nil
 }

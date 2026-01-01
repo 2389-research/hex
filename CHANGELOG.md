@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔌 Provider Consolidation via Mux
+
+Major refactoring to consolidate all LLM providers through the mux library, reducing ~800 lines of custom provider code and adding Ollama support.
+
+### Added
+- **Ollama provider**: Local LLM inference support via `--provider=ollama`
+  - Uses `OLLAMA_HOST` environment variable (defaults to `http://localhost:11434`)
+  - Compatible with llama3.2, codellama, mistral, mixtral, and other Ollama models
+- **MuxAdapter**: Single adapter wrapping mux's `llm.Client` interface for all providers
+
+### Changed
+- All LLM providers now use mux library's battle-tested implementations
+- MCP client migrated to use `mux/mcp` client instead of custom implementation
+- Upgraded mux to v0.5.1 (adds Gemini, OpenRouter, Ollama providers)
+- ServerConfig now supports `env` field for MCP server environment variables
+
+### Removed
+- Custom Anthropic adapter (~150 lines) - replaced by mux
+- Custom OpenAI provider (~200 lines) - replaced by mux
+- Custom Gemini provider (~200 lines) - replaced by mux
+- Custom OpenRouter provider (~150 lines) - replaced by mux
+- Custom MCP client (~350 lines) - replaced by mux/mcp
+- Unused MCPToolManager struct
+
+### Dependencies
+- `github.com/2389-research/mux` v0.3.0 → v0.5.1
+
 ---
 
 ## [1.9.3] - 2025-12-31

@@ -13,10 +13,11 @@ import (
 
 // ServerConfig represents an MCP server configuration
 type ServerConfig struct {
-	Name      string   `json:"name"`
-	Transport string   `json:"transport"`
-	Command   string   `json:"command"`
-	Args      []string `json:"args,omitempty"`
+	Name      string            `json:"name"`
+	Transport string            `json:"transport"`
+	Command   string            `json:"command"`
+	Args      []string          `json:"args,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
 }
 
 // MCPConfig represents the .mcp.json configuration file format
