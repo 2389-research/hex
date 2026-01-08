@@ -46,6 +46,7 @@ jobs:
           version: latest
           args: release --clean
         env:
+          GOPRIVATE: github.com/2389-research/*
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
