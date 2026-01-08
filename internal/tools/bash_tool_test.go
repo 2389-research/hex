@@ -686,6 +686,8 @@ func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
 	bashID := result.Metadata["bash_id"].(string)
 
 	// Poll until process completes (with timeout)
+	// Accumulate all output since GetNewOutput() is incremental
+	var allOutput strings.Builder
 	var outputResult *tools.Result
 	maxAttempts := 50 // 5 seconds max
 	for i := 0; i < maxAttempts; i++ {
@@ -695,6 +697,7 @@ func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, outputResult.Success)
+		allOutput.WriteString(outputResult.Output)
 
 		// Check if process is done
 		if done, ok := outputResult.Metadata["done"].(bool); ok && done {
@@ -706,8 +709,8 @@ func TestBashTool_Execute_Background_WithWorkingDirectory(t *testing.T) {
 	done, _ := outputResult.Metadata["done"].(bool)
 	require.True(t, done, "process should have completed within timeout")
 
-	// Verify output contains working directory
-	assert.Contains(t, outputResult.Output, workingDir)
+	// Verify accumulated output contains working directory
+	assert.Contains(t, allOutput.String(), workingDir)
 
 	// Clean up
 	_ = tools.GetBackgroundRegistry().Remove(bashID)
