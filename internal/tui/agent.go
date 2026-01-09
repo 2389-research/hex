@@ -355,15 +355,27 @@ func (a *HexAgent) requestApproval(ctx context.Context, tool *core.ToolUse) (tux
 }
 
 // executeTool runs a tool and returns the result.
-// Stub - will be implemented in Task 8.
 func (a *HexAgent) executeTool(ctx context.Context, tool *core.ToolUse) tools.ToolResult {
-	// TODO: Implement in Task 8
-	return tools.ToolResult{
-		Type:      "tool_result",
-		ToolUseID: tool.ID,
-		Content:   "Tool execution not yet implemented",
-		IsError:   true,
+	if a.executor == nil {
+		return tools.ToolResult{
+			Type:      "tool_result",
+			ToolUseID: tool.ID,
+			Content:   "Tool executor not configured",
+			IsError:   true,
+		}
 	}
+
+	result, err := a.executor.Execute(ctx, tool.Name, tool.Input)
+	if err != nil {
+		return tools.ToolResult{
+			Type:      "tool_result",
+			ToolUseID: tool.ID,
+			Content:   err.Error(),
+			IsError:   true,
+		}
+	}
+
+	return tools.ResultToToolResult(result, tool.ID)
 }
 
 // continueWithToolResults sends tool results to API and resumes streaming.
