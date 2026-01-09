@@ -332,6 +332,33 @@ func runRoot(_ *cobra.Command, args []string) error {
 			return fmt.Errorf("register glob tool: %w", regErr)
 		}
 
+		// Register interactive tools (AskUserQuestion, TodoWrite)
+		if regErr := registry.Register(tools.NewAskUserQuestionTool()); regErr != nil {
+			return fmt.Errorf("register ask_user_question tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewTodoWriteTool()); regErr != nil {
+			return fmt.Errorf("register todo_write tool: %w", regErr)
+		}
+
+		// Register research tools (WebFetch, WebSearch)
+		if regErr := registry.Register(tools.NewWebFetchTool()); regErr != nil {
+			return fmt.Errorf("register web_fetch tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewWebSearchTool()); regErr != nil {
+			return fmt.Errorf("register web_search tool: %w", regErr)
+		}
+
+		// Register advanced execution tools (Task, BashOutput, KillShell)
+		if regErr := registry.Register(tools.NewTaskTool()); regErr != nil {
+			return fmt.Errorf("register task tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewBashOutputTool()); regErr != nil {
+			return fmt.Errorf("register bash_output tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewKillShellTool()); regErr != nil {
+			return fmt.Errorf("register kill_shell tool: %w", regErr)
+		}
+
 		executor := tools.NewExecutor(registry, nil)
 
 		return runTuxMode(providerCfg.APIKey, tuxModel, systemPrompt, executor)
