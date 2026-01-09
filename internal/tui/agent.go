@@ -106,14 +106,30 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 
 		// Handle different chunk types
 		switch chunk.Type {
+		case "content_block_start":
+			a.handleContentBlockStart(chunk)
+
 		case "content_block_delta":
-			if chunk.Delta != nil && chunk.Delta.Type == "text_delta" {
-				responseText.WriteString(chunk.Delta.Text)
-				a.emit(tux.Event{
-					Type: tux.EventText,
-					Text: chunk.Delta.Text,
-				})
+			if chunk.Delta != nil {
+				switch chunk.Delta.Type {
+				case "text_delta":
+					responseText.WriteString(chunk.Delta.Text)
+					a.emit(tux.Event{
+						Type: tux.EventText,
+						Text: chunk.Delta.Text,
+					})
+				case "input_json_delta":
+					// Accumulate tool parameter JSON
+					if a.assemblingTool != nil {
+						a.toolInputJSONBuf.WriteString(chunk.Delta.PartialJSON)
+					}
+				}
 			}
+
+		case "content_block_stop":
+			// Will be implemented in Task 5
+			a.handleContentBlockStop()
+
 		case "message_stop":
 			// Add assistant response to history
 			a.mu.Lock()
@@ -123,7 +139,13 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 			})
 			a.mu.Unlock()
 
-			a.emit(tux.Event{Type: tux.EventComplete})
+			// Process any pending tools (to be implemented)
+			if len(a.pendingTools) > 0 {
+				// TODO: Will be implemented in Task 6
+				a.emit(tux.Event{Type: tux.EventComplete})
+			} else {
+				a.emit(tux.Event{Type: tux.EventComplete})
+			}
 		}
 	}
 
@@ -215,4 +237,10 @@ func (a *HexAgent) handleContentBlockStart(chunk *core.StreamChunk) {
 			ToolParams: nil, // Params not yet available
 		})
 	}
+}
+
+// handleContentBlockStop processes a content_block_stop chunk.
+// Stub - will be implemented in Task 5.
+func (a *HexAgent) handleContentBlockStop() {
+	// TODO: Implement in Task 5
 }
