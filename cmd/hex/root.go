@@ -309,7 +309,11 @@ func runRoot(_ *cobra.Command, args []string) error {
 			tuxModel = "claude-sonnet-4-5-20250929"
 		}
 
-		return runTuxMode(providerCfg.APIKey, tuxModel, systemPrompt)
+		// Create tool registry and executor for tux mode
+		registry := tools.NewRegistry()
+		executor := tools.NewExecutor(registry, nil)
+
+		return runTuxMode(providerCfg.APIKey, tuxModel, systemPrompt, executor)
 	}
 
 	if printMode {

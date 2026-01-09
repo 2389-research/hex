@@ -21,6 +21,7 @@ func newTestAgent(model, systemPrompt string) *HexAgent {
 		model:        model,
 		systemPrompt: systemPrompt,
 		messages:     make([]core.Message, 0),
+		executor:     nil, // Tests that don't execute tools
 	}
 }
 

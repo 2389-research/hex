@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/tux"
 )
 
@@ -17,6 +18,9 @@ type HexAgent struct {
 	client       *core.Client
 	model        string
 	systemPrompt string
+
+	// Tool execution
+	executor *tools.Executor
 
 	// Conversation state
 	messages []core.Message
@@ -27,8 +31,8 @@ type HexAgent struct {
 	cancel context.CancelFunc
 }
 
-// NewHexAgent creates a new HexAgent with the given API client.
-func NewHexAgent(client *core.Client, model string, systemPrompt string) *HexAgent {
+// NewHexAgent creates a new HexAgent with the given API client and tool executor.
+func NewHexAgent(client *core.Client, model string, systemPrompt string, executor *tools.Executor) *HexAgent {
 	if client == nil {
 		panic("client cannot be nil")
 	}
@@ -37,6 +41,7 @@ func NewHexAgent(client *core.Client, model string, systemPrompt string) *HexAge
 		model:        model,
 		systemPrompt: systemPrompt,
 		messages:     make([]core.Message, 0),
+		executor:     executor,
 	}
 }
 
