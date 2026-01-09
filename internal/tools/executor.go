@@ -83,6 +83,12 @@ func (e *Executor) SetHookEngine(engine *hooks.Engine) {
 	e.hookEngine = engine
 }
 
+// Registry returns the tool registry associated with this executor.
+// Returns nil if the executor is not initialized.
+func (e *Executor) Registry() *Registry {
+	return e.registry
+}
+
 // Execute runs a tool by name with given parameters
 func (e *Executor) Execute(ctx context.Context, toolName string, params map[string]interface{}) (*Result, error) {
 	// Handle nil parameters

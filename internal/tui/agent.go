@@ -91,6 +91,7 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 		MaxTokens: 8192,
 		Stream:    true,
 		System:    a.systemPrompt,
+		Tools:     a.GetToolDefinitions(),
 	}
 
 	// Start streaming
@@ -217,6 +218,19 @@ func (a *HexAgent) ClearHistory() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.messages = make([]core.Message, 0)
+}
+
+// GetToolDefinitions returns tool definitions for all registered tools.
+// Returns nil if executor or registry is not configured.
+func (a *HexAgent) GetToolDefinitions() []core.ToolDefinition {
+	if a.executor == nil {
+		return nil
+	}
+	registry := a.executor.Registry()
+	if registry == nil {
+		return nil
+	}
+	return registry.GetDefinitions()
 }
 
 // resetToolState clears tool parsing state for a new run.
@@ -413,6 +427,7 @@ func (a *HexAgent) continueWithToolResults(ctx context.Context, results []tools.
 		MaxTokens: 8192,
 		Stream:    true,
 		System:    a.systemPrompt,
+		Tools:     a.GetToolDefinitions(),
 	}
 
 	// Start new stream

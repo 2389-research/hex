@@ -311,6 +311,27 @@ func runRoot(_ *cobra.Command, args []string) error {
 
 		// Create tool registry and executor for tux mode
 		registry := tools.NewRegistry()
+
+		// Register core tools (same as interactive mode)
+		if regErr := registry.Register(tools.NewReadTool()); regErr != nil {
+			return fmt.Errorf("register read tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewWriteTool()); regErr != nil {
+			return fmt.Errorf("register write tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewBashTool()); regErr != nil {
+			return fmt.Errorf("register bash tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewEditTool()); regErr != nil {
+			return fmt.Errorf("register edit tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewGrepTool()); regErr != nil {
+			return fmt.Errorf("register grep tool: %w", regErr)
+		}
+		if regErr := registry.Register(tools.NewGlobTool()); regErr != nil {
+			return fmt.Errorf("register glob tool: %w", regErr)
+		}
+
 		executor := tools.NewExecutor(registry, nil)
 
 		return runTuxMode(providerCfg.APIKey, tuxModel, systemPrompt, executor)
