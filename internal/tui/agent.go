@@ -133,18 +133,21 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 			a.handleContentBlockStop()
 
 		case "message_stop":
-			// Add assistant response to history
-			a.mu.Lock()
-			a.messages = append(a.messages, core.Message{
-				Role:    "assistant",
-				Content: responseText.String(),
-			})
-			a.mu.Unlock()
+			// Add assistant response to history if there's text
+			if responseText.Len() > 0 {
+				a.mu.Lock()
+				a.messages = append(a.messages, core.Message{
+					Role:    "assistant",
+					Content: responseText.String(),
+				})
+				a.mu.Unlock()
+			}
 
-			// Process any pending tools (to be implemented)
+			// Process any pending tools
 			if len(a.pendingTools) > 0 {
-				// TODO: Will be implemented in Task 6
-				a.emit(tux.Event{Type: tux.EventComplete})
+				if err := a.processTools(ctx); err != nil {
+					return err
+				}
 			} else {
 				a.emit(tux.Event{Type: tux.EventComplete})
 			}
@@ -263,4 +266,94 @@ func (a *HexAgent) handleContentBlockStop() {
 	a.pendingTools = append(a.pendingTools, a.assemblingTool)
 	a.assemblingTool = nil
 	a.toolInputJSONBuf.Reset()
+}
+
+// processTools handles pending tools: approval, execution, results.
+func (a *HexAgent) processTools(ctx context.Context) error {
+	var toolResults []tools.ToolResult
+
+	for _, tool := range a.pendingTools {
+		// Check if tool needs approval
+		needsApproval := true
+		if a.executor != nil {
+			// Could check executor's approval rules here
+			// For now, always require approval
+		}
+
+		var approved bool
+		if needsApproval {
+			// Request approval via event
+			decision, err := a.requestApproval(ctx, tool)
+			if err != nil {
+				return err
+			}
+			approved = (decision == tux.DecisionApprove || decision == tux.DecisionAlwaysAllow)
+		} else {
+			approved = true
+		}
+
+		if approved {
+			// Execute tool
+			result := a.executeTool(ctx, tool)
+			toolResults = append(toolResults, result)
+
+			// Emit result event
+			a.emit(tux.Event{
+				Type:       tux.EventToolResult,
+				ToolID:     tool.ID,
+				ToolName:   tool.Name,
+				ToolOutput: result.Content,
+				Success:    !result.IsError,
+			})
+		} else {
+			// Tool denied
+			toolResults = append(toolResults, tools.ToolResult{
+				Type:      "tool_result",
+				ToolUseID: tool.ID,
+				Content:   "Tool execution denied by user",
+				IsError:   true,
+			})
+
+			a.emit(tux.Event{
+				Type:       tux.EventToolResult,
+				ToolID:     tool.ID,
+				ToolName:   tool.Name,
+				ToolOutput: "Tool execution denied by user",
+				Success:    false,
+			})
+		}
+	}
+
+	// Clear pending tools
+	a.pendingTools = nil
+
+	// Continue conversation with tool results
+	return a.continueWithToolResults(ctx, toolResults)
+}
+
+// requestApproval emits an approval event and waits for user decision.
+// Stub - will be implemented in Task 7.
+func (a *HexAgent) requestApproval(ctx context.Context, tool *core.ToolUse) (tux.ApprovalDecision, error) {
+	// TODO: Implement in Task 7
+	return tux.DecisionApprove, nil // Auto-approve for now
+}
+
+// executeTool runs a tool and returns the result.
+// Stub - will be implemented in Task 8.
+func (a *HexAgent) executeTool(ctx context.Context, tool *core.ToolUse) tools.ToolResult {
+	// TODO: Implement in Task 8
+	return tools.ToolResult{
+		Type:      "tool_result",
+		ToolUseID: tool.ID,
+		Content:   "Tool execution not yet implemented",
+		IsError:   true,
+	}
+}
+
+// continueWithToolResults sends tool results to API and resumes streaming.
+// Stub - will be implemented in Task 9.
+func (a *HexAgent) continueWithToolResults(ctx context.Context, results []tools.ToolResult) error {
+	// TODO: Implement in Task 9
+	a.emit(tux.Event{Type: tux.EventComplete})
+	return nil
 }
