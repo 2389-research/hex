@@ -332,10 +332,26 @@ func (a *HexAgent) processTools(ctx context.Context) error {
 }
 
 // requestApproval emits an approval event and waits for user decision.
-// Stub - will be implemented in Task 7.
 func (a *HexAgent) requestApproval(ctx context.Context, tool *core.ToolUse) (tux.ApprovalDecision, error) {
-	// TODO: Implement in Task 7
-	return tux.DecisionApprove, nil // Auto-approve for now
+	// Create response channel
+	responseChan := make(chan tux.ApprovalDecision, 1)
+
+	// Emit approval event with params now available
+	a.emit(tux.Event{
+		Type:       tux.EventApproval,
+		ToolID:     tool.ID,
+		ToolName:   tool.Name,
+		ToolParams: tool.Input,
+		Response:   responseChan,
+	})
+
+	// Wait for decision
+	select {
+	case decision := <-responseChan:
+		return decision, nil
+	case <-ctx.Done():
+		return tux.DecisionDeny, ctx.Err()
+	}
 }
 
 // executeTool runs a tool and returns the result.
