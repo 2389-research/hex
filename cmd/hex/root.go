@@ -90,6 +90,9 @@ var (
 	// Spell system flags
 	spellName string
 	spellMode string
+
+	// Tux-based TUI (experimental)
+	useTux bool
 )
 
 var rootCmd = &cobra.Command{
@@ -150,6 +153,9 @@ func init() {
 	// Spell system flags
 	rootCmd.PersistentFlags().StringVar(&spellName, "spell", "", "Use a spell (agent personality)")
 	rootCmd.PersistentFlags().StringVar(&spellMode, "spell-mode", "", "Override spell mode: replace or layer")
+
+	// Tux-based TUI flag
+	rootCmd.PersistentFlags().BoolVar(&useTux, "tux", false, "Use tux-based TUI (experimental)")
 
 	// Register subcommands
 	rootCmd.AddCommand(visualizeCmd)
@@ -269,6 +275,35 @@ func runRoot(_ *cobra.Command, args []string) error {
 			return fmt.Errorf("setup wizard: %w", err)
 		}
 		// Wizard completed successfully, continue to interactive mode
+	}
+
+	// Tux-based TUI mode (experimental)
+	if useTux {
+		logging.InfoWith("Using tux-based TUI mode", "mode", "experimental")
+
+		// Load config and get API key using same pattern as interactive mode
+		cfg, err := core.LoadConfig()
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
+
+		// Get provider config for Anthropic (tux mode currently only supports Anthropic)
+		providerCfg, ok := cfg.ProviderConfigs["anthropic"]
+		if !ok {
+			providerCfg = core.ProviderConfig{} // Use empty config, will check env var
+		}
+
+		// Check for environment variable override
+		if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
+			providerCfg.APIKey = envKey
+		}
+
+		// Validate API key
+		if providerCfg.APIKey == "" {
+			return fmt.Errorf("API key not configured for Anthropic. Set ANTHROPIC_API_KEY environment variable or add to config")
+		}
+
+		return runTuxMode(providerCfg.APIKey, model, systemPrompt)
 	}
 
 	if printMode {
