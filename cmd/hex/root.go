@@ -303,7 +303,13 @@ func runRoot(_ *cobra.Command, args []string) error {
 			return fmt.Errorf("API key not configured for Anthropic. Set ANTHROPIC_API_KEY environment variable or add to config")
 		}
 
-		return runTuxMode(providerCfg.APIKey, model, systemPrompt)
+		// Use default model if not specified (same as interactive mode)
+		tuxModel := model
+		if tuxModel == "" {
+			tuxModel = "claude-sonnet-4-5-20250929"
+		}
+
+		return runTuxMode(providerCfg.APIKey, tuxModel, systemPrompt)
 	}
 
 	if printMode {
