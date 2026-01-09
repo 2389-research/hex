@@ -5,6 +5,8 @@ package tui
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -240,7 +242,25 @@ func (a *HexAgent) handleContentBlockStart(chunk *core.StreamChunk) {
 }
 
 // handleContentBlockStop processes a content_block_stop chunk.
-// Stub - will be implemented in Task 5.
 func (a *HexAgent) handleContentBlockStop() {
-	// TODO: Implement in Task 5
+	if a.assemblingTool == nil {
+		return
+	}
+
+	// Parse accumulated JSON into Input map
+	jsonStr := a.toolInputJSONBuf.String()
+	if jsonStr != "" {
+		if err := json.Unmarshal([]byte(jsonStr), &a.assemblingTool.Input); err != nil {
+			// Log error but continue - malformed params
+			a.emit(tux.Event{
+				Type:  tux.EventError,
+				Error: fmt.Errorf("parse tool params: %w", err),
+			})
+		}
+	}
+
+	// Add to pending tools
+	a.pendingTools = append(a.pendingTools, a.assemblingTool)
+	a.assemblingTool = nil
+	a.toolInputJSONBuf.Reset()
 }
