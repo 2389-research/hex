@@ -1639,3 +1639,11 @@ func (m *Model) navigateHistoryDown() bool {
 
 	return true
 }
+
+// HasActiveOverlay returns true if any overlay is currently displayed
+func (m *Model) HasActiveOverlay() bool {
+	if m.overlayManager == nil {
+		return false
+	}
+	return m.overlayManager.HasActive()
+}
