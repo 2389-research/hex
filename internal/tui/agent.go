@@ -191,3 +191,28 @@ func (a *HexAgent) resetToolState() {
 	a.toolInputJSONBuf.Reset()
 	a.pendingTools = nil
 }
+
+// handleContentBlockStart processes a content_block_start chunk.
+func (a *HexAgent) handleContentBlockStart(chunk *core.StreamChunk) {
+	if chunk.ContentBlock == nil {
+		return
+	}
+
+	if chunk.ContentBlock.Type == "tool_use" {
+		a.assemblingTool = &core.ToolUse{
+			Type:  "tool_use",
+			ID:    chunk.ContentBlock.ID,
+			Name:  chunk.ContentBlock.Name,
+			Input: make(map[string]interface{}),
+		}
+		a.toolInputJSONBuf.Reset()
+
+		// Emit tool call event (parameters will come in deltas)
+		a.emit(tux.Event{
+			Type:       tux.EventToolCall,
+			ToolID:     chunk.ContentBlock.ID,
+			ToolName:   chunk.ContentBlock.Name,
+			ToolParams: nil, // Params not yet available
+		})
+	}
+}
