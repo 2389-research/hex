@@ -71,6 +71,9 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 		a.mu.Unlock()
 	}()
 
+	// Reset tool state for new run
+	a.resetToolState()
+
 	// Add user message to history
 	a.mu.Lock()
 	a.messages = append(a.messages, core.Message{
@@ -98,7 +101,13 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 	}
 
 	// Process stream
+	return a.processStream(ctx, chunks)
+}
+
+// processStream handles the streaming response from the API.
+func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.StreamChunk) error {
 	var responseText strings.Builder
+
 	for chunk := range chunks {
 		select {
 		case <-ctx.Done():
@@ -121,7 +130,6 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 						Text: chunk.Delta.Text,
 					})
 				case "input_json_delta":
-					// Accumulate tool parameter JSON
 					if a.assemblingTool != nil {
 						a.toolInputJSONBuf.WriteString(chunk.Delta.PartialJSON)
 					}
@@ -129,7 +137,6 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 			}
 
 		case "content_block_stop":
-			// Will be implemented in Task 5
 			a.handleContentBlockStop()
 
 		case "message_stop":
@@ -379,9 +386,42 @@ func (a *HexAgent) executeTool(ctx context.Context, tool *core.ToolUse) tools.To
 }
 
 // continueWithToolResults sends tool results to API and resumes streaming.
-// Stub - will be implemented in Task 9.
 func (a *HexAgent) continueWithToolResults(ctx context.Context, results []tools.ToolResult) error {
-	// TODO: Implement in Task 9
-	a.emit(tux.Event{Type: tux.EventComplete})
-	return nil
+	// Reset tool state for continuation
+	a.resetToolState()
+
+	// Build tool result content blocks
+	contentBlocks := make([]core.ContentBlock, 0, len(results))
+	for _, r := range results {
+		contentBlocks = append(contentBlocks, core.NewToolResultBlock(r.ToolUseID, r.Content))
+	}
+
+	// Add to message history
+	a.mu.Lock()
+	a.messages = append(a.messages, core.Message{
+		Role:         "user",
+		ContentBlock: contentBlocks,
+	})
+	messages := make([]core.Message, len(a.messages))
+	copy(messages, a.messages)
+	a.mu.Unlock()
+
+	// Build continuation request
+	req := core.MessageRequest{
+		Model:     a.model,
+		Messages:  messages,
+		MaxTokens: 8192,
+		Stream:    true,
+		System:    a.systemPrompt,
+	}
+
+	// Start new stream
+	chunks, err := a.client.CreateMessageStream(ctx, req)
+	if err != nil {
+		a.emit(tux.Event{Type: tux.EventError, Error: err})
+		return err
+	}
+
+	// Process continuation stream
+	return a.processStream(ctx, chunks)
 }
