@@ -22,6 +22,11 @@ type HexAgent struct {
 	// Tool execution
 	executor *tools.Executor
 
+	// Tool parsing state (within a single Run)
+	assemblingTool   *core.ToolUse
+	toolInputJSONBuf strings.Builder
+	pendingTools     []*core.ToolUse
+
 	// Conversation state
 	messages []core.Message
 	mu       sync.Mutex
@@ -178,4 +183,11 @@ func (a *HexAgent) ClearHistory() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.messages = make([]core.Message, 0)
+}
+
+// resetToolState clears tool parsing state for a new run.
+func (a *HexAgent) resetToolState() {
+	a.assemblingTool = nil
+	a.toolInputJSONBuf.Reset()
+	a.pendingTools = nil
 }
