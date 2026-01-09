@@ -100,11 +100,13 @@ func (a *BubbleteaAdapter) SimulateStreamStart() error {
 		Role:    "assistant",
 		Content: "",
 	})
+	a.model.ForceUpdateViewport()
 	return nil
 }
 
 func (a *BubbleteaAdapter) SimulateStreamChunk(text string) error {
 	a.model.AppendStreamingText(text)
+	a.model.ForceUpdateViewport()
 	return nil
 }
 
@@ -112,6 +114,7 @@ func (a *BubbleteaAdapter) SimulateStreamEnd() error {
 	a.model.CommitStreamingText()
 	a.model.Streaming = false
 	a.model.SetStatus(ui.StatusIdle)
+	a.model.ForceUpdateViewport()
 	return nil
 }
 
