@@ -129,3 +129,73 @@ func TestHexAgent_CancelMultipleTimes(t *testing.T) {
 	agent.Cancel()
 	agent.Cancel()
 }
+
+func TestHexAgent_ResetToolState(t *testing.T) {
+	agent := newTestAgent("test-model", "test system")
+
+	// Set some state
+	agent.assemblingTool = &core.ToolUse{ID: "test"}
+	agent.toolInputJSONBuf.WriteString("test json")
+	agent.pendingTools = []*core.ToolUse{{ID: "pending"}}
+
+	// Reset
+	agent.resetToolState()
+
+	assert.Nil(t, agent.assemblingTool)
+	assert.Equal(t, "", agent.toolInputJSONBuf.String())
+	assert.Nil(t, agent.pendingTools)
+}
+
+func TestHexAgent_HandleContentBlockStart_ToolUse(t *testing.T) {
+	agent := newTestAgent("test-model", "test system")
+	ch := agent.Subscribe()
+
+	chunk := &core.StreamChunk{
+		Type: "content_block_start",
+		ContentBlock: &core.Content{
+			Type: "tool_use",
+			ID:   "tool_123",
+			Name: "read_file",
+		},
+	}
+
+	agent.handleContentBlockStart(chunk)
+
+	// Verify assembling tool is set
+	require.NotNil(t, agent.assemblingTool)
+	assert.Equal(t, "tool_123", agent.assemblingTool.ID)
+	assert.Equal(t, "read_file", agent.assemblingTool.Name)
+
+	// Verify event was emitted
+	select {
+	case event := <-ch:
+		assert.Equal(t, tux.EventToolCall, event.Type)
+		assert.Equal(t, "tool_123", event.ToolID)
+		assert.Equal(t, "read_file", event.ToolName)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("timeout waiting for event")
+	}
+}
+
+func TestHexAgent_HandleContentBlockStop(t *testing.T) {
+	agent := newTestAgent("test-model", "test system")
+
+	// Set up assembling tool with JSON
+	agent.assemblingTool = &core.ToolUse{
+		ID:    "tool_123",
+		Name:  "read_file",
+		Input: make(map[string]interface{}),
+	}
+	agent.toolInputJSONBuf.WriteString(`{"path":"/test.txt"}`)
+
+	agent.handleContentBlockStop()
+
+	// Verify tool was added to pending
+	require.Len(t, agent.pendingTools, 1)
+	assert.Equal(t, "tool_123", agent.pendingTools[0].ID)
+	assert.Equal(t, "/test.txt", agent.pendingTools[0].Input["path"])
+
+	// Verify assembling state was cleared
+	assert.Nil(t, agent.assemblingTool)
+	assert.Equal(t, "", agent.toolInputJSONBuf.String())
+}
