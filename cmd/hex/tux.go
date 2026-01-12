@@ -70,12 +70,24 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		// User should switch to Chat tab to continue the conversation
 	})
 
+	// Create autocomplete with command provider
+	autocomplete := tux.NewAutocomplete()
+	commands := []tux.Completion{
+		{Value: "/help", Display: "/help", Description: "Show help", Score: 100},
+		{Value: "/new", Display: "/new", Description: "Start new session", Score: 90},
+		{Value: "/history", Display: "/history", Description: "Browse session history", Score: 80},
+		{Value: "/clear", Display: "/clear", Description: "Clear chat display", Score: 70},
+		{Value: "/model", Display: "/model", Description: "Show current model", Score: 60},
+	}
+	autocomplete.RegisterProvider("command", tux.NewCommandProvider(commands))
+
 	// Define help categories for the ? overlay
 	helpCategories := []tux.HelpCategory{
 		{
 			Title: "General",
 			Bindings: []tux.HelpBinding{
 				{Key: "?", Description: "Toggle help overlay"},
+				{Key: "Tab", Description: "Autocomplete commands"},
 				{Key: "Ctrl+C", Description: "Quit"},
 				{Key: "Ctrl+E", Description: "Show errors"},
 				{Key: "Esc", Description: "Toggle input/content focus"},
@@ -114,7 +126,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		},
 	}
 
-	// Create tux app with Dracula theme, History tab, and help
+	// Create tux app with Dracula theme, History tab, help, and autocomplete
 	app = tux.New(agent,
 		tux.WithTheme(th),
 		tux.WithTab(tux.TabDef{
@@ -124,6 +136,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 			Content:  historyContent,
 		}),
 		tux.WithHelpCategories(helpCategories...),
+		tux.WithAutocomplete(autocomplete),
 	)
 
 	// Run the app
