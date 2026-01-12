@@ -557,3 +557,107 @@ func (a *HexAgent) continueWithToolResults(ctx context.Context, results []tools.
 	// Process continuation stream
 	return a.processStream(ctx, chunks)
 }
+
+// NewSession starts a fresh conversation session.
+// This clears the current session and message history.
+func (a *HexAgent) NewSession() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	now := time.Now()
+	a.currentSession = &Session{
+		ID:        uuid.New().String(),
+		CreatedAt: now,
+		UpdatedAt: now,
+		Messages:  make([]SessionMessage, 0),
+	}
+	a.messages = nil // Clear conversation history
+}
+
+// ResumeSession loads and continues an existing session.
+// Returns error if session not found or storage not configured.
+func (a *HexAgent) ResumeSession(id string) error {
+	if a.storage == nil {
+		return fmt.Errorf("session storage not configured")
+	}
+
+	session, err := a.storage.Load(id)
+	if err != nil {
+		return err
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	a.currentSession = session
+	// Convert SessionMessages to core.Messages for API
+	a.messages = convertSessionToMessages(session.Messages)
+	return nil
+}
+
+// convertSessionToMessages converts session messages to API messages.
+// This restores conversation history for API continuation.
+func convertSessionToMessages(sessionMsgs []SessionMessage) []core.Message {
+	messages := make([]core.Message, 0, len(sessionMsgs))
+
+	for _, sm := range sessionMsgs {
+		if sm.Role == "user" {
+			// User messages are simple text
+			messages = append(messages, core.Message{
+				Role:    "user",
+				Content: sm.Content,
+			})
+		} else if sm.Role == "assistant" {
+			// Assistant messages may have tool calls
+			if len(sm.ToolCalls) > 0 {
+				// Build content blocks with text and tool_use blocks
+				var contentBlocks []core.ContentBlock
+				if sm.Content != "" {
+					contentBlocks = append(contentBlocks, core.NewTextBlock(sm.Content))
+				}
+				for _, tc := range sm.ToolCalls {
+					contentBlocks = append(contentBlocks, core.ContentBlock{
+						Type:  "tool_use",
+						ID:    tc.ID,
+						Name:  tc.Name,
+						Input: tc.Input,
+					})
+				}
+				messages = append(messages, core.Message{
+					Role:         "assistant",
+					ContentBlock: contentBlocks,
+				})
+
+				// Add tool results as user message with tool_result blocks
+				var resultBlocks []core.ContentBlock
+				for _, tc := range sm.ToolCalls {
+					resultBlocks = append(resultBlocks, core.NewToolResultBlock(tc.ID, tc.Output))
+				}
+				messages = append(messages, core.Message{
+					Role:         "user",
+					ContentBlock: resultBlocks,
+				})
+			} else {
+				// Text-only assistant message
+				messages = append(messages, core.Message{
+					Role:    "assistant",
+					Content: sm.Content,
+				})
+			}
+		}
+	}
+
+	return messages
+}
+
+// CurrentSession returns the current session, or nil if none.
+func (a *HexAgent) CurrentSession() *Session {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.currentSession
+}
+
+// Storage returns the session storage, or nil if not configured.
+func (a *HexAgent) Storage() *SessionStorage {
+	return a.storage
+}
