@@ -81,12 +81,26 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 	}
 	autocomplete.RegisterProvider("command", tux.NewCommandProvider(commands))
 
+	// Define quick actions for the ':' command palette
+	quickActions := []tux.ListItem{
+		{ID: "read", Title: "read", Description: "Read a file", Value: ":read "},
+		{ID: "grep", Title: "grep", Description: "Search files with pattern", Value: ":grep "},
+		{ID: "glob", Title: "glob", Description: "Find files by pattern", Value: ":glob "},
+		{ID: "web", Title: "web", Description: "Fetch a web page", Value: ":web "},
+		{ID: "bash", Title: "bash", Description: "Run a shell command", Value: ":bash "},
+		{ID: "write", Title: "write", Description: "Write to a file", Value: ":write "},
+		{ID: "edit", Title: "edit", Description: "Edit a file", Value: ":edit "},
+		{ID: "save", Title: "save", Description: "Save conversation", Value: ":save"},
+		{ID: "export", Title: "export", Description: "Export as markdown", Value: ":export"},
+	}
+
 	// Define help categories for the ? overlay
 	helpCategories := []tux.HelpCategory{
 		{
 			Title: "General",
 			Bindings: []tux.HelpBinding{
 				{Key: "?", Description: "Toggle help overlay"},
+				{Key: ":", Description: "Quick actions menu"},
 				{Key: "Tab", Description: "Autocomplete commands"},
 				{Key: "Ctrl+C", Description: "Quit"},
 				{Key: "Ctrl+E", Description: "Show errors"},
@@ -126,7 +140,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		},
 	}
 
-	// Create tux app with Dracula theme, History tab, help, and autocomplete
+	// Create tux app with Dracula theme, History tab, help, autocomplete, and quick actions
 	app = tux.New(agent,
 		tux.WithTheme(th),
 		tux.WithTab(tux.TabDef{
@@ -137,6 +151,20 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		}),
 		tux.WithHelpCategories(helpCategories...),
 		tux.WithAutocomplete(autocomplete),
+		tux.WithQuickActions(func() {
+			modal := tux.NewListModal(tux.ListModalConfig{
+				ID:         "quick-actions",
+				Title:      "Quick Actions",
+				Items:      quickActions,
+				Filterable: true,
+				OnSelect: func(item tux.ListItem) {
+					if value, ok := item.Value.(string); ok {
+						app.SetInputValue(value)
+					}
+				},
+			})
+			app.PushModal(modal)
+		}),
 	)
 
 	// Run the app
