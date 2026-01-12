@@ -32,6 +32,7 @@ require (
 	cloud.google.com/go v0.121.6 // indirect
 	cloud.google.com/go/auth v0.16.4 // indirect
 	cloud.google.com/go/compute/metadata v0.8.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/anthropics/anthropic-sdk-go v1.19.0 // indirect

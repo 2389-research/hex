@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -12,12 +13,19 @@ import (
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/hex/internal/tui"
 	"github.com/2389-research/tux"
-	"github.com/2389-research/tux/theme"
 )
 
 // runTuxMode starts the tux-based TUI.
 // This is called when --tux flag is passed.
 func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) error {
+	// Load UI configuration from ~/.config/hex/ui.toml or other locations
+	cfg, err := tux.LoadConfig("hex")
+	if err != nil {
+		// Log warning but continue with defaults
+		log.Printf("Warning: failed to load UI config: %v", err)
+		cfg = tux.DefaultConfig()
+	}
+
 	// Create API client
 	client := core.NewClient(apiKey)
 
@@ -35,8 +43,9 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 	// Create HexAgent
 	agent := tui.NewHexAgent(client, model, systemPrompt, executor, storage)
 
-	// Create theme (reused for history content)
-	th := theme.NewDraculaTheme()
+	// Build theme from config for components that need it directly
+	// (supports dracula, nord, gruvbox, highcontrast, neoterminal)
+	th := cfg.BuildTheme()
 
 	// Create app pointer - will be set after app creation.
 	// This allows the callback to access app methods.
@@ -148,9 +157,9 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		},
 	}
 
-	// Create tux app with Dracula theme, History tab, help, autocomplete, and quick actions
+	// Create tux app with user config (theme, input settings), History tab, help, autocomplete, and quick actions
 	app = tux.New(agent,
-		tux.WithTheme(th),
+		tux.WithConfig(cfg),
 		tux.WithTab(tux.TabDef{
 			ID:       "history",
 			Label:    "History",
