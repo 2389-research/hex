@@ -107,6 +107,9 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 				{Key: ":", Description: "Quick actions menu"},
 				{Key: "Tab", Description: "Autocomplete commands"},
 				{Key: "Ctrl+→", Description: "Accept suggestion"},
+				{Key: "Ctrl+L", Description: "Clear chat"},
+				{Key: "Ctrl+S", Description: "Save session"},
+				{Key: "Ctrl+F", Description: "Toggle favorite"},
 				{Key: "Ctrl+C", Description: "Quit"},
 				{Key: "Ctrl+E", Description: "Show errors"},
 				{Key: "Esc", Description: "Toggle input/content focus"},
@@ -170,6 +173,23 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 				},
 			})
 			app.PushModal(modal)
+		}),
+		tux.WithClearChat(func() {
+			app.ClearChat()
+		}),
+		tux.WithSave(func() {
+			// Save current session
+			if err := agent.SaveSession(); err != nil {
+				// Error will be shown via status bar
+				_ = err
+			}
+		}),
+		tux.WithToggleFavorite(func() {
+			// Toggle favorite on current session
+			if err := agent.ToggleFavorite(); err != nil {
+				// Error will be shown via status bar
+				_ = err
+			}
 		}),
 	)
 

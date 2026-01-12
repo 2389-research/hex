@@ -661,3 +661,42 @@ func (a *HexAgent) CurrentSession() *Session {
 func (a *HexAgent) Storage() *SessionStorage {
 	return a.storage
 }
+
+// SaveSession saves the current session to storage.
+// Returns error if no session or storage not configured.
+func (a *HexAgent) SaveSession() error {
+	if a.storage == nil {
+		return fmt.Errorf("session storage not configured")
+	}
+
+	a.mu.Lock()
+	session := a.currentSession
+	a.mu.Unlock()
+
+	if session == nil {
+		return fmt.Errorf("no active session")
+	}
+
+	return a.storage.Save(session)
+}
+
+// ToggleFavorite toggles the favorite status of the current session.
+// Returns error if no session or storage not configured.
+func (a *HexAgent) ToggleFavorite() error {
+	if a.storage == nil {
+		return fmt.Errorf("session storage not configured")
+	}
+
+	a.mu.Lock()
+	session := a.currentSession
+	a.mu.Unlock()
+
+	if session == nil {
+		return fmt.Errorf("no active session")
+	}
+
+	session.Favorite = !session.Favorite
+	session.UpdatedAt = time.Now()
+
+	return a.storage.Save(session)
+}
