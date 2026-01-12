@@ -22,6 +22,7 @@ func newTestAgent(model, systemPrompt string) *HexAgent {
 		systemPrompt: systemPrompt,
 		messages:     make([]core.Message, 0),
 		executor:     nil, // Tests that don't execute tools
+		storage:      nil, // No session persistence in tests
 	}
 }
 

@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/tools"
@@ -19,8 +21,19 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 	// Create API client
 	client := core.NewClient(apiKey)
 
+	// Create session storage
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("get home directory: %w", err)
+	}
+	sessionDir := filepath.Join(homeDir, ".hex", "sessions")
+	storage, err := tui.NewSessionStorage(sessionDir)
+	if err != nil {
+		return fmt.Errorf("create session storage: %w", err)
+	}
+
 	// Create HexAgent
-	agent := tui.NewHexAgent(client, model, systemPrompt, executor)
+	agent := tui.NewHexAgent(client, model, systemPrompt, executor, storage)
 
 	// Create tux app with Dracula theme
 	app := tux.New(agent,

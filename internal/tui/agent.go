@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/tux"
+	"github.com/google/uuid"
 )
 
 // HexAgent implements tux.Agent by wrapping hex's API client.
@@ -36,10 +38,15 @@ type HexAgent struct {
 	// Current run state
 	events chan tux.Event
 	cancel context.CancelFunc
+
+	// Session management
+	storage        *SessionStorage
+	currentSession *Session
 }
 
 // NewHexAgent creates a new HexAgent with the given API client and tool executor.
-func NewHexAgent(client *core.Client, model string, systemPrompt string, executor *tools.Executor) *HexAgent {
+// The storage parameter is optional; if nil, sessions will not be persisted.
+func NewHexAgent(client *core.Client, model string, systemPrompt string, executor *tools.Executor, storage *SessionStorage) *HexAgent {
 	if client == nil {
 		panic("client cannot be nil")
 	}
@@ -49,6 +56,7 @@ func NewHexAgent(client *core.Client, model string, systemPrompt string, executo
 		systemPrompt: systemPrompt,
 		messages:     make([]core.Message, 0),
 		executor:     executor,
+		storage:      storage,
 	}
 }
 
@@ -74,14 +82,38 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 	// Reset tool state for new run
 	a.resetToolState()
 
-	// Add user message to history
+	// Initialize session if needed
 	a.mu.Lock()
+	if a.currentSession == nil {
+		now := time.Now()
+		a.currentSession = &Session{
+			ID:        uuid.New().String(),
+			CreatedAt: now,
+			UpdatedAt: now,
+			Messages:  make([]SessionMessage, 0),
+		}
+	}
+
+	// Add user message to history
 	a.messages = append(a.messages, core.Message{
 		Role:    "user",
 		Content: prompt,
 	})
 	messages := make([]core.Message, len(a.messages))
 	copy(messages, a.messages)
+
+	// Add user message to session
+	userMsg := SessionMessage{
+		Role:      "user",
+		Content:   prompt,
+		Timestamp: time.Now(),
+	}
+	a.currentSession.Messages = append(a.currentSession.Messages, userMsg)
+
+	// Set title from first user message
+	if a.currentSession.Title == "" {
+		a.currentSession.Title = GenerateTitle(prompt)
+	}
 	a.mu.Unlock()
 
 	// Build request
@@ -163,7 +195,7 @@ func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.Stream
 				})
 				a.mu.Unlock()
 
-				if err := a.processTools(ctx); err != nil {
+				if err := a.processTools(ctx, responseText.String()); err != nil {
 					return err
 				}
 			} else if responseText.Len() > 0 {
@@ -173,7 +205,22 @@ func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.Stream
 					Role:    "assistant",
 					Content: responseText.String(),
 				})
+
+				// Add assistant message to session and save
+				if a.currentSession != nil {
+					assistantMsg := SessionMessage{
+						Role:      "assistant",
+						Content:   responseText.String(),
+						Timestamp: time.Now(),
+					}
+					a.currentSession.Messages = append(a.currentSession.Messages, assistantMsg)
+					a.currentSession.UpdatedAt = time.Now()
+				}
 				a.mu.Unlock()
+
+				// Save session (outside lock)
+				a.saveSession()
+
 				a.emit(tux.Event{Type: tux.EventComplete})
 			} else {
 				a.emit(tux.Event{Type: tux.EventComplete})
@@ -237,6 +284,20 @@ func (a *HexAgent) ClearHistory() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.messages = make([]core.Message, 0)
+}
+
+// saveSession persists the current session to storage if configured.
+// This is safe to call even if storage or currentSession is nil.
+func (a *HexAgent) saveSession() {
+	a.mu.Lock()
+	storage := a.storage
+	session := a.currentSession
+	a.mu.Unlock()
+
+	if storage != nil && session != nil {
+		// Ignore errors for now - session saving is best-effort
+		_ = storage.Save(session)
+	}
 }
 
 // GetToolDefinitions returns tool definitions for all registered tools.
@@ -309,8 +370,10 @@ func (a *HexAgent) handleContentBlockStop() {
 }
 
 // processTools handles pending tools: approval, execution, results.
-func (a *HexAgent) processTools(ctx context.Context) error {
+// responseText is the text content that preceded the tool calls (may be empty).
+func (a *HexAgent) processTools(ctx context.Context, responseText string) error {
 	var toolResults []tools.ToolResult
+	var sessionToolCalls []SessionToolCall
 
 	for _, tool := range a.pendingTools {
 		// Check if tool needs approval
@@ -337,6 +400,15 @@ func (a *HexAgent) processTools(ctx context.Context) error {
 			result := a.executeTool(ctx, tool)
 			toolResults = append(toolResults, result)
 
+			// Track for session
+			sessionToolCalls = append(sessionToolCalls, SessionToolCall{
+				ID:     tool.ID,
+				Name:   tool.Name,
+				Input:  tool.Input,
+				Output: result.Content,
+				Error:  result.IsError,
+			})
+
 			// Emit result event
 			a.emit(tux.Event{
 				Type:       tux.EventToolResult,
@@ -354,6 +426,15 @@ func (a *HexAgent) processTools(ctx context.Context) error {
 				IsError:   true,
 			})
 
+			// Track denied tool for session
+			sessionToolCalls = append(sessionToolCalls, SessionToolCall{
+				ID:     tool.ID,
+				Name:   tool.Name,
+				Input:  tool.Input,
+				Output: "Tool execution denied by user",
+				Error:  true,
+			})
+
 			a.emit(tux.Event{
 				Type:       tux.EventToolResult,
 				ToolID:     tool.ID,
@@ -363,6 +444,23 @@ func (a *HexAgent) processTools(ctx context.Context) error {
 			})
 		}
 	}
+
+	// Add assistant message with tool calls to session
+	a.mu.Lock()
+	if a.currentSession != nil {
+		assistantMsg := SessionMessage{
+			Role:      "assistant",
+			Content:   responseText,
+			Timestamp: time.Now(),
+			ToolCalls: sessionToolCalls,
+		}
+		a.currentSession.Messages = append(a.currentSession.Messages, assistantMsg)
+		a.currentSession.UpdatedAt = time.Now()
+	}
+	a.mu.Unlock()
+
+	// Save session after tool execution
+	a.saveSession()
 
 	// Clear pending tools
 	a.pendingTools = nil
