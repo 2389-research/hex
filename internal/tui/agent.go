@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/tux"
 )
@@ -55,6 +56,8 @@ func NewHexAgent(client *core.Client, model string, systemPrompt string, executo
 // Run starts the agent with the given prompt.
 // It runs until completion or context cancellation.
 func (a *HexAgent) Run(ctx context.Context, prompt string) error {
+	logging.Debug("HexAgent.Run starting", "prompt", prompt, "model", a.model)
+
 	// Create cancellable context
 	ctx, cancel := context.WithCancel(ctx)
 	a.mu.Lock()
@@ -95,11 +98,14 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 	}
 
 	// Start streaming
+	logging.Debug("HexAgent.Run calling CreateMessageStream", "tools_count", len(req.Tools))
 	chunks, err := a.client.CreateMessageStream(ctx, req)
 	if err != nil {
+		logging.Debug("HexAgent.Run CreateMessageStream error", "error", err)
 		a.emit(tux.Event{Type: tux.EventError, Error: err})
 		return err
 	}
+	logging.Debug("HexAgent.Run got chunks channel, starting processStream")
 
 	// Process stream
 	return a.processStream(ctx, chunks)
@@ -107,9 +113,11 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 
 // processStream handles the streaming response from the API.
 func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.StreamChunk) error {
+	logging.Debug("HexAgent.processStream starting")
 	var responseText strings.Builder
 
 	for chunk := range chunks {
+		logging.Debug("HexAgent.processStream got chunk", "type", chunk.Type)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -141,21 +149,40 @@ func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.Stream
 			a.handleContentBlockStop()
 
 		case "message_stop":
-			// Add assistant response to history if there's text
-			if responseText.Len() > 0 {
+			// Build assistant message with text and/or tool_use blocks
+			if len(a.pendingTools) > 0 {
+				// Assistant message with tool_use blocks
+				var contentBlocks []core.ContentBlock
+				if responseText.Len() > 0 {
+					contentBlocks = append(contentBlocks, core.NewTextBlock(responseText.String()))
+				}
+				for _, tool := range a.pendingTools {
+					contentBlocks = append(contentBlocks, core.ContentBlock{
+						Type:  "tool_use",
+						ID:    tool.ID,
+						Name:  tool.Name,
+						Input: tool.Input,
+					})
+				}
+				a.mu.Lock()
+				a.messages = append(a.messages, core.Message{
+					Role:         "assistant",
+					ContentBlock: contentBlocks,
+				})
+				a.mu.Unlock()
+
+				if err := a.processTools(ctx); err != nil {
+					return err
+				}
+			} else if responseText.Len() > 0 {
+				// Text-only response
 				a.mu.Lock()
 				a.messages = append(a.messages, core.Message{
 					Role:    "assistant",
 					Content: responseText.String(),
 				})
 				a.mu.Unlock()
-			}
-
-			// Process any pending tools
-			if len(a.pendingTools) > 0 {
-				if err := a.processTools(ctx); err != nil {
-					return err
-				}
+				a.emit(tux.Event{Type: tux.EventComplete})
 			} else {
 				a.emit(tux.Event{Type: tux.EventComplete})
 			}
@@ -200,9 +227,12 @@ func (a *HexAgent) emit(event tux.Event) {
 	if ch != nil {
 		select {
 		case ch <- event:
+			logging.Debug("HexAgent.emit sent event", "type", string(event.Type))
 		default:
-			// Channel full, drop event (shouldn't happen with buffered channel)
+			logging.Debug("HexAgent.emit DROPPED event (channel full)", "type", string(event.Type))
 		}
+	} else {
+		logging.Debug("HexAgent.emit NO CHANNEL - event lost", "type", string(event.Type))
 	}
 }
 
