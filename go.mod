@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/2389-research/mux v0.6.0
-	github.com/2389-research/tux v0.0.0-20260112170625-1c6135e26f71
+	github.com/2389-research/tux v0.0.0-20260112174816-802a14f288bf
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/charmbracelet/bubbles v0.21.1-0.20250623103423-23b8fd6302d7

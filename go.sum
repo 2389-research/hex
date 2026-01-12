@@ -16,6 +16,8 @@ github.com/2389-research/tux v0.0.0-20260112170508-f77deaa1fbb4 h1:aJ/29vY5FqBkr
 github.com/2389-research/tux v0.0.0-20260112170508-f77deaa1fbb4/go.mod h1:iW6AAFwY3QPvDLeKC07Y+IxC5SCigtDUAN/p5X1asAs=
 github.com/2389-research/tux v0.0.0-20260112170625-1c6135e26f71 h1:x44p3qDH96u5FJeIr0Ws8PeFISfPLY1lPtw6Pw4ri4c=
 github.com/2389-research/tux v0.0.0-20260112170625-1c6135e26f71/go.mod h1:iW6AAFwY3QPvDLeKC07Y+IxC5SCigtDUAN/p5X1asAs=
+github.com/2389-research/tux v0.0.0-20260112174816-802a14f288bf h1:UotWdCM4UdN+CVJ18wVDkhbWP5oAUiqlgNsjQggsiuw=
+github.com/2389-research/tux v0.0.0-20260112174816-802a14f288bf/go.mod h1:iW6AAFwY3QPvDLeKC07Y+IxC5SCigtDUAN/p5X1asAs=
 github.com/JohannesKaufmann/html-to-markdown v1.6.0 h1:04VXMiE50YYfCfLboJCLcgqF5x+rHJnb1ssNmqpLH/k=
 github.com/JohannesKaufmann/html-to-markdown v1.6.0/go.mod h1:NUI78lGg/a7vpEJTz/0uOcYMaibytE4BUOQS8k78yPQ=
 github.com/MakeNowJust/heredoc v1.0.0 h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ4pzQ=
