@@ -35,9 +35,35 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 	// Create HexAgent
 	agent := tui.NewHexAgent(client, model, systemPrompt, executor, storage)
 
-	// Create tux app with Dracula theme
+	// Create theme (reused for history content)
+	th := theme.NewDraculaTheme()
+
+	// Create history content with callback for session selection.
+	// Note: The callback handles session resumption. User should switch
+	// to Chat tab (via Tab key or Ctrl+1) after selecting a session.
+	historyContent := tui.NewHistoryContent(storage, th, func(session *tui.Session) {
+		if session == nil {
+			return
+		}
+		// Resume the selected session
+		if err := agent.ResumeSession(session.ID); err != nil {
+			// Error handling - session resume failed
+			// The user will see an error when they try to chat
+			return
+		}
+		// Session resumed successfully
+		// User should switch to Chat tab to continue the conversation
+	})
+
+	// Create tux app with Dracula theme and History tab
 	app := tux.New(agent,
-		tux.WithTheme(theme.NewDraculaTheme()),
+		tux.WithTheme(th),
+		tux.WithTab(tux.TabDef{
+			ID:       "history",
+			Label:    "History",
+			Shortcut: "ctrl+h",
+			Content:  historyContent,
+		}),
 	)
 
 	// Run the app

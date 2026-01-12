@@ -401,6 +401,21 @@ func (h *HistoryContent) Sessions() []*Session {
 	return h.sessions
 }
 
+// OnActivate is called when the History tab becomes active.
+// Implements shell.TabContent interface for lifecycle hooks.
+// Returns a command to refresh the session list.
+func (h *HistoryContent) OnActivate() tea.Cmd {
+	return h.loadSessionsCmd()
+}
+
+// OnDeactivate is called when the History tab becomes inactive.
+// Implements shell.TabContent interface for lifecycle hooks.
+func (h *HistoryContent) OnDeactivate() {
+	// Clear delete confirmation state when leaving tab
+	h.deleteConfirm = false
+	h.deleteTarget = -1
+}
+
 // formatRelativeTime formats a time as a human-readable relative string.
 func formatRelativeTime(t time.Time) string {
 	now := time.Now()
