@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/2389-research/hex/internal/core"
-	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/tux"
 )
@@ -56,8 +55,6 @@ func NewHexAgent(client *core.Client, model string, systemPrompt string, executo
 // Run starts the agent with the given prompt.
 // It runs until completion or context cancellation.
 func (a *HexAgent) Run(ctx context.Context, prompt string) error {
-	logging.Debug("HexAgent.Run starting", "prompt", prompt, "model", a.model)
-
 	// Create cancellable context
 	ctx, cancel := context.WithCancel(ctx)
 	a.mu.Lock()
@@ -98,14 +95,11 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 	}
 
 	// Start streaming
-	logging.Debug("HexAgent.Run calling CreateMessageStream", "tools_count", len(req.Tools))
 	chunks, err := a.client.CreateMessageStream(ctx, req)
 	if err != nil {
-		logging.Debug("HexAgent.Run CreateMessageStream error", "error", err)
 		a.emit(tux.Event{Type: tux.EventError, Error: err})
 		return err
 	}
-	logging.Debug("HexAgent.Run got chunks channel, starting processStream")
 
 	// Process stream
 	return a.processStream(ctx, chunks)
@@ -113,11 +107,9 @@ func (a *HexAgent) Run(ctx context.Context, prompt string) error {
 
 // processStream handles the streaming response from the API.
 func (a *HexAgent) processStream(ctx context.Context, chunks <-chan *core.StreamChunk) error {
-	logging.Debug("HexAgent.processStream starting")
 	var responseText strings.Builder
 
 	for chunk := range chunks {
-		logging.Debug("HexAgent.processStream got chunk", "type", chunk.Type)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -227,12 +219,9 @@ func (a *HexAgent) emit(event tux.Event) {
 	if ch != nil {
 		select {
 		case ch <- event:
-			logging.Debug("HexAgent.emit sent event", "type", string(event.Type))
 		default:
-			logging.Debug("HexAgent.emit DROPPED event (channel full)", "type", string(event.Type))
+			// Channel full, drop event (shouldn't happen with buffered channel)
 		}
-	} else {
-		logging.Debug("HexAgent.emit NO CHANNEL - event lost", "type", string(event.Type))
 	}
 }
 
