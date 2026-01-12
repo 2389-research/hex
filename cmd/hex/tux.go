@@ -70,7 +70,51 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		// User should switch to Chat tab to continue the conversation
 	})
 
-	// Create tux app with Dracula theme and History tab
+	// Define help categories for the ? overlay
+	helpCategories := []tux.HelpCategory{
+		{
+			Title: "General",
+			Bindings: []tux.HelpBinding{
+				{Key: "?", Description: "Toggle help overlay"},
+				{Key: "Ctrl+C", Description: "Quit"},
+				{Key: "Ctrl+E", Description: "Show errors"},
+				{Key: "Esc", Description: "Toggle input/content focus"},
+			},
+		},
+		{
+			Title: "Tabs",
+			Bindings: []tux.HelpBinding{
+				{Key: "Alt+1", Description: "Switch to Chat tab"},
+				{Key: "Alt+2", Description: "Switch to Tools tab"},
+				{Key: "Alt+3", Description: "Switch to History tab"},
+				{Key: "Ctrl+H", Description: "Switch to History tab"},
+				{Key: "Ctrl+O", Description: "Switch to Tools tab"},
+			},
+		},
+		{
+			Title: "Chat (when focused)",
+			Bindings: []tux.HelpBinding{
+				{Key: "j/k", Description: "Scroll up/down"},
+				{Key: "g", Description: "Jump to top"},
+				{Key: "G", Description: "Jump to bottom"},
+				{Key: "Ctrl+U/D", Description: "Page up/down"},
+			},
+		},
+		{
+			Title: "History",
+			Bindings: []tux.HelpBinding{
+				{Key: "j/k", Description: "Navigate sessions"},
+				{Key: "Enter", Description: "Resume session"},
+				{Key: "n", Description: "New session"},
+				{Key: "f", Description: "Toggle favorite"},
+				{Key: "d", Description: "Delete (press twice)"},
+				{Key: "/", Description: "Search sessions"},
+				{Key: "r", Description: "Refresh list"},
+			},
+		},
+	}
+
+	// Create tux app with Dracula theme, History tab, and help
 	app = tux.New(agent,
 		tux.WithTheme(th),
 		tux.WithTab(tux.TabDef{
@@ -79,6 +123,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 			Shortcut: "ctrl+h",
 			Content:  historyContent,
 		}),
+		tux.WithHelpCategories(helpCategories...),
 	)
 
 	// Run the app
