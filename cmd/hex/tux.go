@@ -81,6 +81,10 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 	}
 	autocomplete.RegisterProvider("command", tux.NewCommandProvider(commands))
 
+	// Create suggestions with detector
+	suggestions := tux.NewSuggestions()
+	suggestions.SetProvider(tui.NewDetector())
+
 	// Define quick actions for the ':' command palette
 	quickActions := []tux.ListItem{
 		{ID: "read", Title: "read", Description: "Read a file", Value: ":read "},
@@ -102,6 +106,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 				{Key: "?", Description: "Toggle help overlay"},
 				{Key: ":", Description: "Quick actions menu"},
 				{Key: "Tab", Description: "Autocomplete commands"},
+				{Key: "Ctrl+→", Description: "Accept suggestion"},
 				{Key: "Ctrl+C", Description: "Quit"},
 				{Key: "Ctrl+E", Description: "Show errors"},
 				{Key: "Esc", Description: "Toggle input/content focus"},
@@ -151,6 +156,7 @@ func runTuxMode(apiKey, model, systemPrompt string, executor *tools.Executor) er
 		}),
 		tux.WithHelpCategories(helpCategories...),
 		tux.WithAutocomplete(autocomplete),
+		tux.WithSuggestions(suggestions),
 		tux.WithQuickActions(func() {
 			modal := tux.NewListModal(tux.ListModalConfig{
 				ID:         "quick-actions",
