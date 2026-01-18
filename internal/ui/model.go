@@ -385,9 +385,17 @@ func (m *Model) AddMessage(role, content string) {
 	m.updateContextUsage()
 }
 
+// MaxQueueSize is the maximum number of messages that can be queued
+const MaxQueueSize = 100
+
 // QueueMessage adds a message to the queue for processing after current operation
-func (m *Model) QueueMessage(msg string) {
+// Returns false if the queue is full
+func (m *Model) QueueMessage(msg string) bool {
+	if len(m.messageQueue) >= MaxQueueSize {
+		return false
+	}
 	m.messageQueue = append(m.messageQueue, msg)
+	return true
 }
 
 // QueueCount returns the number of queued messages

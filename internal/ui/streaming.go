@@ -352,7 +352,8 @@ func formatTokenRateFloat(rate float64) string {
 	if rate > 999 {
 		return "999+"
 	}
-	return lipgloss.NewStyle().String() + string(rune('0'+int(rate)/100)) + string(rune('0'+(int(rate)%100)/10)) + string(rune('0'+int(rate)%10))
+	// Manual digit conversion for integer token rates
+	return string(rune('0'+int(rate)/100)) + string(rune('0'+(int(rate)%100)/10)) + string(rune('0'+int(rate)%10))
 }
 
 // StreamingStats provides statistics about the streaming session

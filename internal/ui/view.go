@@ -90,9 +90,11 @@ func (m *Model) View() string {
 		// Show queued messages above input if any exist
 		if m.QueueCount() > 0 {
 			// Show first message preview and count using theme styles
+			// Use rune-based truncation to handle UTF-8 properly
 			firstMsg := m.PeekQueue()
-			if len(firstMsg) > 40 {
-				firstMsg = firstMsg[:37] + "..."
+			runes := []rune(firstMsg)
+			if len(runes) > 40 {
+				firstMsg = string(runes[:37]) + "..."
 			}
 			queueIndicator := m.theme.QueueIndicator.Render(fmt.Sprintf("[Q:%d] ", m.QueueCount()))
 			b.WriteString(queueIndicator + m.theme.QueuedMessage.Render("◷ "+firstMsg+" (↑ to edit)") + "\n")

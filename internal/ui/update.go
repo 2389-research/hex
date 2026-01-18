@@ -504,8 +504,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				// Check if waiting for response - if so, queue the message
 				if m.waitingForResponse {
-					// Queue the message for later processing
-					m.QueueMessage(input)
+					// Queue the message for later processing (with cap protection)
+					if !m.QueueMessage(input) {
+						m.ErrorMessage = "Message queue is full (max 100). Please wait for current response."
+						return m, nil
+					}
 					m.Input.Reset()
 					m.updateInputHeight() // Reset height to 1 line after clearing
 					m.updateViewportPreserveScroll()
