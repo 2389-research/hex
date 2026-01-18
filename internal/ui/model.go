@@ -132,8 +132,8 @@ type Model struct {
 	streamChan         <-chan *core.StreamChunk
 	streamCtx          context.Context
 	streamCancel       context.CancelFunc
-	queuedMessage      string // Single queued message to process after current operation
-	waitingForResponse bool   // True from message send until response complete - blocks new input
+	messageQueue       []string // Queue of messages to process after current operation
+	waitingForResponse bool     // True from message send until response complete - blocks new input
 
 	// Phase 4: Service layer integration
 	convSvc  services.ConversationService
@@ -383,6 +383,49 @@ func (m *Model) AddMessage(role, content string) {
 	})
 	// Update context usage after adding message
 	m.updateContextUsage()
+}
+
+// QueueMessage adds a message to the queue for processing after current operation
+func (m *Model) QueueMessage(msg string) {
+	m.messageQueue = append(m.messageQueue, msg)
+}
+
+// QueueCount returns the number of queued messages
+func (m *Model) QueueCount() int {
+	return len(m.messageQueue)
+}
+
+// DrainQueue returns and clears all queued messages
+func (m *Model) DrainQueue() []string {
+	if len(m.messageQueue) == 0 {
+		return nil
+	}
+	queued := m.messageQueue
+	m.messageQueue = nil
+	return queued
+}
+
+// Requeue adds messages back to the front of the queue
+func (m *Model) Requeue(messages []string) {
+	m.messageQueue = append(messages, m.messageQueue...)
+}
+
+// PeekQueue returns the first queued message without removing it
+func (m *Model) PeekQueue() string {
+	if len(m.messageQueue) == 0 {
+		return ""
+	}
+	return m.messageQueue[0]
+}
+
+// PopQueue removes and returns the first queued message
+func (m *Model) PopQueue() string {
+	if len(m.messageQueue) == 0 {
+		return ""
+	}
+	msg := m.messageQueue[0]
+	m.messageQueue = m.messageQueue[1:]
+	return msg
 }
 
 // NextView cycles to the next view mode

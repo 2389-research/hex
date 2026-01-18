@@ -255,6 +255,22 @@ func NewNeoTerminalTheme() *Theme {
 	t.UserMessage = lipgloss.NewStyle().
 		Foreground(t.Colors.Orange)
 
+	t.AssistantMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Green)
+
+	t.ThinkingMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Italic(true)
+
+	// Queue indicator style
+	t.QueueIndicator = lipgloss.NewStyle().
+		Foreground(t.Colors.Orange).
+		Bold(true)
+
+	t.QueuedMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Italic(true)
+
 	return t
 }
 

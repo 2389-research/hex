@@ -1,5 +1,5 @@
 // ABOUTME: Tests for input queuing during waitingForResponse state
-// ABOUTME: Tests single queued message, UP arrow editing, input blocking
+// ABOUTME: Tests message queue array, UP arrow editing, queue processing
 
 package ui
 
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWaitingForResponse_BlocksInput(t *testing.T) {
+func TestWaitingForResponse_QueuesMessage(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.waitingForResponse = true
 
@@ -21,30 +21,33 @@ func TestWaitingForResponse_BlocksInput(t *testing.T) {
 	m := newModel.(*Model)
 
 	// Message should be queued, not added to Messages
-	assert.Equal(t, "queued message", m.queuedMessage)
+	assert.Equal(t, 1, m.QueueCount())
+	assert.Equal(t, "queued message", m.PeekQueue())
 	assert.Empty(t, m.Messages, "Message should not be added to Messages while waiting")
 	assert.Empty(t, m.Input.Value(), "Input should be cleared after queuing")
 }
 
-func TestWaitingForResponse_OnlyOneQueuedMessage(t *testing.T) {
+func TestWaitingForResponse_QueuesMultipleMessages(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.waitingForResponse = true
-	model.queuedMessage = "first message"
+	model.QueueMessage("first message")
 
-	// Try to queue another message
+	// Queue another message
 	model.Input.SetValue("second message")
 	enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
 	newModel, _ := model.Update(enterMsg)
 	m := newModel.(*Model)
 
-	// Should still have first message, second should be ignored
-	assert.Equal(t, "first message", m.queuedMessage)
+	// Should have both messages queued
+	assert.Equal(t, 2, m.QueueCount())
+	assert.Equal(t, "first message", m.PeekQueue())
 }
 
-func TestUpArrow_EditsQueuedMessage(t *testing.T) {
+func TestUpArrow_EditsFirstQueuedMessage(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.waitingForResponse = true
-	model.queuedMessage = "my queued message"
+	model.QueueMessage("first message")
+	model.QueueMessage("second message")
 	model.Input.Focus()
 
 	// Press UP with empty input
@@ -52,15 +55,16 @@ func TestUpArrow_EditsQueuedMessage(t *testing.T) {
 	newModel, _ := model.Update(upMsg)
 	m := newModel.(*Model)
 
-	// Queued message should move to input
-	assert.Empty(t, m.queuedMessage, "Queued message should be cleared")
-	assert.Equal(t, "my queued message", m.Input.Value(), "Input should have queued message")
+	// First queued message should move to input, second remains in queue
+	assert.Equal(t, 1, m.QueueCount())
+	assert.Equal(t, "second message", m.PeekQueue())
+	assert.Equal(t, "first message", m.Input.Value(), "Input should have first queued message")
 }
 
 func TestUpArrow_DoesNotEditIfInputNotEmpty(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.waitingForResponse = true
-	model.queuedMessage = "queued"
+	model.QueueMessage("queued")
 	model.Input.Focus()
 	model.Input.SetValue("typing something")
 
@@ -70,23 +74,22 @@ func TestUpArrow_DoesNotEditIfInputNotEmpty(t *testing.T) {
 	m := newModel.(*Model)
 
 	// Should NOT pull queued message (input is not empty)
-	assert.Equal(t, "queued", m.queuedMessage, "Queued message should remain")
+	assert.Equal(t, 1, m.QueueCount(), "Queued message should remain")
 }
 
-func TestInputBlocked_WhenQueuedMessageExists(t *testing.T) {
+func TestTypingAllowed_WhenQueuedMessagesExist(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.waitingForResponse = true
-	model.queuedMessage = "existing queued message"
+	model.QueueMessage("existing queued message")
 	model.Input.Focus()
 
-	// Try to type - input should be blocked
-	oldValue := model.Input.Value()
+	// Should be able to type even with queued messages
 	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
 	newModel, _ := model.Update(keyMsg)
 	m := newModel.(*Model)
 
-	// Input should not have changed (blocked)
-	assert.Equal(t, oldValue, m.Input.Value(), "Input should be blocked when queued message exists")
+	// Input should have the character (typing allowed)
+	assert.Contains(t, m.Input.Value(), "a", "Typing should be allowed when queued messages exist")
 }
 
 func TestNotWaiting_ProcessesImmediately(t *testing.T) {
@@ -100,7 +103,7 @@ func TestNotWaiting_ProcessesImmediately(t *testing.T) {
 	m := newModel.(*Model)
 
 	// Message should be added to Messages immediately
-	assert.Empty(t, m.queuedMessage, "Should not be queued")
+	assert.Equal(t, 0, m.QueueCount(), "Should not be queued")
 	assert.Len(t, m.Messages, 1, "Message should be added to Messages")
 	assert.Equal(t, "immediate message", m.Messages[0].Content)
 	assert.True(t, m.waitingForResponse, "Should now be waiting for response")
@@ -108,14 +111,14 @@ func TestNotWaiting_ProcessesImmediately(t *testing.T) {
 
 func TestProcessQueuedMessage_AddsToMessages(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
-	model.queuedMessage = "queued message"
+	model.QueueMessage("queued message")
 	model.waitingForResponse = false // Simulate response complete
 
 	// Process queued message
 	cmd := model.processQueuedMessage()
 
 	// Should be added to Messages now
-	assert.Empty(t, model.queuedMessage, "Queued message should be cleared")
+	assert.Equal(t, 0, model.QueueCount(), "Queue should be empty")
 	assert.Len(t, model.Messages, 1, "Message should be added")
 	assert.Equal(t, "queued message", model.Messages[0].Content)
 	assert.True(t, model.waitingForResponse, "Should be waiting again")
@@ -123,9 +126,25 @@ func TestProcessQueuedMessage_AddsToMessages(t *testing.T) {
 	_ = cmd
 }
 
+func TestProcessQueuedMessage_ProcessesFirstOnly(t *testing.T) {
+	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.QueueMessage("first")
+	model.QueueMessage("second")
+	model.QueueMessage("third")
+	model.waitingForResponse = false
+
+	// Process queued message
+	_ = model.processQueuedMessage()
+
+	// Only first should be processed, others remain
+	assert.Equal(t, 2, model.QueueCount())
+	assert.Equal(t, "second", model.PeekQueue())
+	assert.Len(t, model.Messages, 1)
+	assert.Equal(t, "first", model.Messages[0].Content)
+}
+
 func TestProcessQueuedMessage_EmptyQueue(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
-	model.queuedMessage = ""
 
 	cmd := model.processQueuedMessage()
 
@@ -136,7 +155,7 @@ func TestProcessQueuedMessage_EmptyQueue(t *testing.T) {
 
 func TestQueuedMessageDisplay(t *testing.T) {
 	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
-	model.queuedMessage = "test message"
+	model.QueueMessage("test message")
 	model.CurrentView = ViewModeChat
 
 	// Initialize model properly for rendering
@@ -147,8 +166,41 @@ func TestQueuedMessageDisplay(t *testing.T) {
 
 	view := model.View()
 
-	// Should contain the queued message indicator
+	// Should contain the queued message indicator with count
 	assert.Contains(t, view, "test message")
-	assert.Contains(t, view, "queued")
+	assert.Contains(t, view, "[Q:1]")
 	assert.Contains(t, view, "↑ to edit")
+}
+
+func TestQueueMethods(t *testing.T) {
+	model := NewModel("conv-123", "claude-sonnet-4-5-20250929")
+
+	// Test empty queue
+	assert.Equal(t, 0, model.QueueCount())
+	assert.Equal(t, "", model.PeekQueue())
+	assert.Equal(t, "", model.PopQueue())
+	assert.Nil(t, model.DrainQueue())
+
+	// Test adding messages
+	model.QueueMessage("one")
+	model.QueueMessage("two")
+	assert.Equal(t, 2, model.QueueCount())
+	assert.Equal(t, "one", model.PeekQueue())
+
+	// Test PopQueue
+	assert.Equal(t, "one", model.PopQueue())
+	assert.Equal(t, 1, model.QueueCount())
+	assert.Equal(t, "two", model.PeekQueue())
+
+	// Test DrainQueue
+	model.QueueMessage("three")
+	queued := model.DrainQueue()
+	assert.Equal(t, []string{"two", "three"}, queued)
+	assert.Equal(t, 0, model.QueueCount())
+
+	// Test Requeue (adds to front)
+	model.QueueMessage("four")
+	model.Requeue([]string{"one", "two"})
+	assert.Equal(t, 3, model.QueueCount())
+	assert.Equal(t, "one", model.PeekQueue())
 }

@@ -102,7 +102,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Streaming = true // Set streaming flag for queue logic
 		// Show thinking indicator while waiting for first response chunk
 		if m.streamingDisplay != nil {
-			m.streamingDisplay.SetThinking(true, "")
+			m.streamingDisplay.AppendThinkingLine("Thinking")
 		}
 		// Add assistant message placeholder immediately to preserve message ordering
 		// This ensures the assistant response appears after the user message that triggered it,
@@ -449,20 +449,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Handle Tab - trigger autocomplete or switch views
+		// Handle Tab - always switch views (autocomplete triggered by / prefix)
 		if msg.Type == tea.KeyTab {
-			// If textarea is focused and has content, show autocomplete
-			if m.Input.Focused() && m.Input.Value() != "" {
-				provider := DetectProvider(m.Input.Value())
-				m.autocomplete.Show(m.Input.Value(), provider)
-				// Push autocomplete overlay if not already active
-				if m.overlayManager.GetActive() != m.autocompleteOverlay {
-					m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
-					m.adjustViewportForOverlay()
-				}
-				return m, nil
-			}
-			// Otherwise, switch views
 			m.NextView()
 			return m, nil
 		}
@@ -516,12 +504,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				// Check if waiting for response - if so, queue the message
 				if m.waitingForResponse {
-					// Only allow one queued message
-					if m.queuedMessage != "" {
-						// Already have a queued message - ignore
-						return m, nil
-					}
-					m.queuedMessage = input
+					// Queue the message for later processing
+					m.QueueMessage(input)
 					m.Input.Reset()
 					m.updateInputHeight() // Reset height to 1 line after clearing
 					m.updateViewportPreserveScroll()
@@ -579,10 +563,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle UP arrow to edit queued message
-		// If there's a queued message and input is empty, pull it back for editing
-		if m.Input.Focused() && msg.Type == tea.KeyUp && m.queuedMessage != "" && m.Input.Value() == "" {
-			m.Input.SetValue(m.queuedMessage)
-			m.queuedMessage = ""
+		// If there's a queued message and input is empty, pull first one back for editing
+		if m.Input.Focused() && msg.Type == tea.KeyUp && m.QueueCount() > 0 && m.Input.Value() == "" {
+			m.Input.SetValue(m.PopQueue())
 			m.updateViewportPreserveScroll()
 			return m, nil
 		}
@@ -704,8 +687,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Update input (only if not in search mode and no queued message)
-	if !m.SearchMode && m.queuedMessage == "" {
+	// Update input (only if not in search mode - allow typing even with queued messages)
+	if !m.SearchMode {
 		oldValue := m.Input.Value()
 		m.Input, cmd = m.Input.Update(msg)
 		cmds = append(cmds, cmd)
@@ -972,9 +955,9 @@ func (m *Model) handleContentBlockStart(chunk *core.StreamChunk) (tea.Model, tea
 	}
 	m.toolInputJSONBuf = "" // Reset JSON buffer
 
-	// Update streaming display to show tool call in progress
+	// Update streaming display to show tool call in progress (order-preserving)
 	if m.streamingDisplay != nil {
-		m.streamingDisplay.StartToolCall(chunk.ContentBlock.ID, chunk.ContentBlock.Name)
+		m.streamingDisplay.AppendToolLine(chunk.ContentBlock.Name, chunk.ContentBlock.ID)
 	}
 	m.updateViewport()
 
@@ -1315,16 +1298,15 @@ func (m *Model) streamMessage(_ string) tea.Cmd {
 	}
 }
 
-// processQueuedMessage checks if there's a queued message and processes it
+// processQueuedMessage checks if there's a queued message and processes the first one
 func (m *Model) processQueuedMessage() tea.Cmd {
-	if m.queuedMessage == "" {
-		// No queued message
+	if m.QueueCount() == 0 {
+		// No queued messages
 		return nil
 	}
 
-	// Get and clear the queued message
-	message := m.queuedMessage
-	m.queuedMessage = ""
+	// Get and remove the first queued message
+	message := m.PopQueue()
 
 	// Add the queued message to conversation history now that it's being processed
 	m.AddMessage("user", message)

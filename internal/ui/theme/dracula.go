@@ -117,7 +117,13 @@ type Theme struct {
 	LinkHover lipgloss.Style
 
 	// Message styles
-	UserMessage lipgloss.Style
+	UserMessage      lipgloss.Style
+	AssistantMessage lipgloss.Style
+	ThinkingMessage  lipgloss.Style
+
+	// Queue indicator style
+	QueueIndicator lipgloss.Style
+	QueuedMessage  lipgloss.Style
 }
 
 // NewDraculaTheme creates and returns a new Dracula theme with all styles initialized
@@ -353,6 +359,22 @@ func NewDraculaTheme() *Theme {
 	// Message styles
 	t.UserMessage = lipgloss.NewStyle().
 		Foreground(t.Colors.Cyan)
+
+	t.AssistantMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Green)
+
+	t.ThinkingMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Italic(true)
+
+	// Queue indicator style
+	t.QueueIndicator = lipgloss.NewStyle().
+		Foreground(t.Colors.Orange).
+		Bold(true)
+
+	t.QueuedMessage = lipgloss.NewStyle().
+		Foreground(t.Colors.Comment).
+		Italic(true)
 
 	return t
 }

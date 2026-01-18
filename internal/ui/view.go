@@ -87,12 +87,15 @@ func (m *Model) View() string {
 
 	// Input (only in chat view) - always render in chat mode
 	if m.CurrentView == ViewModeChat {
-		// Show queued message above input if one exists
-		if m.queuedMessage != "" {
-			queuedStyle := lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#6272A4")).
-				Italic(true)
-			b.WriteString(queuedStyle.Render("◷ "+m.queuedMessage+" (queued · ↑ to edit)") + "\n")
+		// Show queued messages above input if any exist
+		if m.QueueCount() > 0 {
+			// Show first message preview and count using theme styles
+			firstMsg := m.PeekQueue()
+			if len(firstMsg) > 40 {
+				firstMsg = firstMsg[:37] + "..."
+			}
+			queueIndicator := m.theme.QueueIndicator.Render(fmt.Sprintf("[Q:%d] ", m.QueueCount()))
+			b.WriteString(queueIndicator + m.theme.QueuedMessage.Render("◷ "+firstMsg+" (↑ to edit)") + "\n")
 		}
 
 		// Add top border for input

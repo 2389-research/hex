@@ -29,6 +29,8 @@ type StreamingDisplay struct {
 	spinnerFrames []string
 	spinnerFrame  int
 	lastSpinTime  time.Time
+	// Order-preserving streaming content
+	streamingLines []StreamingLine
 }
 
 var (
@@ -64,6 +66,25 @@ type ToolCallProgress struct {
 	Complete   bool
 }
 
+// StreamingLineType identifies what kind of streaming content this is
+type StreamingLineType int
+
+const (
+	// StreamingLineThinking represents thinking/reasoning content
+	StreamingLineThinking StreamingLineType = iota
+	// StreamingLineTool represents tool call content
+	StreamingLineTool
+	// StreamingLineText represents regular text content
+	StreamingLineText
+)
+
+// StreamingLine represents a single line/chunk of streaming content with order preserved
+type StreamingLine struct {
+	Type    StreamingLineType
+	Content string
+	ToolID  string // For tool lines, the tool ID
+}
+
 // NewStreamingDisplay creates a new streaming display manager
 func NewStreamingDisplay() *StreamingDisplay {
 	return &StreamingDisplay{
@@ -95,6 +116,7 @@ func (s *StreamingDisplay) Reset() {
 	s.currentToolCalls = []ToolCallProgress{}
 	s.thinkingActive = false
 	s.thinkingText = ""
+	s.streamingLines = nil
 }
 
 // AppendText adds new text to the streaming buffer
@@ -120,6 +142,88 @@ func (s *StreamingDisplay) AppendText(chunk string) {
 
 	// In typewriter mode, position will be advanced by Update()
 	// (no action needed here)
+
+	// Track in order-preserving list (append to last text line or create new)
+	if len(s.streamingLines) > 0 {
+		last := &s.streamingLines[len(s.streamingLines)-1]
+		if last.Type == StreamingLineText {
+			last.Content += chunk
+			return
+		}
+	}
+	s.streamingLines = append(s.streamingLines, StreamingLine{
+		Type:    StreamingLineText,
+		Content: chunk,
+	})
+}
+
+// AppendThinkingLine adds a thinking line preserving order
+func (s *StreamingDisplay) AppendThinkingLine(text string) {
+	s.streamingLines = append(s.streamingLines, StreamingLine{
+		Type:    StreamingLineThinking,
+		Content: text,
+	})
+	// Also update legacy fields for backward compatibility
+	s.thinkingActive = true
+	s.thinkingText = text
+}
+
+// AppendToolLine adds a tool usage line preserving order
+func (s *StreamingDisplay) AppendToolLine(name, id string) {
+	s.streamingLines = append(s.streamingLines, StreamingLine{
+		Type:    StreamingLineTool,
+		Content: name,
+		ToolID:  id,
+	})
+	// Also update legacy fields for backward compatibility
+	s.currentToolCalls = append(s.currentToolCalls, ToolCallProgress{
+		Name:       name,
+		ID:         id,
+		InProgress: true,
+		Complete:   false,
+	})
+}
+
+// GetStreamingLines returns all streaming lines in order
+func (s *StreamingDisplay) GetStreamingLines() []StreamingLine {
+	return s.streamingLines
+}
+
+// GetOrderedText returns all text from streaming lines combined
+func (s *StreamingDisplay) GetOrderedText() string {
+	var b strings.Builder
+	for _, line := range s.streamingLines {
+		if line.Type == StreamingLineText {
+			b.WriteString(line.Content)
+		}
+	}
+	return b.String()
+}
+
+// RenderOrderedContent renders streaming lines in order with styles
+func (s *StreamingDisplay) RenderOrderedContent() string {
+	var parts []string
+
+	for _, line := range s.streamingLines {
+		switch line.Type {
+		case StreamingLineThinking:
+			spinner := s.getSpinnerFrame()
+			display := spinner + " " + line.Content
+			parts = append(parts, thinkingStyle.Render(display))
+		case StreamingLineTool:
+			display := "⚙ " + line.Content
+			parts = append(parts, toolCallStyle.Render(display))
+		case StreamingLineText:
+			// Text is rendered separately via GetText() for markdown processing
+			// Skip here to avoid double rendering
+		}
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return strings.Join(parts, "\n")
 }
 
 // GetText returns the current text (respecting typewriter mode)
