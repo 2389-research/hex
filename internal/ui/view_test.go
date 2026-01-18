@@ -75,19 +75,22 @@ func TestViewStatusIndicatorChanges(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.Ready = true
 
-	// Test idle status
+	// Test idle status - shows green dot with "ready"
 	view := model.View()
-	assert.Contains(t, view, "●")
+	assert.Contains(t, view, "◉")
+	assert.Contains(t, view, "ready")
 
-	// Test streaming status
+	// Test streaming status - shows animated dot with "streaming"
 	model.SetStatus(ui.StatusStreaming)
 	view = model.View()
-	assert.Contains(t, view, "●")
+	assert.Contains(t, view, "◎")
+	assert.Contains(t, view, "streaming")
 
-	// Test error status
+	// Test error status - shows error symbol with "error"
 	model.SetStatus(ui.StatusError)
 	view = model.View()
-	assert.Contains(t, view, "●")
+	assert.Contains(t, view, "⊘")
+	assert.Contains(t, view, "error")
 }
 
 func TestViewInitializingState(t *testing.T) {
