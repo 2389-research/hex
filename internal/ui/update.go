@@ -751,6 +751,22 @@ func (m *Model) updateViewport() {
 	m.updateViewportInternal(true)
 }
 
+// UpdateViewport is the exported version of updateViewport for testing harnesses.
+// It refreshes the viewport content from the current Messages slice.
+// Note: This respects the 60fps throttling. Use ForceUpdateViewport for tests
+// that need immediate updates.
+func (m *Model) UpdateViewport() {
+	m.updateViewport()
+}
+
+// ForceUpdateViewport updates the viewport immediately, bypassing throttling.
+// This is intended for testing harnesses where throttling would cause flaky tests.
+func (m *Model) ForceUpdateViewport() {
+	// Reset the last update time to bypass throttling
+	m.lastViewportUpdate = time.Time{}
+	m.updateViewport()
+}
+
 // updateViewportPreserveScroll renders messages without scrolling to bottom
 func (m *Model) updateViewportPreserveScroll() {
 	m.updateViewportInternal(false)

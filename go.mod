@@ -1,9 +1,10 @@
 module github.com/2389-research/hex
 
-go 1.24.1
+go 1.25.5
 
 require (
 	github.com/2389-research/mux v0.6.0
+	github.com/2389-research/tux v0.0.0-20260112174816-802a14f288bf
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/charmbracelet/bubbles v0.21.1-0.20250623103423-23b8fd6302d7
@@ -31,6 +32,7 @@ require (
 	cloud.google.com/go v0.121.6 // indirect
 	cloud.google.com/go/auth v0.16.4 // indirect
 	cloud.google.com/go/compute/metadata v0.8.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/anthropics/anthropic-sdk-go v1.19.0 // indirect
@@ -107,3 +109,5 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+
+replace github.com/2389-research/tux => /Users/dylanr/work/tui
