@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="harper/hex"
+REPO="2389-research/hex"
 BINARY_NAME="hex"
 INSTALL_DIR=""
 USE_SUDO=false

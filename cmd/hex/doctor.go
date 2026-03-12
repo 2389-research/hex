@@ -75,10 +75,10 @@ func checkConfigFile() bool {
 		return false
 	}
 
-	configPath := filepath.Join(home, ".hex", "config.yaml")
+	configPath := filepath.Join(home, ".hex", "config.toml")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		printCheck("Config file", false, "not found")
-		fmt.Println("  Run: hex setup-token <your-api-key>")
+		fmt.Println("  Run: hex setup")
 		return false
 	}
 
@@ -95,8 +95,8 @@ func checkAPIKey() bool {
 
 	if _, err := cfg.GetAPIKey(); err != nil {
 		printCheck("API key", false, "not configured")
-		fmt.Println("  Run: hex setup-token <your-api-key>")
-		fmt.Println("  Or set: export HEX_API_KEY=<your-key>")
+		fmt.Println("  Run: hex setup")
+		fmt.Println("  Or set: export ANTHROPIC_API_KEY=<your-key>")
 		return false
 	}
 

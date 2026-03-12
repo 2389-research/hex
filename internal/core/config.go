@@ -162,7 +162,7 @@ func (c *Config) GetProviderConfig() (ProviderConfig, error) {
 func (c *Config) GetAPIKey() (string, error) {
 	pc, err := c.GetProviderConfig()
 	if err != nil {
-		return "", fmt.Errorf("API key not configured. Set %s_API_KEY or run 'hex setup-token'", c.Provider)
+		return "", fmt.Errorf("API key not configured. Set %s_API_KEY or run 'hex setup'", c.Provider)
 	}
 	return pc.APIKey, nil
 }

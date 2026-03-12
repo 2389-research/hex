@@ -6,12 +6,16 @@ The Task tool enables Hex to spawn sub-agent processes to handle complex, multi-
 
 ## How It Works
 
-The Task tool works by:
+The Task tool supports three execution modes:
 
-1. **Spawning a New Process**: Launches a new `hex` process as a subprocess
-2. **Passing Context**: The prompt and configuration are passed to the subprocess
-3. **Inheriting Environment**: API keys and environment variables are inherited from parent
-4. **Capturing Output**: The subprocess output is captured and returned as the tool result
+1. **Legacy subprocess mode**: Spawns a new `hex --print` process
+2. **Framework mode**: Uses `subagents.Executor` for structured agent execution
+3. **Mux mode**: Runs agents in-process using the mux library
+
+The mode is selected automatically based on configuration. In all modes:
+- The prompt and configuration are passed to the sub-agent
+- API keys and environment variables are inherited from parent
+- Output is captured and returned as the tool result
 
 ## Architecture
 

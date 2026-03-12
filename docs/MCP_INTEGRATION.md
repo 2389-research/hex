@@ -92,7 +92,7 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 - Persist to `.mcp.json`
 - CRUD operations (add, remove, list, update)
 
-**MCP Client** (`internal/mcp/client.go`):
+**MCP Client** (via `github.com/2389-research/mux/mcp` library):
 - JSON-RPC 2.0 communication
 - Process lifecycle (spawn, communicate, cleanup)
 - Protocol handshake and version negotiation
@@ -103,10 +103,10 @@ MCP (Model Context Protocol) is an open standard created by Anthropic that enabl
 - Result format conversion
 - Error handling
 
-**MCP Tool Manager** (`internal/mcp/tool_adapter.go`):
-- Fetch tools from MCP client
-- Manage multiple tool adapters
-- Provide unified tool access
+**MCP Loader** (`internal/mcp/loader.go`):
+- Load server configs from `.mcp.json`
+- Initialize mux MCP clients
+- Register tools with hex's tool registry
 
 ## Components
 
@@ -149,53 +149,42 @@ type MCPConfig struct {
 
 **Purpose**: Communicate with MCP server processes via JSON-RPC 2.0
 
-**Key Types**:
-```go
-type Client struct {
-    cmd       *exec.Cmd          // Server process
-    stdin     io.WriteCloser     // Write JSON-RPC requests
-    stdout    io.ReadCloser      // Read JSON-RPC responses
-    nextID    int32              // Atomic request ID counter
-    pending   map[int]chan Response // Request ID -> response channel
-}
-
-type Tool struct {
-    Name        string                 `json:"name"`
-    Description string                 `json:"description"`
-    InputSchema map[string]interface{} `json:"inputSchema"`
-}
-```
+Hex uses the `github.com/2389-research/mux/mcp` library (`muxmcp`) for MCP client communication rather than a custom implementation.
 
 **Protocol Flow**:
-1. **Initialization**:
+1. **Create Client**:
    ```go
-   client := mcp.NewClient("npx", "-y", "@modelcontextprotocol/server-filesystem", "/data")
-   err := client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
+   muxConfig := muxmcp.ServerConfig{
+       Name:    serverConfig.Name,
+       Command: serverConfig.Command,
+       Args:    serverConfig.Args,
+       Env:     serverConfig.Env,
+   }
+   client, err := muxmcp.NewClient(muxConfig)
    ```
 
-2. **List Tools**:
+2. **Start (handles initialization handshake)**:
+   ```go
+   err := client.Start(ctx)
+   ```
+
+3. **List Tools**:
    ```go
    tools, err := client.ListTools(ctx)
-   // Returns: []Tool with name, description, inputSchema
+   // Returns: []muxmcp.ToolInfo with name, description, inputSchema
    ```
 
-3. **Call Tool**:
+4. **Call Tool**:
    ```go
-   result, err := client.CallTool(ctx, "filesystem_read_file", map[string]interface{}{
+   result, err := client.CallTool(ctx, "read_file", map[string]interface{}{
        "path": "/data/config.json",
    })
-   // Returns: map with "content" array
    ```
 
-4. **Cleanup**:
+5. **Cleanup**:
    ```go
    err := client.Close()
-   // Terminates server process
    ```
-
-**Request ID Management**: Atomic counter ensures unique IDs for concurrent requests
-
-**Response Correlation**: Pending map matches responses to waiting goroutines
 
 ### 3. MCP Tool Adapter
 
@@ -204,8 +193,8 @@ type Tool struct {
 **Key Type**:
 ```go
 type MCPToolAdapter struct {
-    client  *Client  // MCP client for tool execution
-    mcpTool Tool     // Original MCP tool definition
+    client  muxmcp.Client   // MCP client for tool execution
+    mcpTool muxmcp.ToolInfo // Original MCP tool definition
 }
 ```
 
@@ -253,41 +242,24 @@ Hex result format:
 }
 ```
 
-### 4. MCP Tool Manager
+### 4. MCP Loader
 
-**Purpose**: Manage multiple MCP tool adapters from a server
+**Purpose**: Load MCP server configs and register tools with hex's registry
 
-**Key Type**:
+**Workflow** (in `internal/mcp/loader.go`):
 ```go
-type MCPToolManager struct {
-    client *Client                      // MCP client
-    tools  map[string]*MCPToolAdapter  // Tool name -> adapter
-    mu     sync.RWMutex                // Concurrent access protection
-}
+// LoadMCPTools reads .mcp.json and initializes all servers
+err := mcp.LoadMCPTools(baseDir, registry)
+
+// Internally for each server:
+// 1. Create mux client from config
+// 2. Start client (handles handshake)
+// 3. List available tools
+// 4. Create MCPToolAdapter for each tool
+// 5. Register adapters with hex's tool registry
 ```
 
-**Operations**:
-- `RefreshTools(ctx)` - Fetch latest tools from server
-- `GetTools()` - Return all tools as `[]tools.Tool`
-- `GetTool(name)` - Get specific tool by name
-- `Count()` - Number of available tools
-
-**Workflow**:
-```go
-// Create manager for MCP server
-manager := mcp.NewMCPToolManager(client)
-
-// Fetch tools from server
-err := manager.RefreshTools(ctx)
-
-// Get all tools for registration
-mcpTools := manager.GetTools()
-
-// Register with Hex's tool registry
-for _, tool := range mcpTools {
-    hexRegistry.Register(tool)
-}
-```
+Tools are registered directly without name prefixing - if a name collision occurs, the duplicate is silently skipped.
 
 ## Protocol Implementation
 
@@ -488,72 +460,30 @@ for _, tool := range mcpTools {
 ### Loading MCP Tools at Startup
 
 ```go
-// 1. Load server configurations
-registry := mcp.NewRegistry(".")
-if err := registry.Load(); err != nil {
-    return err
-}
-
-// 2. Connect to each server
-servers := registry.ListServers()
-for _, serverConfig := range servers {
-    // 3. Create client
-    client, err := mcp.NewClient(serverConfig.Command, serverConfig.Args...)
-    if err != nil {
-        log.Printf("Failed to connect to %s: %v", serverConfig.Name, err)
-        continue
-    }
-
-    // 4. Initialize handshake
-    err = client.Initialize(ctx, "hex", "1.0.0", "2024-11-05")
-    if err != nil {
-        log.Printf("Failed to initialize %s: %v", serverConfig.Name, err)
-        client.Close()
-        continue
-    }
-
-    // 5. Create tool manager
-    toolManager := mcp.NewMCPToolManager(client)
-    if err := toolManager.RefreshTools(ctx); err != nil {
-        log.Printf("Failed to load tools from %s: %v", serverConfig.Name, err)
-        client.Close()
-        continue
-    }
-
-    // 6. Register tools
-    mcpTools := toolManager.GetTools()
-    for _, tool := range mcpTools {
-        // Add server name prefix to avoid collisions
-        prefixedTool := mcp.WithPrefix(tool, serverConfig.Name)
-        hexRegistry.Register(prefixedTool)
-    }
-
-    log.Printf("Loaded %d tools from %s", len(mcpTools), serverConfig.Name)
+// LoadMCPTools handles everything: config loading, client init, tool registration
+err := mcp.LoadMCPTools(baseDir, hexRegistry)
+if err != nil {
+    log.Printf("Failed to load MCP tools: %v", err)
+    // Hex continues with built-in tools only
 }
 ```
 
+Internally, `LoadMCPTools` (in `internal/mcp/loader.go`):
+1. Reads `.mcp.json` from the base directory
+2. For each server config, creates a `muxmcp.Client`
+3. Starts the client (handles JSON-RPC initialization)
+4. Lists available tools via `client.ListTools(ctx)`
+5. Wraps each tool in an `MCPToolAdapter`
+6. Registers adapters with the hex tool registry
+
 ### Tool Naming Convention
 
-To avoid name collisions between servers and built-in tools, MCP tools are prefixed with their server name:
+MCP tools are registered using their original name from the server. If a name collision occurs (e.g., a tool name matches a built-in tool), the duplicate registration is silently skipped.
 
 **Example**:
 - Server name: `filesystem`
 - Tool name from server: `read_file`
-- Registered name in Hex: `filesystem_read_file`
-
-**Implementation**:
-```go
-func WithPrefix(tool tools.Tool, prefix string) tools.Tool {
-    return &PrefixedToolAdapter{
-        tool:   tool,
-        prefix: prefix,
-    }
-}
-
-func (p *PrefixedToolAdapter) Name() string {
-    return p.prefix + "_" + p.tool.Name()
-}
-```
+- Registered name in Hex: `read_file` (no prefix)
 
 ### Error Handling
 

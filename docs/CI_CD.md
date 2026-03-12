@@ -77,11 +77,9 @@ Creates multi-platform release:
   4. Run GoReleaser to build and publish
 
 **Artifacts Created**:
-- Binaries for: linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64, windows/arm64
-- Archives: tar.gz (Unix), zip (Windows)
+- Binaries for: linux/amd64, linux/arm64, darwin/amd64, darwin/arm64
+- Archives: tar.gz
 - Checksums file (SHA256)
-- Debian/RPM/APK packages
-- Docker images (ghcr.io/harper/hex)
 - GitHub release with notes
 
 ### 2. Publish Homebrew Job
@@ -91,7 +89,7 @@ Updates Homebrew tap:
 - **Depends on**: Release job completion
 - **Steps**:
   1. Extract version from tag
-  2. Trigger repository dispatch to `harper/homebrew-tap`
+  2. Trigger repository dispatch to `2389-research/homebrew-tap`
 
 **Note**: Requires `HOMEBREW_TAP_TOKEN` secret in repository settings.
 
@@ -108,20 +106,20 @@ builds:
     binary: hex
     env:
       - CGO_ENABLED=0  # Static binaries
-    goos: [linux, darwin, windows]
+    goos: [linux, darwin]
     goarch: [amd64, arm64]
     ldflags:
       - -s -w  # Strip debug info
-      - -X github.com/2389-research/hex/internal/core.Version={{.Version}}
-      - -X github.com/2389-research/hex/internal/core.Commit={{.ShortCommit}}
-      - -X github.com/2389-research/hex/internal/core.Date={{.Date}}
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
 ```
 
 ### Archives
 
 - **Naming**: `hex_v1.2.3_Darwin_x86_64.tar.gz`
 - **Includes**: Binary, LICENSE, README.md, CHANGELOG.md, docs/
-- **Format**: tar.gz (Unix), zip (Windows)
+- **Format**: tar.gz
 
 ### Changelog
 
@@ -131,22 +129,6 @@ Automatic changelog generation with sections:
 - Other Changes
 
 Excludes: docs, test, ci, chore commits
-
-### Docker Images
-
-Published to GitHub Container Registry (ghcr.io):
-- `ghcr.io/harper/hex:latest`
-- `ghcr.io/harper/hex:v1`
-- `ghcr.io/harper/hex:v1.2`
-- `ghcr.io/harper/hex:v1.2.3`
-
-### Package Formats
-
-- **Debian** (.deb)
-- **RPM** (.rpm)
-- **Alpine** (.apk)
-
-Installed to: `/usr/bin/hex`
 
 ## Local Development
 
@@ -205,7 +187,7 @@ The CI/CD infrastructure supports multiple installation methods:
 
 ### 1. Install Script
 
-**URL**: `https://raw.githubusercontent.com/harper/hex/main/install.sh`
+**URL**: `https://raw.githubusercontent.com/2389-research/hex/main/install.sh`
 
 **Features**:
 - Auto-detects OS and architecture
@@ -216,18 +198,18 @@ The CI/CD infrastructure supports multiple installation methods:
 
 **Usage**:
 ```bash
-curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/2389-research/hex/main/install.sh | bash
 ```
 
 ### 2. Homebrew
 
-**Tap**: `harper/tap`
+**Tap**: `2389-research/homebrew-tap`
 
 **Maintained by**: GoReleaser (automatic updates)
 
 **Usage**:
 ```bash
-brew install harper/tap/hex
+brew install 2389-research/homebrew-tap/hex
 ```
 
 ### 3. Go Install
@@ -246,39 +228,6 @@ go install github.com/2389-research/hex/cmd/hex@latest
 2. Extract binary
 3. Move to PATH directory
 4. Verify: `hex --version`
-
-### 5. Docker
-
-**Registry**: GitHub Container Registry (ghcr.io)
-
-**Usage**:
-```bash
-# Pull latest
-docker pull ghcr.io/harper/hex:latest
-
-# Run
-docker run -it --rm ghcr.io/harper/hex:latest --help
-```
-
-### 6. Package Managers
-
-**Debian/Ubuntu**:
-```bash
-wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.deb
-sudo dpkg -i hex_1.2.3_Linux_x86_64.deb
-```
-
-**Fedora/RHEL**:
-```bash
-wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.rpm
-sudo rpm -i hex_1.2.3_Linux_x86_64.rpm
-```
-
-**Alpine**:
-```bash
-wget https://github.com/2389-research/hex/releases/download/v1.2.3/hex_1.2.3_Linux_x86_64.apk
-apk add --allow-untrusted hex_1.2.3_Linux_x86_64.apk
-```
 
 ## Release Process
 
@@ -363,8 +312,8 @@ Add to README.md:
 ### Coverage Reports
 
 Coverage uploaded to Codecov.io:
-- View at: https://codecov.io/gh/harper/hex
-- Badge: `[![codecov](https://codecov.io/gh/harper/hex/branch/main/graph/badge.svg)](https://codecov.io/gh/harper/hex)`
+- View at: https://codecov.io/gh/2389-research/hex
+- Badge: `[![codecov](https://codecov.io/gh/2389-research/hex/branch/main/graph/badge.svg)](https://codecov.io/gh/2389-research/hex)`
 
 ## Troubleshooting
 

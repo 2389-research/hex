@@ -70,7 +70,7 @@ Tokens: 0 in / 0 out [Chat] ctrl+c: quit • enter: send • tab: accept
 ### Example 3: URL Detection
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Fetch https://api.github.com/repos/harper/hex                  │
+│ Fetch https://api.github.com/repos/2389-research/hex             │
 └──────────────────────────────────────────────────────────────────┘
 
 ╭──────────────────────────────────────────────────────────────────╮
@@ -78,7 +78,7 @@ Tokens: 0 in / 0 out [Chat] ctrl+c: quit • enter: send • tab: accept
 │                                                                  │
 │ → web_fetch                                                      │
 │   Detected HTTP/HTTPS URL                                       │
-│   Action: :web_fetch https://api.github.com/repos/harper/hex   │
+│   Action: :web_fetch https://api.github.com/repos/2389-research/hex │
 │                                                                  │
 │ Tab: accept • Esc: dismiss                                      │
 ╰──────────────────────────────────────────────────────────────────╯

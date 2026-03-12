@@ -21,24 +21,22 @@ Hex v1.0 is a production-ready Claude CLI with comprehensive tool support, inter
 - ✅ **Print Mode** - Non-interactive command-line queries
 - ✅ **Interactive TUI** - Full-featured Bubbletea interface with streaming
 - ✅ **Conversation Persistence** - SQLite storage with resume support
-- ✅ **Tool System** - 11 built-in tools + extensible via MCP
+- ✅ **Tool System** - 13 built-in tools + extensible via MCP
 - ✅ **MCP Integration** - Model Context Protocol for external tools
 - ✅ **Structured Logging** - JSON and text formats with multiple log levels
 - ✅ **CI/CD Pipeline** - GitHub Actions with comprehensive quality checks
-- ✅ **Multi-Platform** - macOS, Linux, Windows support
+- ✅ **Multi-Platform** - macOS, Linux support
 
-### Built-in Tools (11 Total)
+### Built-in Tools (13 Total)
 **Core**: Read, Write, Bash, Edit, Grep, Glob
 **Advanced**: AskUserQuestion, TodoWrite, WebFetch, WebSearch, Task
 **Process Management**: BashOutput, KillShell
 
-### Distribution Channels (6)
+### Distribution Channels (4)
 1. Homebrew (macOS/Linux)
 2. Install scripts (curl/PowerShell)
-3. Docker images (GHCR)
-4. Binary releases (GitHub)
-5. Linux packages (.deb, .rpm, .apk)
-6. Go install
+3. Binary releases (GitHub)
+4. Go install
 
 ## Quick Start
 
@@ -48,10 +46,10 @@ Hex v1.0 is a production-ready Claude CLI with comprehensive tool support, inter
 
 ```bash
 # macOS and Linux
-curl -sSL https://raw.githubusercontent.com/harper/hex/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/2389-research/hex/main/install.sh | bash
 
 # Windows (PowerShell as Administrator)
-iwr -useb https://raw.githubusercontent.com/harper/hex/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/2389-research/hex/main/install.ps1 | iex
 
 # Verify installation
 hex --version
@@ -61,7 +59,7 @@ hex --version
 
 ```bash
 # Add tap and install
-brew install harper/tap/hex
+brew install 2389-research/homebrew-tap/hex
 
 # Verify installation
 hex --version
@@ -104,7 +102,7 @@ hex --version
 
 ```bash
 # Configure API key
-hex setup-token sk-ant-api03-...
+hex setup
 
 # Verify configuration
 hex doctor
@@ -183,7 +181,7 @@ After 6 phases of development, Hex v1.0 is production-ready with:
 See [Multi-Agent Features Guide](docs/MULTIAGENT_FEATURES.md) for details.
 
 ### Security Notes
-⚠️ **Important**: v1.0 requires **Go 1.24.9+** to address 12 known vulnerabilities in Go stdlib. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) for details.
+⚠️ **Important**: v1.0 requires **Go 1.24.1+**. See [SECURITY_AUDIT.md](docs/development/SECURITY_AUDIT.md) for details.
 
 ## Interactive Mode Features
 
@@ -224,10 +222,13 @@ Type `y` to approve, `n` (or Enter) to deny.
 
 Three ways to configure:
 
-**1. Config file** (`~/.hex/config.yaml`):
-```yaml
-api_key: sk-ant-api03-...
-model: claude-sonnet-4-5-20250929
+**1. Config file** (`~/.hex/config.toml`):
+```toml
+provider = "anthropic"
+model = "claude-sonnet-4-5-20250929"
+
+[providers.anthropic]
+api_key = "sk-ant-api03-..."
 ```
 
 **2. Environment variables**:
@@ -317,15 +318,15 @@ hex
 
 **Development:**
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design and internals
-- **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)** - Visual architecture guide
+- **[ARCHITECTURE_DIAGRAM.md](docs/development/ARCHITECTURE_DIAGRAM.md)** - Visual architecture guide
 - **[examples/mcp/](examples/mcp/)** - MCP server examples and configurations
 
 **Release Information:**
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
-- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** - v1.0.0 release notes
-- **[ROADMAP_UPDATED.md](ROADMAP_UPDATED.md)** - Project roadmap and status
-- **[SECURITY_AUDIT.md](SECURITY_AUDIT.md)** - Security vulnerability report
-- **[KNOWN_ISSUES.md](KNOWN_ISSUES.md)** - Known non-blocking issues
+- **[RELEASE_NOTES.md](docs/archive/RELEASE_NOTES.md)** - v1.0.0 release notes
+- **[ROADMAP_UPDATED.md](docs/development/ROADMAP_UPDATED.md)** - Project roadmap and status
+- **[SECURITY_AUDIT.md](docs/development/SECURITY_AUDIT.md)** - Security vulnerability report
+- **[KNOWN_ISSUES.md](docs/development/KNOWN_ISSUES.md)** - Known non-blocking issues
 
 ## Development
 
@@ -461,9 +462,9 @@ All tool operations include safety features:
 
 ## Requirements
 
-- **Go 1.24.9 or later** (required for security fixes - see [SECURITY_AUDIT.md](SECURITY_AUDIT.md))
+- **Go 1.24.1 or later** (see [SECURITY_AUDIT.md](docs/development/SECURITY_AUDIT.md))
 - Anthropic API key ([get one here](https://console.anthropic.com))
-- macOS, Linux, or Windows
+- macOS or Linux
 
 ## Contributing
 
@@ -478,7 +479,7 @@ Contributions welcome! Please:
 
 **API key not found**:
 ```bash
-hex setup-token sk-ant-api03-...
+hex setup
 hex doctor
 ```
 
@@ -489,10 +490,7 @@ lsof ~/.hex/hex.db
 ```
 
 **Tool timeout**:
-```yaml
-# Increase in config
-tool_timeout: 120
-```
+Bash tool has a default 30s timeout, max 5 minutes. Use shorter commands or break up long operations.
 
 See [USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting.
 
@@ -501,10 +499,10 @@ See [USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting.
 **v1.0.0** (Current - Production Ready ✅):
 - ✅ All core features complete
 - ✅ Interactive TUI with streaming
-- ✅ 11 built-in tools + MCP integration
+- ✅ 13 built-in tools + MCP integration
 - ✅ Structured logging and observability
 - ✅ CI/CD with comprehensive checks
-- ✅ 6 distribution channels
+- ✅ 4 distribution channels
 
 **v1.1** (Q1 2026):
 - Enhanced MCP support (HTTP/SSE transport, resources, prompts)
@@ -526,7 +524,7 @@ See [USER_GUIDE.md](docs/USER_GUIDE.md) for more troubleshooting.
 - Advanced security features
 - Enterprise integrations
 
-See [ROADMAP_UPDATED.md](ROADMAP_UPDATED.md) for detailed plans.
+See [ROADMAP_UPDATED.md](docs/development/ROADMAP_UPDATED.md) for detailed plans.
 
 ## Acknowledgments
 

@@ -4,7 +4,7 @@ Hex uses structured logging to help with debugging, monitoring, and understandin
 
 ## Enabling Logging
 
-By default, logging is set to `info` level and outputs to stderr. You can customize logging behavior using command-line flags.
+By default, logging is set to `info` level. In TUI mode, logs are discarded to avoid disrupting the interface unless `--log-file` or `--debug` is specified. In print mode, logs output to stderr. You can customize logging behavior using command-line flags.
 
 ### Log Levels
 
@@ -45,8 +45,9 @@ hex --log-level debug --log-file debug.log "investigate issue"
 ```
 
 When `--log-file` is specified:
-- Info/warn/error levels: logs only to the file
-- Debug level: logs to both file and stderr for convenience
+- Logs are written to the specified file
+- In TUI mode, logs do not go to stderr (to avoid disrupting the UI)
+- When combined with `--debug`, logs also go to stderr
 
 #### `--log-format`
 

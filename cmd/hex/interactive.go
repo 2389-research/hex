@@ -96,7 +96,7 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 		// Phase 4: Set all services on UI model
 		uiModel.SetServices(convSvc, msgSvc, agentSvc)
 	} else {
-		return fmt.Errorf("API key not configured. Run 'hex setup-token <key>' or set ANTHROPIC_API_KEY environment variable")
+		return fmt.Errorf("API key not configured. Run 'hex setup' or set ANTHROPIC_API_KEY environment variable")
 	}
 
 	// Create tool registry and executor

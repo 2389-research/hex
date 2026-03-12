@@ -1,6 +1,6 @@
-# Contributing to Clem
+# Contributing to Hex
 
-Thank you for your interest in contributing to Clem! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Hex! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -32,14 +32,14 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 2. Clone your fork:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/clem.git
-cd clem
+git clone https://github.com/YOUR_USERNAME/hex.git
+cd hex
 ```
 
 3. Add upstream remote:
 
 ```bash
-git remote add upstream https://github.com/harper/clem.git
+git remote add upstream https://github.com/2389-research/hex.git
 ```
 
 ### Build and Test
@@ -215,8 +215,8 @@ package packagename
 ### Project Structure
 
 ```
-clem/
-├── cmd/clem/           # CLI entry point
+hex/
+├── cmd/hex/           # CLI entry point
 ├── internal/           # Private implementation
 │   ├── core/          # API client, types, config
 │   ├── ui/            # Bubbletea TUI
@@ -241,8 +241,8 @@ import (
     "github.com/spf13/cobra"
 
     // Internal packages
-    "github.com/harper/clem/internal/core"
-    "github.com/harper/clem/internal/ui"
+    "github.com/2389-research/hex/internal/core"
+    "github.com/2389-research/hex/internal/ui"
 )
 ```
 
@@ -333,4 +333,4 @@ Contributors are recognized in:
 - GitHub contributors page
 - Release notes for their contributions
 
-Thank you for contributing to Clem!
+Thank you for contributing to Hex!

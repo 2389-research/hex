@@ -106,18 +106,22 @@ Different tools have different approval rules:
 - Always approved for normal files
 - Requires approval for sensitive paths:
   - `/etc/*` (system config)
-  - `~/.ssh/*` (SSH keys)
-  - `~/.aws/*` (AWS credentials)
-  - `.env` files (secrets)
+  - `/sys/*` (system internals)
+  - `/proc/*` (process info)
+  - `/dev/*` (device files)
+  - `/boot/*` (boot files)
+  - `/root/*` (root home)
+  - `/var/log/*` (system logs)
 
 **Write Tool**:
-- Create mode: Auto-approved (won't overwrite)
+- All write operations require approval
+- Create mode: Requires approval
 - Overwrite mode: Requires approval (destructive)
-- Append mode: Auto-approved (additive)
+- Append mode: Requires approval
 
 **Bash Tool**:
-- Safe commands: Auto-approved (ls, pwd, echo, etc.)
-- Dangerous commands: Requires approval (rm -rf, sudo, curl, etc.)
+- All bash commands require approval
+- Dangerous commands flagged with extra warning (rm -rf, sudo, curl, etc.)
 - Long-running commands (timeout > 60s): Requires approval
 
 ### Approval Security
@@ -136,7 +140,7 @@ Different tools have different approval rules:
 
 ### Summary
 
-Hex provides 13 core tools for file operations, code editing, search, and advanced capabilities:
+Hex provides 15 tools (13 core tools plus Skill and SlashCommand meta-tools) for file operations, code editing, search, and advanced capabilities:
 
 | Tool | Purpose | Approval Rules | Timeout |
 |------|---------|----------------|---------|
@@ -164,7 +168,7 @@ Hex provides 13 core tools for file operations, code editing, search, and advanc
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `file_path` | string | Yes | Absolute or relative path to file |
+| `path` | string | Yes | Absolute or relative path to file |
 
 ### Example Request
 
@@ -172,7 +176,7 @@ Hex provides 13 core tools for file operations, code editing, search, and advanc
 {
   "tool": "read_file",
   "parameters": {
-    "file_path": "/path/to/file.txt"
+    "path": "/path/to/file.txt"
   }
 }
 ```
@@ -185,7 +189,7 @@ Hex provides 13 core tools for file operations, code editing, search, and advanc
 - Checks file exists and is readable
 
 **Size Limits**:
-- Maximum file size: 10MB (configurable)
+- Maximum file size: 1MB (configurable)
 - Prevents memory exhaustion from huge files
 
 **Content Validation**:
@@ -195,11 +199,12 @@ Hex provides 13 core tools for file operations, code editing, search, and advanc
 **Sensitive Path Detection**:
 Requires approval for:
 - `/etc/*` - System configuration
-- `~/.ssh/*` - SSH keys and config
-- `~/.aws/*` - AWS credentials
-- `.env`, `*.env` - Environment secrets
-- `~/.gnupg/*` - GPG keys
-- `/proc/*`, `/sys/*` - System internals
+- `/sys/*` - System internals
+- `/proc/*` - Process information
+- `/dev/*` - Device files
+- `/boot/*` - Boot files
+- `/root/*` - Root home directory
+- `/var/log/*` - System logs
 
 ### Return Value
 
@@ -243,7 +248,7 @@ Requires approval for:
 |-------|--------|----------|
 | File not found | Path doesn't exist | Check path spelling |
 | Permission denied | No read access | Check file permissions |
-| File too large | Size > 10MB | Read in chunks or use bash tool |
+| File too large | Size > 1MB | Read in chunks or use bash tool |
 | Binary file | Non-UTF-8 content | Use bash tool with hexdump |
 
 ## Write Tool
@@ -256,7 +261,7 @@ Requires approval for:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `file_path` | string | Yes | Path to write to |
+| `path` | string | Yes | Path to write to |
 | `content` | string | Yes | Content to write |
 | `mode` | string | No | Operation mode (default: create) |
 
@@ -265,7 +270,7 @@ Requires approval for:
 **create** (default):
 - Creates new file
 - Fails if file already exists
-- Auto-approved (safe)
+- Requires approval
 
 **overwrite**:
 - Replaces existing file
@@ -275,7 +280,7 @@ Requires approval for:
 **append**:
 - Adds to end of existing file
 - Creates file if doesn't exist
-- Auto-approved (non-destructive)
+- Requires approval
 
 ### Example Request
 
@@ -283,7 +288,7 @@ Requires approval for:
 {
   "tool": "write_file",
   "parameters": {
-    "file_path": "/path/to/output.txt",
+    "path": "/path/to/output.txt",
     "content": "Hello, world!",
     "mode": "create"
   }
@@ -349,7 +354,7 @@ Requires approval for:
 
 **Claude**: [Requests write_file with README.md content]
 
-**Hex**: Auto-approved (create mode, new file)
+**Hex**: Requires approval (create mode)
 
 **Tool**: Creates README.md
 
@@ -414,11 +419,10 @@ Requires approval for:
 - `chmod 777` (insecure permissions)
 - `> /dev/sda` (disk writing)
 
-**Safe Commands** (auto-approved):
+**All commands require approval**, including read-only operations like:
 - `ls`, `pwd`, `echo`, `cat`, `grep`
 - `find`, `wc`, `head`, `tail`
 - `git status`, `git log`, `git diff`
-- Read-only operations
 
 ### Return Value
 
@@ -454,7 +458,7 @@ Requires approval for:
 
 **Claude**: [Requests bash with command: find . -name "*.go"]
 
-**Hex**: Auto-approved (safe command)
+**Hex**: Requires approval
 
 **Tool**: Executes and returns file list
 
@@ -466,7 +470,7 @@ Requires approval for:
 ```
 Command: ls -la
 Timeout: 30s (default)
-Status: Auto-approved
+Status: Requires approval
 ```
 
 **Long timeout (requires approval)**:
@@ -2851,15 +2855,12 @@ Find more at: https://github.com/modelcontextprotocol
 ### Permission Levels
 
 **Auto-approved** (safe operations):
-- Reading normal files
-- Creating new files
-- Appending to files
-- Safe bash commands (ls, grep, etc.)
+- Reading normal files (non-sensitive paths)
 
-**Requires approval** (potentially dangerous):
-- Reading sensitive files (/etc, ~/.ssh)
-- Overwriting existing files
-- Dangerous bash commands (rm -rf, sudo)
+**Requires approval** (most operations):
+- Reading sensitive files (/etc, /sys, /proc, /dev, /boot, /root, /var/log)
+- All write operations (create, overwrite, append)
+- All bash commands
 - Long-running commands (>60s timeout)
 
 **Never allowed** (blocked):
@@ -2900,11 +2901,11 @@ Find more at: https://github.com/modelcontextprotocol
 
 **Flow**:
 1. Claude requests `bash(mkdir -p cmd/app internal pkg)`
-2. Auto-approved (safe command)
+2. User approves
 3. Claude requests `write_file(cmd/app/main.go, boilerplate_code, create)`
-4. Auto-approved (create mode)
+4. User approves
 5. Claude requests `write_file(go.mod, module_config, create)`
-6. Auto-approved
+6. User approves
 7. Structure created
 
 ### Example 3: Log Analysis
@@ -2917,7 +2918,7 @@ Find more at: https://github.com/modelcontextprotocol
 3. User approves
 4. Claude reads logs
 5. Claude requests `bash(grep ERROR /var/log/app.log | wc -l)`
-6. Auto-approved (read-only)
+6. User approves
 7. Claude summarizes findings
 
 ### Example 4: Bulk File Operations
@@ -2926,7 +2927,7 @@ Find more at: https://github.com/modelcontextprotocol
 
 **Flow**:
 1. Claude requests `bash(find . -name "*.go" -exec grep -Hn TODO {} \;)`
-2. Auto-approved (safe command)
+2. User approves
 3. Returns list of TODOs
 4. Claude formats and presents results
 
@@ -2936,7 +2937,7 @@ Find more at: https://github.com/modelcontextprotocol
 
 **Flow**:
 1. Claude requests `read_file(config.yaml)`
-2. Auto-approved
+2. User approves
 3. Claude reads current config
 4. Claude generates updated config
 5. Claude requests `write_file(config.yaml, updated_config, overwrite)`
@@ -2980,7 +2981,7 @@ Find more at: https://github.com/modelcontextprotocol
 
 **Symptom**: "File too large" or "Out of memory"
 
-**Cause**: File exceeds 10MB limit
+**Cause**: File exceeds 1MB limit
 
 **Solution**:
 - Use bash tool with `head -n 100 largefile.txt`

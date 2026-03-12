@@ -346,8 +346,18 @@ Once fully integrated, users can:
 └─────────────────────────────────────────┘
 ```
 
-## Summary
+## Integration Status
 
-The hooks system is **75% complete**. The core implementation is solid and tested. The remaining work is integration at specific points in the application lifecycle. Each integration point is straightforward - add a hookEngine field, wire it up, and call the appropriate Fire* method.
+**Core hooks**: Fully implemented and tested (events, config, executor, engine).
+
+**Tool executor hooks**: Integrated (PreToolUse, PostToolUse fire correctly).
+
+**Not yet integrated** (TODO):
+- SessionStart/SessionEnd in `cmd/hex/root.go`
+- UserPromptSubmit in UI message handling
+- Stop event after Claude responses
+- Notification, PermissionRequest, PreCompact events
+
+The remaining work is integration at specific points in the application lifecycle. Each integration point is straightforward - add a hookEngine field, wire it up, and call the appropriate Fire* method.
 
 This implementation follows the Claude Code specification and provides all 10 official hook events with proper matchers, environment variables, and error handling.

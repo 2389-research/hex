@@ -271,7 +271,7 @@ cd hex
 go build -o hex ./cmd/hex
 
 # Configure API key
-./hex setup-token sk-ant-...
+./hex setup
 
 # Start using
 ./hex
@@ -508,7 +508,7 @@ Whether you're refactoring a legacy codebase, implementing a new feature, debugg
 git clone https://github.com/2389-research/hex.git
 cd hex
 go build -o hex ./cmd/hex
-./hex setup-token
+./hex setup
 ./hex
 ```
 

@@ -1,6 +1,6 @@
 # Release Checklist
 
-Checklist for preparing and publishing Clem releases.
+Checklist for preparing and publishing Hex releases.
 
 ## Pre-Release Checklist
 
@@ -35,23 +35,24 @@ Checklist for preparing and publishing Clem releases.
 - [ ] Manual testing on macOS
 - [ ] Manual testing on Linux (if available)
 - [ ] Manual testing on Windows (if available)
-- [ ] Fresh install test (`go install github.com/harper/clem/cmd/clem@latest`)
+- [ ] Fresh install test (`go install github.com/2389-research/hex/cmd/hex@latest`)
 - [ ] Config migration test (if schema changed)
 - [ ] Database migration test (if schema changed)
 - [ ] Upgrade test from previous version
 
 ### Features Verification
 
-For v0.2.0 specifically:
+Core functionality:
 
 - [ ] Interactive mode launches successfully
 - [ ] Streaming responses work
-- [ ] All three tools execute correctly
+- [ ] All tools execute correctly
 - [ ] Tool approval prompts appear
 - [ ] Conversation persistence works
 - [ ] `--continue` flag works
 - [ ] `--resume` flag works
-- [ ] Print mode still works (backward compatibility)
+- [ ] Print mode works
+- [ ] TUI renders correctly
 
 ## Release Process
 
@@ -70,21 +71,21 @@ go test ./...
 
 ```bash
 # Create annotated tag
-git tag -a v0.2.0 -m "Release v0.2.0: Interactive Mode with Tools"
+git tag -a vX.Y.Z -m "Release vX.Y.Z: description"
 
 # Verify tag
 git tag -l
-git show v0.2.0
+git show vX.Y.Z
 ```
 
 ### 3. Push Tag
 
 ```bash
 # Push tag to remote
-git push origin v0.2.0
+git push origin vX.Y.Z
 
 # Verify on GitHub
-# Visit: https://github.com/harper/clem/tags
+# Visit: https://github.com/2389-research/hex/tags
 ```
 
 ### 4. Create GitHub Release
@@ -93,8 +94,8 @@ On GitHub:
 
 1. Go to Releases page
 2. Click "Draft a new release"
-3. Select tag: `v0.2.0`
-4. Title: "Clem v0.2.0 - Interactive Mode with Tools"
+3. Select tag: `vX.Y.Z`
+4. Title: "Hex vX.Y.Z - Description"
 5. Copy content from RELEASE_NOTES.md
 6. Check "Set as latest release"
 7. Publish release
@@ -103,14 +104,14 @@ On GitHub:
 
 ```bash
 # Clean install test
-go install github.com/harper/clem/cmd/clem@v0.2.0
+go install github.com/2389-research/hex/cmd/hex@latest
 
 # Verify version
-clem --version
+hex --version
 
 # Quick functionality test
-clem doctor
-clem --print "Hello"
+hex doctor
+hex --print "Hello"
 ```
 
 ### 6. Update Documentation Site (if applicable)
@@ -150,7 +151,7 @@ If critical bug found after release:
 ### 1. Create Hotfix Branch
 
 ```bash
-git checkout -b hotfix/v0.2.1 v0.2.0
+git checkout -b hotfix/vX.Y.Z vX.Y.Z
 ```
 
 ### 2. Fix Bug
@@ -165,16 +166,16 @@ git commit -m "fix: critical bug description"
 ### 3. Tag Hotfix
 
 ```bash
-git tag -a v0.2.1 -m "Hotfix v0.2.1: Critical bug fix"
-git push origin hotfix/v0.2.1
-git push origin v0.2.1
+git tag -a vX.Y.Z -m "Hotfix vX.Y.Z: Critical bug fix"
+git push origin hotfix/vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 ### 4. Merge Back
 
 ```bash
 git checkout main
-git merge hotfix/v0.2.1
+git merge hotfix/vX.Y.Z
 git push origin main
 ```
 
@@ -240,33 +241,23 @@ If release has critical issues:
 
 - Create hotfix branch
 - Fix critical issue
-- Release patch version (v0.2.1)
+- Release patch version
 - Update all documentation
 
 ## Checklist Archive
 
-### v0.2.0 (2025-11-27)
+### v1.0.0 (2026-03-12)
 
-All items completed:
-- ✅ Interactive mode implementation
-- ✅ Tool system (Read, Write, Bash)
+Hex v1.0.0 release:
+- ✅ Interactive mode with TUI
+- ✅ Full tool system (Read, Write, Edit, Bash, Grep, Glob)
 - ✅ Storage layer with SQLite
 - ✅ Streaming API support
+- ✅ GoReleaser integration
 - ✅ Comprehensive documentation
 - ✅ All tests passing
-- ✅ README updated
-- ✅ CHANGELOG created
-- ✅ Release notes written
-
-### v0.1.0 (2025-11-25)
-
-Initial release:
-- ✅ Print mode
-- ✅ Configuration system
-- ✅ API client
-- ✅ Basic commands
 
 ---
 
-**Last Updated**: 2025-11-27
-**Next Review**: Before v0.3.0 release
+**Last Updated**: 2026-03-12
+**Next Review**: Before next release

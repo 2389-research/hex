@@ -50,10 +50,10 @@ Hex is a Go-based CLI for Claude with three main operational modes:
 │  │  (Registry, Executor, Tools)           │         │
 │  └────┬─────────┬──────────┬──────────────┘         │
 │       │         │          │                         │
-│  ┌────▼────┐ ┌─▼──────┐ ┌─▼──────┐                │
-│  │  Read   │ │ Write  │ │  Bash  │                │
-│  │  Tool   │ │  Tool  │ │  Tool  │                │
-│  └─────────┘ └────────┘ └────────┘                │
+│  ┌────▼────┐ ┌─▼──────┐ ┌─▼──────┐ ┌──────────┐  │
+│  │  Read   │ │ Write  │ │  Bash  │ │ Edit,    │  │
+│  │  Tool   │ │  Tool  │ │  Tool  │ │ Grep ... │  │
+│  └─────────┘ └────────┘ └────────┘ └──────────┘  │
 └──────────────────┬──────────────────────────────────┘
                    │
                    ▼
@@ -88,7 +88,7 @@ hex/
 │   │   ├── model.go     # UI state and data
 │   │   ├── update.go    # Event handling logic
 │   │   ├── view.go      # Rendering logic
-│   │   └── styles.go    # Lipgloss styling
+│   │   └── (styling distributed across component files)
 │   │
 │   ├── storage/         # SQLite persistence
 │   │   ├── schema.go    # Database initialization
@@ -107,8 +107,6 @@ hex/
 │       ├── write_tool.go # Write file tool
 │       └── bash_tool.go  # Bash command tool
 │
-├── pkg/                 # Public APIs (future plugins)
-│   └── plugin/          # Plugin interface (Phase 5)
 │
 ├── test/integration/    # Integration test suites
 │   ├── api_test.go
@@ -229,10 +227,10 @@ type Tool interface {
 - Execution lifecycle
 - Error handling
 
-**Tools**:
-- ReadTool: Safe file reading
-- WriteTool: File creation/modification
-- BashTool: Command execution
+**Tools** (14+ implementations):
+- Core: ReadTool, WriteTool, BashTool, EditTool, GrepTool, GlobTool
+- Advanced: AskUserQuestion, TodoWrite, WebFetch, WebSearch, Task
+- Process Management: BashOutput, KillShell
 
 ### 5. UI Package (internal/ui)
 
@@ -754,28 +752,25 @@ func (a *StreamAccumulator) Add(chunk *StreamChunk) {
 
 ---
 
-## Future Architecture (Planned)
+## Completed Phases
 
-### Phase 3: Extended Tools
+### Phase 3: Extended Tools (Complete)
 
-- Edit tool (multi-line find/replace)
-- Grep tool (search in files)
+- Edit tool (exact string replacement)
+- Grep tool (ripgrep-based code search)
 - Glob tool (file pattern matching)
-- Tool result persistence in DB
 
-### Phase 4: MCP Integration
+### Phase 4: MCP Integration (Complete)
 
-- MCP server support
-- External tool discovery
-- Plugin system architecture
-- Tool composition
+- MCP server support via mux library
+- External tool discovery and registration
+- Sub-agent system via Task tool
 
-### Phase 5: Plugin System
+### Future
 
-- Public plugin API (pkg/plugin)
-- Dynamic loading (Go plugins or WASM)
-- Plugin registry
-- Sandboxing
+- Plugin system (public plugin API)
+- HTTP/SSE MCP transport
+- Advanced resource and prompt support
 
 ---
 

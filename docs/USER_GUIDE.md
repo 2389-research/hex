@@ -54,9 +54,9 @@ make run -- --help
 
 Three ways to configure your API key:
 
-**Option 1: Command (Recommended)**
+**Option 1: Setup Wizard (Recommended)**
 ```bash
-hex setup-token sk-ant-api03-...
+hex setup
 ```
 
 **Option 2: Environment Variable**
@@ -66,10 +66,13 @@ export ANTHROPIC_API_KEY=sk-ant-api03-...
 
 **Option 3: Config File**
 
-Create `~/.hex/config.yaml`:
-```yaml
-api_key: sk-ant-api03-...
-model: claude-sonnet-4-5-20250929
+Create `~/.hex/config.toml`:
+```toml
+provider = "anthropic"
+model = "claude-sonnet-4-5-20250929"
+
+[providers.anthropic]
+api_key = "sk-ant-api03-..."
 ```
 
 **Option 4: .env File**
@@ -84,25 +87,31 @@ HEX_MODEL=claude-sonnet-4-5-20250929
 
 Configuration is loaded in this order (later overrides earlier):
 
-1. Config file (`~/.hex/config.yaml`)
+1. Config file (`~/.hex/config.toml`)
 2. Environment variables
 3. .env file in current directory
 4. Command-line flags
 
 ### Available Settings
 
-```yaml
-# ~/.hex/config.yaml
+```toml
+# ~/.hex/config.toml
 
-# Required
-api_key: sk-ant-api03-...
+# Provider selection (default: anthropic)
+provider = "anthropic"
 
-# Optional (with defaults)
-model: claude-sonnet-4-5-20250929
-database_path: ~/.hex/hex.db
-tool_timeout: 30  # seconds
-max_tokens: 4096
-temperature: 1.0
+# Model to use
+model = "claude-sonnet-4-5-20250929"
+
+# Permission mode (ask, auto, deny)
+permission_mode = "ask"
+
+# Default tools to enable
+default_tools = ["Bash", "Read", "Write", "Edit", "Grep"]
+
+# Provider-specific configuration
+[providers.anthropic]
+api_key = "sk-ant-api03-..."
 ```
 
 ### Health Check
@@ -260,7 +269,7 @@ In interactive mode:
 
 ## Tool System
 
-Claude can execute three types of tools with your approval:
+Claude can execute tools with your approval. Core tools include:
 
 ### Read Tool
 
@@ -280,8 +289,8 @@ Approve execution? [y/N]
 ```
 
 **Safety features:**
-- Approval required for sensitive paths (`/etc`, `~/.ssh`, etc.)
-- File size limits (default 10MB)
+- Approval required for sensitive paths (`/etc`, `/sys`, `/proc`, `/dev`, `/boot`, `/root`, `/var/log`)
+- File size limits (default 1MB)
 - UTF-8 validation
 - Path validation (no parent directory traversal)
 
@@ -430,8 +439,8 @@ Use different Claude models:
 # Via flag
 hex --model claude-opus-4-5-20250929
 
-# Via config
-echo "model: claude-opus-4-5-20250929" >> ~/.hex/config.yaml
+# Via config (in ~/.hex/config.toml)
+# model = "claude-opus-4-5-20250929"
 ```
 
 Available models:
@@ -441,31 +450,18 @@ Available models:
 
 ### Token Limits
 
-Control maximum response length:
+Control maximum response length via the `--max-tokens` flag:
 
 ```bash
-# Via flag
 hex --max-tokens 8192
-
-# Via config
-echo "max_tokens: 8192" >> ~/.hex/config.yaml
 ```
-
-Defaults:
-- Print mode: 4096 tokens
-- Interactive mode: 4096 tokens
-- Maximum: Model-dependent (check API docs)
 
 ### Temperature
 
-Adjust response randomness (0.0 to 1.0):
+Adjust response randomness (0.0 to 1.0) via the `--temperature` flag:
 
 ```bash
-# Via flag
 hex --temperature 0.5
-
-# Via config
-echo "temperature: 0.5" >> ~/.hex/config.yaml
 ```
 
 - `0.0`: Deterministic, focused
@@ -519,7 +515,7 @@ Error: API key not configured
 
 **Solution:**
 ```bash
-hex setup-token sk-ant-api03-...
+hex setup
 # Or verify: hex doctor
 ```
 
@@ -543,15 +539,12 @@ Tool execution timeout after 30s
 ```
 
 **Solution:**
-```bash
-# Increase timeout in config:
-echo "tool_timeout: 120" >> ~/.hex/config.yaml
-```
+Bash tool has a default 30s timeout (max 5 minutes). Use shorter commands or break up long operations.
 
 **Large File Read Failure**
 
 ```
-Error: file too large (>10MB)
+Error: file too large (>1MB)
 ```
 
 **Solution:**
