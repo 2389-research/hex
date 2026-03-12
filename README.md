@@ -1,4 +1,4 @@
-# Hex - Claude CLI
+# Hex -  CLI
 
 <p align="center">
   <img src="docs/hex.png" alt="Hex Logo" width="400"/>
