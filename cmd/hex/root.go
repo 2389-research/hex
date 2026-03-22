@@ -801,9 +801,15 @@ func createProvider(cfg *core.Config, providerName string) (providers.Provider, 
 		if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
 			providerCfg.APIKey = envKey
 		}
+		if envURL := os.Getenv("ANTHROPIC_BASE_URL"); envURL != "" {
+			providerCfg.BaseURL = envURL
+		}
 	case "openai":
 		if envKey := os.Getenv("OPENAI_API_KEY"); envKey != "" {
 			providerCfg.APIKey = envKey
+		}
+		if envURL := os.Getenv("OPENAI_BASE_URL"); envURL != "" {
+			providerCfg.BaseURL = envURL
 		}
 	case "gemini":
 		if envKey := os.Getenv("GEMINI_API_KEY"); envKey != "" {
@@ -834,9 +840,17 @@ func createProvider(cfg *core.Config, providerName string) (providers.Provider, 
 	var client llm.Client
 	switch providerName {
 	case "anthropic":
-		client = llm.NewAnthropicClient(providerCfg.APIKey, "")
+		if providerCfg.BaseURL != "" {
+			client = llm.NewAnthropicClientWithBaseURL(providerCfg.APIKey, "", providerCfg.BaseURL)
+		} else {
+			client = llm.NewAnthropicClient(providerCfg.APIKey, "")
+		}
 	case "openai":
-		client = llm.NewOpenAIClient(providerCfg.APIKey, "")
+		if providerCfg.BaseURL != "" {
+			client = llm.NewOpenAIClientWithBaseURL(providerCfg.APIKey, "", providerCfg.BaseURL)
+		} else {
+			client = llm.NewOpenAIClient(providerCfg.APIKey, "")
+		}
 	case "gemini":
 		ctx := context.Background()
 		var err error

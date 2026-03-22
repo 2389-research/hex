@@ -282,9 +282,15 @@ func createMuxLLMClient(cfg *core.Config, providerName, modelName string) (llm.C
 		if envKey := os.Getenv("ANTHROPIC_API_KEY"); envKey != "" {
 			providerCfg.APIKey = envKey
 		}
+		if envURL := os.Getenv("ANTHROPIC_BASE_URL"); envURL != "" {
+			providerCfg.BaseURL = envURL
+		}
 	case "openai":
 		if envKey := os.Getenv("OPENAI_API_KEY"); envKey != "" {
 			providerCfg.APIKey = envKey
+		}
+		if envURL := os.Getenv("OPENAI_BASE_URL"); envURL != "" {
+			providerCfg.BaseURL = envURL
 		}
 	case "gemini":
 		if envKey := os.Getenv("GEMINI_API_KEY"); envKey != "" {
@@ -312,8 +318,16 @@ func createMuxLLMClient(cfg *core.Config, providerName, modelName string) (llm.C
 	ctx := context.Background()
 	switch providerName {
 	case "anthropic":
+		if providerCfg.BaseURL != "" {
+			logging.InfoWith("Using custom Anthropic base URL", "url", providerCfg.BaseURL)
+			return llm.NewAnthropicClientWithBaseURL(providerCfg.APIKey, modelName, providerCfg.BaseURL), providerCfg.APIKey, nil
+		}
 		return llm.NewAnthropicClient(providerCfg.APIKey, modelName), providerCfg.APIKey, nil
 	case "openai":
+		if providerCfg.BaseURL != "" {
+			logging.InfoWith("Using custom OpenAI base URL", "url", providerCfg.BaseURL)
+			return llm.NewOpenAIClientWithBaseURL(providerCfg.APIKey, modelName, providerCfg.BaseURL), providerCfg.APIKey, nil
+		}
 		return llm.NewOpenAIClient(providerCfg.APIKey, modelName), providerCfg.APIKey, nil
 	case "gemini":
 		client, err := llm.NewGeminiClient(ctx, providerCfg.APIKey, modelName)
