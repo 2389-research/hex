@@ -337,6 +337,18 @@ func runPrintMode(prompt string) error {
 				}
 			}
 
+			// Add verification hint if files were modified
+			hasMutation := false
+			for _, tu := range toolUses {
+				if tu.Name == "edit" || tu.Name == "write_file" {
+					hasMutation = true
+					break
+				}
+			}
+			if hasMutation && len(toolResults) > 0 {
+				toolResults[len(toolResults)-1].Content = toolResults[len(toolResults)-1].Content + "\n\n[hex: Files were modified. Consider verifying your changes compile or pass tests before proceeding.]"
+			}
+
 			// Add tool results as user message
 			userMsg := core.Message{
 				Role:         "user",
