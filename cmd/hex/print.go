@@ -102,6 +102,10 @@ func runPrintMode(prompt string) error {
 
 	// Multi-turn tool execution loop with token tracking
 	maxTurns := 20
+	if maxTurns == 0 {
+		maxTurns = 20
+	}
+	tracker := &turnTracker{}
 	var totalInputTokens, totalOutputTokens int
 
 	for turn := 0; turn < maxTurns; turn++ {
@@ -321,6 +325,15 @@ func runPrintMode(prompt string) error {
 						ToolUseID: toolUses[i].ID,
 						Content:   "Error: tool execution did not complete",
 					})
+				}
+			}
+
+			// Check for stuck patterns
+			hint := tracker.recordByToolName(toolUses, toolResults)
+			if hint != "" {
+				logging.WarnWith("Stuck detection triggered", "hint", hint)
+				if len(toolResults) > 0 {
+					toolResults[len(toolResults)-1].Content = toolResults[len(toolResults)-1].Content + "\n\n" + hint
 				}
 			}
 
