@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/logging"
+	"github.com/2389-research/hex/internal/memory"
 	"github.com/2389-research/hex/internal/tools"
 )
 
@@ -141,6 +144,12 @@ func runPrintMode(prompt string) error {
 			req.System = core.DefaultSystemPrompt + "\n\n" + effectiveSystemPrompt
 		} else {
 			req.System = core.DefaultSystemPrompt
+		}
+
+		// Load project memory context
+		projContext := loadProjectContext()
+		if projContext != "" {
+			req.System = req.System + "\n\n" + projContext
 		}
 
 		if len(toolDefs) > 0 {
@@ -414,4 +423,25 @@ func formatOutput(resp *core.MessageResponse, format string) error {
 		return fmt.Errorf("unknown output format: %s", format)
 	}
 	return nil
+}
+
+// loadProjectContext loads or detects project context for the system prompt
+func loadProjectContext() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+
+	hexDir := filepath.Join(cwd, ".hex")
+	proj, err := memory.Load(hexDir)
+
+	if err != nil || refreshMemory || memory.IsStale(proj, 7*24*time.Hour) {
+		proj, err = memory.DetectProject(cwd)
+		if err != nil {
+			return ""
+		}
+		_ = memory.Save(hexDir, proj)
+	}
+
+	return proj.ToPromptContext()
 }

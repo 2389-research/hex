@@ -85,6 +85,12 @@ func runPrintModeWithMux(prompt string) error {
 		sysPrompt = agentsContext + "\n\n" + sysPrompt
 	}
 
+	// Load project memory context
+	projContext := loadProjectContext()
+	if projContext != "" {
+		sysPrompt = sysPrompt + "\n\n" + projContext
+	}
+
 	// Create approval function based on permission mode
 	approvalFunc, err := createMuxApprovalFunc()
 	if err != nil {
