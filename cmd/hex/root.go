@@ -90,6 +90,11 @@ var (
 	// Spell system flags
 	spellName string
 	spellMode string
+
+	// Agent intelligence flags
+	maxTurns      int
+	planMode      bool
+	refreshMemory bool
 )
 
 var rootCmd = &cobra.Command{
@@ -150,6 +155,11 @@ func init() {
 	// Spell system flags
 	rootCmd.PersistentFlags().StringVar(&spellName, "spell", "", "Use a spell (agent personality)")
 	rootCmd.PersistentFlags().StringVar(&spellMode, "spell-mode", "", "Override spell mode: replace or layer")
+
+	// Agent intelligence flags
+	rootCmd.PersistentFlags().IntVar(&maxTurns, "max-turns", 20, "Maximum tool execution turns before stopping")
+	rootCmd.PersistentFlags().BoolVar(&planMode, "plan", false, "Plan before executing: generate a plan first, then execute it step by step")
+	rootCmd.PersistentFlags().BoolVar(&refreshMemory, "refresh-memory", false, "Force re-scan of project context (regenerate .hex/project.json)")
 
 	// Register subcommands
 	rootCmd.AddCommand(visualizeCmd)
