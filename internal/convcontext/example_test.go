@@ -58,10 +58,10 @@ func ExampleManager_tokenSavings() {
 
 	// Output:
 	// Original conversation: 500 messages, ~37400 tokens
-	// After pruning: 5 messages, ~333 tokens
-	// Tokens saved: 37067 (99.1%)
-	// Cost saved per request: $0.1112
-	// Cost saved over 100 requests: $11.12
+	// After pruning: 14 messages, ~995 tokens
+	// Tokens saved: 36405 (97.3%)
+	// Cost saved per request: $0.1092
+	// Cost saved over 100 requests: $10.92
 }
 
 // ExamplePruneContext demonstrates context pruning preserving important messages

@@ -5,6 +5,9 @@
 package convcontext
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/2389-research/hex/internal/core"
 )
 
@@ -69,7 +72,19 @@ func EstimateMessageTokens(msg core.Message) int {
 	tokens := messageOverhead
 	tokens += EstimateTokens(msg.Content)
 
-	// Add tokens for tool calls if present
+	// Add tokens for content blocks (tool calls, tool results, etc.)
+	for _, block := range msg.ContentBlock {
+		tokens += EstimateTokens(block.Text)
+		tokens += EstimateTokens(block.Content)
+		if block.Name != "" {
+			tokens += EstimateTokens(block.Name)
+		}
+		if block.Type == "tool_use" && block.Input != nil {
+			tokens += 20
+		}
+	}
+
+	// Add tokens for legacy tool calls if present
 	for _, tool := range msg.ToolCalls {
 		tokens += EstimateTokens(tool.Name)
 		// Rough estimate for input params
@@ -77,6 +92,25 @@ func EstimateMessageTokens(msg core.Message) int {
 	}
 
 	return tokens
+}
+
+// SummarizeToolResult creates a brief summary of a tool result for context pruning
+func SummarizeToolResult(toolName, content string) string {
+	if content == "" {
+		return "[Previously: " + toolName + " returned empty]"
+	}
+
+	lines := 1
+	for _, c := range content {
+		if c == '\n' {
+			lines++
+		}
+	}
+
+	if len(content) > 200 {
+		return fmt.Sprintf("[Previously: %s returned %d lines]", toolName, lines)
+	}
+	return "[Previously: " + toolName + " executed]"
 }
 
 // EstimateMessagesTokens estimates total tokens for a slice of messages
@@ -120,7 +154,7 @@ func PruneContext(messages []core.Message, maxTokens int) []core.Message {
 		systemIdx = 0
 	}
 
-	// Step 2: Identify important messages (with tool calls)
+	// Step 2: Identify important messages (with tool calls or errors)
 	importantIndices := make(map[int]bool)
 	for i, msg := range messages {
 		if i == systemIdx {
@@ -128,6 +162,16 @@ func PruneContext(messages []core.Message, maxTokens int) []core.Message {
 		}
 		if len(msg.ToolCalls) > 0 {
 			importantIndices[i] = true
+		}
+		// Prioritize messages containing errors
+		if strings.Contains(strings.ToLower(msg.Content), "error") {
+			importantIndices[i] = true
+		}
+		// Check content blocks for errors too
+		for _, block := range msg.ContentBlock {
+			if strings.Contains(strings.ToLower(block.Content), "error") {
+				importantIndices[i] = true
+			}
 		}
 	}
 

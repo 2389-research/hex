@@ -245,3 +245,53 @@ func TestManager_GetUsage_NearLimit(t *testing.T) {
 	assert.True(t, usage.NearLimit, "Should be near limit at 90%+")
 	assert.Greater(t, usage.PercentUsed, 90.0)
 }
+
+func TestEstimateMessageTokens_WithContentBlocks(t *testing.T) {
+	msg := core.Message{
+		Role: "user",
+		ContentBlock: []core.ContentBlock{
+			{Type: "tool_result", ToolUseID: "1", Content: "file contents with 100 characters of text for estimation purposes here and more text to pad it out"},
+		},
+	}
+	tokens := EstimateMessageTokens(msg)
+	if tokens <= messageOverhead {
+		t.Errorf("expected tokens > %d for message with content blocks, got %d", messageOverhead, tokens)
+	}
+}
+
+func TestEstimateMessageTokens_EmptyMessage(t *testing.T) {
+	msg := core.Message{Role: "user"}
+	tokens := EstimateMessageTokens(msg)
+	if tokens != messageOverhead {
+		t.Errorf("expected %d for empty message, got %d", messageOverhead, tokens)
+	}
+}
+
+func TestSummarizeToolResult(t *testing.T) {
+	// Long content should produce a short summary
+	longContent := "func main() {\n\tfmt.Println(\"hello\")\n}\n"
+	for i := 0; i < 20; i++ {
+		longContent += "// padding line\n"
+	}
+	summary := SummarizeToolResult("read_file", longContent)
+	if summary == "" {
+		t.Error("expected non-empty summary")
+	}
+	if len(summary) > 100 {
+		t.Errorf("summary too long (%d chars), expected concise summary", len(summary))
+	}
+}
+
+func TestSummarizeToolResult_Short(t *testing.T) {
+	summary := SummarizeToolResult("bash", "ok")
+	if summary == "" {
+		t.Error("expected non-empty summary for short content")
+	}
+}
+
+func TestSummarizeToolResult_Empty(t *testing.T) {
+	summary := SummarizeToolResult("bash", "")
+	if summary == "" {
+		t.Error("expected non-empty summary for empty content")
+	}
+}
