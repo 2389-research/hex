@@ -139,47 +139,69 @@ func runPrintModeWithMux(prompt string) error {
 		logging.InfoWith("Created mux root agent", "model", modelToUse)
 	}
 
-	// Subscribe to events before running
-	events := agent.Subscribe()
-
-	// Run agent in goroutine
-	errChan := make(chan error, 1)
-	go func() {
-		errChan <- agent.Run(ctx, prompt)
-	}()
-
-	// Process events
-	var finalText string
-	for event := range events {
-		switch event.Type {
-		case orchestrator.EventText:
-			// Stream text to stdout
-			fmt.Print(event.Text)
-
-		case orchestrator.EventToolCall:
-			logging.InfoWith("Tool call", "name", event.ToolName, "id", event.ToolID)
-
-		case orchestrator.EventToolResult:
-			if event.Result != nil {
-				logging.DebugWith("Tool result", "output_len", len(event.Result.Output))
-			}
-
-		case orchestrator.EventComplete:
-			finalText = event.FinalText
-
-		case orchestrator.EventError:
-			if event.Error != nil {
-				return fmt.Errorf("agent error: %w", event.Error)
-			}
-
-		case orchestrator.EventStateChange:
-			logging.DebugWith("State change", "from", event.FromState, "to", event.ToState)
-		}
+	// In plan mode, wrap the prompt so the agent produces a plan first, then execute
+	runPrompt := prompt
+	if planMode {
+		runPrompt = "Before executing, create a numbered plan for this task. List:\n1. What files you need to read\n2. What changes to make\n3. How to verify the changes work\n\nOutput ONLY the plan, do not start executing yet.\n\nTask: " + prompt
 	}
 
-	// Wait for agent to complete
-	if err := <-errChan; err != nil {
-		return fmt.Errorf("agent run failed: %w", err)
+	// runMuxAgent runs the agent with a given prompt and streams events, returning the final text.
+	runMuxAgent := func(agentPrompt string) (string, error) {
+		events := agent.Subscribe()
+
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- agent.Run(ctx, agentPrompt)
+		}()
+
+		var finalText string
+		for event := range events {
+			switch event.Type {
+			case orchestrator.EventText:
+				fmt.Print(event.Text)
+
+			case orchestrator.EventToolCall:
+				logging.InfoWith("Tool call", "name", event.ToolName, "id", event.ToolID)
+
+			case orchestrator.EventToolResult:
+				if event.Result != nil {
+					logging.DebugWith("Tool result", "output_len", len(event.Result.Output))
+				}
+
+			case orchestrator.EventComplete:
+				finalText = event.FinalText
+
+			case orchestrator.EventError:
+				if event.Error != nil {
+					return "", fmt.Errorf("agent error: %w", event.Error)
+				}
+
+			case orchestrator.EventStateChange:
+				logging.DebugWith("State change", "from", event.FromState, "to", event.ToState)
+			}
+		}
+
+		if runErr := <-errChan; runErr != nil {
+			return "", fmt.Errorf("agent run failed: %w", runErr)
+		}
+
+		return finalText, nil
+	}
+
+	// First run: plan (or full execution if not in plan mode)
+	finalText, err := runMuxAgent(runPrompt)
+	if err != nil {
+		return err
+	}
+
+	// In plan mode, run a second turn to execute the plan
+	if planMode {
+		fmt.Println()
+		execPrompt := "Good plan. Now execute it step by step. After completing each step, note which step you finished."
+		finalText, err = runMuxAgent(execPrompt)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Ensure newline after streamed output

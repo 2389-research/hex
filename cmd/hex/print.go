@@ -89,6 +89,11 @@ func runPrintMode(prompt string) error {
 		msg.Content = prompt
 	}
 
+	// Plan mode: wrap prompt with planning instruction
+	if planMode && prompt != "" && len(imagePaths) == 0 {
+		msg.Content = "Before executing, create a numbered plan for this task. List:\n1. What files you need to read\n2. What changes to make\n3. How to verify the changes work\n\nOutput ONLY the plan, do not start executing yet.\n\nTask: " + prompt
+	}
+
 	// Setup tools - always enabled in print mode
 	var registry *tools.Registry
 	var executor *tools.Executor
@@ -179,6 +184,22 @@ func runPrintMode(prompt string) error {
 
 		// Check stop reason
 		if resp.StopReason == "end_turn" || resp.StopReason == "max_tokens" {
+			// In plan mode on first turn, inject plan and continue to execution
+			if planMode && turn == 0 {
+				assistantMsg := core.Message{
+					Role:    "assistant",
+					Content: resp.GetTextContent(),
+				}
+				messages = append(messages, assistantMsg)
+
+				execMsg := core.Message{
+					Role:    "user",
+					Content: "Good plan. Now execute it step by step. After completing each step, note which step you finished.",
+				}
+				messages = append(messages, execMsg)
+				continue
+			}
+
 			// Print token usage summary if we have metrics
 			if totalInputTokens > 0 || totalOutputTokens > 0 {
 				logging.InfoWith("Total token usage",
