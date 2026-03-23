@@ -92,9 +92,11 @@ var (
 	spellMode string
 
 	// Agent intelligence flags
-	maxTurns      int
-	planMode      bool
-	refreshMemory bool
+	maxTurns       int
+	planMode       bool
+	refreshMemory  bool
+	enableThinking bool
+	thinkingBudget int
 )
 
 var rootCmd = &cobra.Command{
@@ -160,6 +162,8 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&maxTurns, "max-turns", 20, "Maximum tool execution turns before stopping")
 	rootCmd.PersistentFlags().BoolVar(&planMode, "plan", false, "Plan before executing: generate a plan first, then execute it step by step")
 	rootCmd.PersistentFlags().BoolVar(&refreshMemory, "refresh-memory", false, "Force re-scan of project context (regenerate .hex/project.json)")
+	rootCmd.PersistentFlags().BoolVar(&enableThinking, "thinking", false, "Enable extended thinking for deeper reasoning on complex tasks")
+	rootCmd.PersistentFlags().IntVar(&thinkingBudget, "thinking-budget", 10000, "Token budget for extended thinking")
 
 	// Register subcommands
 	rootCmd.AddCommand(visualizeCmd)

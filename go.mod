@@ -3,7 +3,7 @@ module github.com/2389-research/hex
 go 1.24.1
 
 require (
-	github.com/2389-research/mux v0.6.2
+	github.com/2389-research/mux v0.7.0
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/charmbracelet/bubbles v0.21.1-0.20250623103423-23b8fd6302d7

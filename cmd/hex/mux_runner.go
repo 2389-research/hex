@@ -65,6 +65,12 @@ func runPrintModeWithMux(prompt string) error {
 		return fmt.Errorf("create LLM client: %w", err)
 	}
 
+	// Wrap with extended thinking if enabled
+	if enableThinking {
+		llmClient = adapter.NewThinkingClient(llmClient, thinkingBudget)
+		logging.InfoWith("Extended thinking enabled", "budget", thinkingBudget)
+	}
+
 	// Set up tools with mux-based subagent support
 	hexTools, err := getHexToolsWithMuxSubagents(llmClient)
 	if err != nil {
