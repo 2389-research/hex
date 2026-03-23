@@ -118,6 +118,7 @@ func runPrintModeWithMux(prompt string) error {
 		SystemPrompt: sysPrompt,
 		HexTools:     hexTools,
 		ApprovalFunc: approvalFunc,
+		LLMClient:    llmClient,
 	}
 
 	// Wire up hooks if available

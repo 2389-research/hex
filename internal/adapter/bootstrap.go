@@ -47,11 +47,15 @@ type Config struct {
 	HexTools     []tools.Tool
 	ApprovalFunc ApprovalFunc      // Optional: if nil, tools requiring approval will fail
 	HookManager  *muxhooks.Manager // Optional: mux hook manager for lifecycle events
+	LLMClient    llm.Client        // Optional: pre-configured LLM client (overrides APIKey/Model)
 }
 
 // NewRootAgent creates a root agent with full tool access.
 func NewRootAgent(cfg Config) *agent.Agent {
-	llmClient := llm.NewAnthropicClient(cfg.APIKey, cfg.Model)
+	llmClient := cfg.LLMClient
+	if llmClient == nil {
+		llmClient = llm.NewAnthropicClient(cfg.APIKey, cfg.Model)
+	}
 
 	registry := muxtool.NewRegistry()
 	for _, hexTool := range cfg.HexTools {
@@ -78,7 +82,10 @@ func NewRootAgent(cfg Config) *agent.Agent {
 
 // NewSubagent creates a subagent with filtered tool access based on env vars.
 func NewSubagent(cfg Config) *agent.Agent {
-	llmClient := llm.NewAnthropicClient(cfg.APIKey, cfg.Model)
+	llmClient := cfg.LLMClient
+	if llmClient == nil {
+		llmClient = llm.NewAnthropicClient(cfg.APIKey, cfg.Model)
+	}
 
 	registry := muxtool.NewRegistry()
 	for _, hexTool := range cfg.HexTools {
