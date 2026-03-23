@@ -109,9 +109,9 @@ func runPrintMode(prompt string) error {
 	messages := []core.Message{msg}
 
 	// Multi-turn tool execution loop with token tracking
-	maxTurns := 20
+	maxTurns := 50
 	if maxTurns == 0 {
-		maxTurns = 20
+		maxTurns = 50
 	}
 	tracker := &turnTracker{}
 	var totalInputTokens, totalOutputTokens int
@@ -122,7 +122,7 @@ func runPrintMode(prompt string) error {
 		// Create API request
 		req := core.MessageRequest{
 			Model:     modelToUse,
-			MaxTokens: 4096,
+			MaxTokens: 16384,
 			Messages:  messages,
 		}
 
@@ -358,6 +358,15 @@ func runPrintMode(prompt string) error {
 				}
 			}
 
+			// Truncate oversized tool results to preserve context budget
+			const maxResultChars = 15000
+			for i := range toolResults {
+				if len(toolResults[i].Content) > maxResultChars {
+					orig := len(toolResults[i].Content)
+					toolResults[i].Content = toolResults[i].Content[:maxResultChars] + fmt.Sprintf("\n\n[truncated: showing first %d of %d chars. Use offset/limit parameters to read specific sections.]", maxResultChars, orig)
+				}
+			}
+
 			// Check for stuck patterns
 			hint := tracker.recordByToolName(toolUses, toolResults)
 			if hint != "" {
@@ -410,22 +419,24 @@ func runPrintMode(prompt string) error {
 		return formatOutput(resp, outputFormat)
 	}
 
-	// Print token usage even on max turns error
+	// Max turns reached — output best effort instead of erroring
+	// The agent may have already written files; exit cleanly so verifiers can check
 	if totalInputTokens > 0 || totalOutputTokens > 0 {
-		logging.InfoWith("Total token usage (partial)",
+		logging.InfoWith("Total token usage (max turns reached)",
 			"input_tokens", totalInputTokens,
 			"output_tokens", totalOutputTokens,
 			"total_tokens", totalInputTokens+totalOutputTokens,
 		)
 	}
 
-	// Print cost summary if agent ID is set (even on error)
 	agentID := os.Getenv("HEX_AGENT_ID")
 	if agentID != "" {
 		cost.PrintCostSummary(agentID)
 	}
 
-	return fmt.Errorf("exceeded maximum turns (%d) in tool execution loop", maxTurns)
+	// Output whatever we have rather than failing
+	fmt.Fprintf(os.Stderr, "Warning: reached maximum turns (%d)\n", maxTurns)
+	return nil
 }
 
 func formatOutput(resp *core.MessageResponse, format string) error {
