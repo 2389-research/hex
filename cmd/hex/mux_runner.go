@@ -65,10 +65,12 @@ func runPrintModeWithMux(prompt string) error {
 		return fmt.Errorf("create LLM client: %w", err)
 	}
 
-	// Wrap with extended thinking if enabled
-	if enableThinking {
+	// Wrap with extended thinking if enabled (Anthropic only — OpenAI doesn't support it with tools)
+	if enableThinking && providerName == "anthropic" {
 		llmClient = adapter.NewThinkingClient(llmClient, thinkingBudget)
 		logging.InfoWith("Extended thinking enabled", "budget", thinkingBudget)
+	} else if enableThinking && providerName != "anthropic" {
+		logging.WarnWith("Extended thinking not supported for provider, ignoring", "provider", providerName)
 	}
 
 	// Set up tools with mux-based subagent support
