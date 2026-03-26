@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
+	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/logging"
@@ -118,6 +120,38 @@ func runPrintMode(prompt string) error {
 
 	for turn := 0; turn < maxTurns; turn++ {
 		logging.DebugWith("Print mode turn", "turn", turn+1, "messages", len(messages))
+
+		// Observation masking: replace old tool results with brief markers
+		// Keeps last 6 turns of full results, masks everything older
+		// Errors are always preserved (critical for debugging)
+		const preserveRecentTurns = 6
+		if len(messages) > preserveRecentTurns {
+			cutoff := len(messages) - preserveRecentTurns
+			for i := 0; i < cutoff; i++ {
+				for j := range messages[i].ContentBlock {
+					block := &messages[i].ContentBlock[j]
+					if block.Type == "tool_result" && block.Content != "" {
+						// Preserve errors
+						if strings.Contains(block.Content, "Error:") {
+							continue
+						}
+						// Skip already-masked results
+						if strings.HasPrefix(block.Content, "[") && len(block.Content) < 100 {
+							continue
+						}
+						// Mask with brief marker
+						block.Content = "[tool result: OK]"
+					}
+				}
+			}
+		}
+
+		// Prune context if approaching token limits
+		ctxManager := ctxmgr.NewManager(maxContextTokens)
+		if ctxManager.ShouldPrune(messages) {
+			messages = ctxManager.Prune(messages)
+			logging.InfoWith("Context pruned", "messages", len(messages))
+		}
 
 		// Create API request
 		req := core.MessageRequest{
@@ -396,18 +430,6 @@ func runPrintMode(prompt string) error {
 				if len(toolResults) > 0 {
 					toolResults[len(toolResults)-1].Content = toolResults[len(toolResults)-1].Content + "\n\n" + hint
 				}
-			}
-
-			// Add verification hint if files were modified
-			hasMutation := false
-			for _, tu := range toolUses {
-				if tu.Name == "edit" || tu.Name == "write_file" {
-					hasMutation = true
-					break
-				}
-			}
-			if hasMutation && len(toolResults) > 0 {
-				toolResults[len(toolResults)-1].Content = toolResults[len(toolResults)-1].Content + "\n\n[hex: Files were modified. Consider verifying your changes compile or pass tests before proceeding.]"
 			}
 
 			// Add tool results as user message

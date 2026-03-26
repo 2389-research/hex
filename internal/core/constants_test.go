@@ -35,9 +35,9 @@ func TestDefaultSystemPromptPlanning(t *testing.T) {
 		"system prompt must include planning guidance")
 }
 
-func TestDefaultSystemPromptClarification(t *testing.T) {
-	assert.Contains(t, strings.ToLower(core.DefaultSystemPrompt), "clarif",
-		"system prompt must include clarification guidance")
+func TestHeadlessGuidanceHandlesClarification(t *testing.T) {
+	assert.Contains(t, strings.ToLower(core.HeadlessGuidance), "never ask",
+		"headless guidance must handle clarification by telling agent not to ask")
 }
 
 func TestDefaultSystemPromptLength(t *testing.T) {
