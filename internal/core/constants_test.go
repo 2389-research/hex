@@ -44,3 +44,15 @@ func TestDefaultSystemPromptLength(t *testing.T) {
 	assert.GreaterOrEqual(t, len(core.DefaultSystemPrompt), 500,
 		"system prompt must be at least 500 characters to provide meaningful guidance")
 }
+
+func TestDefaultSystemPromptPersistence(t *testing.T) {
+	assert.Contains(t, strings.ToLower(core.DefaultSystemPrompt), "persist",
+		"system prompt must instruct agent to persist until task is solved")
+}
+
+func TestHeadlessGuidanceExists(t *testing.T) {
+	assert.Contains(t, strings.ToLower(core.HeadlessGuidance), "non-interactive",
+		"headless guidance must mention non-interactive mode")
+	assert.Contains(t, strings.ToLower(core.HeadlessGuidance), "never ask",
+		"headless guidance must tell agent not to ask questions")
+}

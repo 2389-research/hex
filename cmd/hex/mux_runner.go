@@ -80,7 +80,7 @@ func runPrintModeWithMux(prompt string) error {
 	}
 
 	// Build system prompt
-	sysPrompt := core.DefaultSystemPrompt
+	sysPrompt := core.DefaultSystemPrompt + core.HeadlessGuidance
 	if systemPrompt != "" {
 		sysPrompt = sysPrompt + "\n\n" + systemPrompt
 	}

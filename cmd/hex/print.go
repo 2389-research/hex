@@ -151,6 +151,9 @@ func runPrintMode(prompt string) error {
 			req.System = core.DefaultSystemPrompt
 		}
 
+		// Print mode is always non-interactive — append headless guidance
+		req.System = req.System + core.HeadlessGuidance
+
 		// Load project memory context
 		projContext := loadProjectContext()
 		if projContext != "" {
@@ -358,12 +361,31 @@ func runPrintMode(prompt string) error {
 				}
 			}
 
-			// Truncate oversized tool results to preserve context budget
-			const maxResultChars = 15000
+			// Per-tool output limits to preserve context budget
+			toolLimits := map[string]int{
+				"read_file":  12000,
+				"bash":       8000,
+				"grep":       5000,
+				"glob":       3000,
+				"edit":       5000,
+				"write_file": 3000,
+			}
+			const defaultLimit = 15000
 			for i := range toolResults {
-				if len(toolResults[i].Content) > maxResultChars {
+				limit := defaultLimit
+				if toolResults[i].ToolUseID != "" {
+					for _, tu := range toolUses {
+						if tu.ID == toolResults[i].ToolUseID {
+							if l, ok := toolLimits[tu.Name]; ok {
+								limit = l
+							}
+							break
+						}
+					}
+				}
+				if len(toolResults[i].Content) > limit {
 					orig := len(toolResults[i].Content)
-					toolResults[i].Content = toolResults[i].Content[:maxResultChars] + fmt.Sprintf("\n\n[truncated: showing first %d of %d chars. Use offset/limit parameters to read specific sections.]", maxResultChars, orig)
+					toolResults[i].Content = toolResults[i].Content[:limit] + fmt.Sprintf("\n\n[truncated: showing first %d of %d chars. Use offset/limit parameters to read specific sections.]", limit, orig)
 				}
 			}
 
