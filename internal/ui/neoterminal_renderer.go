@@ -13,41 +13,79 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// renderNeoTerminalMessage creates a message with colored left border
+// renderNeoTerminalMessage creates a message with colored left border and role badge
 func (m *Model) renderNeoTerminalMessage(role, content string, timestamp time.Time) string {
 	var b strings.Builder
 
-	// Determine border color based on role
+	// Determine styling based on role
 	var borderColor lipgloss.Color
+	var roleBadge string
+	var badgeStyle lipgloss.Style
 
 	switch role {
 	case "user":
-		borderColor = m.theme.Colors.Orange // Orange for user
+		borderColor = m.theme.Colors.Orange
+		roleBadge = "YOU"
+		badgeStyle = lipgloss.NewStyle().
+			Foreground(m.theme.Colors.Background).
+			Background(m.theme.Colors.Orange).
+			Bold(true).
+			Padding(0, 1)
 	case "assistant":
-		borderColor = m.theme.Colors.Green // Green for Hex/assistant
+		borderColor = m.theme.Colors.Green
+		roleBadge = "HEX"
+		badgeStyle = lipgloss.NewStyle().
+			Foreground(m.theme.Colors.Background).
+			Background(m.theme.Colors.Green).
+			Bold(true).
+			Padding(0, 1)
 	case "system":
-		borderColor = m.theme.Colors.Cyan // Cyan for system
+		borderColor = m.theme.Colors.Cyan
+		roleBadge = "SYS"
+		badgeStyle = lipgloss.NewStyle().
+			Foreground(m.theme.Colors.Background).
+			Background(m.theme.Colors.Cyan).
+			Bold(true).
+			Padding(0, 1)
 	default:
 		borderColor = m.theme.Colors.Comment
+		roleBadge = "..."
+		badgeStyle = lipgloss.NewStyle().
+			Foreground(m.theme.Colors.Foreground).
+			Background(m.theme.Colors.Comment).
+			Padding(0, 1)
 	}
 
 	// Create border style
 	borderStyle := lipgloss.NewStyle().Foreground(borderColor)
 	border := borderStyle.Render("┃")
+	topBorder := borderStyle.Render("┏")
+	bottomBorder := borderStyle.Render("┗")
 
 	// Trim trailing empty lines to avoid excessive spacing
 	content = strings.TrimRight(content, "\n")
 	if content == "" {
-		// Empty message - just return empty string
 		return ""
 	}
 
-	lines := strings.Split(content, "\n")
+	// Format timestamp
+	timeStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+	timeStr := ""
+	if !timestamp.IsZero() {
+		timeStr = timeStyle.Render(" " + timestamp.Format("15:04"))
+	}
 
+	// Role badge header line
+	b.WriteString(topBorder + " " + badgeStyle.Render(roleBadge) + timeStr + "\n")
+
+	// Content lines with border
+	lines := strings.Split(content, "\n")
 	for _, line := range lines {
-		// Every line gets the colored border prefix
 		b.WriteString(border + " " + line + "\n")
 	}
+
+	// Bottom cap
+	b.WriteString(bottomBorder + "\n")
 
 	return b.String()
 }
@@ -143,17 +181,28 @@ func (m *Model) renderNeoTerminalBottomBar() string {
 	// Format: ┗━ ● status │ model │ cwd │ ⌃C quit ━━━━━━━━━━━━━━━━━━━━━━━━ ━┛
 	// Total width = m.Width exactly (matches top bar structure)
 
-	// Status indicator
+	// Status indicator with distinctive styling
 	var statusText string
 	statusStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
 
 	switch m.Status {
 	case StatusIdle:
-		statusText = "● idle"
+		// Subtle green dot for ready state
+		dotStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green)
+		textStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+		statusText = dotStyle.Render("◉") + textStyle.Render(" ready")
 	case StatusStreaming:
-		statusText = statusStyle.Foreground(m.theme.Colors.Cyan).Render("● streaming")
+		// Animated-looking streaming indicator
+		dotStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan).Bold(true)
+		textStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan)
+		statusText = dotStyle.Render("◎") + textStyle.Render(" streaming")
 	case StatusError:
-		statusText = statusStyle.Foreground(m.theme.Colors.Red).Render("● error")
+		// Red alert for errors
+		dotStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Red).Bold(true)
+		textStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Red)
+		statusText = dotStyle.Render("⊘") + textStyle.Render(" error")
+	default:
+		statusText = statusStyle.Render("○ idle")
 	}
 
 	// Model name (extract short name from full model ID)

@@ -203,62 +203,117 @@ func (m *Model) wrapContentWithBorders(content string) string {
 	return result.String()
 }
 
-// renderIntroView renders the startup welcome screen
+// renderIntroView renders the startup welcome screen with bold hexagonal branding
 func (m *Model) renderIntroView() string {
 	var b strings.Builder
 
-	// Center the content
-	padding := strings.Repeat(" ", 10)
-
-	// ASCII art logo with Dracula colors
-	logoText := `
-   ██╗  ██╗███████╗██╗  ██╗
-   ██║  ██║██╔════╝╚██╗██╔╝
-   ███████║█████╗   ╚███╔╝
-   ██╔══██║██╔══╝   ██╔██╗
-   ██║  ██║███████╗██╔╝ ██╗
-   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-`
-	logo := m.theme.Title.Render(logoText)
-
-	// Pad each line of the logo
-	logoLines := strings.Split(logo, "\n")
-	for _, line := range logoLines {
-		if strings.TrimSpace(line) != "" {
-			b.WriteString(padding + line + "\n")
-		}
+	// Hexagonal ASCII art - distinctive and memorable
+	hexLogo := []string{
+		"           ╱╲",
+		"          ╱  ╲",
+		"         ╱ ⬡⬡ ╲",
+		"        ╱  ██  ╲",
+		"       ╱   ██   ╲",
+		"      ╱────────────╲",
+		"      ╲────────────╱",
+		"       ╲   ██   ╱",
+		"        ╲  ██  ╱",
+		"         ╲ ⬡⬡ ╱",
+		"          ╲  ╱",
+		"           ╲╱",
 	}
+
+	// Title text using block characters
+	titleLines := []string{
+		"██╗  ██╗ ███████╗ ██╗  ██╗",
+		"██║  ██║ ██╔════╝ ╚██╗██╔╝",
+		"███████║ █████╗    ╚███╔╝ ",
+		"██╔══██║ ██╔══╝    ██╔██╗ ",
+		"██║  ██║ ███████╗ ██╔╝ ██╗",
+		"╚═╝  ╚═╝ ╚══════╝ ╚═╝  ╚═╝",
+	}
+
+	// Render hexagon with accent color
+	hexStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan)
+	hexInnerStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green).Bold(true)
+
+	// Center padding based on terminal width
+	contentWidth := 60
+	leftPad := (m.Width - contentWidth) / 2
+	if leftPad < 4 {
+		leftPad = 4
+	}
+	padding := strings.Repeat(" ", leftPad)
+
 	b.WriteString("\n")
 
-	// Welcome message
-	welcome := m.theme.Emphasized.Render("Welcome to Hex!")
-	tagline := m.theme.Muted.Render("Your intelligent command-line assistant powered by Claude")
-	b.WriteString(padding + welcome + "\n")
-	b.WriteString(padding + tagline + "\n\n\n")
+	// Render hex logo with inner detail highlighting
+	for _, line := range hexLogo {
+		styled := hexStyle.Render(line)
+		// Highlight inner elements
+		styled = strings.ReplaceAll(styled, "██", hexInnerStyle.Render("██"))
+		styled = strings.ReplaceAll(styled, "⬡⬡", hexInnerStyle.Render("⬡⬡"))
+		b.WriteString(padding + "       " + styled + "\n")
+	}
 
-	// Quick start guide
-	quickStart := m.theme.Subtitle.Render("Quick Start:")
-	b.WriteString(padding + quickStart + "\n\n")
+	b.WriteString("\n")
 
-	features := []struct {
-		icon string
+	// Render title with gradient-like effect (left to right color shift)
+	titleStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green).Bold(true)
+	for _, line := range titleLines {
+		b.WriteString(padding + titleStyle.Render(line) + "\n")
+	}
+
+	b.WriteString("\n")
+
+	// Tagline with subtle styling
+	taglineStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment).Italic(true)
+	tagline := "Claude-powered intelligence for your terminal"
+	b.WriteString(padding + taglineStyle.Render(tagline) + "\n")
+
+	b.WriteString("\n")
+
+	// Decorative separator
+	sepStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+	separator := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	b.WriteString(padding + sepStyle.Render(separator) + "\n\n")
+
+	// Quick commands in a more compact, scannable format
+	cmdStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Cyan).Bold(true)
+	descStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Foreground)
+	mutedStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Comment)
+
+	commands := []struct {
+		key  string
 		desc string
 	}{
-		{"💬", "Chat naturally with Claude AI"},
-		{"🔧", "Execute tools with approval workflow"},
-		{"📝", "Manage conversation history"},
-		{"⌨️", "Vi-style navigation (j/k, gg/G)"},
-		{":", "Quick actions menu"},
-		{"?", "Show help anytime"},
+		{"Enter", "Send message"},
+		{"Tab", "Cycle views"},
+		{"Ctrl+H", "Toggle help"},
+		{":", "Quick actions"},
+		{"Ctrl+C", "Quit"},
 	}
 
-	for _, f := range features {
-		icon := m.theme.Success.Render(f.icon)
-		desc := m.theme.Body.Render(f.desc)
-		b.WriteString(padding + "  " + icon + "  " + desc + "\n")
+	// Render commands in a horizontal layout
+	var cmdParts []string
+	for _, cmd := range commands {
+		part := cmdStyle.Render(cmd.key) + mutedStyle.Render(" → ") + descStyle.Render(cmd.desc)
+		cmdParts = append(cmdParts, part)
 	}
 
-	b.WriteString("\n\n")
+	// Two rows of commands
+	row1 := strings.Join(cmdParts[:3], "   ")
+	row2 := strings.Join(cmdParts[3:], "   ")
+	b.WriteString(padding + row1 + "\n")
+	b.WriteString(padding + row2 + "\n")
+
+	b.WriteString("\n")
+
+	// Ready prompt with subtle animation hint
+	readyStyle := lipgloss.NewStyle().Foreground(m.theme.Colors.Green)
+	b.WriteString(padding + readyStyle.Render("▸ ") + descStyle.Render("Type a message to begin...") + "\n")
+
+	b.WriteString("\n")
 
 	return b.String()
 }
