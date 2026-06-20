@@ -77,6 +77,7 @@ func TestDefaultConfig_Explore(t *testing.T) {
 	assert.Contains(t, config.AllowedTools, "Grep")
 	assert.Contains(t, config.AllowedTools, "Glob")
 	assert.Contains(t, config.AllowedTools, "Bash")
+	assert.Contains(t, config.AllowedTools, "Skill")
 }
 
 func TestDefaultConfig_Plan(t *testing.T) {
@@ -91,6 +92,7 @@ func TestDefaultConfig_Plan(t *testing.T) {
 	assert.Contains(t, config.AllowedTools, "Read")
 	assert.Contains(t, config.AllowedTools, "Grep")
 	assert.Contains(t, config.AllowedTools, "Glob")
+	assert.Contains(t, config.AllowedTools, "Skill")
 	assert.NotContains(t, config.AllowedTools, "Bash")
 }
 
@@ -104,6 +106,7 @@ func TestDefaultConfig_CodeReviewer(t *testing.T) {
 	// Should be read-only
 	assert.NotNil(t, config.AllowedTools)
 	assert.Contains(t, config.AllowedTools, "Read")
+	assert.Contains(t, config.AllowedTools, "Skill")
 	assert.NotContains(t, config.AllowedTools, "Edit")
 	assert.NotContains(t, config.AllowedTools, "Write")
 }

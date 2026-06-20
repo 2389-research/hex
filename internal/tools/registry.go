@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/subagents"
 )
 
 // Registry manages available tools
@@ -156,6 +157,34 @@ func GetToolSchema(toolName string) map[string]interface{} {
 				},
 			},
 			"required": []string{"command"},
+		}
+	case "task":
+		return map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"prompt": map[string]interface{}{
+					"type":        "string",
+					"description": "Complete instructions for the sub-agent to execute autonomously",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "Short human-readable summary of the task",
+				},
+				"subagent_type": map[string]interface{}{
+					"type":        "string",
+					"description": "Type of sub-agent to launch",
+					"enum":        subagents.ValidSubagentTypes(),
+				},
+				"model": map[string]interface{}{
+					"type":        "string",
+					"description": "Optional model override for the sub-agent",
+				},
+				"resume": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Resume the most recent matching sub-agent conversation when available",
+				},
+			},
+			"required": []string{"prompt", "description", "subagent_type"},
 		}
 	case "grep":
 		return map[string]interface{}{

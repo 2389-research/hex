@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/2389-research/hex/internal/permissions"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/mux/agent"
 	muxhooks "github.com/2389-research/mux/hooks"
@@ -33,6 +34,35 @@ func parseCSV(s string) []string {
 		}
 	}
 	return result
+}
+
+func assistantText(message llm.Message) string {
+	if message.Content != "" {
+		return message.Content
+	}
+
+	var builder strings.Builder
+	for _, block := range message.Blocks {
+		if block.Type == llm.ContentTypeText {
+			builder.WriteString(block.Text)
+		}
+	}
+	return builder.String()
+}
+
+func filterToolsByAllowed(hexTools []tools.Tool, allowedTools []string) []tools.Tool {
+	if allowedTools == nil {
+		return hexTools
+	}
+
+	rules := permissions.NewRules(allowedTools, nil)
+	filteredTools := make([]tools.Tool, 0, len(hexTools))
+	for _, tool := range hexTools {
+		if rules.IsToolAllowed(tool.Name()) {
+			filteredTools = append(filteredTools, tool)
+		}
+	}
+	return filteredTools
 }
 
 // ApprovalFunc is called when a tool requires approval before execution.
@@ -175,20 +205,7 @@ func (r *AgentRunner) RunAgent(ctx context.Context, agentID, prompt, systemPromp
 	hexTools := r.ToolFactory()
 
 	// Filter tools if allowedTools is specified
-	var filteredTools []tools.Tool
-	if allowedTools == nil {
-		filteredTools = hexTools
-	} else {
-		allowedSet := make(map[string]bool)
-		for _, name := range allowedTools {
-			allowedSet[strings.ToLower(name)] = true
-		}
-		for _, tool := range hexTools {
-			if allowedSet[strings.ToLower(tool.Name())] {
-				filteredTools = append(filteredTools, tool)
-			}
-		}
-	}
+	filteredTools := filterToolsByAllowed(hexTools, allowedTools)
 
 	// Create mux registry with adapted tools
 	registry := muxtool.NewRegistry()
@@ -220,7 +237,7 @@ func (r *AgentRunner) RunAgent(ctx context.Context, agentID, prompt, systemPromp
 	messages := a.Messages()
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].Role == "assistant" {
-			output = messages[i].Content
+			output = assistantText(messages[i])
 			break
 		}
 	}

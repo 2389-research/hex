@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/2389-research/hex/internal/subagents"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -175,4 +176,26 @@ func TestRegistry_ConcurrentGetAndRegister(t *testing.T) {
 	retrieved, err := registry.Get("initial")
 	require.NoError(t, err)
 	assert.Equal(t, "initial", retrieved.Name())
+}
+
+func TestGetToolSchema_TaskIncludesRequiredFields(t *testing.T) {
+	schema := tools.GetToolSchema("task")
+
+	properties, ok := schema["properties"].(map[string]interface{})
+	require.True(t, ok)
+	require.NotEmpty(t, properties)
+
+	for _, field := range []string{"prompt", "description", "subagent_type"} {
+		assert.Contains(t, properties, field)
+	}
+
+	required, ok := schema["required"].([]string)
+	require.True(t, ok)
+	assert.ElementsMatch(t, []string{"prompt", "description", "subagent_type"}, required)
+
+	subagentType, ok := properties["subagent_type"].(map[string]interface{})
+	require.True(t, ok)
+	enum, ok := subagentType["enum"].([]string)
+	require.True(t, ok)
+	assert.ElementsMatch(t, subagents.ValidSubagentTypes(), enum)
 }

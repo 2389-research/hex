@@ -5,6 +5,10 @@ package adapter
 import (
 	"os"
 	"testing"
+
+	"github.com/2389-research/hex/internal/skills"
+	"github.com/2389-research/hex/internal/tools"
+	"github.com/2389-research/mux/llm"
 )
 
 func TestParseCSV(t *testing.T) {
@@ -53,5 +57,42 @@ func TestIsSubagent(t *testing.T) {
 
 	if !IsSubagent() {
 		t.Error("expected IsSubagent() to return true when env is set")
+	}
+}
+
+func TestAssistantTextFallsBackToTextBlocks(t *testing.T) {
+	message := llm.Message{
+		Role: llm.RoleAssistant,
+		Blocks: []llm.ContentBlock{
+			{Type: llm.ContentTypeThinking, Thinking: "internal reasoning"},
+			{Type: llm.ContentTypeText, Text: "first"},
+			{Type: llm.ContentTypeText, Text: " second"},
+		},
+	}
+
+	if got := assistantText(message); got != "first second" {
+		t.Fatalf("assistantText() = %q, want %q", got, "first second")
+	}
+}
+
+func TestFilterToolsByAllowedMatchesAliasesAndSkill(t *testing.T) {
+	available := []tools.Tool{
+		tools.NewReadTool(),
+		tools.NewGrepTool(),
+		tools.NewGlobTool(),
+		skills.NewToolAdapter(skills.NewRegistry()),
+	}
+
+	filtered := filterToolsByAllowed(available, []string{"Read", "Grep", "Glob", "Skill"})
+
+	names := make(map[string]bool)
+	for _, tool := range filtered {
+		names[tool.Name()] = true
+	}
+
+	for _, name := range []string{"read_file", "grep", "glob", "Skill"} {
+		if !names[name] {
+			t.Fatalf("filterToolsByAllowed() missing %q from filtered names %v", name, names)
+		}
 	}
 }

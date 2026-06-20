@@ -73,8 +73,19 @@ func runPrintModeWithMux(prompt string) error {
 		logging.WarnWith("Extended thinking not supported for provider, ignoring", "provider", providerName)
 	}
 
+	pluginRegistry, err := initializePlugins()
+	if err != nil {
+		logging.WarnWith("Failed to initialize plugins", "error", err.Error())
+	}
+
+	var pluginSkillPaths []string
+	if pluginRegistry != nil {
+		pluginSkillPaths = getPluginSkillPaths(pluginRegistry)
+		logging.DebugWith("Plugin skill paths for mux", "skills", len(pluginSkillPaths))
+	}
+
 	// Set up tools with mux-based subagent support
-	hexTools, err := getHexToolsWithMuxSubagents(llmClient)
+	hexTools, err := getHexToolsWithMuxSubagents(llmClient, pluginSkillPaths)
 	if err != nil {
 		return fmt.Errorf("setup tools: %w", err)
 	}
@@ -137,6 +148,7 @@ func runPrintModeWithMux(prompt string) error {
 	// Create agent (root or subagent based on environment)
 	var agent interface {
 		Run(ctx context.Context, prompt string) error
+		Continue(ctx context.Context, prompt string) error
 		Subscribe() <-chan orchestrator.Event
 	}
 
@@ -155,11 +167,15 @@ func runPrintModeWithMux(prompt string) error {
 	}
 
 	// runMuxAgent runs the agent with a given prompt and streams events, returning the final text.
-	runMuxAgent := func(agentPrompt string) (string, error) {
+	runMuxAgent := func(agentPrompt string, continueRun bool) (string, error) {
 		events := agent.Subscribe()
 
 		errChan := make(chan error, 1)
 		go func() {
+			if continueRun {
+				errChan <- agent.Continue(ctx, agentPrompt)
+				return
+			}
 			errChan <- agent.Run(ctx, agentPrompt)
 		}()
 
@@ -198,7 +214,7 @@ func runPrintModeWithMux(prompt string) error {
 	}
 
 	// First run: plan (or full execution if not in plan mode)
-	finalText, err := runMuxAgent(runPrompt)
+	finalText, err := runMuxAgent(runPrompt, false)
 	if err != nil {
 		return err
 	}
@@ -206,8 +222,8 @@ func runPrintModeWithMux(prompt string) error {
 	// In plan mode, run a second turn to execute the plan
 	if planMode {
 		fmt.Println()
-		execPrompt := "Good plan. Now execute it step by step. After completing each step, note which step you finished."
-		finalText, err = runMuxAgent(execPrompt)
+		execPrompt := buildMuxPlanExecutionPrompt(finalText)
+		finalText, err = runMuxAgent(execPrompt, true)
 		if err != nil {
 			return err
 		}
@@ -221,11 +237,16 @@ func runPrintModeWithMux(prompt string) error {
 	return nil
 }
 
+func buildMuxPlanExecutionPrompt(planText string) string {
+	return "Good plan. Here is the plan to execute:\n\n" + planText + "\n\nNow execute it step by step. After completing each step, note which step you finished."
+}
+
 // getHexToolsWithMuxSubagents returns hex tools with mux-based subagent support.
 // The TaskTool is configured to use mux agents instead of subprocesses.
-func getHexToolsWithMuxSubagents(llmClient llm.Client) ([]tools.Tool, error) {
+func getHexToolsWithMuxSubagents(llmClient llm.Client, pluginSkillPaths []string) ([]tools.Tool, error) {
 	// Create the TaskTool first without mux config
 	taskTool := tools.NewTaskTool()
+	_, skillTool := initializeSkills(pluginSkillPaths)
 
 	// Create base tools
 	baseTools := []tools.Tool{
@@ -235,6 +256,7 @@ func getHexToolsWithMuxSubagents(llmClient llm.Client) ([]tools.Tool, error) {
 		tools.NewBashTool(),
 		tools.NewGrepTool(),
 		tools.NewGlobTool(),
+		skillTool,
 	}
 
 	// Tool factory for subagents - creates fresh tools excluding TaskTool to avoid recursion issues
@@ -246,6 +268,7 @@ func getHexToolsWithMuxSubagents(llmClient llm.Client) ([]tools.Tool, error) {
 			tools.NewBashTool(),
 			tools.NewGrepTool(),
 			tools.NewGlobTool(),
+			skillTool,
 		}
 	}
 
@@ -258,14 +281,10 @@ func getHexToolsWithMuxSubagents(llmClient llm.Client) ([]tools.Tool, error) {
 
 	// Filter based on --tools flag if specified
 	if len(enabledTools) > 0 {
-		enabledSet := make(map[string]bool)
-		for _, t := range enabledTools {
-			enabledSet[t] = true
-		}
-
+		rules := permissions.NewRules(enabledTools, nil)
 		filtered := make([]tools.Tool, 0)
 		for _, t := range hexTools {
-			if enabledSet[t.Name()] {
+			if rules.IsToolAllowed(t.Name()) {
 				filtered = append(filtered, t)
 			}
 		}
