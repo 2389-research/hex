@@ -3,6 +3,7 @@
 package convcontext
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/2389-research/hex/internal/core"
@@ -177,6 +178,75 @@ func TestNewManager(t *testing.T) {
 	m := NewManager(100000)
 	require.NotNil(t, m)
 	assert.Equal(t, 100000, m.MaxTokens)
+	assert.Equal(t, StrategyPrune, m.Strategy)
+}
+
+func TestNewManagerWithStrategy(t *testing.T) {
+	m := NewManagerWithStrategy(100000, StrategyKeepAll)
+	require.NotNil(t, m)
+	assert.Equal(t, 100000, m.MaxTokens)
+	assert.Equal(t, StrategyKeepAll, m.Strategy)
+}
+
+func TestParsePruneStrategy(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected PruneStrategy
+		wantErr  bool
+	}{
+		{input: "keep-all", expected: StrategyKeepAll},
+		{input: "prune", expected: StrategyPrune},
+		{input: "summarize", expected: StrategySummarize},
+		{input: "unknown", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := ParsePruneStrategy(tt.input)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func TestManagerStrategyControlsPruning(t *testing.T) {
+	messages := []core.Message{
+		{Role: "user", Content: strings.Repeat("old ", 100)},
+		{Role: "assistant", Content: strings.Repeat("response ", 100)},
+	}
+
+	keepAll := NewManagerWithStrategy(10, StrategyKeepAll)
+	assert.Equal(t, messages, keepAll.Prune(messages))
+	assert.False(t, keepAll.ShouldPrune(messages))
+
+	prune := NewManagerWithStrategy(10, StrategyPrune)
+	assert.True(t, prune.ShouldPrune(messages))
+}
+
+func TestManagerSummarizeStrategyAddsSummaryForPrunedMessages(t *testing.T) {
+	messages := []core.Message{
+		{Role: "system", Content: "System instructions"},
+		{Role: "user", Content: "Old decision: use SQLite for storage"},
+		{Role: "assistant", Content: "Confirmed SQLite storage decision"},
+		{Role: "user", Content: strings.Repeat("recent question ", 8)},
+		{Role: "assistant", Content: strings.Repeat("recent answer ", 8)},
+	}
+
+	manager := NewManagerWithStrategy(60, StrategySummarize)
+	pruned := manager.Prune(messages)
+
+	assert.Less(t, len(pruned), len(messages))
+	if len(pruned) < 2 {
+		t.Fatalf("summarized context too short: %#v", pruned)
+	}
+	assert.Equal(t, "system", pruned[0].Role)
+	assert.Contains(t, pruned[1].Content, "Previous conversation summary")
+	assert.Contains(t, pruned[1].Content, "Old decision: use SQLite")
+	assert.Contains(t, pruned[len(pruned)-1].Content, "recent answer")
 }
 
 func TestManager_ShouldPrune(t *testing.T) {

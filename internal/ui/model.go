@@ -7,17 +7,23 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/2389-research/hex/internal/approval"
 	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
+	"github.com/2389-research/hex/internal/mcp"
+	"github.com/2389-research/hex/internal/plugins"
 	"github.com/2389-research/hex/internal/pubsub"
 	"github.com/2389-research/hex/internal/services"
 	"github.com/2389-research/hex/internal/tools"
+	conversationbrowser "github.com/2389-research/hex/internal/ui/browser"
+	"github.com/2389-research/hex/internal/ui/dashboard"
 	"github.com/2389-research/hex/internal/ui/forms"
 	"github.com/2389-research/hex/internal/ui/theme"
+	"github.com/2389-research/hex/internal/ui/visualization"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -117,15 +123,17 @@ type Model struct {
 	ShowIntro      bool // Show intro screen in viewport initially
 
 	// Task 5: Advanced UI Features
-	CurrentView  ViewMode
-	Status       Status
-	ErrorMessage string
-	TokensInput  int
-	TokensOutput int
-	SearchMode   bool
-	SearchQuery  string
-	renderer     *glamour.TermRenderer
-	lastKeyWasG  bool // Track 'g' key for 'gg' navigation
+	CurrentView        ViewMode
+	Status             Status
+	ErrorMessage       string
+	TokensInput        int
+	TokensOutput       int
+	SearchMode         bool
+	SearchQuery        string
+	SearchMatches      []int
+	CurrentSearchMatch int
+	renderer           *glamour.TermRenderer
+	lastKeyWasG        bool // Track 'g' key for 'gg' navigation
 
 	// Task 6: Streaming Integration
 	apiClient          *core.Client
@@ -220,6 +228,9 @@ type Model struct {
 	toolTimelineOverlay *GenericFullscreenOverlay // Tool timeline overlay instance
 	helpOverlay         *GenericFullscreenOverlay // Help overlay instance
 	historyOverlay      *GenericFullscreenOverlay // History overlay instance
+	tokenVisualization  *visualization.TokenVisualization
+	conversationBrowser *conversationbrowser.ConversationBrowser
+	pluginDashboard     *dashboard.PluginDashboard
 	// Note: ToolApprovalOverlay instances are created dynamically per tool
 
 	// TUI Polish: Message hover for timestamp display
@@ -306,6 +317,9 @@ func NewModel(conversationID, model string) *Model {
 
 	// TUI Polish: Initialize Neo-Terminal theme
 	neoTerminalTheme := theme.NeoTerminalTheme()
+	tokenVisualization := visualization.NewTokenVisualization(neoTerminalTheme)
+	_, _ = tokenVisualization.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	pluginDashboard := dashboard.NewPluginDashboard(neoTerminalTheme)
 
 	// Initialize Model
 	m := &Model{
@@ -330,6 +344,8 @@ func NewModel(conversationID, model string) *Model {
 		quickActionsInput:    "",
 		quickActionsFiltered: []*QuickAction{},
 		autocomplete:         autocomplete,
+		tokenVisualization:   tokenVisualization,
+		pluginDashboard:      pluginDashboard,
 		suggestionDetector:   suggestionDetector,
 		suggestionLearner:    suggestionLearner,
 		suggestions:          []*Suggestion{},
@@ -349,6 +365,7 @@ func NewModel(conversationID, model string) *Model {
 	m.toolTimelineOverlay = NewToolTimelineOverlay(m)
 	m.helpOverlay = NewHelpOverlay()
 	m.historyOverlay = NewHistoryOverlay(&m.Messages)
+	m.connectQuickActions()
 
 	return m
 }
@@ -454,6 +471,24 @@ func (m *Model) NextView() {
 func (m *Model) UpdateTokens(input, output int) {
 	m.TokensInput += input
 	m.TokensOutput += output
+	m.updateTokenVisualization()
+}
+
+func (m *Model) updateTokenVisualization() {
+	if m.tokenVisualization == nil {
+		return
+	}
+	maxTokens := 8192
+	if m.contextManager != nil && m.contextManager.MaxTokens > 0 {
+		maxTokens = m.contextManager.MaxTokens
+	}
+	m.tokenVisualization.UpdateTokens(visualization.TokenUsage{
+		InputTokens:  m.TokensInput,
+		OutputTokens: m.TokensOutput,
+		TotalTokens:  m.TokensInput + m.TokensOutput,
+		MaxTokens:    maxTokens,
+		ModelName:    m.Model,
+	})
 }
 
 // SetStatus sets the current UI status
@@ -658,17 +693,66 @@ func (m *Model) constrainLongCodeBlocks(content string) string {
 func (m *Model) EnterSearchMode() {
 	m.SearchMode = true
 	m.SearchQuery = ""
+	m.SearchMatches = nil
+	m.CurrentSearchMatch = -1
 }
 
 // ExitSearchMode deactivates search mode
 func (m *Model) ExitSearchMode() {
 	m.SearchMode = false
 	m.SearchQuery = ""
+	m.SearchMatches = nil
+	m.CurrentSearchMatch = -1
 }
 
 // UpdateSearchQuery updates the search query
 func (m *Model) UpdateSearchQuery(query string) {
 	m.SearchQuery = query
+	m.updateSearchMatches()
+}
+
+// SearchResultCount returns the number of message matches for the current query.
+func (m *Model) SearchResultCount() int {
+	return len(m.SearchMatches)
+}
+
+// ExecuteSearch selects the next matching message for the current query.
+func (m *Model) ExecuteSearch() bool {
+	m.updateSearchMatches()
+	if len(m.SearchMatches) == 0 {
+		m.CurrentSearchMatch = -1
+		return false
+	}
+
+	m.CurrentSearchMatch = (m.CurrentSearchMatch + 1) % len(m.SearchMatches)
+	return true
+}
+
+func (m *Model) updateSearchMatches() {
+	query := strings.TrimSpace(strings.ToLower(m.SearchQuery))
+	if query == "" {
+		m.SearchMatches = nil
+		m.CurrentSearchMatch = -1
+		return
+	}
+
+	matches := make([]int, 0)
+	for i, msg := range m.Messages {
+		if strings.Contains(strings.ToLower(msg.Content), query) {
+			matches = append(matches, i)
+			continue
+		}
+		for _, block := range msg.ContentBlock {
+			if strings.Contains(strings.ToLower(block.Text), query) || strings.Contains(strings.ToLower(block.Content), query) {
+				matches = append(matches, i)
+				break
+			}
+		}
+	}
+	m.SearchMatches = matches
+	if m.CurrentSearchMatch >= len(matches) {
+		m.CurrentSearchMatch = -1
+	}
 }
 
 // AppendStreamingText adds a chunk to the streaming buffer and updates the last message in place
@@ -817,6 +901,47 @@ func (m *Model) SetServices(convSvc services.ConversationService, msgSvc service
 	m.convSvc = convSvc
 	m.msgSvc = msgSvc
 	m.agentSvc = agentSvc
+	if convSvc != nil && msgSvc != nil {
+		m.conversationBrowser = conversationbrowser.NewConversationBrowser(convSvc, msgSvc, m.theme)
+		_, _ = m.conversationBrowser.Update(tea.WindowSizeMsg{Width: m.Width, Height: m.Height})
+	}
+}
+
+// SetIntegrationRegistries feeds plugin and MCP registry data into the Tools dashboard.
+func (m *Model) SetIntegrationRegistries(pluginRegistry *plugins.Registry, mcpRegistry *mcp.Registry) {
+	if m.pluginDashboard == nil {
+		return
+	}
+
+	pluginInfos := []dashboard.PluginInfo{}
+	if pluginRegistry != nil {
+		for _, plugin := range pluginRegistry.GetAll() {
+			status := "Disabled"
+			if plugin.Enabled {
+				status = "Loaded"
+			}
+			pluginInfos = append(pluginInfos, dashboard.PluginInfo{
+				Name:    plugin.Name,
+				Version: plugin.Version,
+				Enabled: plugin.Enabled,
+				Status:  status,
+			})
+		}
+	}
+
+	mcpInfos := []dashboard.MCPServerInfo{}
+	if mcpRegistry != nil {
+		for _, server := range mcpRegistry.ListServers() {
+			mcpInfos = append(mcpInfos, dashboard.MCPServerInfo{
+				Name:      server.Name,
+				URL:       server.Command,
+				Connected: false,
+				Status:    "Configured",
+			})
+		}
+	}
+
+	m.pluginDashboard.SetData(pluginInfos, mcpInfos)
 }
 
 // StartEventSubscriptions initializes event subscriptions and returns commands to listen for events
@@ -891,6 +1016,7 @@ func (m *Model) SetSlashCommands(commands []string, descriptions map[string]stri
 // SetContextManager sets the context manager and initializes context tracking
 func (m *Model) SetContextManager(manager *ctxmgr.Manager) {
 	m.contextManager = manager
+	m.updateTokenVisualization()
 	m.updateContextUsage()
 }
 
@@ -1280,6 +1406,66 @@ func (m *Model) SaveConversation() error {
 	return nil
 }
 
+// connectQuickActions connects built-in registry actions to model behavior.
+func (m *Model) connectQuickActions() {
+	actionTemplates := map[string]string{
+		"read":   "read ",
+		"grep":   "grep ",
+		"web":    "web ",
+		"attach": "attach ",
+	}
+
+	for name, template := range actionTemplates {
+		actionName := name
+		inputTemplate := template
+		_ = m.quickActionsRegistry.SetActionHandler(actionName, func(args string) error {
+			args = strings.TrimSpace(args)
+			if args != "" {
+				m.Input.SetValue(actionName + " " + args)
+			} else {
+				m.Input.SetValue(inputTemplate)
+			}
+			m.Input.Focus()
+			m.updateInputHeight()
+			return nil
+		})
+	}
+
+	_ = m.quickActionsRegistry.SetActionHandler("save", func(_ string) error {
+		return m.SaveConversation()
+	})
+
+	_ = m.quickActionsRegistry.SetActionHandler("export", func(_ string) error {
+		exported := m.ExportConversation()
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage(fmt.Sprintf("Conversation exported (%d bytes)", len(exported)))
+		}
+		return nil
+	})
+
+	_ = m.quickActionsRegistry.SetActionCommand("settings", func(_ string) tea.Cmd {
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Opening settings...")
+		}
+		return forms.RunSettingsFormAsync(m.Model, os.Getenv("ANTHROPIC_API_KEY"), settingsConfigPath())
+	})
+
+	_ = m.quickActionsRegistry.SetActionCommand("onboarding", func(_ string) tea.Cmd {
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Opening onboarding...")
+		}
+		return forms.RunOnboardingFormAsync(settingsConfigPath())
+	})
+}
+
+func settingsConfigPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return ""
+	}
+	return filepath.Join(home, ".hex", "config.toml")
+}
+
 // ToggleFavorite toggles the favorite status of the current conversation
 func (m *Model) ToggleFavorite() error {
 	if m.convSvc == nil {
@@ -1331,12 +1517,8 @@ func (m *Model) UpdateQuickActionsInput(input string) {
 	m.quickActionsFiltered = m.quickActionsRegistry.FuzzySearch(input)
 }
 
-// ExecuteQuickAction executes the selected or first filtered action
-func (m *Model) ExecuteQuickAction() error {
-	if len(m.quickActionsFiltered) == 0 {
-		return fmt.Errorf("no actions available")
-	}
-
+// ExecuteQuickAction executes the selected or first filtered action.
+func (m *Model) ExecuteQuickAction() (tea.Cmd, error) {
 	// Parse command and args from input
 	command, args := ParseActionCommand(m.quickActionsInput)
 
@@ -1344,6 +1526,9 @@ func (m *Model) ExecuteQuickAction() error {
 	actionName := command
 	if actionName == "" && len(m.quickActionsFiltered) > 0 {
 		actionName = m.quickActionsFiltered[0].Name
+	}
+	if actionName == "" {
+		return nil, fmt.Errorf("no actions available")
 	}
 
 	// Exit quick actions mode
@@ -1539,7 +1724,7 @@ func (m *Model) LaunchQuickActionsForm() tea.Cmd {
 		switch action.Name {
 		case "help", "back", "forward", "quit":
 			category = string(forms.CategoryNavigation)
-		case "save", "export", "clear", "reset":
+		case "save", "export", "clear", "reset", "settings", "onboarding":
 			category = string(forms.CategorySettings)
 		}
 
@@ -1559,8 +1744,8 @@ func (m *Model) LaunchQuickActionsForm() tea.Cmd {
 	return forms.RunQuickActionsFormAsync(formActions)
 }
 
-// handleQuickActionsResult processes the result from the huh quick actions form
-func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.Model {
+// handleQuickActionsResult processes the result from the huh quick actions form.
+func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) (tea.Model, tea.Cmd) {
 	// Exit quick actions mode
 	m.quickActionsMode = false
 
@@ -1570,7 +1755,7 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.M
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
 		}
-		return m
+		return m, nil
 	}
 
 	// Execute the selected action
@@ -1582,23 +1767,74 @@ func (m *Model) handleQuickActionsResult(msg *forms.QuickActionsResultMsg) tea.M
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: action not found")
 		}
-		return m
+		return m, nil
 	}
 
 	// Execute the action handler
-	err = action.Handler("")
+	cmd, err := m.quickActionsRegistry.Execute(action.Name, "")
 	if err != nil {
 		m.ErrorMessage = "Action failed: " + err.Error()
 		if m.statusBar != nil {
 			m.statusBar.SetCustomMessage("Error: " + err.Error())
 		}
-		return m
+		return m, nil
 	}
 
 	if m.statusBar != nil {
 		m.statusBar.SetCustomMessage("Executed: " + action.Name)
 	}
 
+	return m, cmd
+}
+
+func (m *Model) handleSettingsResult(msg *forms.SettingsResultMsg) tea.Model {
+	if msg.Error != nil {
+		m.ErrorMessage = "Settings error: " + msg.Error.Error()
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
+		}
+		return m
+	}
+	if msg.Result == nil {
+		return m
+	}
+	if msg.Result.Cancelled {
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Settings cancelled")
+		}
+		return m
+	}
+
+	m.Model = msg.Result.Model
+	if m.statusBar != nil {
+		m.statusBar.SetCustomMessage("Settings saved")
+	}
+	return m
+}
+
+func (m *Model) handleOnboardingResult(msg *forms.OnboardingResultMsg) tea.Model {
+	if msg.Error != nil {
+		m.ErrorMessage = "Onboarding error: " + msg.Error.Error()
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Error: " + msg.Error.Error())
+		}
+		return m
+	}
+	if msg.Result == nil {
+		return m
+	}
+	if msg.Result.Skipped {
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Onboarding skipped")
+		}
+		return m
+	}
+	if msg.Result.Completed {
+		m.Model = msg.Result.Model
+		if m.statusBar != nil {
+			m.statusBar.SetCustomMessage("Onboarding complete")
+		}
+	}
 	return m
 }
 
@@ -1618,6 +1854,13 @@ func (m *Model) addToInputHistory(input string) {
 
 	// Add to history (most recent at the end)
 	m.inputHistory = append(m.inputHistory, input)
+	if m.autocomplete != nil {
+		if provider, ok := m.autocomplete.GetProvider("history"); ok {
+			if historyProvider, ok := provider.(*HistoryProvider); ok {
+				historyProvider.AddToHistory(input)
+			}
+		}
+	}
 
 	// Limit history size to 100 entries
 	const maxHistorySize = 100

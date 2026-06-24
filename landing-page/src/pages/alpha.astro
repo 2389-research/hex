@@ -3,20 +3,24 @@
 // ABOUTME: Fetches releases from Firebase with tactical ops styling
 import Layout from '../layouts/Layout.astro';
 
-const VERSIONS_URL = 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
+const VERSIONS_URL = import.meta.env.HEX_ALPHA_VERSIONS_URL || 'https://firebasestorage.googleapis.com/v0/b/hex-code-daf69.firebasestorage.app/o/releases%2Fversions.json?alt=media';
 
 let version = '';
 let downloads: Record<string, string> = {};
+let downloadMetadataError = '';
 
 try {
   const res = await fetch(VERSIONS_URL);
+  if (!res.ok) {
+    throw new Error(`versions request failed with ${res.status}`);
+  }
   const data = await res.json();
   version = data.latest || '';
   if (data.releases && data.releases.length > 0) {
     downloads = data.releases[0].downloads || {};
   }
-} catch (e) {
-  console.error('Failed to fetch versions:', e);
+} catch {
+  downloadMetadataError = 'Download manifest is unavailable right now.';
 }
 
 const platforms = [
@@ -73,6 +77,19 @@ const platforms = [
           </div>
 
           <div>
+            {downloadMetadataError && (
+              <div class="px-4 py-4 border-b border-alert-dim/40 bg-alert/5" role="alert" aria-live="polite">
+                <div class="flex items-start gap-3">
+                  <span class="mt-1 w-2 h-2 rounded-full bg-alert shadow-[0_0_12px_rgba(255,107,0,0.55)]"></span>
+                  <div>
+                    <p class="text-alert text-xs tracking-widest mb-2">DOWNLOAD MANIFEST UNAVAILABLE</p>
+                    <p class="text-text-dim text-xs leading-relaxed">
+                      {downloadMetadataError} Refresh this page to retry, or check GitHub for the latest alpha release.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {platforms.map((p, i) => (
               <div class={`download-row fade-up`} style={`animation-delay: ${0.3 + i * 0.1}s`}>
                 <div class="flex items-center gap-4">

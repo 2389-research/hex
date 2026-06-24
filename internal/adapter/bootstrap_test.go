@@ -3,9 +3,26 @@
 package adapter
 
 import (
+	"context"
 	"os"
 	"testing"
+
+	"github.com/2389-research/hex/internal/skills"
+	"github.com/2389-research/hex/internal/tools"
+	"github.com/2389-research/mux/llm"
 )
+
+type stubLLMClient struct{}
+
+func (stubLLMClient) CreateMessage(context.Context, *llm.Request) (*llm.Response, error) {
+	return &llm.Response{}, nil
+}
+
+func (stubLLMClient) CreateMessageStream(context.Context, *llm.Request) (<-chan llm.StreamEvent, error) {
+	ch := make(chan llm.StreamEvent)
+	close(ch)
+	return ch, nil
+}
 
 func TestParseCSV(t *testing.T) {
 	tests := []struct {
@@ -53,5 +70,66 @@ func TestIsSubagent(t *testing.T) {
 
 	if !IsSubagent() {
 		t.Error("expected IsSubagent() to return true when env is set")
+	}
+}
+
+func TestAssistantTextFallsBackToTextBlocks(t *testing.T) {
+	message := llm.Message{
+		Role: llm.RoleAssistant,
+		Blocks: []llm.ContentBlock{
+			{Type: llm.ContentTypeThinking, Thinking: "internal reasoning"},
+			{Type: llm.ContentTypeText, Text: "first"},
+			{Type: llm.ContentTypeText, Text: " second"},
+		},
+	}
+
+	if got := assistantText(message); got != "first second" {
+		t.Fatalf("assistantText() = %q, want %q", got, "first second")
+	}
+}
+
+func TestFilterToolsByAllowedMatchesAliasesAndSkill(t *testing.T) {
+	available := []tools.Tool{
+		tools.NewReadTool(),
+		tools.NewGrepTool(),
+		tools.NewGlobTool(),
+		skills.NewToolAdapter(skills.NewRegistry()),
+	}
+
+	filtered := filterToolsByAllowed(available, []string{"Read", "Grep", "Glob", "Skill"})
+
+	names := make(map[string]bool)
+	for _, tool := range filtered {
+		names[tool.Name()] = true
+	}
+
+	for _, name := range []string{"read_file", "grep", "glob", "Skill"} {
+		if !names[name] {
+			t.Fatalf("filterToolsByAllowed() missing %q from filtered names %v", name, names)
+		}
+	}
+}
+
+func TestNewRootAgentCarriesMaxIterations(t *testing.T) {
+	root := NewRootAgent(Config{
+		Model:         "test-model",
+		LLMClient:     stubLLMClient{},
+		MaxIterations: 7,
+	})
+
+	if got := root.Config().MaxIterations; got != 7 {
+		t.Fatalf("root agent MaxIterations = %d, want 7", got)
+	}
+}
+
+func TestNewSubagentCarriesMaxIterations(t *testing.T) {
+	subagent := NewSubagent(Config{
+		Model:         "test-model",
+		LLMClient:     stubLLMClient{},
+		MaxIterations: 3,
+	})
+
+	if got := subagent.Config().MaxIterations; got != 3 {
+		t.Fatalf("subagent MaxIterations = %d, want 3", got)
 	}
 }

@@ -144,10 +144,7 @@ func showConversationPicker(db *sql.DB) (string, error) {
 		return "", fmt.Errorf("no conversations found")
 	}
 
-	// Limit to 20 most recent
-	if len(conversations) > 20 {
-		conversations = conversations[:20]
-	}
+	conversations = conversationsForPicker(conversations)
 
 	// Create picker model
 	picker := ui.NewSessionPicker(conversations)
@@ -162,4 +159,11 @@ func showConversationPicker(db *sql.DB) (string, error) {
 	// Get selected conversation ID
 	finalModel := result.(ui.SessionPicker)
 	return finalModel.GetSelectedID(), nil
+}
+
+func conversationsForPicker(conversations []*services.Conversation) []*services.Conversation {
+	if len(conversations) > 20 {
+		return conversations[:20]
+	}
+	return conversations
 }

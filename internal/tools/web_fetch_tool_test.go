@@ -265,13 +265,14 @@ func TestWebFetchTool_Timeout(t *testing.T) {
 		t.Skip("Skipping slow timeout test in short mode")
 	}
 
-	// Create test server that never responds
-	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		time.Sleep(60 * time.Second) // Long delay
+	// Create test server that waits for the client timeout, then exits cleanly.
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
 	}))
 	defer server.Close()
 
-	tool := NewWebFetchTool()
+	tool := NewWebFetchTool().(*WebFetchTool)
+	tool.client.Timeout = 100 * time.Millisecond
 	params := map[string]interface{}{
 		"url":    server.URL,
 		"prompt": "extract content",
@@ -289,8 +290,8 @@ func TestWebFetchTool_Timeout(t *testing.T) {
 		t.Error("Expected timeout failure")
 	}
 
-	// Should timeout in reasonable time (not 60s)
-	if duration > 35*time.Second {
+	// Should timeout in reasonable time (not the server's default close wait)
+	if duration > time.Second {
 		t.Errorf("Timeout took too long: %v", duration)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // QuickAction represents a single quick action
@@ -15,6 +17,7 @@ type QuickAction struct {
 	Description string
 	Usage       string
 	Handler     func(args string) error
+	Command     func(args string) tea.Cmd
 }
 
 // QuickActionsRegistry manages quick actions
@@ -67,6 +70,16 @@ func (r *QuickActionsRegistry) registerBuiltInActions() {
 	_ = r.RegisterAction("export", "Export conversation as markdown", "export", func(_ string) error {
 		return fmt.Errorf("export action not yet connected to model")
 	})
+
+	// Settings action
+	_ = r.RegisterAction("settings", "Open settings", "settings", func(_ string) error {
+		return fmt.Errorf("settings action not yet connected to model")
+	})
+
+	// Onboarding action
+	_ = r.RegisterAction("onboarding", "Open onboarding", "onboarding", func(_ string) error {
+		return fmt.Errorf("onboarding action not yet connected to model")
+	})
 }
 
 // RegisterAction adds a new quick action
@@ -85,6 +98,32 @@ func (r *QuickActionsRegistry) RegisterAction(name, description, usage string, h
 		Handler:     handler,
 	}
 
+	return nil
+}
+
+// SetActionHandler replaces a registered action handler.
+func (r *QuickActionsRegistry) SetActionHandler(name string, handler func(string) error) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	action, exists := r.actions[name]
+	if !exists {
+		return fmt.Errorf("action %s not found", name)
+	}
+	action.Handler = handler
+	return nil
+}
+
+// SetActionCommand replaces a registered action command.
+func (r *QuickActionsRegistry) SetActionCommand(name string, command func(string) tea.Cmd) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	action, exists := r.actions[name]
+	if !exists {
+		return fmt.Errorf("action %s not found", name)
+	}
+	action.Command = command
 	return nil
 }
 
@@ -114,14 +153,17 @@ func (r *QuickActionsRegistry) ListActions() []*QuickAction {
 	return actions
 }
 
-// Execute runs an action with the given arguments
-func (r *QuickActionsRegistry) Execute(name, args string) error {
+// Execute runs an action with the given arguments.
+func (r *QuickActionsRegistry) Execute(name, args string) (tea.Cmd, error) {
 	action, err := r.GetAction(name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return action.Handler(args)
+	if action.Command != nil {
+		return action.Command(args), nil
+	}
+	return nil, action.Handler(args)
 }
 
 // FuzzySearch searches actions by name using fuzzy matching

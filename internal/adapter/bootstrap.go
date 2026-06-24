@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/2389-research/hex/internal/permissions"
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/mux/agent"
 	muxhooks "github.com/2389-research/mux/hooks"
@@ -35,19 +36,49 @@ func parseCSV(s string) []string {
 	return result
 }
 
+func assistantText(message llm.Message) string {
+	if message.Content != "" {
+		return message.Content
+	}
+
+	var builder strings.Builder
+	for _, block := range message.Blocks {
+		if block.Type == llm.ContentTypeText {
+			builder.WriteString(block.Text)
+		}
+	}
+	return builder.String()
+}
+
+func filterToolsByAllowed(hexTools []tools.Tool, allowedTools []string) []tools.Tool {
+	if allowedTools == nil {
+		return hexTools
+	}
+
+	rules := permissions.NewRules(allowedTools, nil)
+	filteredTools := make([]tools.Tool, 0, len(hexTools))
+	for _, tool := range hexTools {
+		if rules.IsToolAllowed(tool.Name()) {
+			filteredTools = append(filteredTools, tool)
+		}
+	}
+	return filteredTools
+}
+
 // ApprovalFunc is called when a tool requires approval before execution.
 // Returns true to approve, false to deny. Error indicates approval check failed.
 type ApprovalFunc func(ctx context.Context, toolName string, params map[string]any) (bool, error)
 
 // Config holds configuration for creating an agent.
 type Config struct {
-	APIKey       string
-	Model        string
-	SystemPrompt string
-	HexTools     []tools.Tool
-	ApprovalFunc ApprovalFunc      // Optional: if nil, tools requiring approval will fail
-	HookManager  *muxhooks.Manager // Optional: mux hook manager for lifecycle events
-	LLMClient    llm.Client        // Optional: pre-configured LLM client (overrides APIKey/Model)
+	APIKey        string
+	Model         string
+	SystemPrompt  string
+	HexTools      []tools.Tool
+	ApprovalFunc  ApprovalFunc      // Optional: if nil, tools requiring approval will fail
+	HookManager   *muxhooks.Manager // Optional: mux hook manager for lifecycle events
+	LLMClient     llm.Client        // Optional: pre-configured LLM client (overrides APIKey/Model)
+	MaxIterations int               // Optional: maximum mux orchestrator loop iterations
 }
 
 // NewRootAgent creates a root agent with full tool access.
@@ -63,11 +94,12 @@ func NewRootAgent(cfg Config) *agent.Agent {
 	}
 
 	agentCfg := agent.Config{
-		Name:         "hex-root",
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          "hex-root",
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided
@@ -101,13 +133,14 @@ func NewSubagent(cfg Config) *agent.Agent {
 	}
 
 	agentCfg := agent.Config{
-		Name:         agentID,
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		AllowedTools: allowed,
-		DeniedTools:  denied,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          agentID,
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		AllowedTools:  allowed,
+		DeniedTools:   denied,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided
@@ -136,11 +169,12 @@ func NewSubagentWithClient(cfg Config, llmClient llm.Client, agentID string) *ag
 	}
 
 	agentCfg := agent.Config{
-		Name:         agentID,
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          agentID,
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided
@@ -175,20 +209,7 @@ func (r *AgentRunner) RunAgent(ctx context.Context, agentID, prompt, systemPromp
 	hexTools := r.ToolFactory()
 
 	// Filter tools if allowedTools is specified
-	var filteredTools []tools.Tool
-	if allowedTools == nil {
-		filteredTools = hexTools
-	} else {
-		allowedSet := make(map[string]bool)
-		for _, name := range allowedTools {
-			allowedSet[strings.ToLower(name)] = true
-		}
-		for _, tool := range hexTools {
-			if allowedSet[strings.ToLower(tool.Name())] {
-				filteredTools = append(filteredTools, tool)
-			}
-		}
-	}
+	filteredTools := filterToolsByAllowed(hexTools, allowedTools)
 
 	// Create mux registry with adapted tools
 	registry := muxtool.NewRegistry()
@@ -220,7 +241,7 @@ func (r *AgentRunner) RunAgent(ctx context.Context, agentID, prompt, systemPromp
 	messages := a.Messages()
 	for i := len(messages) - 1; i >= 0; i-- {
 		if messages[i].Role == "assistant" {
-			output = messages[i].Content
+			output = assistantText(messages[i])
 			break
 		}
 	}

@@ -106,19 +106,19 @@ func DefaultConfig(t SubagentType) *Config {
 	switch t {
 	case TypeExplore:
 		// Explorer is read-only and thorough
-		config.AllowedTools = []string{"Read", "Grep", "Glob", "Bash"}
+		config.AllowedTools = []string{"Read", "Grep", "Glob", "Bash", "Skill"}
 		config.Temperature = 0.7
 		config.MaxTokens = 8192 // Longer responses for detailed analysis
 
 	case TypePlan:
 		// Planner is read-only and strategic
-		config.AllowedTools = []string{"Read", "Grep", "Glob"}
+		config.AllowedTools = []string{"Read", "Grep", "Glob", "Skill"}
 		config.Temperature = 0.6
 		config.MaxTokens = 6144
 
 	case TypeCodeReviewer:
 		// Reviewer is read-only and critical
-		config.AllowedTools = []string{"Read", "Grep", "Glob"}
+		config.AllowedTools = []string{"Read", "Grep", "Glob", "Skill"}
 		config.Temperature = 0.3
 		config.MaxTokens = 6144
 

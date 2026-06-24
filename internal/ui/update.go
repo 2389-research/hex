@@ -159,7 +159,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle quick actions form results from huh
 	case *forms.QuickActionsResultMsg:
-		return m.handleQuickActionsResult(msg), nil
+		return m.handleQuickActionsResult(msg)
+
+	case *forms.SettingsResultMsg:
+		return m.handleSettingsResult(msg), nil
+
+	case *forms.OnboardingResultMsg:
+		return m.handleOnboardingResult(msg), nil
 
 	case tea.KeyMsg:
 		// PRIORITY 1: Route input to overlay manager FIRST (modal behavior)
@@ -466,8 +472,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Handle Enter key
 		if msg.Type == tea.KeyEnter {
 			if m.SearchMode {
-				// Execute search (placeholder for now)
-				m.ExitSearchMode()
+				m.ExecuteSearch()
 				return m, nil
 			}
 			// Handle Alt+Enter as fallback: insert newline in textarea
@@ -544,7 +549,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Handle backspace in search mode
 		if msg.Type == tea.KeyBackspace {
 			if m.SearchMode && len(m.SearchQuery) > 0 {
-				m.SearchQuery = m.SearchQuery[:len(m.SearchQuery)-1]
+				m.UpdateSearchQuery(m.SearchQuery[:len(m.SearchQuery)-1])
 				return m, nil
 			}
 		}
@@ -602,7 +607,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Handle search mode input
 			if m.SearchMode {
-				m.SearchQuery += string(r)
+				m.UpdateSearchQuery(m.SearchQuery + string(r))
 				return m, nil
 			}
 
@@ -679,6 +684,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.approvalPrompt != nil {
 			m.approvalPrompt.SetWidth(msg.Width)
 		}
+		if m.tokenVisualization != nil {
+			_, _ = m.tokenVisualization.Update(tea.WindowSizeMsg{Width: msg.Width, Height: msg.Height})
+		}
+		if m.conversationBrowser != nil {
+			_, _ = m.conversationBrowser.Update(tea.WindowSizeMsg{Width: msg.Width - 4, Height: msg.Height - 4})
+		}
 		// NOTE: Async approval form handles its own sizing via form.Run()
 	}
 
@@ -700,29 +711,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if newValue != oldValue {
 			// Phase 6C Task 4: Update autocomplete as user types
 			if m.autocomplete != nil {
-				if m.autocomplete.IsActive() {
-					// If the input no longer starts with /, hide autocomplete
-					if !strings.HasPrefix(strings.TrimSpace(newValue), "/") {
-						m.autocomplete.Hide()
-						// Pop overlay if active
-						if m.overlayManager.GetActive() == m.autocompleteOverlay {
-							m.overlayManager.Pop()
-							m.adjustViewportForOverlay()
-						}
-					} else {
-						// Already active - just update with new input
-						m.autocomplete.Update(newValue)
-					}
-				} else if strings.HasPrefix(strings.TrimSpace(newValue), "/") {
-					// Auto-show autocomplete when typing starts with /
+				if strings.TrimSpace(newValue) == "" {
+					m.autocomplete.Hide()
+				} else {
 					provider := DetectProvider(newValue)
 					m.autocomplete.Show(newValue, provider)
-					// Push overlay if not already active
-					if m.overlayManager.GetActive() != m.autocompleteOverlay {
-						m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
-						m.adjustViewportForOverlay()
-					}
 				}
+				m.syncAutocompleteOverlay()
 			}
 
 			// Auto-grow input height based on content (up to MaxHeight)
@@ -742,6 +737,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *Model) syncAutocompleteOverlay() {
+	if m.autocomplete == nil || m.autocompleteOverlay == nil || m.overlayManager == nil {
+		return
+	}
+
+	if m.autocomplete.IsActive() {
+		if m.overlayManager.GetActive() != m.autocompleteOverlay {
+			m.overlayManager.Push(m.autocompleteOverlay, m.Width, m.Height)
+			m.adjustViewportForOverlay()
+		}
+		return
+	}
+
+	if m.overlayManager.GetActive() == m.autocompleteOverlay {
+		m.overlayManager.Pop()
+		m.adjustViewportForOverlay()
+	}
 }
 
 // updateViewport renders messages into viewport with throttling for smooth performance

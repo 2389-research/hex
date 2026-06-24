@@ -118,7 +118,11 @@ func (m *Model) View() string {
 	// Fullscreen overlays are handled at the top of View() function
 	if m.SearchMode {
 		// Search mode indicator
-		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_", m.SearchQuery))
+		matchText := ""
+		if strings.TrimSpace(m.SearchQuery) != "" {
+			matchText = fmt.Sprintf(" (%d matches)", m.SearchResultCount())
+		}
+		searchPrompt := m.theme.SearchPrompt.Render(fmt.Sprintf("Search: %s_%s", m.SearchQuery, matchText))
 		b.WriteString(searchPrompt + "\n")
 	}
 
@@ -270,10 +274,22 @@ func (m *Model) renderChatView() string {
 
 // renderHistoryView renders the conversation history browser
 func (m *Model) renderHistoryView() string {
+	if m.conversationBrowser != nil {
+		return m.conversationBrowser.View()
+	}
+
 	var b strings.Builder
-	b.WriteString(m.theme.ViewMode.Render("📚 History Browser") + "\n\n")
-	b.WriteString("(History browser not yet implemented)\n")
-	b.WriteString("\nPress Tab to return to chat")
+	b.WriteString(m.theme.ViewMode.Render("📚 Conversation History") + "\n\n")
+	if len(m.Messages) == 0 {
+		b.WriteString("No messages in this conversation yet.\n")
+	} else {
+		for i, msg := range m.Messages {
+			role := strings.ToUpper(msg.Role)
+			content := messagePreview(msg)
+			b.WriteString(fmt.Sprintf("%02d  %s  %s\n", i+1, role, content))
+		}
+	}
+	b.WriteString("\nPress Tab to inspect tools")
 	return b.String()
 }
 
@@ -281,9 +297,61 @@ func (m *Model) renderHistoryView() string {
 func (m *Model) renderToolsView() string {
 	var b strings.Builder
 	b.WriteString(m.theme.ViewMode.Render("🔧 Tool Inspector") + "\n\n")
-	b.WriteString("(Tool inspector not yet implemented)\n")
-	b.WriteString("\nPress Tab to return to chat")
+	if m.pluginDashboard != nil {
+		if dashboard := m.pluginDashboard.RenderCompact(m.Width - 4); dashboard != "" {
+			b.WriteString(m.theme.Subtitle.Render("Plugin/MCP Status") + "\n")
+			b.WriteString(dashboard + "\n\n")
+		}
+	}
+	if m.tokenVisualization != nil && (m.TokensInput > 0 || m.TokensOutput > 0) {
+		b.WriteString(m.theme.Subtitle.Render("Token Usage") + "\n")
+		b.WriteString(m.tokenVisualization.View() + "\n\n")
+	}
+	if len(m.toolResultHistory) == 0 && m.currentToolLogName == "" {
+		b.WriteString("No tool calls recorded.\n")
+	} else {
+		if m.currentToolLogName != "" {
+			b.WriteString(fmt.Sprintf("Active: %s %s\n", m.currentToolLogName, m.currentToolLogParam))
+		}
+		for i, result := range m.toolResultHistory {
+			status := "ok"
+			if result.Result != nil && result.Result.Error != "" {
+				status = "error"
+			}
+			b.WriteString(fmt.Sprintf("%02d  %s  %s\n", i+1, result.ToolUseID, status))
+		}
+	}
+	b.WriteString("\nPress Tab to return to intro")
 	return b.String()
+}
+
+func messagePreview(msg Message) string {
+	content := strings.TrimSpace(msg.Content)
+	if content == "" && len(msg.ContentBlock) > 0 {
+		content = contentBlockPreview(msg)
+	}
+	content = strings.Join(strings.Fields(content), " ")
+	if len(content) > 120 {
+		content = content[:117] + "..."
+	}
+	return content
+}
+
+func contentBlockPreview(msg Message) string {
+	parts := make([]string, 0, len(msg.ContentBlock))
+	for _, block := range msg.ContentBlock {
+		switch {
+		case block.Text != "":
+			parts = append(parts, block.Text)
+		case block.Content != "":
+			parts = append(parts, block.Content)
+		case block.Name != "":
+			parts = append(parts, "tool:"+block.Name)
+		default:
+			parts = append(parts, block.Type)
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // renderStatusBar renders the bottom status bar with token counter and help

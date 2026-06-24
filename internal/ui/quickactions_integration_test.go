@@ -5,6 +5,7 @@ package ui
 import (
 	"testing"
 
+	"github.com/2389-research/hex/internal/ui/forms"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,13 +86,21 @@ func TestModelQuickActionsExecute(t *testing.T) {
 	// Type "save"
 	model.UpdateQuickActionsInput("save")
 
-	// Execute should work (even though handler isn't connected yet)
-	err := model.ExecuteQuickAction()
-	// Expected to fail because handlers aren't connected
-	assert.Error(t, err)
+	_, err := model.ExecuteQuickAction()
+	assert.NoError(t, err)
 
-	// But mode should be exited
 	assert.False(t, model.quickActionsMode)
+}
+
+func TestModelQuickActionReadPreparesInputTemplate(t *testing.T) {
+	model := NewModel("test-conv", "test-model")
+	model.EnterQuickActionsMode()
+	model.UpdateQuickActionsInput("read")
+
+	_, err := model.ExecuteQuickAction()
+	assert.NoError(t, err)
+	assert.False(t, model.quickActionsMode)
+	assert.Equal(t, "read ", model.Input.Value())
 }
 
 func TestModelQuickActionsWithArguments(t *testing.T) {
@@ -101,13 +110,69 @@ func TestModelQuickActionsWithArguments(t *testing.T) {
 	// Type "read /path/to/file"
 	model.UpdateQuickActionsInput("read /path/to/file")
 
-	// The fuzzy search searches for the full string, so it won't match
-	// This is expected behavior - the command parser will extract "read" later
-	// But the filtered list will be empty since no action name contains the full string
-	// This is OK - ExecuteQuickAction will parse the command correctly
-
 	// Parse command to verify it works
 	command, args := ParseActionCommand("read /path/to/file")
 	assert.Equal(t, "read", command)
 	assert.Equal(t, "/path/to/file", args)
+
+	_, err := model.ExecuteQuickAction()
+	assert.NoError(t, err)
+	assert.Equal(t, "read /path/to/file", model.Input.Value())
+}
+
+func TestModelQuickActionSettingsLaunchesSettingsForm(t *testing.T) {
+	model := NewModel("test-conv", "test-model")
+	model.EnterQuickActionsMode()
+	model.UpdateQuickActionsInput("settings")
+
+	cmd, err := model.ExecuteQuickAction()
+	assert.NoError(t, err)
+	assert.NotNil(t, cmd)
+	assert.False(t, model.quickActionsMode)
+}
+
+func TestModelQuickActionOnboardingLaunchesOnboardingForm(t *testing.T) {
+	model := NewModel("test-conv", "test-model")
+	model.EnterQuickActionsMode()
+	model.UpdateQuickActionsInput("onboarding")
+
+	cmd, err := model.ExecuteQuickAction()
+	assert.NoError(t, err)
+	assert.NotNil(t, cmd)
+	assert.False(t, model.quickActionsMode)
+}
+
+func TestModelSettingsResultUpdatesModel(t *testing.T) {
+	model := NewModel("test-conv", "old-model")
+
+	updated, cmd := model.Update(&forms.SettingsResultMsg{
+		Result: &forms.SettingsFormResult{
+			Model:       "new-model",
+			APIKey:      "sk-ant-test",
+			Temperature: 0.7,
+			MaxTokens:   2048,
+		},
+	})
+	result := updated.(*Model)
+
+	assert.Nil(t, cmd)
+	assert.Equal(t, "new-model", result.Model)
+	assert.Empty(t, result.ErrorMessage)
+}
+
+func TestModelOnboardingResultUpdatesModel(t *testing.T) {
+	model := NewModel("test-conv", "old-model")
+
+	updated, cmd := model.Update(&forms.OnboardingResultMsg{
+		Result: &forms.OnboardingFormResult{
+			Model:     "new-model",
+			APIKey:    "sk-ant-test",
+			Completed: true,
+		},
+	})
+	result := updated.(*Model)
+
+	assert.Nil(t, cmd)
+	assert.Equal(t, "new-model", result.Model)
+	assert.Empty(t, result.ErrorMessage)
 }

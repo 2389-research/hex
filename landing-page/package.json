@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "test:alpha-error": "HEX_ALPHA_VERSIONS_URL=http://127.0.0.1:23989/releases.json astro build && node scripts/verify-alpha-error.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

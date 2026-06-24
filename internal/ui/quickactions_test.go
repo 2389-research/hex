@@ -104,7 +104,7 @@ func TestFuzzySearchActions(t *testing.T) {
 		{
 			name:     "empty query returns all",
 			query:    "",
-			minMatch: 6, // All built-in actions
+			minMatch: 8, // All built-in actions
 		},
 	}
 
@@ -180,7 +180,7 @@ func TestBuiltInActions(t *testing.T) {
 	registry := NewQuickActionsRegistry()
 
 	// Test that all built-in actions are registered
-	builtins := []string{"read", "grep", "web", "attach", "save", "export"}
+	builtins := []string{"read", "grep", "web", "attach", "save", "export", "settings", "onboarding"}
 
 	for _, name := range builtins {
 		t.Run(name, func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestExecuteAction(t *testing.T) {
 	require.NoError(t, err)
 
 	// Execute the action
-	err = registry.Execute("test", "some args")
+	_, err = registry.Execute("test", "some args")
 	require.NoError(t, err)
 
 	assert.True(t, executed, "Handler should have been called")
@@ -220,7 +220,7 @@ func TestExecuteAction(t *testing.T) {
 func TestExecuteActionNotFound(t *testing.T) {
 	registry := NewQuickActionsRegistry()
 
-	err := registry.Execute("nonexistent", "")
+	_, err := registry.Execute("nonexistent", "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -237,7 +237,7 @@ func TestActionHandlerError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Execute should return the handler error
-	err = registry.Execute("test", "")
+	_, err = registry.Execute("test", "")
 	assert.Error(t, err)
 }
 
