@@ -52,9 +52,28 @@ type ContextUsage struct {
 
 // NewManager creates a new context manager
 func NewManager(maxTokens int) *Manager {
+	return NewManagerWithStrategy(maxTokens, StrategyPrune)
+}
+
+// NewManagerWithStrategy creates a new context manager with an explicit pruning strategy.
+func NewManagerWithStrategy(maxTokens int, strategy PruneStrategy) *Manager {
 	return &Manager{
 		MaxTokens: maxTokens,
-		Strategy:  StrategyPrune,
+		Strategy:  strategy,
+	}
+}
+
+// ParsePruneStrategy converts a CLI/config string into a pruning strategy.
+func ParsePruneStrategy(strategy string) (PruneStrategy, error) {
+	switch strings.TrimSpace(strings.ToLower(strategy)) {
+	case "keep-all":
+		return StrategyKeepAll, nil
+	case "prune":
+		return StrategyPrune, nil
+	case "summarize":
+		return StrategySummarize, nil
+	default:
+		return StrategyPrune, fmt.Errorf("invalid context strategy %q: must be keep-all, prune, or summarize", strategy)
 	}
 }
 
@@ -232,13 +251,107 @@ func PruneContext(messages []core.Message, maxTokens int) []core.Message {
 
 // ShouldPrune returns true if messages should be pruned
 func (m *Manager) ShouldPrune(messages []core.Message) bool {
+	if m.Strategy == StrategyKeepAll {
+		return false
+	}
 	tokens := EstimateMessagesTokens(messages)
 	return tokens > m.MaxTokens
 }
 
 // Prune prunes the messages according to the manager's strategy
 func (m *Manager) Prune(messages []core.Message) []core.Message {
+	if m.Strategy == StrategyKeepAll {
+		return messages
+	}
+	if m.Strategy == StrategySummarize {
+		return SummarizeContext(messages, m.MaxTokens)
+	}
 	return PruneContext(messages, m.MaxTokens)
+}
+
+// SummarizeContext replaces pruned messages with a compact summary message.
+func SummarizeContext(messages []core.Message, maxTokens int) []core.Message {
+	pruned := PruneContext(messages, maxTokens)
+	if len(pruned) == len(messages) {
+		return pruned
+	}
+
+	removed := removedMessages(messages, pruned)
+	if len(removed) == 0 {
+		return pruned
+	}
+
+	summary := core.Message{
+		Role:    "system",
+		Content: compactPrunedSummary(removed),
+	}
+
+	insertAt := 0
+	if len(pruned) > 0 && pruned[0].Role == "system" {
+		insertAt = 1
+	}
+
+	result := make([]core.Message, 0, len(pruned)+1)
+	result = append(result, pruned[:insertAt]...)
+	result = append(result, summary)
+	result = append(result, pruned[insertAt:]...)
+
+	for EstimateMessagesTokens(result) > maxTokens && len(result) > insertAt+2 {
+		removeAt := insertAt + 1
+		if removeAt >= len(result)-1 {
+			break
+		}
+		result = append(result[:removeAt], result[removeAt+1:]...)
+	}
+
+	return result
+}
+
+func removedMessages(messages []core.Message, kept []core.Message) []core.Message {
+	keptCounts := make(map[string]int, len(kept))
+	for _, msg := range kept {
+		keptCounts[messageSignature(msg)]++
+	}
+
+	removed := make([]core.Message, 0, len(messages)-len(kept))
+	for _, msg := range messages {
+		signature := messageSignature(msg)
+		if keptCounts[signature] > 0 {
+			keptCounts[signature]--
+			continue
+		}
+		removed = append(removed, msg)
+	}
+	return removed
+}
+
+func messageSignature(msg core.Message) string {
+	return fmt.Sprintf("%s\x00%s\x00%d\x00%d", msg.Role, msg.Content, len(msg.ContentBlock), len(msg.ToolCalls))
+}
+
+func compactPrunedSummary(messages []core.Message) string {
+	var builder strings.Builder
+	builder.WriteString("Previous conversation summary:\n")
+	builder.WriteString(fmt.Sprintf("Pruned %d earlier message(s).", len(messages)))
+
+	for _, msg := range messages {
+		if msg.Role == "system" {
+			continue
+		}
+		line := strings.TrimSpace(strings.ReplaceAll(msg.Content, "\n", " "))
+		if line == "" {
+			continue
+		}
+		if len(line) > 120 {
+			line = line[:120] + "..."
+		}
+		builder.WriteString("\n- ")
+		builder.WriteString(msg.Role)
+		builder.WriteString(": ")
+		builder.WriteString(line)
+	}
+
+	return builder.String()
 }
 
 // GetUsage returns current context usage information

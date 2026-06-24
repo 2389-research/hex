@@ -72,6 +72,41 @@ func TestLoggingLevels(t *testing.T) {
 	}
 }
 
+func TestVerboseEnablesDebugLogLevel(t *testing.T) {
+	tmpDir := t.TempDir()
+	testLogFile := filepath.Join(tmpDir, "verbose.log")
+
+	originalVerbose := verbose
+	originalDebug := debug
+	originalLogLevel := logLevel
+	originalLogFile := logFile
+	originalLogFormat := logFormat
+	defer func() {
+		verbose = originalVerbose
+		debug = originalDebug
+		logLevel = originalLogLevel
+		logFile = originalLogFile
+		logFormat = originalLogFormat
+	}()
+
+	verbose = true
+	debug = false
+	logLevel = "info"
+	logFile = testLogFile
+	logFormat = "text"
+
+	err := initializeLogging()
+	require.NoError(t, err)
+	require.NotNil(t, globalLogger)
+
+	globalLogger.Debug("verbose debug marker")
+	closeLogger()
+
+	contents, err := os.ReadFile(testLogFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(contents), "verbose debug marker")
+}
+
 func TestLoggingFormats(t *testing.T) {
 	tests := []struct {
 		name   string

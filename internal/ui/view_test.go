@@ -3,10 +3,16 @@
 package ui_test
 
 import (
+	"path/filepath"
 	"testing"
 
+	"github.com/2389-research/hex/internal/mcp"
+	"github.com/2389-research/hex/internal/services"
+	"github.com/2389-research/hex/internal/storage"
 	"github.com/2389-research/hex/internal/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestViewRendersChatMode(t *testing.T) {
@@ -22,20 +28,61 @@ func TestViewRendersHistoryMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeHistory
+	model.AddMessage("user", "Show me the deployment plan")
 
 	view := model.View()
-	assert.Contains(t, view, "History Browser")
+	assert.Contains(t, view, "Conversation History")
+	assert.Contains(t, view, "Show me the deployment plan")
+	assert.NotContains(t, view, "not yet implemented")
 	assert.Contains(t, view, "HEX › HISTORY") // Neo-Terminal shows mode in status bar
+}
+
+func TestViewRendersConversationBrowserWhenServicesAvailable(t *testing.T) {
+	db, err := storage.OpenDatabase(filepath.Join(t.TempDir(), "hex.db"))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.SetServices(services.NewConversationService(db), services.NewMessageService(db), nil)
+	model.Ready = true
+	model.CurrentView = ui.ViewModeHistory
+	updated, _ := model.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	model = updated.(*ui.Model)
+
+	view := model.View()
+	assert.Contains(t, view, "Conversation Browser")
+	assert.NotContains(t, view, "Conversation History")
 }
 
 func TestViewRendersToolsMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.Ready = true
 	model.CurrentView = ui.ViewModeTools
+	model.UpdateTokens(100, 250)
 
 	view := model.View()
 	assert.Contains(t, view, "Tool Inspector")
+	assert.Contains(t, view, "350 / 8192 tokens")
+	assert.Contains(t, view, "No tool calls recorded")
+	assert.NotContains(t, view, "not yet implemented")
 	assert.Contains(t, view, "HEX › TOOLS") // Neo-Terminal shows mode in status bar
+}
+
+func TestViewRendersIntegrationDashboardData(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.Ready = true
+	model.CurrentView = ui.ViewModeTools
+	registry := mcp.NewRegistry(t.TempDir())
+	err := registry.AddServer(mcp.ServerConfig{
+		Name:      "local-tools",
+		Transport: "stdio",
+		Command:   "hex-mcp",
+	})
+	require.NoError(t, err)
+	model.SetIntegrationRegistries(nil, registry)
+
+	view := model.View()
+	assert.Contains(t, view, "MCP Servers: 0/1 connected")
 }
 
 func TestViewShowsTokenCounter(t *testing.T) {
@@ -52,12 +99,15 @@ func TestViewShowsTokenCounter(t *testing.T) {
 func TestViewShowsSearchMode(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.Ready = true
+	model.AddMessage("user", "test one")
+	model.AddMessage("assistant", "another test result")
 	model.EnterSearchMode()
 	model.UpdateSearchQuery("test")
 
 	view := model.View()
 	assert.Contains(t, view, "Search:")
 	assert.Contains(t, view, "test")
+	assert.Contains(t, view, "2 matches")
 }
 
 func TestViewShowsHelpText(t *testing.T) {

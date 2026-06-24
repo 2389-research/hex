@@ -144,6 +144,29 @@ func TestSearchModeBackspace(t *testing.T) {
 	assert.Equal(t, "", m.SearchQuery)
 }
 
+func TestSearchModeEnterSelectsNextMatch(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.CurrentView = ui.ViewModeChat
+	model.AddMessage("user", "alpha one")
+	model.AddMessage("assistant", "alpha two")
+	model.EnterSearchMode()
+	model.UpdateSearchQuery("alpha")
+
+	msg := tea.KeyMsg{Type: tea.KeyEnter}
+	updatedModel, _ := model.Update(msg)
+	m := updatedModel.(*ui.Model)
+
+	assert.True(t, m.SearchMode)
+	assert.Equal(t, "alpha", m.SearchQuery)
+	assert.Equal(t, 0, m.CurrentSearchMatch)
+
+	updatedModel, _ = m.Update(msg)
+	m = updatedModel.(*ui.Model)
+
+	assert.True(t, m.SearchMode)
+	assert.Equal(t, 1, m.CurrentSearchMatch)
+}
+
 func TestGGSequenceResetOnOtherKeys(t *testing.T) {
 	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
 	model.Ready = true

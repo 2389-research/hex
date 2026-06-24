@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/2389-research/hex/internal/agentsmd"
-	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/logging"
 	"github.com/2389-research/hex/internal/mcp"
@@ -209,7 +208,10 @@ func continueInteractiveWithModel(db *sql.DB, uiModel *ui.Model, initialPrompt s
 	uiModel.SetSlashCommands(cmdNames, cmdDescriptions)
 
 	// Set up context manager
-	contextManager := ctxmgr.NewManager(maxContextTokens)
+	contextManager, err := createContextManager()
+	if err != nil {
+		return err
+	}
 	uiModel.SetContextManager(contextManager)
 	logging.DebugWith("Context manager initialized", "maxTokens", maxContextTokens, "strategy", contextStrategy)
 

@@ -132,12 +132,13 @@ func runPrintModeWithMux(prompt string) error {
 
 	// Create agent config
 	agentCfg := adapter.Config{
-		APIKey:       apiKey,
-		Model:        modelToUse,
-		SystemPrompt: sysPrompt,
-		HexTools:     hexTools,
-		ApprovalFunc: approvalFunc,
-		LLMClient:    llmClient,
+		APIKey:        apiKey,
+		Model:         modelToUse,
+		SystemPrompt:  sysPrompt,
+		HexTools:      hexTools,
+		ApprovalFunc:  approvalFunc,
+		LLMClient:     llmClient,
+		MaxIterations: effectiveMaxTurns(),
 	}
 
 	// Wire up hooks if available
@@ -361,6 +362,10 @@ func createMuxLLMClient(cfg *core.Config, providerName, modelName string) (llm.C
 		client, err := llm.NewGeminiClient(ctx, providerCfg.APIKey, modelName)
 		return client, providerCfg.APIKey, err
 	case "openrouter":
+		if providerCfg.BaseURL != "" {
+			logging.InfoWith("Using custom OpenRouter base URL", "url", providerCfg.BaseURL)
+			return llm.NewOpenRouterClientWithBaseURL(providerCfg.APIKey, modelName, providerCfg.BaseURL), providerCfg.APIKey, nil
+		}
 		return llm.NewOpenRouterClient(providerCfg.APIKey, modelName), providerCfg.APIKey, nil
 	case "ollama":
 		return llm.NewOllamaClient(providerCfg.BaseURL, modelName), "", nil

@@ -3,6 +3,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -89,5 +91,53 @@ func TestTurnTracker_RecordByToolName(t *testing.T) {
 	}
 	if !strings.Contains(hint, "bash") {
 		t.Errorf("expected hint to mention tool name 'bash', got %q", hint)
+	}
+}
+
+func TestFormatOutputStreamJSONWritesSingleLine(t *testing.T) {
+	resp := &core.MessageResponse{
+		ID:         "msg_123",
+		Type:       "message",
+		Role:       "assistant",
+		Model:      "claude-test",
+		StopReason: "end_turn",
+		Content: []core.Content{
+			{Type: "text", Text: "hello"},
+		},
+		Usage: core.Usage{InputTokens: 3, OutputTokens: 2},
+	}
+
+	var out bytes.Buffer
+	err := formatOutputTo(&out, resp, "stream-json")
+	if err != nil {
+		t.Fatalf("formatOutputTo stream-json returned error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("expected one JSON line, got %d lines: %q", len(lines), out.String())
+	}
+
+	var decoded core.MessageResponse
+	if err := json.Unmarshal([]byte(lines[0]), &decoded); err != nil {
+		t.Fatalf("stream-json output is not valid JSON: %v\n%s", err, lines[0])
+	}
+	if decoded.ID != resp.ID || decoded.Content[0].Text != "hello" {
+		t.Fatalf("stream-json output did not preserve response: %#v", decoded)
+	}
+}
+
+func TestEffectiveMaxTurnsUsesConfiguredFlag(t *testing.T) {
+	originalMaxTurns := maxTurns
+	defer func() { maxTurns = originalMaxTurns }()
+
+	maxTurns = 7
+	if got := effectiveMaxTurns(); got != 7 {
+		t.Fatalf("effectiveMaxTurns() = %d, want 7", got)
+	}
+
+	maxTurns = 0
+	if got := effectiveMaxTurns(); got != 50 {
+		t.Fatalf("effectiveMaxTurns() with zero = %d, want default 50", got)
 	}
 }

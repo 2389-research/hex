@@ -3,6 +3,7 @@
 package adapter
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -10,6 +11,18 @@ import (
 	"github.com/2389-research/hex/internal/tools"
 	"github.com/2389-research/mux/llm"
 )
+
+type stubLLMClient struct{}
+
+func (stubLLMClient) CreateMessage(context.Context, *llm.Request) (*llm.Response, error) {
+	return &llm.Response{}, nil
+}
+
+func (stubLLMClient) CreateMessageStream(context.Context, *llm.Request) (<-chan llm.StreamEvent, error) {
+	ch := make(chan llm.StreamEvent)
+	close(ch)
+	return ch, nil
+}
 
 func TestParseCSV(t *testing.T) {
 	tests := []struct {
@@ -94,5 +107,29 @@ func TestFilterToolsByAllowedMatchesAliasesAndSkill(t *testing.T) {
 		if !names[name] {
 			t.Fatalf("filterToolsByAllowed() missing %q from filtered names %v", name, names)
 		}
+	}
+}
+
+func TestNewRootAgentCarriesMaxIterations(t *testing.T) {
+	root := NewRootAgent(Config{
+		Model:         "test-model",
+		LLMClient:     stubLLMClient{},
+		MaxIterations: 7,
+	})
+
+	if got := root.Config().MaxIterations; got != 7 {
+		t.Fatalf("root agent MaxIterations = %d, want 7", got)
+	}
+}
+
+func TestNewSubagentCarriesMaxIterations(t *testing.T) {
+	subagent := NewSubagent(Config{
+		Model:         "test-model",
+		LLMClient:     stubLLMClient{},
+		MaxIterations: 3,
+	})
+
+	if got := subagent.Config().MaxIterations; got != 3 {
+		t.Fatalf("subagent MaxIterations = %d, want 3", got)
 	}
 }

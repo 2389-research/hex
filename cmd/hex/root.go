@@ -116,7 +116,7 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&printMode, "print", "p", false, "Print mode (non-interactive)")
 	rootCmd.PersistentFlags().StringVar(&outputFormat, "output-format", "text", "Output format: text, json, stream-json")
-	rootCmd.PersistentFlags().StringVar(&provider, "provider", "", "LLM provider (anthropic) - other providers coming soon")
+	rootCmd.PersistentFlags().StringVar(&provider, "provider", "", "LLM provider: anthropic, openai, gemini, openrouter, ollama (non-Anthropic require print mode and --model)")
 	rootCmd.PersistentFlags().StringVarP(&model, "model", "m", "", "Model to use")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging to /tmp/hex-debug.log")
@@ -588,6 +588,10 @@ func runInteractive(prompt string) error {
 
 	// Phase 5B: Load MCP tools from .mcp.json if present
 	logging.Debug("Loading MCP tools")
+	mcpDashboardRegistry := mcp.NewRegistry(".")
+	if loadErr := mcpDashboardRegistry.Load(); loadErr != nil {
+		logging.WarnWith("Failed to load MCP dashboard registry", "error", loadErr.Error())
+	}
 	if mcpErr := mcp.LoadMCPTools(".", registry); mcpErr != nil {
 		// Log error but don't fail - continue with built-in tools
 		logging.WarnWith("Failed to load MCP tools", "error", mcpErr.Error())
@@ -616,6 +620,7 @@ func runInteractive(prompt string) error {
 
 	// Set tool system in model
 	uiModel.SetToolSystem(registry, executor)
+	uiModel.SetIntegrationRegistries(pluginRegistry, mcpDashboardRegistry)
 
 	// Set slash commands for autocomplete
 	cmdNames := commandRegistry.List()
@@ -626,7 +631,10 @@ func runInteractive(prompt string) error {
 	uiModel.SetSlashCommands(cmdNames, cmdDescriptions)
 
 	// Phase 6B: Set up context manager
-	contextManager := ctxmgr.NewManager(maxContextTokens)
+	contextManager, err := createContextManager()
+	if err != nil {
+		return err
+	}
 	uiModel.SetContextManager(contextManager)
 	logging.DebugWith("Context manager initialized", "maxTokens", maxContextTokens, "strategy", contextStrategy)
 
@@ -682,10 +690,12 @@ func runInteractive(prompt string) error {
 var globalLogger *logging.Logger
 
 func initializeLogging() error {
-	// If --debug is specified, force debug level and enable stderr output
+	// If --debug or --verbose is specified, force debug-level logs.
 	level := logging.LevelFromString(logLevel)
-	if debug {
+	if debug || verbose {
 		level = logging.LevelDebug
+	}
+	if debug {
 		// Set environment variable so other packages know we're in debug mode
 		_ = os.Setenv("HEX_DEBUG", "1") // Ignore error - not critical if env var fails to set
 	}
@@ -790,6 +800,14 @@ func createPermissionChecker() (*permissions.Checker, error) {
 	return checker, nil
 }
 
+func createContextManager() (*ctxmgr.Manager, error) {
+	strategy, err := ctxmgr.ParsePruneStrategy(contextStrategy)
+	if err != nil {
+		return nil, err
+	}
+	return ctxmgr.NewManagerWithStrategy(maxContextTokens, strategy), nil
+}
+
 // createProvider creates the appropriate provider based on config and provider name
 // Uses mux's battle-tested LLM clients wrapped in MuxAdapter
 func createProvider(cfg *core.Config, providerName string) (providers.Provider, error) {
@@ -863,7 +881,11 @@ func createProvider(cfg *core.Config, providerName string) (providers.Provider, 
 			return nil, fmt.Errorf("create gemini client: %w", err)
 		}
 	case "openrouter":
-		client = llm.NewOpenRouterClient(providerCfg.APIKey, "")
+		if providerCfg.BaseURL != "" {
+			client = llm.NewOpenRouterClientWithBaseURL(providerCfg.APIKey, "", providerCfg.BaseURL)
+		} else {
+			client = llm.NewOpenRouterClient(providerCfg.APIKey, "")
+		}
 	case "ollama":
 		client = llm.NewOllamaClient(providerCfg.BaseURL, "")
 	default:

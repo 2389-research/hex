@@ -196,11 +196,11 @@ func TestLoadPluginData(t *testing.T) {
 		t.Fatal("loadPluginData should return pluginDataMsg")
 	}
 
-	if len(dataMsg.plugins) == 0 {
-		t.Error("Should load some mock plugins")
+	if len(dataMsg.plugins) != 0 {
+		t.Errorf("Should not fabricate plugin data, got %d plugins", len(dataMsg.plugins))
 	}
-	if len(dataMsg.mcpServers) == 0 {
-		t.Error("Should load some mock MCP servers")
+	if len(dataMsg.mcpServers) != 0 {
+		t.Errorf("Should not fabricate MCP data, got %d servers", len(dataMsg.mcpServers))
 	}
 }
 

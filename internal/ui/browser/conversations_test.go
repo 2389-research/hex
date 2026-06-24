@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,7 +81,7 @@ func TestNewConversationBrowser(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	if browser == nil {
 		t.Fatal("NewConversationBrowser returned nil")
@@ -104,7 +105,7 @@ func TestConversationBrowserInit(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	cmd := browser.Init()
 	if cmd == nil {
@@ -120,7 +121,7 @@ func TestConversationBrowserUpdate(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	t.Run("window size message", func(t *testing.T) {
 		msg := tea.WindowSizeMsg{Width: 100, Height: 30}
@@ -171,7 +172,7 @@ func TestConversationBrowserView(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	t.Run("view before size set", func(t *testing.T) {
 		view := browser.View()
@@ -191,6 +192,57 @@ func TestConversationBrowserView(t *testing.T) {
 			t.Error("Should not show loading after size set")
 		}
 	})
+}
+
+func TestConversationBrowserLoadsRealMessagePreview(t *testing.T) {
+	db := setupTestDB(t)
+	defer func() { _ = db.Close() }()
+
+	seedConversations(t, db)
+
+	convSvc := services.NewConversationService(db)
+	msgSvc := services.NewMessageService(db)
+	err := msgSvc.Add(context.Background(), &services.Message{
+		ConversationID: "conv-1",
+		Role:           "user",
+		Content:        "Please summarize the rollout plan",
+	})
+	if err != nil {
+		t.Fatalf("Failed to seed message: %v", err)
+	}
+	err = msgSvc.Add(context.Background(), &services.Message{
+		ConversationID: "conv-1",
+		Role:           "assistant",
+		Content:        "Use staged deployment with rollback checks.",
+	})
+	if err != nil {
+		t.Fatalf("Failed to seed message: %v", err)
+	}
+
+	th := theme.NewDraculaTheme()
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
+	convs, err := convSvc.List(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to load conversations: %v", err)
+	}
+	for _, conv := range convs {
+		if conv.ID == "conv-1" {
+			browser.selectedConv = conv
+			break
+		}
+	}
+
+	msg := browser.loadConversationContent()
+	loaded, ok := msg.(conversationContentMsg)
+	if !ok {
+		t.Fatalf("Expected conversationContentMsg, got %T", msg)
+	}
+	if !strings.Contains(loaded.content, "Please summarize the rollout plan") {
+		t.Fatalf("Expected real user message in preview, got %q", loaded.content)
+	}
+	if strings.Contains(loaded.content, "to be implemented") {
+		t.Fatalf("Preview still contains placeholder text: %q", loaded.content)
+	}
 }
 
 func TestConversationItem(t *testing.T) {
@@ -244,7 +296,7 @@ func TestSortConversations(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	// Load conversations via service
 	convs, err := convSvc.List(context.Background())
@@ -298,7 +350,7 @@ func TestFuzzySearch(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	// Load conversations via service
 	convs, err := convSvc.List(context.Background())
@@ -356,7 +408,7 @@ func TestUpdateFilteredItems(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	// Load conversations via service
 	convs, err := convSvc.List(context.Background())
@@ -392,7 +444,7 @@ func TestLoadConversations(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	msg := browser.loadConversations()
 
@@ -416,7 +468,7 @@ func TestGetSelectedConversation(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	t.Run("no selection", func(t *testing.T) {
 		conv := browser.GetSelectedConversation()
@@ -449,7 +501,7 @@ func TestRenderPreview(t *testing.T) {
 
 	th := theme.NewDraculaTheme()
 	convSvc := services.NewConversationService(db)
-	browser := NewConversationBrowser(convSvc, th)
+	browser := NewConversationBrowser(convSvc, services.NewMessageService(db), th)
 
 	t.Run("no selection", func(t *testing.T) {
 		preview := browser.renderPreview(40, 20)

@@ -25,6 +25,17 @@ func TestBuildMuxPlanExecutionPromptIncludesGeneratedPlan(t *testing.T) {
 	}
 }
 
+func TestRunPrintModeWithMuxPassesMaxTurnsToAgentConfig(t *testing.T) {
+	source, err := os.ReadFile("mux_runner.go")
+	if err != nil {
+		t.Fatalf("read mux_runner.go: %v", err)
+	}
+
+	if !strings.Contains(string(source), "MaxIterations: effectiveMaxTurns()") {
+		t.Fatal("mux print mode should pass effectiveMaxTurns() to adapter.Config.MaxIterations")
+	}
+}
+
 func TestGetHexToolsWithMuxSubagentsIncludesSkillTool(t *testing.T) {
 	tools, err := getHexToolsWithMuxSubagents(nil, nil)
 	if err != nil {

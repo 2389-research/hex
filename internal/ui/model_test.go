@@ -123,11 +123,29 @@ func TestSearchMode(t *testing.T) {
 	// Update search query
 	model.UpdateSearchQuery("test query")
 	assert.Equal(t, "test query", model.SearchQuery)
+	assert.Equal(t, 0, model.SearchResultCount())
 
 	// Exit search mode
 	model.ExitSearchMode()
 	assert.False(t, model.SearchMode)
 	assert.Empty(t, model.SearchQuery)
+}
+
+func TestSearchModeFindsMessageMatches(t *testing.T) {
+	model := ui.NewModel("conv-123", "claude-sonnet-4-5-20250929")
+	model.AddMessage("user", "Alpha setup details")
+	model.AddMessage("assistant", "No relevant content")
+	model.AddMessage("user", "Follow-up about alpha deployment")
+
+	model.EnterSearchMode()
+	model.UpdateSearchQuery("alpha")
+
+	assert.Equal(t, 2, model.SearchResultCount())
+	assert.Equal(t, []int{0, 2}, model.SearchMatches)
+	assert.True(t, model.ExecuteSearch())
+	assert.Equal(t, 0, model.CurrentSearchMatch)
+	assert.True(t, model.ExecuteSearch())
+	assert.Equal(t, 1, model.CurrentSearchMatch)
 }
 
 func TestAppendStreamingText(t *testing.T) {

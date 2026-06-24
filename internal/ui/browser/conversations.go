@@ -30,6 +30,7 @@ const (
 // ConversationBrowser manages the conversation browsing interface
 type ConversationBrowser struct {
 	convSvc        services.ConversationService
+	msgSvc         services.MessageService
 	theme          *theme.Theme
 	conversations  []*services.Conversation
 	filteredItems  []list.Item
@@ -85,7 +86,7 @@ func (ci conversationItem) Description() string {
 }
 
 // NewConversationBrowser creates a new conversation browser
-func NewConversationBrowser(convSvc services.ConversationService, t *theme.Theme) *ConversationBrowser {
+func NewConversationBrowser(convSvc services.ConversationService, msgSvc services.MessageService, t *theme.Theme) *ConversationBrowser {
 	// Create list delegate with Dracula styling
 	delegate := list.NewDefaultDelegate()
 
@@ -121,6 +122,7 @@ func NewConversationBrowser(convSvc services.ConversationService, t *theme.Theme
 
 	return &ConversationBrowser{
 		convSvc:       convSvc,
+		msgSvc:        msgSvc,
 		theme:         t,
 		list:          l,
 		sortMode:      SortByDate,
@@ -417,12 +419,32 @@ func (cb *ConversationBrowser) loadConversationContent() tea.Msg {
 	if cb.selectedConv == nil {
 		return conversationContentMsg{content: ""}
 	}
-
-	// Load recent messages (simplified - you may want to implement full message loading)
-	// For now, just return a placeholder
-	return conversationContentMsg{
-		content: fmt.Sprintf("Messages for conversation %s\n(Full message loading to be implemented)", cb.selectedConv.ID),
+	if cb.msgSvc == nil {
+		return errorMsg{err: fmt.Errorf("message service not available")}
 	}
+
+	messages, err := cb.msgSvc.GetByConversation(context.Background(), cb.selectedConv.ID)
+	if err != nil {
+		return errorMsg{err: err}
+	}
+	if len(messages) == 0 {
+		return conversationContentMsg{content: "No messages in this conversation yet."}
+	}
+
+	start := 0
+	if len(messages) > 5 {
+		start = len(messages) - 5
+	}
+
+	var preview strings.Builder
+	for _, msg := range messages[start:] {
+		content := strings.Join(strings.Fields(msg.Content), " ")
+		if len(content) > 160 {
+			content = content[:157] + "..."
+		}
+		preview.WriteString(fmt.Sprintf("%s: %s\n", msg.Role, content))
+	}
+	return conversationContentMsg{content: strings.TrimSpace(preview.String())}
 }
 
 func (cb *ConversationBrowser) toggleFavorite(id string, isFavorite bool) tea.Cmd {

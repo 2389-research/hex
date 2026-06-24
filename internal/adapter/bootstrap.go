@@ -71,13 +71,14 @@ type ApprovalFunc func(ctx context.Context, toolName string, params map[string]a
 
 // Config holds configuration for creating an agent.
 type Config struct {
-	APIKey       string
-	Model        string
-	SystemPrompt string
-	HexTools     []tools.Tool
-	ApprovalFunc ApprovalFunc      // Optional: if nil, tools requiring approval will fail
-	HookManager  *muxhooks.Manager // Optional: mux hook manager for lifecycle events
-	LLMClient    llm.Client        // Optional: pre-configured LLM client (overrides APIKey/Model)
+	APIKey        string
+	Model         string
+	SystemPrompt  string
+	HexTools      []tools.Tool
+	ApprovalFunc  ApprovalFunc      // Optional: if nil, tools requiring approval will fail
+	HookManager   *muxhooks.Manager // Optional: mux hook manager for lifecycle events
+	LLMClient     llm.Client        // Optional: pre-configured LLM client (overrides APIKey/Model)
+	MaxIterations int               // Optional: maximum mux orchestrator loop iterations
 }
 
 // NewRootAgent creates a root agent with full tool access.
@@ -93,11 +94,12 @@ func NewRootAgent(cfg Config) *agent.Agent {
 	}
 
 	agentCfg := agent.Config{
-		Name:         "hex-root",
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          "hex-root",
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided
@@ -131,13 +133,14 @@ func NewSubagent(cfg Config) *agent.Agent {
 	}
 
 	agentCfg := agent.Config{
-		Name:         agentID,
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		AllowedTools: allowed,
-		DeniedTools:  denied,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          agentID,
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		AllowedTools:  allowed,
+		DeniedTools:   denied,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided
@@ -166,11 +169,12 @@ func NewSubagentWithClient(cfg Config, llmClient llm.Client, agentID string) *ag
 	}
 
 	agentCfg := agent.Config{
-		Name:         agentID,
-		Registry:     registry,
-		LLMClient:    llmClient,
-		SystemPrompt: cfg.SystemPrompt,
-		HookManager:  cfg.HookManager, // Wire up hooks if provided
+		Name:          agentID,
+		Registry:      registry,
+		LLMClient:     llmClient,
+		SystemPrompt:  cfg.SystemPrompt,
+		HookManager:   cfg.HookManager, // Wire up hooks if provided
+		MaxIterations: cfg.MaxIterations,
 	}
 
 	// Wire up approval function if provided

@@ -234,52 +234,9 @@ type pluginDataMsg struct {
 // Commands
 
 func (pd *PluginDashboard) loadPluginData() tea.Msg {
-	// Mock data for now - in a real implementation, this would query actual plugin system
-	plugins := []PluginInfo{
-		{
-			Name:    "superpowers",
-			Version: "1.0.0",
-			Enabled: true,
-			Status:  "Active",
-		},
-		{
-			Name:    "document-skills",
-			Version: "1.2.0",
-			Enabled: true,
-			Status:  "Active",
-		},
-		{
-			Name:    "elements-of-style",
-			Version: "0.9.0",
-			Enabled: false,
-			Status:  "Disabled",
-		},
-	}
-
-	mcpServers := []MCPServerInfo{
-		{
-			Name:      "private-journal",
-			URL:       "local://journal",
-			Connected: true,
-			Status:    "Connected",
-		},
-		{
-			Name:      "chronicle",
-			URL:       "local://chronicle",
-			Connected: true,
-			Status:    "Connected",
-		},
-		{
-			Name:      "playwright",
-			URL:       "local://playwright",
-			Connected: false,
-			Status:    "Disconnected",
-		},
-	}
-
 	return pluginDataMsg{
-		plugins:    plugins,
-		mcpServers: mcpServers,
+		plugins:    []PluginInfo{},
+		mcpServers: []MCPServerInfo{},
 	}
 }
 
@@ -291,6 +248,13 @@ func (pd *PluginDashboard) GetPlugins() []PluginInfo {
 // GetMCPServers returns the current MCP server list
 func (pd *PluginDashboard) GetMCPServers() []MCPServerInfo {
 	return pd.mcpServers
+}
+
+// SetData replaces dashboard data and refreshes the rendered table.
+func (pd *PluginDashboard) SetData(plugins []PluginInfo, mcpServers []MCPServerInfo) {
+	pd.plugins = plugins
+	pd.mcpServers = mcpServers
+	pd.updateTable()
 }
 
 // RenderCompact renders a compact summary for embedding in other views

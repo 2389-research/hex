@@ -6,13 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	ctxmgr "github.com/2389-research/hex/internal/convcontext"
 	"github.com/2389-research/hex/internal/core"
 	"github.com/2389-research/hex/internal/cost"
 	"github.com/2389-research/hex/internal/logging"
@@ -111,12 +111,13 @@ func runPrintMode(prompt string) error {
 	messages := []core.Message{msg}
 
 	// Multi-turn tool execution loop with token tracking
-	maxTurns := 50
-	if maxTurns == 0 {
-		maxTurns = 50
-	}
+	maxTurns := effectiveMaxTurns()
 	tracker := &turnTracker{}
 	var totalInputTokens, totalOutputTokens int
+	ctxManager, err := createContextManager()
+	if err != nil {
+		return err
+	}
 
 	for turn := 0; turn < maxTurns; turn++ {
 		logging.DebugWith("Print mode turn", "turn", turn+1, "messages", len(messages))
@@ -147,7 +148,6 @@ func runPrintMode(prompt string) error {
 		}
 
 		// Prune context if approaching token limits
-		ctxManager := ctxmgr.NewManager(maxContextTokens)
 		if ctxManager.ShouldPrune(messages) {
 			messages = ctxManager.Prune(messages)
 			logging.InfoWith("Context pruned", "messages", len(messages))
@@ -484,21 +484,35 @@ func runPrintMode(prompt string) error {
 }
 
 func formatOutput(resp *core.MessageResponse, format string) error {
+	return formatOutputTo(os.Stdout, resp, format)
+}
+
+func formatOutputTo(w io.Writer, resp *core.MessageResponse, format string) error {
 	switch format {
 	case "text":
-		fmt.Println(resp.GetTextContent())
+		fmt.Fprintln(w, resp.GetTextContent())
 	case "json":
-		encoder := json.NewEncoder(os.Stdout)
+		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(resp); err != nil {
 			return fmt.Errorf("encode JSON: %w", err)
 		}
 	case "stream-json":
-		return fmt.Errorf("streaming not yet implemented")
+		encoder := json.NewEncoder(w)
+		if err := encoder.Encode(resp); err != nil {
+			return fmt.Errorf("encode stream JSON: %w", err)
+		}
 	default:
 		return fmt.Errorf("unknown output format: %s", format)
 	}
 	return nil
+}
+
+func effectiveMaxTurns() int {
+	if maxTurns <= 0 {
+		return 50
+	}
+	return maxTurns
 }
 
 // loadProjectContext loads or detects project context for the system prompt
