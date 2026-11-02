@@ -19,7 +19,7 @@ func TestPhase1Integration(t *testing.T) {
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err, "failed to build test binary")
-	defer func() { _ = os.Remove("../../hex-test")
+	defer func() { _ = os.Remove("../../hex-test") }()
 
 	hexBin := "../../hex-test"
 
@@ -93,7 +93,7 @@ func TestPrintModeWithRealAPI(t *testing.T) {
 	buildCmd.Dir = "../.."
 	err := buildCmd.Run()
 	require.NoError(t, err, "failed to build test binary")
-	defer func() { _ = os.Remove("../../hex-test")
+	defer func() { _ = os.Remove("../../hex-test") }()
 
 	hexBin := "../../hex-test"
 
