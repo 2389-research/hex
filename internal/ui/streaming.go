@@ -4,6 +4,7 @@
 package ui
 
 import (
+	"math"
 	"strings"
 	"time"
 
@@ -40,10 +41,6 @@ var (
 
 	tokenRateStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("243"))
-
-	waitingStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("243")).
-			Italic(true)
 
 	typewriterCursorStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("86")).
@@ -97,8 +94,8 @@ func NewStreamingDisplay() *StreamingDisplay {
 		typewriterSpeed:  30 * time.Millisecond,
 		waitingForTokens: true,
 		startTime:        time.Now(),
-		// "dots" spinner from cli-spinners (80ms interval)
-		spinnerFrames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		// Hexagonal/geometric spinner - distinctive for hex branding
+		spinnerFrames: []string{"⬡", "⬢", "◇", "◆", "⬡", "⬢", "◇", "◆"},
 		spinnerFrame:  0,
 		lastSpinTime:  time.Now(),
 	}
@@ -294,25 +291,46 @@ func (s *StreamingDisplay) GetElapsedTime() time.Duration {
 	return time.Since(s.startTime)
 }
 
-// RenderStreamingIndicator renders the streaming status indicator
+// RenderStreamingIndicator renders the streaming status indicator with animated effects
 func (s *StreamingDisplay) RenderStreamingIndicator() string {
 	var b strings.Builder
 
 	if s.waitingForTokens {
-		// Show waiting indicator
+		// Show waiting indicator with subtle pulse
 		elapsed := time.Since(s.startTime)
 		dots := int(elapsed.Milliseconds()/300) % 4
-		b.WriteString(waitingStyle.Render("Waiting for response" + strings.Repeat(".", dots)))
+
+		// Pulse the color slightly for visual interest
+		pulseProgress := float64(elapsed.Milliseconds()%1000) / 1000.0
+		pulseIntensity := (math.Sin(pulseProgress*2*math.Pi) + 1) / 2
+		grayVal := int(100 + pulseIntensity*55) // Range from #64 (100) to #9B (155)
+		pulseColor := lipgloss.Color(formatHexGray(grayVal))
+		pulseStyle := lipgloss.NewStyle().Foreground(pulseColor).Italic(true)
+
+		b.WriteString(pulseStyle.Render("◉ Waiting" + strings.Repeat(".", dots)))
 		return b.String()
 	}
 
-	// Show streaming indicator with token rate
-	b.WriteString(streamingIndicatorStyle.Render("⚡ Streaming"))
+	// Show streaming indicator with animated gradient
+	elapsed := time.Since(s.startTime)
+
+	// Animate lightning bolt color
+	pulseProgress := float64(elapsed.Milliseconds()%500) / 500.0
+	pulseIntensity := (math.Sin(pulseProgress*2*math.Pi) + 1) / 2
+
+	// Interpolate between cyan (#56 = 86) and bright cyan
+	boltColor := lipgloss.Color(formatHexRGB(86, int(233+pulseIntensity*22), int(253+pulseIntensity*2)))
+	boltStyle := lipgloss.NewStyle().Foreground(boltColor).Bold(true)
+
+	b.WriteString(boltStyle.Render("⚡") + " ")
+	b.WriteString(streamingIndicatorStyle.Render("Streaming"))
 
 	if s.tokenRate > 0 {
 		b.WriteString(" ")
-		b.WriteString(tokenRateStyle.Render(
-			lipgloss.NewStyle().String() + "(" + formatTokenRateFloat(s.tokenRate) + " tok/s)"))
+		// Add visual indicator of speed with bar
+		speedBar := renderSpeedBar(s.tokenRate)
+		b.WriteString(speedBar)
+		b.WriteString(tokenRateStyle.Render(" " + formatTokenRateFloat(s.tokenRate) + " tok/s"))
 	}
 
 	// Add typewriter mode indicator
@@ -322,10 +340,78 @@ func (s *StreamingDisplay) RenderStreamingIndicator() string {
 			progress = (s.typewriterPos * 100) / len(s.text)
 		}
 		b.WriteString(tokenRateStyle.Render(
-			lipgloss.NewStyle().String() + " [typewriter " + lipgloss.NewStyle().String() + string(rune('0'+progress/10)) + string(rune('0'+progress%10)) + "%]"))
+			" [typewriter " + string(rune('0'+progress/10)) + string(rune('0'+progress%10)) + "%]"))
 	}
 
 	return b.String()
+}
+
+// formatHexGray creates a hex color string for a gray value
+func formatHexGray(val int) string {
+	if val < 0 {
+		val = 0
+	}
+	if val > 255 {
+		val = 255
+	}
+	return string([]byte{'#', hexDigit(val / 16), hexDigit(val % 16), hexDigit(val / 16), hexDigit(val % 16), hexDigit(val / 16), hexDigit(val % 16)})
+}
+
+// formatHexRGB creates a hex color string from RGB values
+func formatHexRGB(r, g, b int) string {
+	clamp := func(v int) int {
+		if v < 0 {
+			return 0
+		}
+		if v > 255 {
+			return 255
+		}
+		return v
+	}
+	r, g, b = clamp(r), clamp(g), clamp(b)
+	return string([]byte{'#', hexDigit(r / 16), hexDigit(r % 16), hexDigit(g / 16), hexDigit(g % 16), hexDigit(b / 16), hexDigit(b % 16)})
+}
+
+// hexDigit converts a value 0-15 to a hex digit
+func hexDigit(v int) byte {
+	if v < 10 {
+		return byte('0' + v)
+	}
+	return byte('a' + v - 10)
+}
+
+// renderSpeedBar creates a visual speed indicator
+func renderSpeedBar(rate float64) string {
+	// Map rate to 1-5 blocks
+	bars := int(rate / 20) // 20 tok/s per bar
+	if bars < 1 {
+		bars = 1
+	}
+	if bars > 5 {
+		bars = 5
+	}
+
+	// Gradient from yellow to green based on speed
+	colors := []lipgloss.Color{
+		lipgloss.Color("#f1fa8c"), // Yellow (slow)
+		lipgloss.Color("#bef992"), // Yellow-green
+		lipgloss.Color("#73daca"), // Cyan-green
+		lipgloss.Color("#50fa7b"), // Green (fast)
+		lipgloss.Color("#50fa7b"), // Green
+	}
+
+	var result string
+	for i := 0; i < bars; i++ {
+		style := lipgloss.NewStyle().Foreground(colors[i])
+		result += style.Render("▮")
+	}
+	// Fill remaining with dim blocks
+	dimStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#44475a"))
+	for i := bars; i < 5; i++ {
+		result += dimStyle.Render("▯")
+	}
+
+	return result
 }
 
 // RenderWithCursor renders text with a typewriter cursor if in typewriter mode
@@ -493,21 +579,63 @@ func (s *StreamingDisplay) getSpinnerFrame() string {
 func (s *StreamingDisplay) GetWorkDisplay() string {
 	var parts []string
 
-	// Show thinking if active with animated spinner
+	// Show thinking if active with animated spinner and pulsing effect
 	if s.thinkingActive {
 		spinner := s.getSpinnerFrame()
-		display := spinner + " Thinking"
+
+		// Create pulsing color effect for thinking state
+		elapsed := time.Since(s.startTime)
+		pulseProgress := float64(elapsed.Milliseconds()%1500) / 1500.0
+		pulseIntensity := (math.Sin(pulseProgress*2*math.Pi) + 1) / 2
+
+		// Pulse between cyan (#56E0F3) and purple (#BD93F9)
+		// Cyan base: R=86, G=224, B=243
+		// Purple accent: R=189, G=147, B=249
+		r := int(86 + pulseIntensity*(189-86))
+		g := int(224 - pulseIntensity*(224-147))
+		b := int(243 + pulseIntensity*(249-243))
+		pulseColor := lipgloss.Color(formatHexRGB(r, g, b))
+
+		pulseStyle := lipgloss.NewStyle().
+			Foreground(pulseColor).
+			Italic(true)
+
+		// Build thinking display with brain emoji and animated dots
+		dots := int((elapsed.Milliseconds() / 400) % 4)
+		dotStr := strings.Repeat("·", dots) + strings.Repeat(" ", 3-dots)
+
+		display := spinner + " 🧠 Thinking" + dotStr
 		if s.thinkingText != "" {
-			display += "..."
+			// Show truncated thinking text for context
+			thinkText := s.thinkingText
+			if len(thinkText) > 40 {
+				thinkText = thinkText[:37] + "..."
+			}
+			display += " — " + thinkText
 		}
-		parts = append(parts, thinkingStyle.Render(display))
+		parts = append(parts, pulseStyle.Render(display))
 	}
 
-	// Show active tool calls
+	// Show active tool calls with distinctive styling
 	for _, tool := range s.currentToolCalls {
 		if tool.InProgress {
-			display := "▍ Using tool: " + tool.Name
-			parts = append(parts, toolCallStyle.Render(display))
+			// Use gear emoji and pulsing effect for tools
+			elapsed := time.Since(s.startTime)
+			pulseProgress := float64(elapsed.Milliseconds()%1000) / 1000.0
+			pulseIntensity := (math.Sin(pulseProgress*2*math.Pi) + 1) / 2
+
+			// Pulse between purple (#BD93F9) and pink (#FF79C6)
+			r := int(189 + pulseIntensity*(255-189))
+			g := int(147 - pulseIntensity*(147-121))
+			b := int(249 - pulseIntensity*(249-198))
+			toolColor := lipgloss.Color(formatHexRGB(r, g, b))
+
+			toolStyle := lipgloss.NewStyle().
+				Foreground(toolColor).
+				Bold(true)
+
+			display := "⚙ " + tool.Name
+			parts = append(parts, toolStyle.Render(display))
 		}
 	}
 
